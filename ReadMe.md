@@ -143,7 +143,7 @@ For training resnet50 with batch_size=256,you need at least 4 2080ti gpus,and ne
 You can see model training details in imagenet_experiments/experiment_folder/.
 
 # Citation
-If you find our work useful in your research, please consider citing:
+If you find my work useful in your research, please consider citing:
 ```
 @inproceedings{zgcr,
  title={pytorch-ImageNet-CIFAR-COCO-VOC-training},
