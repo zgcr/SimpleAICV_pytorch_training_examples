@@ -1,5 +1,5 @@
-# requirements
-platform:Ubuntu 18.04.4
+# Requirements
+Platform:Ubuntu 18.04.4
 ```
 1.pytorch==1.4.0
 2.torchvision==0.5.0
@@ -14,7 +14,7 @@ platform:Ubuntu 18.04.4
 11.apex==0.1
 ```
 
-if you use python3.7,please use the following orders to install apex:
+If you use python3.7,please use the following orders to install apex:
 ```
 git clone https://github.com/NVIDIA/apex
 cd apex
@@ -28,7 +28,7 @@ pip install -v --no-cache-dir ./
 ```
 Using apex to train can reduce video memory usage by 25%-30%, but the training speed will be slower, the trained model has the same performance as not using apex.
 
-# my pretrained models
+# My pretrained models
 You can download all my pretrained models from here:https://drive.google.com/drive/folders/1rewWULfXsvE0voA-A_ooTWwadq9lsk3X?usp=sharing .
 
 
@@ -98,7 +98,7 @@ You can see model training details in cifar100_experiments/resnet50cifar/.
 
 
 # ImageNet training results
-##  training in nn.parallel mode results
+##  Training in nn.parallel mode results
 | Network       | warm up | lr decay | total epochs | Top-1 error |
 | --- | --- |  --- |  --- |  --- | 
 | ResNet-18     | no | multistep | 100 | 29.684 | 
@@ -134,7 +134,7 @@ All nets are trained by input size 224x224 except DarkNet(input size 256x256) an
 
 For training resnet50 with batch_size=256,you need at least 4 2080ti gpus,and need about three or four days.
 
-## training in nn.DistributedDataParallel mode results
+## Training in nn.DistributedDataParallel mode results
 | Network       | sync-BN |warm up | lr decay | total epochs | Top-1 error |
 | --- | --- |  --- |  --- |  --- |  --- | 
 | ResNet-50     | no | no | multistep | 100 | 23.72 |
