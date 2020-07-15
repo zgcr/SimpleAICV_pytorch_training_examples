@@ -20,7 +20,7 @@ class Config(object):
     dataset_path = VOCdataset_path
 
     network = "resnet50_retinanet"
-    pretrained = False
+    pretrained = True
     num_classes = 20
     seed = 0
     input_image_size = 667
