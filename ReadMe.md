@@ -77,7 +77,10 @@ All experiments input_size=667,which is equal to resize=400 in RetinaNet paper(h
 | Network | batch | gpu-num | apex | syncbn | epoch5-mAP-mAR-loss | epoch10-mAP-mAR-loss | epoch12-mAP-mAR-loss |
 | --- | --- |  --- |  --- |  --- |  --- |  --- |  --- | 
 | ResNet50-RetinaNet | 24 | 2 | yes | no | 0.253,0.361,0.61 | 0.287,0.398,0.51 | 0.293,0.401,0.49 | 
-| ResNet101-RetinaNet  | 16 | 2 | yes | no | 0.254,0.362,0.60 | 0.290,0.398,0.51 | 0.296,0.402,0.48 | 
+| ResNet101-RetinaNet  | 16 | 2 | yes | no | 0.254,0.362,0.60 | 0.290,0.398,0.51 | 0.296,0.402,0.48 |
+ 
+You can see model training details in detection_experiments/resnet50_retinanet_coco_distributed_apex_resize667/.
+
 
 # VOC training results
 Trained on VOC2007 trainval + VOC2012 trainval, tested on VOC2007,using 11-point interpolated AP.
@@ -87,7 +90,7 @@ Trained on VOC2007 trainval + VOC2012 trainval, tested on VOC2007,using 11-point
 | ResNet50-RetinaNet | 24 | 2 | yes | no | 0.660,0.62 | 0.705,0.44 | 0.723,0.35 | 0.732,0.30 | 
 | ResNet50-RetinaNet-usecocopre  | 24 | 2 | yes | no | 0.789,0.34 | 0.780,0.26 | 0.776,0.22 | 0.770,0.19 | 
 
-
+You can see model training details in detection_experiments/resnet50_retinanet_voc_distributed_apex_667_usecocopre/.
 
 # CIFAR100 training results
 Training in nn.parallel mode result:
