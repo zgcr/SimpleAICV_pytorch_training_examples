@@ -71,15 +71,13 @@ VOCdataset
 ```
 
 # COCO training results
-Trained on COCO2017_train, tested on COCO2017_val,using IoU=0.5:0.95,area=all,maxDets=100,mAP(COCOeval,stats[0]).
+Trained on COCO2017_train, tested on COCO2017_val.mAP is IoU=0.5:0.95,area=all,maxDets=100,mAP(COCOeval,stats[0]).mAR is IoU=0.5:0.95,area=all,maxDets=100,mAR(COCOeval,stats[8]).
 All experiments input_size=667,which is equal to resize=400 in RetinaNet paper(https://arxiv.org/pdf/1708.02002.pdf).
 
-| Network | batch | gpu-num | apex | syncbn | epoch5-mAP-loss | epoch10-mAP-loss | epoch12-mAP-loss |
+| Network | batch | gpu-num | apex | syncbn | epoch5-mAP-mAR-loss | epoch10-mAP-mAR-loss | epoch12-mAP-mAR-loss |
 | --- | --- |  --- |  --- |  --- |  --- |  --- |  --- | 
-| ResNet18-RetinaNet | 24 | 2 | yes | no |   |   |   | 
-| ResNet34-RetinaNet | 24 | 2 | yes | no |   |   |   | 
-| ResNet50-RetinaNet | 24 | 2 | yes | no | 0.253,0.61 | 0.287,0.51 | 0.293,0.49 | 
-| ResNet101-RetinaNet  | 16 | 2 | yes | no |   | |  | 
+| ResNet50-RetinaNet | 24 | 2 | yes | no | 0.253,0.361,0.61 | 0.287,0.398,0.51 | 0.293,0.401,0.49 | 
+| ResNet101-RetinaNet  | 16 | 2 | yes | no | 0.254,0.362,0.60 | 0.290,0.398,0.51 | 0.296,0.402,0.48 | 
 
 # VOC training results
 Trained on VOC2007 trainval + VOC2012 trainval, tested on VOC2007,using 11-point interpolated AP.
