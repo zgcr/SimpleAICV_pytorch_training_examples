@@ -81,8 +81,9 @@ All experiments input_size=667,which is equal to resize=400 in RetinaNet paper(h
 
 # VOC training results
 Trained on VOC2007 trainval + VOC2012 trainval, tested on VOC2007,using 11-point interpolated AP.
+
 | Network | batch | gpu-num | apex | syncbn | epoch5-mAP-loss | epoch10-mAP-loss | epoch15-mAP-loss | epoch20-mAP-loss |
-| --- | --- |  --- |  --- |  --- |  --- |  --- |  --- | 
+| --- | --- |  --- |  --- |  --- |  --- |  --- |  --- |  --- | 
 | ResNet50-RetinaNet | 24 | 2 | yes | no | 0.660,0.62 | 0.705,0.44 | 0.723,0.35 | 0.732,0.30 | 
 | ResNet50-RetinaNet-usecocopre  | 24 | 2 | yes | no | 0.789,0.34 | 0.780,0.26 | 0.776,0.22 | 0.770,0.19 | 
 
