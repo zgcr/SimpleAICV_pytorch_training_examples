@@ -51,7 +51,11 @@ class FCOS(nn.Module):
             128 * expand_ratio[resnet_type]), int(
                 256 * expand_ratio[resnet_type]), int(
                     512 * expand_ratio[resnet_type])
-        self.fpn = RetinaFPN(C3_inplanes, C4_inplanes, C5_inplanes, planes)
+        self.fpn = RetinaFPN(C3_inplanes,
+                             C4_inplanes,
+                             C5_inplanes,
+                             planes,
+                             use_p5=True)
 
         self.num_classes = num_classes
         self.planes = planes
@@ -61,6 +65,7 @@ class FCOS(nn.Module):
                                     num_layers=4,
                                     prior=0.01)
         self.regcenter_head = FCOSRegCenterHead(self.planes, num_layers=4)
+        self.scales = nn.Parameter(torch.FloatTensor([1., 1., 1., 1., 1.]))
 
     def forward(self, inputs):
         [C3, C4, C5] = self.backbone(inputs)
@@ -72,7 +77,7 @@ class FCOS(nn.Module):
         del C3, C4, C5
 
         cls_heads, reg_heads, center_heads = [], [], []
-        for feature in features:
+        for feature, scale in zip(features, self.scales):
             cls_outs = self.cls_head(feature)
             # [N,num_classes,H,W] -> [N,H,W,num_classes]
             cls_outs = cls_outs.permute(0, 2, 3, 1).contiguous()
@@ -81,6 +86,7 @@ class FCOS(nn.Module):
             reg_outs, center_outs = self.regcenter_head(feature)
             # [N,4,H,W] -> [N,H,W,4]
             reg_outs = reg_outs.permute(0, 2, 3, 1).contiguous()
+            reg_outs = reg_outs * scale
             reg_heads.append(reg_outs)
             # [N,1,H,W] -> [N,H,W,1]
             center_outs = center_outs.permute(0, 2, 3, 1).contiguous()
@@ -105,8 +111,6 @@ def _fcos(arch, pretrained, progress, **kwargs):
                                        map_location=torch.device('cpu'))
         # del pretrained_models['cls_head.cls_head.8.weight']
         # del pretrained_models['cls_head.cls_head.8.bias']
-        # del pretrained_models['reg_head.reg_head.8.weight']
-        # del pretrained_models['reg_head.reg_head.8.bias']
 
         # only load state_dict()
         model.load_state_dict(pretrained_models, strict=False)

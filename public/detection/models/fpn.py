@@ -4,8 +4,14 @@ import torch.nn.functional as F
 
 
 class RetinaFPN(nn.Module):
-    def __init__(self, C3_inplanes, C4_inplanes, C5_inplanes, planes):
+    def __init__(self,
+                 C3_inplanes,
+                 C4_inplanes,
+                 C5_inplanes,
+                 planes,
+                 use_p5=False):
         super(RetinaFPN, self).__init__()
+        self.use_p5 = use_p5
         self.P3_1 = nn.Conv2d(C3_inplanes,
                               planes,
                               kernel_size=1,
@@ -36,11 +42,18 @@ class RetinaFPN(nn.Module):
                               kernel_size=3,
                               stride=1,
                               padding=1)
-        self.P6 = nn.Conv2d(C5_inplanes,
-                            planes,
-                            kernel_size=3,
-                            stride=2,
-                            padding=1)
+        if self.use_p5:
+            self.P6 = nn.Conv2d(planes,
+                                planes,
+                                kernel_size=3,
+                                stride=2,
+                                padding=1)
+        else:
+            self.P6 = nn.Conv2d(C5_inplanes,
+                                planes,
+                                kernel_size=3,
+                                stride=2,
+                                padding=1)
 
         self.P7 = nn.Sequential(
             nn.ReLU(),
@@ -57,14 +70,18 @@ class RetinaFPN(nn.Module):
         P3 = F.interpolate(P4, size=(P3.shape[2], P3.shape[3]),
                            mode='nearest') + P3
 
-        P6 = self.P6(C5)
-        P7 = self.P7(P6)
-
         P5 = self.P5_2(P5)
         P4 = self.P4_2(P4)
         P3 = self.P3_2(P3)
 
+        if self.use_p5:
+            P6 = self.P6(P5)
+        else:
+            P6 = self.P6(C5)
+
         del C3, C4, C5
+
+        P7 = self.P7(P6)
 
         return [P3, P4, P5, P6, P7]
 
