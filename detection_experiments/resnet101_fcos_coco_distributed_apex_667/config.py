@@ -21,7 +21,7 @@ class Config(object):
     val_dataset_path = os.path.join(COCO2017_path, 'images/val2017')
     dataset_annotations_path = os.path.join(COCO2017_path, 'annotations')
 
-    network = "resnet50_fcos"
+    network = "resnet101_fcos"
     pretrained = False
     num_classes = 80
     seed = 0
@@ -44,7 +44,7 @@ class Config(object):
                                 ]))
 
     epochs = 24
-    per_node_batch_size = 16
+    per_node_batch_size = 12
     lr = 1e-4
     num_workers = 4
     print_interval = 100

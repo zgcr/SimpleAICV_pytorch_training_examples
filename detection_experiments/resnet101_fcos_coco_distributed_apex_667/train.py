@@ -28,9 +28,9 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from config import Config
 from public.detection.dataset.cocodataset import COCODataPrefetcher, collater
-from public.detection.models.loss import RetinaLoss
-from public.detection.models.decode import RetinaDecoder
-from public.detection.models import retinanet
+from public.detection.models.loss import FCOSLoss
+from public.detection.models.decode import FCOSDecoder
+from public.detection.models import fcos
 from public.imagenet.utils import get_logger
 from pycocotools.cocoeval import COCOeval
 
@@ -230,10 +230,11 @@ def main():
     if local_rank == 0:
         logger.info('finish loading data')
 
-    model = retinanet.__dict__[args.network](**{
+    model = fcos.__dict__[args.network](**{
         "pretrained": args.pretrained,
         "num_classes": args.num_classes,
     })
+
     for name, param in model.named_parameters():
         if local_rank == 0:
             logger.info(f"{name},{param.requires_grad}")
@@ -246,10 +247,10 @@ def main():
         logger.info(
             f"model: '{args.network}', flops: {flops}, params: {params}")
 
-    criterion = RetinaLoss(image_w=args.input_image_size,
-                           image_h=args.input_image_size).cuda()
-    decoder = RetinaDecoder(image_w=args.input_image_size,
-                            image_h=args.input_image_size).cuda()
+    criterion = FCOSLoss(image_w=args.input_image_size,
+                         image_h=args.input_image_size).cuda()
+    decoder = FCOSDecoder(image_w=args.input_image_size,
+                          image_h=args.input_image_size).cuda()
 
     model = model.cuda()
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
@@ -312,7 +313,7 @@ def main():
         if local_rank == 0:
             logger.info(
                 f"finish resuming model from {args.resume}, epoch {checkpoint['epoch']}, best_map: {checkpoint['best_map']}, "
-                f"loss: {checkpoint['loss']:3f}, cls_loss: {checkpoint['cls_loss']:2f}, reg_loss: {checkpoint['reg_loss']:2f}"
+                f"loss: {checkpoint['loss']:3f}, cls_loss: {checkpoint['cls_loss']:2f}, reg_loss: {checkpoint['reg_loss']:2f}, center_ness_loss: {checkpoint['center_ness_loss']:2f}"
             )
 
     if local_rank == 0:
@@ -323,12 +324,12 @@ def main():
         logger.info('start training')
     for epoch in range(start_epoch, args.epochs + 1):
         train_sampler.set_epoch(epoch)
-        cls_losses, reg_losses, losses = train(train_loader, model, criterion,
-                                               optimizer, scheduler, epoch,
-                                               args)
+        cls_losses, reg_losses, center_ness_losses, losses = train(
+            train_loader, model, criterion, optimizer, scheduler, epoch, args)
+
         if local_rank == 0:
             logger.info(
-                f"train: epoch {epoch:0>3d}, cls_loss: {cls_losses:.2f}, reg_loss: {reg_losses:.2f}, loss: {losses:.2f}"
+                f"train: epoch {epoch:0>3d}, cls_loss: {cls_losses:.2f}, reg_loss: {reg_losses:.2f}, center_ness_loss: {center_ness_losses:.2f}, loss: {losses:.2f}"
             )
 
         if epoch % 5 == 0 or epoch == args.epochs:
@@ -351,6 +352,7 @@ def main():
                     'best_map': best_map,
                     'cls_loss': cls_losses,
                     'reg_loss': reg_losses,
+                    'center_ness_loss': center_ness_losses,
                     'loss': losses,
                     'model_state_dict': model.state_dict(),
                     'optimizer_state_dict': optimizer.state_dict(),
@@ -366,7 +368,7 @@ def main():
 
 
 def train(train_loader, model, criterion, optimizer, scheduler, epoch, args):
-    cls_losses, reg_losses, losses = [], [], []
+    cls_losses, reg_losses, center_ness_losses, losses = [], [], [], []
 
     # switch to train mode
     model.train()
@@ -378,10 +380,10 @@ def train(train_loader, model, criterion, optimizer, scheduler, epoch, args):
 
     while images is not None:
         images, annotations = images.cuda().float(), annotations.cuda()
-        cls_heads, reg_heads, batch_anchors = model(images)
-        cls_loss, reg_loss = criterion(cls_heads, reg_heads, batch_anchors,
-                                       annotations)
-        loss = cls_loss + reg_loss
+        cls_heads, reg_heads, center_heads = model(images)
+        cls_loss, reg_loss, center_ness_loss = criterion(
+            cls_heads, reg_heads, center_heads, annotations)
+        loss = cls_loss + reg_loss + center_ness_loss
         if cls_loss == 0.0 or reg_loss == 0.0:
             optimizer.zero_grad()
             continue
@@ -398,20 +400,22 @@ def train(train_loader, model, criterion, optimizer, scheduler, epoch, args):
 
         cls_losses.append(cls_loss.item())
         reg_losses.append(reg_loss.item())
+        center_ness_losses.append(center_ness_loss.item())
         losses.append(loss.item())
 
         images, annotations = prefetcher.next()
 
         if local_rank == 0 and iter_index % args.print_interval == 0:
             logger.info(
-                f"train: epoch {epoch:0>3d}, iter [{iter_index:0>5d}, {iters:0>5d}], cls_loss: {cls_loss.item():.2f}, reg_loss: {reg_loss.item():.2f}, loss_total: {loss.item():.2f}"
+                f"train: epoch {epoch:0>3d}, iter [{iter_index:0>5d}, {iters:0>5d}], cls_loss: {cls_loss.item():.2f}, reg_loss: {reg_loss.item():.2f}, center_ness_loss: {center_ness_loss.item():.2f}, loss_total: {loss.item():.2f}"
             )
 
         iter_index += 1
 
     scheduler.step(np.mean(losses))
 
-    return np.mean(cls_losses), np.mean(reg_losses), np.mean(losses)
+    return np.mean(cls_losses), np.mean(reg_losses), np.mean(
+        center_ness_losses), np.mean(losses)
 
 
 if __name__ == '__main__':

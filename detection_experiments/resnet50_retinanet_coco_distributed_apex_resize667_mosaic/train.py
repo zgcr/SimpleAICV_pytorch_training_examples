@@ -234,6 +234,7 @@ def main():
         "pretrained": args.pretrained,
         "num_classes": args.num_classes,
     })
+
     for name, param in model.named_parameters():
         if local_rank == 0:
             logger.info(f"{name},{param.requires_grad}")
