@@ -27,11 +27,17 @@ __all__ = [
 ]
 
 model_urls = {
-    'resnet18_fcos': 'empty',
-    'resnet34_fcos': 'empty',
-    'resnet50_fcos': 'empty',
-    'resnet101_fcos': 'empty',
-    'resnet152_fcos': 'empty',
+    'resnet18_fcos':
+    'empty',
+    'resnet34_fcos':
+    'empty',
+    'resnet50_fcos':
+    '{}/detection_models/resnet50_fcos_coco_resize667_mAP0.286.pth'.format(
+        pretrained_models_path),
+    'resnet101_fcos':
+    'empty',
+    'resnet152_fcos':
+    'empty',
 }
 
 

@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from torchvision.ops import nms
 
 
 class RetinaDecoder(nn.Module):
@@ -19,6 +20,7 @@ class RetinaDecoder(nn.Module):
         self.max_detection_num = max_detection_num
 
     def forward(self, cls_heads, reg_heads, batch_anchors):
+        device = cls_heads[0].device
         with torch.no_grad():
             filter_scores,filter_score_classes,filter_reg_heads,filter_batch_anchors=[],[],[],[]
             for per_level_cls_head, per_level_reg_head, per_level_anchor in zip(
@@ -61,16 +63,44 @@ class RetinaDecoder(nn.Module):
                 scores = per_image_scores[
                     per_image_scores > self.min_score_threshold].float()
 
-                sorted_keep_scores, sorted_keep_classes, sorted_keep_pred_bboxes = self.nms(
-                    scores, score_classes, pred_bboxes)
+                one_image_scores = (-1) * torch.ones(
+                    (self.max_detection_num, ), device=device)
+                one_image_classes = (-1) * torch.ones(
+                    (self.max_detection_num, ), device=device)
+                one_image_pred_bboxes = (-1) * torch.ones(
+                    (self.max_detection_num, 4), device=device)
 
-                sorted_keep_scores = sorted_keep_scores.unsqueeze(0)
-                sorted_keep_classes = sorted_keep_classes.unsqueeze(0)
-                sorted_keep_pred_bboxes = sorted_keep_pred_bboxes.unsqueeze(0)
+                if scores.shape[0] != 0:
+                    # Sort boxes
+                    sorted_scores, sorted_indexes = torch.sort(scores,
+                                                               descending=True)
+                    sorted_score_classes = score_classes[sorted_indexes]
+                    sorted_pred_bboxes = pred_bboxes[sorted_indexes]
 
-                batch_scores.append(sorted_keep_scores)
-                batch_classes.append(sorted_keep_classes)
-                batch_pred_bboxes.append(sorted_keep_pred_bboxes)
+                    keep = nms(sorted_pred_bboxes, sorted_scores,
+                               self.nms_threshold)
+                    keep_scores = sorted_scores[keep]
+                    keep_classes = sorted_score_classes[keep]
+                    keep_pred_bboxes = sorted_pred_bboxes[keep]
+
+                    final_detection_num = min(self.max_detection_num,
+                                              keep_scores.shape[0])
+
+                    one_image_scores[0:final_detection_num] = keep_scores[
+                        0:final_detection_num]
+                    one_image_classes[0:final_detection_num] = keep_classes[
+                        0:final_detection_num]
+                    one_image_pred_bboxes[
+                        0:final_detection_num, :] = keep_pred_bboxes[
+                            0:final_detection_num, :]
+
+                one_image_scores = one_image_scores.unsqueeze(0)
+                one_image_classes = one_image_classes.unsqueeze(0)
+                one_image_pred_bboxes = one_image_pred_bboxes.unsqueeze(0)
+
+                batch_scores.append(one_image_scores)
+                batch_classes.append(one_image_classes)
+                batch_pred_bboxes.append(one_image_pred_bboxes)
 
             batch_scores = torch.cat(batch_scores, axis=0)
             batch_classes = torch.cat(batch_classes, axis=0)
@@ -80,100 +110,6 @@ class RetinaDecoder(nn.Module):
             # batch_classes shape:[batch_size,max_detection_num]
             # batch_pred_bboxes shape[batch_size,max_detection_num,4]
             return batch_scores, batch_classes, batch_pred_bboxes
-
-    def nms(self, one_image_scores, one_image_classes, one_image_pred_bboxes):
-        """
-        one_image_scores:[anchor_nums],4:classification predict scores
-        one_image_classes:[anchor_nums],class indexes for predict scores
-        one_image_pred_bboxes:[anchor_nums,4],4:x_min,y_min,x_max,y_max
-        """
-        device = one_image_scores.device
-        final_scores = (-1) * torch.ones(
-            (self.max_detection_num, ), device=device)
-        final_classes = (-1) * torch.ones(
-            (self.max_detection_num, ), device=device)
-        final_pred_bboxes = (-1) * torch.ones(
-            (self.max_detection_num, 4), device=device)
-
-        if one_image_scores.shape[0] == 0:
-            return final_scores, final_classes, final_pred_bboxes
-
-        # Sort boxes
-        sorted_one_image_scores, sorted_one_image_scores_indexes = torch.sort(
-            one_image_scores, descending=True)
-        sorted_one_image_classes = one_image_classes[
-            sorted_one_image_scores_indexes]
-        sorted_one_image_pred_bboxes = one_image_pred_bboxes[
-            sorted_one_image_scores_indexes]
-        sorted_pred_bboxes_w_h = sorted_one_image_pred_bboxes[:,
-                                                              2:] - sorted_one_image_pred_bboxes[:, :
-                                                                                                 2]
-
-        sorted_pred_bboxes_areas = sorted_pred_bboxes_w_h[:,
-                                                          0] * sorted_pred_bboxes_w_h[:,
-                                                                                      1]
-
-        keep_scores, keep_classes, keep_pred_bboxes = [], [], []
-        while sorted_one_image_scores.numel() > 0:
-            top1_score, top1_class, top1_pred_bbox = sorted_one_image_scores[
-                0:1], sorted_one_image_classes[
-                    0:1], sorted_one_image_pred_bboxes[0:1]
-
-            keep_scores.append(top1_score)
-            keep_classes.append(top1_class)
-            keep_pred_bboxes.append(top1_pred_bbox)
-
-            top1_areas = sorted_pred_bboxes_areas[0]
-
-            if len(keep_scores) >= self.max_detection_num:
-                break
-
-            if sorted_one_image_scores.numel() == 1:
-                break
-
-            sorted_one_image_scores = sorted_one_image_scores[1:]
-            sorted_one_image_classes = sorted_one_image_classes[1:]
-            sorted_one_image_pred_bboxes = sorted_one_image_pred_bboxes[1:]
-            sorted_pred_bboxes_areas = sorted_pred_bboxes_areas[1:]
-
-            overlap_area_top_left = torch.max(
-                sorted_one_image_pred_bboxes[:, :2], top1_pred_bbox[:, :2])
-            overlap_area_bot_right = torch.min(
-                sorted_one_image_pred_bboxes[:, 2:], top1_pred_bbox[:, 2:])
-            overlap_area_sizes = torch.clamp(overlap_area_bot_right -
-                                             overlap_area_top_left,
-                                             min=0)
-            overlap_area = overlap_area_sizes[:, 0] * overlap_area_sizes[:, 1]
-
-            # compute union_area
-            union_area = top1_areas + sorted_pred_bboxes_areas - overlap_area
-            union_area = torch.clamp(union_area, min=1e-4)
-            # compute ious for top1 pred_bbox and the other pred_bboxes
-            ious = overlap_area / union_area
-
-            sorted_one_image_scores = sorted_one_image_scores[
-                ious < self.nms_threshold]
-            sorted_one_image_classes = sorted_one_image_classes[
-                ious < self.nms_threshold]
-            sorted_one_image_pred_bboxes = sorted_one_image_pred_bboxes[
-                ious < self.nms_threshold]
-            sorted_pred_bboxes_areas = sorted_pred_bboxes_areas[
-                ious < self.nms_threshold]
-
-        keep_scores = torch.cat(keep_scores, axis=0)
-        keep_classes = torch.cat(keep_classes, axis=0)
-        keep_pred_bboxes = torch.cat(keep_pred_bboxes, axis=0)
-
-        final_detection_num = min(self.max_detection_num, keep_scores.shape[0])
-
-        final_scores[0:final_detection_num] = keep_scores[
-            0:final_detection_num]
-        final_classes[0:final_detection_num] = keep_classes[
-            0:final_detection_num]
-        final_pred_bboxes[0:final_detection_num, :] = keep_pred_bboxes[
-            0:final_detection_num, :]
-
-        return final_scores, final_classes, final_pred_bboxes
 
     def snap_tx_ty_tw_th_reg_heads_to_x1_y1_x2_y2_bboxes(
             self, reg_heads, anchors):
@@ -305,16 +241,44 @@ class FCOSDecoder(nn.Module):
                     scores > self.min_score_threshold].float()
                 scores = scores[scores > self.min_score_threshold].float()
 
-                sorted_keep_scores, sorted_keep_classes, sorted_keep_pred_bboxes = self.nms(
-                    scores, score_classes, pred_bboxes)
+                one_image_scores = (-1) * torch.ones(
+                    (self.max_detection_num, ), device=device)
+                one_image_classes = (-1) * torch.ones(
+                    (self.max_detection_num, ), device=device)
+                one_image_pred_bboxes = (-1) * torch.ones(
+                    (self.max_detection_num, 4), device=device)
 
-                sorted_keep_scores = sorted_keep_scores.unsqueeze(0)
-                sorted_keep_classes = sorted_keep_classes.unsqueeze(0)
-                sorted_keep_pred_bboxes = sorted_keep_pred_bboxes.unsqueeze(0)
+                if scores.shape[0] != 0:
+                    # Sort boxes
+                    sorted_scores, sorted_indexes = torch.sort(scores,
+                                                               descending=True)
+                    sorted_score_classes = score_classes[sorted_indexes]
+                    sorted_pred_bboxes = pred_bboxes[sorted_indexes]
 
-                batch_scores.append(sorted_keep_scores)
-                batch_classes.append(sorted_keep_classes)
-                batch_pred_bboxes.append(sorted_keep_pred_bboxes)
+                    keep = nms(sorted_pred_bboxes, sorted_scores,
+                               self.nms_threshold)
+                    keep_scores = sorted_scores[keep]
+                    keep_classes = sorted_score_classes[keep]
+                    keep_pred_bboxes = sorted_pred_bboxes[keep]
+
+                    final_detection_num = min(self.max_detection_num,
+                                              keep_scores.shape[0])
+
+                    one_image_scores[0:final_detection_num] = keep_scores[
+                        0:final_detection_num]
+                    one_image_classes[0:final_detection_num] = keep_classes[
+                        0:final_detection_num]
+                    one_image_pred_bboxes[
+                        0:final_detection_num, :] = keep_pred_bboxes[
+                            0:final_detection_num, :]
+
+                one_image_scores = one_image_scores.unsqueeze(0)
+                one_image_classes = one_image_classes.unsqueeze(0)
+                one_image_pred_bboxes = one_image_pred_bboxes.unsqueeze(0)
+
+                batch_scores.append(one_image_scores)
+                batch_classes.append(one_image_classes)
+                batch_pred_bboxes.append(one_image_pred_bboxes)
 
             batch_scores = torch.cat(batch_scores, axis=0)
             batch_classes = torch.cat(batch_classes, axis=0)
@@ -324,100 +288,6 @@ class FCOSDecoder(nn.Module):
             # batch_classes shape:[batch_size,max_detection_num]
             # batch_pred_bboxes shape[batch_size,max_detection_num,4]
             return batch_scores, batch_classes, batch_pred_bboxes
-
-    def nms(self, one_image_scores, one_image_classes, one_image_pred_bboxes):
-        """
-        one_image_scores:[anchor_nums],4:classification predict scores
-        one_image_classes:[anchor_nums],class indexes for predict scores
-        one_image_pred_bboxes:[anchor_nums,4],4:x_min,y_min,x_max,y_max
-        """
-        device = one_image_scores.device
-        final_scores = (-1) * torch.ones(
-            (self.max_detection_num, ), device=device)
-        final_classes = (-1) * torch.ones(
-            (self.max_detection_num, ), device=device)
-        final_pred_bboxes = (-1) * torch.ones(
-            (self.max_detection_num, 4), device=device)
-
-        if one_image_scores.shape[0] == 0:
-            return final_scores, final_classes, final_pred_bboxes
-
-        # Sort boxes
-        sorted_one_image_scores, sorted_one_image_scores_indexes = torch.sort(
-            one_image_scores, descending=True)
-        sorted_one_image_classes = one_image_classes[
-            sorted_one_image_scores_indexes]
-        sorted_one_image_pred_bboxes = one_image_pred_bboxes[
-            sorted_one_image_scores_indexes]
-        sorted_pred_bboxes_w_h = sorted_one_image_pred_bboxes[:,
-                                                              2:] - sorted_one_image_pred_bboxes[:, :
-                                                                                                 2]
-
-        sorted_pred_bboxes_areas = sorted_pred_bboxes_w_h[:,
-                                                          0] * sorted_pred_bboxes_w_h[:,
-                                                                                      1]
-
-        keep_scores, keep_classes, keep_pred_bboxes = [], [], []
-        while sorted_one_image_scores.numel() > 0:
-            top1_score, top1_class, top1_pred_bbox = sorted_one_image_scores[
-                0:1], sorted_one_image_classes[
-                    0:1], sorted_one_image_pred_bboxes[0:1]
-
-            keep_scores.append(top1_score)
-            keep_classes.append(top1_class)
-            keep_pred_bboxes.append(top1_pred_bbox)
-
-            top1_areas = sorted_pred_bboxes_areas[0]
-
-            if len(keep_scores) >= self.max_detection_num:
-                break
-
-            if sorted_one_image_scores.numel() == 1:
-                break
-
-            sorted_one_image_scores = sorted_one_image_scores[1:]
-            sorted_one_image_classes = sorted_one_image_classes[1:]
-            sorted_one_image_pred_bboxes = sorted_one_image_pred_bboxes[1:]
-            sorted_pred_bboxes_areas = sorted_pred_bboxes_areas[1:]
-
-            overlap_area_top_left = torch.max(
-                sorted_one_image_pred_bboxes[:, :2], top1_pred_bbox[:, :2])
-            overlap_area_bot_right = torch.min(
-                sorted_one_image_pred_bboxes[:, 2:], top1_pred_bbox[:, 2:])
-            overlap_area_sizes = torch.clamp(overlap_area_bot_right -
-                                             overlap_area_top_left,
-                                             min=0)
-            overlap_area = overlap_area_sizes[:, 0] * overlap_area_sizes[:, 1]
-
-            # compute union_area
-            union_area = top1_areas + sorted_pred_bboxes_areas - overlap_area
-            union_area = torch.clamp(union_area, min=1e-4)
-            # compute ious for top1 pred_bbox and the other pred_bboxes
-            ious = overlap_area / union_area
-
-            sorted_one_image_scores = sorted_one_image_scores[
-                ious < self.nms_threshold]
-            sorted_one_image_classes = sorted_one_image_classes[
-                ious < self.nms_threshold]
-            sorted_one_image_pred_bboxes = sorted_one_image_pred_bboxes[
-                ious < self.nms_threshold]
-            sorted_pred_bboxes_areas = sorted_pred_bboxes_areas[
-                ious < self.nms_threshold]
-
-        keep_scores = torch.cat(keep_scores, axis=0)
-        keep_classes = torch.cat(keep_classes, axis=0)
-        keep_pred_bboxes = torch.cat(keep_pred_bboxes, axis=0)
-
-        final_detection_num = min(self.max_detection_num, keep_scores.shape[0])
-
-        final_scores[0:final_detection_num] = keep_scores[
-            0:final_detection_num]
-        final_classes[0:final_detection_num] = keep_classes[
-            0:final_detection_num]
-        final_pred_bboxes[0:final_detection_num, :] = keep_pred_bboxes[
-            0:final_detection_num, :]
-
-        return final_scores, final_classes, final_pred_bboxes
 
     def snap_ltrb_reg_heads_to_x1_y1_x2_y2_bboxes(self, reg_preds,
                                                   points_position):
