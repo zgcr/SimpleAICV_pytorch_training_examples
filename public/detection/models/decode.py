@@ -153,7 +153,7 @@ class FCOSDecoder(nn.Module):
                  image_h,
                  strides=[8, 16, 32, 64, 128],
                  top_n=1000,
-                 min_score_threshold=0.05,
+                 min_score_threshold=0.01,
                  nms_threshold=0.6,
                  max_detection_num=100):
         super(FCOSDecoder, self).__init__()
@@ -165,20 +165,9 @@ class FCOSDecoder(nn.Module):
         self.nms_threshold = nms_threshold
         self.max_detection_num = max_detection_num
 
-    def forward(self, cls_heads, reg_heads, center_heads):
+    def forward(self, cls_heads, reg_heads, center_heads, batch_positions):
         with torch.no_grad():
             device = cls_heads[0].device
-            batch_positions = []
-            for reg_head, stride in zip(reg_heads, self.strides):
-                B, H, W, _ = reg_head.shape
-                per_level_position = torch.zeros(B, H, W, 2).to(device)
-                for h_index in range(H):
-                    for w_index in range(W):
-                        w_ctr = (w_index + 0.5) * stride
-                        h_ctr = (h_index + 0.5) * stride
-                        per_level_position[:, h_index, w_index, 0] = w_ctr
-                        per_level_position[:, h_index, w_index, 1] = h_ctr
-                batch_positions.append(per_level_position)
 
             filter_scores,filter_score_classes,filter_reg_heads,filter_batch_positions=[],[],[],[]
             for per_level_cls_head, per_level_reg_head, per_level_center_head, per_level_position in zip(
@@ -334,7 +323,7 @@ if __name__ == '__main__':
     from fcos import FCOS
     net = FCOS(resnet_type="resnet50")
     image_h, image_w = 600, 600
-    cls_heads, reg_heads, center_heads = net(
+    cls_heads, reg_heads, center_heads, batch_positions = net(
         torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
     annotations = torch.FloatTensor([[[113, 120, 183, 255, 5],
                                       [13, 45, 175, 210, 2]],
@@ -344,6 +333,6 @@ if __name__ == '__main__':
                                       [-1, -1, -1, -1, -1]]])
     decode = FCOSDecoder(image_w, image_h)
     batch_scores2, batch_classes2, batch_pred_bboxes2 = decode(
-        cls_heads, reg_heads, center_heads)
+        cls_heads, reg_heads, center_heads, batch_positions)
     print("2222", batch_scores2.shape, batch_classes2.shape,
           batch_pred_bboxes2.shape)

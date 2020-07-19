@@ -122,9 +122,10 @@ def evaluate_coco(val_dataset, model, decoder):
     for index in range(len(val_dataset)):
         data = val_dataset[index]
         scale = data['scale']
-        cls_heads, reg_heads, batch_anchors = model(data['img'].cuda().permute(
-            2, 0, 1).float().unsqueeze(dim=0))
-        scores, classes, boxes = decoder(cls_heads, reg_heads, batch_anchors)
+        cls_heads, reg_heads, center_heads, batch_positions = model(
+            data['img'].cuda().permute(2, 0, 1).float().unsqueeze(dim=0))
+        scores, classes, boxes = decoder(cls_heads, reg_heads, center_heads,
+                                         batch_positions)
         scores, classes, boxes = scores.cpu(), classes.cpu(), boxes.cpu()
         boxes /= scale
 
@@ -380,9 +381,9 @@ def train(train_loader, model, criterion, optimizer, scheduler, epoch, args):
 
     while images is not None:
         images, annotations = images.cuda().float(), annotations.cuda()
-        cls_heads, reg_heads, center_heads = model(images)
+        cls_heads, reg_heads, center_heads, batch_positions = model(images)
         cls_loss, reg_loss, center_ness_loss = criterion(
-            cls_heads, reg_heads, center_heads, annotations)
+            cls_heads, reg_heads, center_heads, batch_positions, annotations)
         loss = cls_loss + reg_loss + center_ness_loss
         if cls_loss == 0.0 or reg_loss == 0.0:
             optimizer.zero_grad()

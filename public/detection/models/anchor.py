@@ -85,6 +85,54 @@ class RetinaAnchors(nn.Module):
         return feature_map_anchors
 
 
+class FCOSPositions(nn.Module):
+    def __init__(self, strides):
+        super(FCOSPositions, self).__init__()
+        self.strides = strides
+
+    def forward(self, batch_size, fpn_feature_sizes):
+        """
+        generate batch positions
+        """
+        device = fpn_feature_sizes.device
+
+        one_sample_positions = []
+        for stride, fpn_feature_size in zip(self.strides, fpn_feature_sizes):
+            featrue_positions = self.generate_positions_on_feature_map(
+                fpn_feature_size, stride)
+            featrue_positions = featrue_positions.to(device)
+            one_sample_positions.append(featrue_positions)
+
+        batch_positions = []
+        for per_level_featrue_positions in one_sample_positions:
+            per_level_featrue_positions = per_level_featrue_positions.unsqueeze(
+                0).repeat(batch_size, 1, 1, 1)
+            batch_positions.append(per_level_featrue_positions)
+
+        # if input size:[B,3,640,640]
+        # batch_positions shape:[[B, 80, 80, 2],[B, 40, 40, 2],[B, 20, 20, 2],[B, 10, 10, 2],[B, 5, 5, 2]]
+        # per position format:[x_center,y_center]
+        return batch_positions
+
+    def generate_positions_on_feature_map(self, feature_map_size, stride):
+        """
+        generate all positions on a feature map
+        """
+
+        # shifts_x shape:[w],shifts_x shape:[h]
+        shifts_x = (torch.arange(0, feature_map_size[0]) + 0.5) * stride
+        shifts_y = (torch.arange(0, feature_map_size[1]) + 0.5) * stride
+
+        # feature_map_positions shape:[w,h,2] -> [h,w,2] -> [h*w,2]
+        feature_map_positions = torch.tensor([[[shift_x, shift_y]
+                                               for shift_y in shifts_y]
+                                              for shift_x in shifts_x
+                                              ]).permute(1, 0, 2).contiguous()
+
+        # feature_map_positions format: [point_nums,2],2:[x_center,y_center]
+        return feature_map_positions
+
+
 if __name__ == '__main__':
     areas = torch.tensor([[32, 32], [64, 64], [128, 128], [256, 256],
                           [512, 512]])
@@ -101,3 +149,13 @@ if __name__ == '__main__':
 
     for per_level_anchors in anchors:
         print("1111", per_level_anchors.shape)
+
+    strides = torch.tensor([8, 16, 32, 64, 128], dtype=torch.float)
+    image_w, image_h = 640, 640
+    fpn_feature_sizes = torch.tensor(
+        [[torch.ceil(image_w / stride),
+          torch.ceil(image_h / stride)] for stride in strides])
+    positions = FCOSPositions(strides)
+    positions = positions(1, fpn_feature_sizes)
+    for per_level_positions in positions:
+        print("2222", per_level_positions.shape)

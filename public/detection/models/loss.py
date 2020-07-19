@@ -338,12 +338,13 @@ class FCOSLoss(nn.Module):
         self.strides = strides
         self.mi = mi
 
-    def forward(self, cls_heads, reg_heads, center_heads, annotations):
+    def forward(self, cls_heads, reg_heads, center_heads, batch_positions,
+                annotations):
         """
         compute cls loss, reg loss and center-ness loss in one batch
         """
         cls_preds, reg_preds, center_preds, batch_targets = self.get_batch_position_annotations(
-            cls_heads, reg_heads, center_heads, annotations)
+            cls_heads, reg_heads, center_heads, batch_positions, annotations)
 
         cls_preds = torch.sigmoid(cls_preds)
         reg_preds = torch.exp(reg_preds)
@@ -522,34 +523,27 @@ class FCOSLoss(nn.Module):
         return center_ness_loss
 
     def get_batch_position_annotations(self, cls_heads, reg_heads,
-                                       center_heads, annotations):
+                                       center_heads, batch_positions,
+                                       annotations):
         """
         Assign a ground truth target for each position on feature map
         """
         device = annotations.device
-        batch_positions, batch_mi = [], []
-        for reg_head, stride, mi in zip(reg_heads, self.strides, self.mi):
+        batch_mi = []
+        for reg_head, mi in zip(reg_heads, self.mi):
             mi = torch.tensor(mi).to(device)
             B, H, W, _ = reg_head.shape
-            per_level_position = torch.zeros(B, H, W, 2).to(device)
             per_level_mi = torch.zeros(B, H, W, 2).to(device)
             per_level_mi = per_level_mi + mi
-            for h_index in range(H):
-                for w_index in range(W):
-                    w_ctr = (w_index + 0.5) * stride
-                    h_ctr = (h_index + 0.5) * stride
-                    per_level_position[:, h_index, w_index, 0] = w_ctr
-                    per_level_position[:, h_index, w_index, 1] = h_ctr
-            batch_positions.append(per_level_position)
             batch_mi.append(per_level_mi)
 
         cls_preds,reg_preds,center_preds,all_points_position,all_points_mi=[],[],[],[],[]
-        for cls_head, reg_head, center_head, per_level_position, per_level_mi in zip(
+        for cls_pred, reg_pred, center_pred, per_level_position, per_level_mi in zip(
                 cls_heads, reg_heads, center_heads, batch_positions, batch_mi):
-            cls_pred = cls_head.view(cls_head.shape[0], -1, cls_head.shape[-1])
-            reg_pred = reg_head.view(reg_head.shape[0], -1, reg_head.shape[-1])
-            center_pred = center_head.view(center_head.shape[0], -1,
-                                           center_head.shape[-1])
+            cls_pred = cls_pred.view(cls_pred.shape[0], -1, cls_pred.shape[-1])
+            reg_pred = reg_pred.view(reg_pred.shape[0], -1, reg_pred.shape[-1])
+            center_pred = center_pred.view(center_pred.shape[0], -1,
+                                           center_pred.shape[-1])
             per_level_position = per_level_position.view(
                 per_level_position.shape[0], -1, per_level_position.shape[-1])
             per_level_mi = per_level_mi.view(per_level_mi.shape[0], -1,
@@ -732,7 +726,7 @@ if __name__ == '__main__':
     from fcos import FCOS
     net = FCOS(resnet_type="resnet50")
     image_h, image_w = 600, 600
-    cls_heads, reg_heads, center_heads = net(
+    cls_heads, reg_heads, center_heads, batch_positions = net(
         torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
     annotations = torch.FloatTensor([[[113, 120, 183, 255, 5],
                                       [13, 45, 175, 210, 2]],
@@ -742,5 +736,5 @@ if __name__ == '__main__':
                                       [-1, -1, -1, -1, -1]]])
     loss = FCOSLoss(image_w, image_h)
     cls_loss, reg_loss, center_loss = loss(cls_heads, reg_heads, center_heads,
-                                           annotations)
+                                           batch_positions, annotations)
     print("2222", cls_loss, reg_loss, center_loss)

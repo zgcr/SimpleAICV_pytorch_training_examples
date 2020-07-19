@@ -13,6 +13,7 @@ from public.path import pretrained_models_path
 from public.detection.models.backbone import ResNetBackbone
 from public.detection.models.fpn import RetinaFPN
 from public.detection.models.head import FCOSClsHead, FCOSRegCenterHead
+from public.detection.models.anchor import FCOSPositions
 
 import torch
 import torch.nn as nn
@@ -71,9 +72,15 @@ class FCOS(nn.Module):
                                     num_layers=4,
                                     prior=0.01)
         self.regcenter_head = FCOSRegCenterHead(self.planes, num_layers=4)
+
+        self.strides = torch.tensor([8, 16, 32, 64, 128], dtype=torch.float)
+        self.positions = FCOSPositions(self.strides)
+
         self.scales = nn.Parameter(torch.FloatTensor([1., 1., 1., 1., 1.]))
 
     def forward(self, inputs):
+        self.batch_size, _, _, _ = inputs.shape
+        device = inputs.device
         [C3, C4, C5] = self.backbone(inputs)
 
         del inputs
@@ -82,8 +89,10 @@ class FCOS(nn.Module):
 
         del C3, C4, C5
 
+        self.fpn_feature_sizes = []
         cls_heads, reg_heads, center_heads = [], [], []
         for feature, scale in zip(features, self.scales):
+            self.fpn_feature_sizes.append([feature.shape[3], feature.shape[2]])
             cls_outs = self.cls_head(feature)
             # [N,num_classes,H,W] -> [N,H,W,num_classes]
             cls_outs = cls_outs.permute(0, 2, 3, 1).contiguous()
@@ -100,13 +109,20 @@ class FCOS(nn.Module):
 
         del features
 
+        self.fpn_feature_sizes = torch.tensor(
+            self.fpn_feature_sizes).to(device)
+
+        batch_positions = self.positions(self.batch_size,
+                                         self.fpn_feature_sizes)
+
         # if input size:[B,3,640,640]
         # features shape:[[B, 256, 80, 80],[B, 256, 40, 40],[B, 256, 20, 20],[B, 256, 10, 10],[B, 256, 5, 5]]
         # cls_heads shape:[[B, 80, 80, 80],[B, 40, 40, 80],[B, 20, 20, 80],[B, 10, 10, 80],[B, 5, 5, 80]]
         # reg_heads shape:[[B, 80, 80, 4],[B, 40, 40, 4],[B, 20, 20, 4],[B, 10, 10, 4],[B, 5, 5, 4]]
         # center_heads shape:[[B, 80, 80, 1],[B, 40, 40, 1],[B, 20, 20, 1],[B, 10, 10, 1],[B, 5, 5, 1]]
+        # batch_positions shape:[[B, 80, 80, 2],[B, 40, 40, 2],[B, 20, 20, 2],[B, 10, 10, 2],[B, 5, 5, 2]]
 
-        return cls_heads, reg_heads, center_heads
+        return cls_heads, reg_heads, center_heads, batch_positions
 
 
 def _fcos(arch, pretrained, progress, **kwargs):
@@ -147,7 +163,7 @@ def resnet152_fcos(pretrained=False, progress=True, **kwargs):
 if __name__ == '__main__':
     net = FCOS(resnet_type="resnet50")
     image_h, image_w = 600, 600
-    cls_heads, reg_heads, center_heads = net(
+    cls_heads, reg_heads, center_heads, batch_positions = net(
         torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
     annotations = torch.FloatTensor([[[113, 120, 183, 255, 5],
                                       [13, 45, 175, 210, 2]],
@@ -155,3 +171,6 @@ if __name__ == '__main__':
                                       [-1, -1, -1, -1, -1]],
                                      [[-1, -1, -1, -1, -1],
                                       [-1, -1, -1, -1, -1]]])
+
+    print("1111", cls_heads[0].shape, reg_heads[0].shape,
+          center_heads[0].shape, batch_positions[0].shape)

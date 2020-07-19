@@ -1,3 +1,5 @@
 .vscode
 __pycache__
 checkpoints
+log
+*.json

@@ -21,7 +21,7 @@ import torchvision.transforms as transforms
 from public.path import COCO2017_path
 from public.detection.models.retinanet import RetinaNet
 from public.detection.models.fcos import FCOS
-from public.detection.models.decode import RetinaDecoder, FCOSDecoder2
+from public.detection.models.decode import RetinaDecoder, FCOSDecoder
 from public.detection.dataset.cocodataset import CocoDetection, Resize
 from pycocotools.cocoeval import COCOeval
 
@@ -66,13 +66,30 @@ def evaluate_coco(val_dataset, model, decoder, args):
     for index in range(len(val_dataset)):
         data = val_dataset[index]
         scale = data['scale']
+
         if args.use_gpu:
-            cls_heads, reg_heads, batch_anchors = model(
-                data['img'].cuda().permute(2, 0, 1).float().unsqueeze(dim=0))
+            if args.detector == "retinanet":
+                cls_heads, reg_heads, batch_anchors = model(
+                    data['img'].cuda().permute(2, 0,
+                                               1).float().unsqueeze(dim=0))
+            elif args.detector == "fcos":
+                cls_heads, reg_heads, center_heads, batch_positions = model(
+                    data['img'].cuda().permute(2, 0,
+                                               1).float().unsqueeze(dim=0))
         else:
-            cls_heads, reg_heads, batch_anchors = model(data['img'].permute(
-                2, 0, 1).float().unsqueeze(dim=0))
-        scores, classes, boxes = decoder(cls_heads, reg_heads, batch_anchors)
+            if args.detector == "retinanet":
+                cls_heads, reg_heads, batch_anchors = model(
+                    data['img'].permute(2, 0, 1).float().unsqueeze(dim=0))
+            elif args.detector == "fcos":
+                cls_heads, reg_heads, center_heads, batch_positions = model(
+                    data['img'].permute(2, 0, 1).float().unsqueeze(dim=0))
+
+        if args.detector == "retinanet":
+            scores, classes, boxes = decoder(cls_heads, reg_heads,
+                                             batch_anchors)
+        elif args.detector == "fcos":
+            scores, classes, boxes = decoder(cls_heads, reg_heads,
+                                             center_heads, batch_positions)
         scores, classes, boxes = scores.cpu(), classes.cpu(), boxes.cpu()
         boxes /= scale
 
@@ -116,7 +133,7 @@ def evaluate_coco(val_dataset, model, decoder, args):
     testing_time = (time.time() - start_time)
     per_image_testing_time = testing_time / len(val_dataset)
 
-    print(f"per image testing time:{per_image_testing_time:.3f}")
+    print(f"per_image_testing_time:{per_image_testing_time:.3f}")
 
     if not len(results):
         print(f"No target detected in test set images")
@@ -174,8 +191,8 @@ def test_model(args):
     elif args.detector == "fcos":
         model = _fcos(args.backbone, args.pretrained_model_path,
                       args.num_classes)
-        decoder = FCOSDecoder2(image_w=args.input_image_size,
-                               image_h=args.input_image_size)
+        decoder = FCOSDecoder(image_w=args.input_image_size,
+                              image_h=args.input_image_size)
     else:
         print("unsupport detection model!")
         return
