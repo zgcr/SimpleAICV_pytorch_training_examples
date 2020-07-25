@@ -72,6 +72,7 @@ VOCdataset
 
 # COCO training results
 Trained on COCO2017_train, tested on COCO2017_val.mAP is IoU=0.5:0.95,area=all,maxDets=100,mAP(COCOeval,stats[0]).mAR is IoU=0.5:0.95,area=all,maxDets=100,mAR(COCOeval,stats[8]).
+
 My size=667 is equal to resize=400 in RetinaNet paper(https://arxiv.org/pdf/1708.02002.pdf) ,my resize=1000 is equal to resize=600 in RetinaNet paper.
 
 | Network | resize | batch | gpu-num | apex | syncbn | epoch5-mAP-mAR-loss | epoch10-mAP-mAR-loss | epoch12-mAP-mAR-loss |
@@ -91,11 +92,10 @@ For ResNet50-RetinaNet-resize667,the per image inference time = 116 ms(batch=1,u
 | ResNet50-FCOS  | 1000 | 32 | 4 | yes | no | 0.305,0.443,1.15 | 0.315,0.451,1.14 | / | / | / | / |
 
 My size=667 is equal to resize=400 in FCOS paper ,my resize=1000 is equal to resize=600 in FCOS paper.
+
 For ResNet50-FCOS-resize1000 training,I use ResNet50-FCOS-resize667 as a pretrained model parameters to initialize the  ResNet50-FCOS-resize1000.
 
-
 For ResNet50-FCOS-resize667,the per image inference time = 103 ms(batch=1,use one GTX 1070 Max-Q).
-
 
 You can see model training details in detection_experiments/experiment_folder/.
 
