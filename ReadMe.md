@@ -71,7 +71,9 @@ VOCdataset
 ```
 
 # COCO training results
-Trained on COCO2017_train, tested on COCO2017_val.mAP is IoU=0.5:0.95,area=all,maxDets=100,mAP(COCOeval,stats[0]).mAR is IoU=0.5:0.95,area=all,maxDets=100,mAR(COCOeval,stats[8]).
+Trained on COCO2017_train, tested on COCO2017_val.
+mAP is IoU=0.5:0.95,area=all,maxDets=100,mAP(COCOeval,stats[0]).
+mAR is IoU=0.5:0.95,area=all,maxDets=100,mAR(COCOeval,stats[8]).
 
 My size=667 is equal to resize=400 in RetinaNet paper(https://arxiv.org/pdf/1708.02002.pdf) ,my resize=1000 is equal to resize=600 in RetinaNet paper.
 
