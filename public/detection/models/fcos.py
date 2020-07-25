@@ -125,7 +125,7 @@ class FCOS(nn.Module):
         return cls_heads, reg_heads, center_heads, batch_positions
 
 
-def _fcos(arch, pretrained, progress, **kwargs):
+def _fcos(arch, pretrained, **kwargs):
     model = FCOS(arch, **kwargs)
     # only load state_dict()
     if pretrained:
@@ -140,24 +140,24 @@ def _fcos(arch, pretrained, progress, **kwargs):
     return model
 
 
-def resnet18_fcos(pretrained=False, progress=True, **kwargs):
-    return _fcos('resnet18', pretrained, progress, **kwargs)
+def resnet18_fcos(pretrained=False, **kwargs):
+    return _fcos('resnet18', pretrained, **kwargs)
 
 
-def resnet34_fcos(pretrained=False, progress=True, **kwargs):
-    return _fcos('resnet34', pretrained, progress, **kwargs)
+def resnet34_fcos(pretrained=False, **kwargs):
+    return _fcos('resnet34', pretrained, **kwargs)
 
 
-def resnet50_fcos(pretrained=False, progress=True, **kwargs):
-    return _fcos('resnet50', pretrained, progress, **kwargs)
+def resnet50_fcos(pretrained=False, **kwargs):
+    return _fcos('resnet50', pretrained, **kwargs)
 
 
-def resnet101_fcos(pretrained=False, progress=True, **kwargs):
-    return _fcos('resnet101', pretrained, progress, **kwargs)
+def resnet101_fcos(pretrained=False, **kwargs):
+    return _fcos('resnet101', pretrained, **kwargs)
 
 
-def resnet152_fcos(pretrained=False, progress=True, **kwargs):
-    return _fcos('resnet152', pretrained, progress, **kwargs)
+def resnet152_fcos(pretrained=False, **kwargs):
+    return _fcos('resnet152', pretrained, **kwargs)
 
 
 if __name__ == '__main__':

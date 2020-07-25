@@ -13,6 +13,7 @@ from public.detection.models.backbone import ResNetBackbone
 from public.detection.models.fpn import RetinaFPN
 from public.detection.models.head import RetinaClsHead, RetinaRegHead
 from public.detection.models.anchor import RetinaAnchors
+from public.detection.models.module import PAN
 
 import torch
 import torch.nn as nn
@@ -59,6 +60,7 @@ class RetinaNet(nn.Module):
                 256 * expand_ratio[resnet_type]), int(
                     512 * expand_ratio[resnet_type])
         self.fpn = RetinaFPN(C3_inplanes, C4_inplanes, C5_inplanes, planes)
+        self.pan = PAN(planes)
 
         self.num_anchors = num_anchors
         self.num_classes = num_classes
@@ -92,6 +94,7 @@ class RetinaNet(nn.Module):
         del inputs
 
         features = self.fpn([C3, C4, C5])
+        features = self.pan(features)
 
         del C3, C4, C5
 
@@ -127,7 +130,7 @@ class RetinaNet(nn.Module):
         return cls_heads, reg_heads, batch_anchors
 
 
-def _retinanet(arch, pretrained, **kwargs):
+def _retinanet(arch, pretrained, progress, **kwargs):
     model = RetinaNet(arch, **kwargs)
 
     if pretrained:
@@ -145,24 +148,24 @@ def _retinanet(arch, pretrained, **kwargs):
     return model
 
 
-def resnet18_retinanet(pretrained=False, **kwargs):
-    return _retinanet('resnet18', pretrained, **kwargs)
+def resnet18_retinanet(pretrained=False, progress=True, **kwargs):
+    return _retinanet('resnet18', pretrained, progress, **kwargs)
 
 
-def resnet34_retinanet(pretrained=False, **kwargs):
-    return _retinanet('resnet34', pretrained, **kwargs)
+def resnet34_retinanet(pretrained=False, progress=True, **kwargs):
+    return _retinanet('resnet34', pretrained, progress, **kwargs)
 
 
-def resnet50_retinanet(pretrained=False, **kwargs):
-    return _retinanet('resnet50', pretrained, **kwargs)
+def resnet50_retinanet(pretrained=False, progress=True, **kwargs):
+    return _retinanet('resnet50', pretrained, progress, **kwargs)
 
 
-def resnet101_retinanet(pretrained=False, **kwargs):
-    return _retinanet('resnet101', pretrained, **kwargs)
+def resnet101_retinanet(pretrained=False, progress=True, **kwargs):
+    return _retinanet('resnet101', pretrained, progress, **kwargs)
 
 
-def resnet152_retinanet(pretrained=False, **kwargs):
-    return _retinanet('resnet152', pretrained, **kwargs)
+def resnet152_retinanet(pretrained=False, progress=True, **kwargs):
+    return _retinanet('resnet152', pretrained, progress, **kwargs)
 
 
 if __name__ == '__main__':

@@ -114,14 +114,15 @@ class VocDetection(Dataset):
             bbox = obj.find('bndbox')
 
             pts = ['xmin', 'ymin', 'xmax', 'ymax']
-
             bndbox = []
             for pt in pts:
                 cur_pt = float(bbox.find(pt).text)
                 bndbox.append(cur_pt)
-            label_idx = self.category_id_to_voc_label[name]
-            bndbox.append(label_idx)
-            annotations += [bndbox]  # [xmin, ymin, xmax, ymax, label_ind]
+
+            if bndbox[2] > bndbox[0] and bndbox[3] > bndbox[1]:
+                label_idx = self.category_id_to_voc_label[name]
+                bndbox.append(label_idx)
+                annotations += [bndbox]  # [xmin, ymin, xmax, ymax, label_ind]
             # img_id = target.find('filename').text[:-4]
 
         annotations = np.array(annotations)
@@ -328,19 +329,18 @@ if __name__ == '__main__':
     print(voc.voc_label_to_category_id)
     print(len(voc.ids))
     print(voc[0]['img'].shape, voc[0]['annot'], voc[0]['scale'])
-    print(voc[0])
 
-    voc2 = VocDetection(root_dir='/home/zgcr/Downloads/datasets/VOCdataset',
-                        image_sets=[('2007', 'test')],
-                        transform=transforms.Compose([
-                            Resize(resize=600),
-                        ]),
-                        keep_difficult=False)
+    # voc2 = VocDetection(root_dir='/home/zgcr/Downloads/datasets/VOCdataset',
+    #                     image_sets=[('2007', 'test')],
+    #                     transform=transforms.Compose([
+    #                         Resize(resize=600),
+    #                     ]),
+    #                     keep_difficult=False)
 
-    print(voc2.image_set)
-    print(voc2.categories)
-    print(voc2.category_id_to_voc_label)
-    print(voc2.voc_label_to_category_id)
-    print(len(voc2.ids))
-    print(voc2[0]['img'].shape, voc2[0]['annot'], voc2[0]['scale'])
-    print(voc2[0])
+    # print(voc2.image_set)
+    # print(voc2.categories)
+    # print(voc2.category_id_to_voc_label)
+    # print(voc2.voc_label_to_category_id)
+    # print(len(voc2.ids))
+    # print(voc2[0]['img'].shape, voc2[0]['annot'], voc2[0]['scale'])
+    # print(voc2[0])

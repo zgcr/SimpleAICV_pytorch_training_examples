@@ -266,11 +266,12 @@ class CocoDetection(Dataset):
                 continue
 
             annotation = np.zeros((1, 5))
-            annotation[0, :4] = a['bbox']
-            annotation[0, 4] = self.find_coco_label_from_category_id(
-                a['category_id'])
+            if a['bbox'][2] > 0 and a['bbox'][3] > 0:
+                annotation[0, :4] = a['bbox']
+                annotation[0, 4] = self.find_coco_label_from_category_id(
+                    a['category_id'])
 
-            annotations = np.append(annotations, annotation, axis=0)
+                annotations = np.append(annotations, annotation, axis=0)
 
         # transform from [x_min, y_min, w, h] to [x_min, y_min, x_max, y_max]
         annotations[:, 2] = annotations[:, 0] + annotations[:, 2]

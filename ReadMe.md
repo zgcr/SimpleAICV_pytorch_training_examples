@@ -72,7 +72,7 @@ VOCdataset
 
 # COCO training results
 Trained on COCO2017_train, tested on COCO2017_val.mAP is IoU=0.5:0.95,area=all,maxDets=100,mAP(COCOeval,stats[0]).mAR is IoU=0.5:0.95,area=all,maxDets=100,mAR(COCOeval,stats[8]).
-My size=667 is equal to resize=400 in RetinaNet paper(https://arxiv.org/pdf/1708.02002.pdf),my resize=1000 is equal to resize=600 in RetinaNet paper.
+My size=667 is equal to resize=400 in RetinaNet paper(https://arxiv.org/pdf/1708.02002.pdf) ,my resize=1000 is equal to resize=600 in RetinaNet paper.
 
 | Network | resize | batch | gpu-num | apex | syncbn | epoch5-mAP-mAR-loss | epoch10-mAP-mAR-loss | epoch12-mAP-mAR-loss |
 | --- | --- |  --- |  --- |  --- |  --- |  --- |  --- |  --- | 
@@ -88,8 +88,9 @@ For ResNet50-RetinaNet-resize667,the per image inference time = 116 ms(batch=1,u
 | --- | --- |  --- |  --- |  --- |  --- |  --- |  --- |  --- |  --- |  --- |  --- |  
 | ResNet50-FCOS | 667 | 32 | 2 | yes | no | 0.162,0.289,1.31 | 0.226,0.342,1.21 | 0.248,0.370,1.20 | 0.217,0.343,1.17 | 0.282,0.409,1.14 | 0.286,0.409,1.12 | 
 | ResNet101-FCOS | 667 | 24 | 2 | yes | no | 0.206,0.325,1.29 | 0.237,0.359,1.20 | 0.263,0.380,1.18 | 0.277,0.400,1.15 | 0.260,0.385,1.13 | 0.291,0.416,1.10 | 
-| ResNet50-FCOS  | 1000 | 32 | 4 | yes | no |  | | | / | / | / |
+| ResNet50-FCOS  | 1000 | 32 | 4 | yes | no | 0.305,0.443,1.15 | 0.315,0.451,1.14 | / | / | / | / |
 
+My size=667 is equal to resize=400 in FCOS paper ,my resize=1000 is equal to resize=600 in FCOS paper.
 For ResNet50-FCOS-resize1000 training,I use ResNet50-FCOS-resize667 as a pretrained model parameters to initialize the  ResNet50-FCOS-resize1000.
 
 
