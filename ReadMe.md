@@ -94,7 +94,7 @@ For ResNet50-RetinaNet-resize667,the per image inference time = 116 ms(batch=1,u
 | ResNet101-FCOS | 667 | 24 | 2 | yes | no | 0.206,0.325,1.29 | 0.237,0.359,1.20 | 0.263,0.380,1.18 | 0.277,0.400,1.15 | 0.260,0.385,1.13 | 0.291,0.416,1.10 | 
 | ResNet50-FCOS  | 1000 | 32 | 4 | yes | no | 0.305,0.443,1.15 | 0.315,0.451,1.14 | / | / | / | / |
 
-My size=667 is equal to resize=400 in FCOS paper(https://arxiv.org/pdf/1904.01355.pdf),my resize=1000 is equal to resize=600 in FCOS paper.
+My size=667 is equal to resize=400 in FCOS paper(https://arxiv.org/pdf/1904.01355.pdf) ,my resize=1000 is equal to resize=600 in FCOS paper.
 
 This FCOS implementation doesn't contains GN and CenterSample.
 
