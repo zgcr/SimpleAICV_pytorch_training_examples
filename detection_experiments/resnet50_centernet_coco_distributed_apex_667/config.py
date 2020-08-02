@@ -43,10 +43,11 @@ class Config(object):
                                     Resize(resize=input_image_size),
                                 ]))
 
-    epochs = 12
-    per_node_batch_size = 8
+    epochs = 140
+    milestones = [90, 120]
+    per_node_batch_size = 16
     lr = 1e-4
     num_workers = 4
-    print_interval = 20
+    print_interval = 100
     apex = True
     sync_bn = False

@@ -325,8 +325,6 @@ INF = 100000000
 
 class FCOSLoss(nn.Module):
     def __init__(self,
-                 image_w,
-                 image_h,
                  strides=[8, 16, 32, 64, 128],
                  mi=[[-1, 64], [64, 128], [128, 256], [256, 512], [512, INF]],
                  alpha=0.25,
@@ -336,8 +334,6 @@ class FCOSLoss(nn.Module):
         self.alpha = alpha
         self.gamma = gamma
         self.epsilon = epsilon
-        self.image_w = image_w
-        self.image_h = image_h
         self.strides = strides
         self.mi = mi
 
@@ -787,8 +783,7 @@ class CenterNetLoss(nn.Module):
 
         valid_center_num = (per_image_heatmap_targets[per_image_heatmap_targets
                                                       == 1.]).shape[0]
-        loss = -(positive_loss.sum() +
-                 0.001 * negative_loss.sum()) / valid_center_num
+        loss = -(positive_loss.sum() + negative_loss.sum()) / valid_center_num
 
         return loss
 
@@ -841,7 +836,7 @@ class CenterNetLoss(nn.Module):
         loss = torch.where(torch.ge(x, factor), x - 0.5 * factor,
                            0.5 * (x**2) / factor)
         loss = loss.sum() / valid_object_num
-        loss = 0.01 * loss
+        loss = 0.1 * loss
 
         return loss
 

@@ -304,9 +304,12 @@ class FCOSDecoder(nn.Module):
 
 
 class CenterNetDecoder(nn.Module):
-    def __init__(self, topk=100):
+    def __init__(self, image_w, image_h, topk=100, stride=4):
         super(CenterNetDecoder, self).__init__()
+        self.image_w = image_w
+        self.image_h = image_h
         self.topk = topk
+        self.stride = stride
 
     def forward(self, heatmap_heads, offset_heads, wh_heads):
         with torch.no_grad():
@@ -339,6 +342,15 @@ class CenterNetDecoder(nn.Module):
                     topk_ys + per_image_wh_heads[:, 1:2] / 2
                 ],
                                         dim=1)
+
+                topk_bboxes = topk_bboxes * self.stride
+
+                topk_bboxes[:, 0] = torch.clamp(topk_bboxes[:, 0], min=0)
+                topk_bboxes[:, 1] = torch.clamp(topk_bboxes[:, 1], min=0)
+                topk_bboxes[:, 2] = torch.clamp(topk_bboxes[:, 2],
+                                                max=self.image_w - 1)
+                topk_bboxes[:, 3] = torch.clamp(topk_bboxes[:, 3],
+                                                max=self.image_h - 1)
 
                 batch_scores.append(topk_score.unsqueeze(0))
                 batch_classes.append(topk_classes.unsqueeze(0))

@@ -248,8 +248,7 @@ def main():
         logger.info(
             f"model: '{args.network}', flops: {flops}, params: {params}")
 
-    criterion = FCOSLoss(image_w=args.input_image_size,
-                         image_h=args.input_image_size).cuda()
+    criterion = FCOSLoss().cuda()
     decoder = FCOSDecoder(image_w=args.input_image_size,
                           image_h=args.input_image_size).cuda()
 

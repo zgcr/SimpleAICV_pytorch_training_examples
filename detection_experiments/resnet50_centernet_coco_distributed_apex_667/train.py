@@ -50,6 +50,10 @@ def parse_args():
                         type=int,
                         default=Config.epochs,
                         help='num of training epochs')
+    parser.add_argument('--milestones',
+                        type=list,
+                        default=Config.milestones,
+                        help='optimizer milestones')
     parser.add_argument('--per_node_batch_size',
                         type=int,
                         default=Config.per_node_batch_size,
@@ -127,6 +131,7 @@ def evaluate_coco(val_dataset, model, decoder):
         scores, classes, boxes = decoder(heatmap_output, offset_output,
                                          wh_output)
         scores, classes, boxes = scores.cpu(), classes.cpu(), boxes.cpu()
+
         boxes /= scale
 
         # make sure decode batch_size=1
@@ -249,13 +254,13 @@ def main():
             f"model: '{args.network}', flops: {flops}, params: {params}")
 
     criterion = CenterNetLoss().cuda()
-    decoder = CenterNetDecoder().cuda()
+    decoder = CenterNetDecoder(image_w=args.input_image_size,
+                               image_h=args.input_image_size).cuda()
 
     model = model.cuda()
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
-                                                           patience=3,
-                                                           verbose=True)
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(
+        optimizer, milestones=args.milestones, gamma=0.1)
 
     if args.sync_bn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
@@ -409,7 +414,7 @@ def train(train_loader, model, criterion, optimizer, scheduler, epoch, args):
 
         iter_index += 1
 
-    scheduler.step(np.mean(losses))
+    scheduler.step()
 
     return np.mean(heatmap_losses), np.mean(offset_losses), np.mean(
         wh_losses), np.mean(losses)
