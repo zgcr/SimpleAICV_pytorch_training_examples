@@ -72,6 +72,7 @@ VOCdataset
 
 # How to reproduce my results
 If you want to reproduce my experiment result,just enter a category experiments folder,then enter a specific experiment folder.Each experiment folder has it's own config.py and train.py.
+
 If the experiment use nn.parallel to train,you should add this in train.py to specify the GPU for training:
 ```
 os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
