@@ -70,6 +70,28 @@ VOCdataset
 |                 |----SegmentationObject
 ```
 
+# How to reproduce my results
+If you want to reproduce my experiment result,just enter a category experiments folder,then enter a specific experiment folder.Each experiment folder has it's own config.py and train.py.
+If the experiment use nn.parallel to train,you should add this in train.py to specify the GPU for training:
+```
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
+```
+then run this command to train:
+```
+python train.py
+```
+
+If the experiment use nn.DistributedDataParallel to train,you should add this in train.py to specify the GPU for training:
+```
+os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
+```
+then run this command to train:
+```
+python -m torch.distributed.launch --nproc_per_node=2 --master_addr 127.0.0.1 --master_port 20001 train.py
+```
+Please make sure the nproc_per_node number is correct and master_addr/master_port are different from other experiments.
+
+
 # COCO training results
 Trained on COCO2017_train, tested on COCO2017_val.
 
@@ -114,7 +136,7 @@ Trained on VOC2007 trainval + VOC2012 trainval, tested on VOC2007,using 11-point
 | ResNet50-RetinaNet | 667 | 24 | 2 | yes | no | 0.660,0.62 | 0.705,0.44 | 0.723,0.35 | 0.732,0.30 | 
 | ResNet50-RetinaNet-usecocopre | 667 | 24 | 2 | yes | no | 0.789,0.34 | 0.780,0.26 | 0.776,0.22 | 0.770,0.19 | 
 
-You can see model training details in detection_experiments/experiment_folder/.
+You can see more model training details in detection_experiments/experiment_folder/.
 
 # CIFAR100 training results
 Training in nn.parallel mode result:
@@ -126,7 +148,7 @@ Training in nn.parallel mode result:
 | ResNet-101    | no | multistep | 200 | 19.84 | 
 | ResNet-152    | no | multistep | 200 | 19.01 | 
 
-You can see model training details in cifar100_experiments/resnet50cifar/.
+You can see more model training details in cifar100_experiments/resnet50cifar/.
 
 
 # ImageNet training results
@@ -172,7 +194,7 @@ For training resnet50 with batch_size=256,you need at least 4 2080ti gpus,and ne
 | ResNet-50     | no | no | multistep | 100 | 23.72 |
 | ResNet-50     | yes | no | multistep | 100 | 25.44 |  
 
-You can see model training details in imagenet_experiments/experiment_folder/.
+You can see more model training details in imagenet_experiments/experiment_folder/.
 
 # Citation
 If you find my work useful in your research, please consider citing:
