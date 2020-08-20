@@ -36,7 +36,8 @@ model_urls = {
     '{}/detection_models/resnet50_fcos_coco_resize667_mAP0.286.pth'.format(
         pretrained_models_path),
     'resnet101_fcos':
-    'empty',
+    '{}/detection_models/resnet101_fcos_coco_resize667_mAP0.291.pth'.format(
+        pretrained_models_path),
     'resnet152_fcos':
     'empty',
 }
