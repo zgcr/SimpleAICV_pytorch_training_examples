@@ -133,6 +133,76 @@ class FCOSPositions(nn.Module):
         return feature_map_positions
 
 
+class YOLOV3Anchors(nn.Module):
+    def __init__(self, anchor_sizes, per_level_num_anchors, strides):
+        super(YOLOV3Anchors, self).__init__()
+        self.anchor_sizes = anchor_sizes
+        self.per_level_num_anchors = per_level_num_anchors
+        self.strides = strides
+
+    def forward(self, batch_size, fpn_feature_sizes):
+        """
+        generate batch anchors
+        """
+        assert len(self.anchor_sizes
+                   ) == self.per_level_num_anchors * len(fpn_feature_sizes)
+
+        self.per_level_anchor_sizes = []
+        for i in range(len(self.anchor_sizes) // self.per_level_num_anchors):
+            self.per_level_anchor_sizes.append([])
+            for j in range(self.per_level_num_anchors):
+                self.per_level_anchor_sizes[i].append(
+                    self.anchor_sizes[i * self.per_level_num_anchors + j])
+        self.per_level_anchor_sizes = torch.tensor(self.per_level_anchor_sizes)
+
+        device = fpn_feature_sizes.device
+        one_sample_anchors = []
+        for index, per_level_anchors in enumerate(self.per_level_anchor_sizes):
+            feature_map_anchors = self.generate_anchors_on_feature_map(
+                per_level_anchors, fpn_feature_sizes[index],
+                self.strides[index])
+            feature_map_anchors = feature_map_anchors.to(device)
+            one_sample_anchors.append(feature_map_anchors)
+
+        batch_anchors = []
+        for per_level_featrue_anchors in one_sample_anchors:
+            per_level_featrue_anchors = per_level_featrue_anchors.unsqueeze(
+                0).repeat(batch_size, 1, 1, 1, 1)
+            batch_anchors.append(per_level_featrue_anchors)
+
+        # if input size:[B,3,416,416]
+        # batch_anchors shape:[[B,52,52,3,5],[B,26,26,3,5],[B,13,13,3,5]]
+        # per anchor format:[shifts_y,shifts_x,anchor_w,anchor_h,stride]
+        return batch_anchors
+
+    def generate_anchors_on_feature_map(self, per_level_anchors,
+                                        feature_map_size, stride):
+        """
+        generate all anchors on a feature map
+        """
+        # shifts_x shape:[w],shifts_x shape:[h]
+        shifts_x = (torch.arange(0, feature_map_size[0]))
+        shifts_y = (torch.arange(0, feature_map_size[1]))
+
+        # shifts shape:[w,h,2] -> [w,h,1,2] -> [w,h,3,2] -> [h,w,3,2]
+        shifts = torch.tensor([[[shift_x, shift_y] for shift_y in shifts_y]
+                               for shift_x in shifts_x]).unsqueeze(2).repeat(
+                                   1, 1, self.per_level_num_anchors,
+                                   1).permute(1, 0, 2, 3)
+        # per_level_anchors shape:[3,2] -> [1,1,3,2] -> [h,w,3,2]
+        all_anchors_wh = per_level_anchors.unsqueeze(0).unsqueeze(0).repeat(
+            shifts.shape[0], shifts.shape[1], 1, 1)
+        # all_strides shape:[] -> [1,1,1,1] -> [h,w,3,1]
+        all_strides = stride.unsqueeze(0).unsqueeze(0).unsqueeze(0).unsqueeze(
+            0).repeat(shifts.shape[0], shifts.shape[1], shifts.shape[2], 1)
+
+        feature_map_anchors = torch.cat([shifts, all_anchors_wh, all_strides],
+                                        axis=-1)
+
+        # feature_map_anchors format: [h,w,3,5],3:self.per_level_num_anchors,5:[shifts_y,shifts_x,anchor_w,anchor_h,stride]
+        return feature_map_anchors
+
+
 if __name__ == '__main__':
     areas = torch.tensor([[32, 32], [64, 64], [128, 128], [256, 256],
                           [512, 512]])
@@ -159,3 +229,19 @@ if __name__ == '__main__':
     positions = positions(1, fpn_feature_sizes)
     for per_level_positions in positions:
         print("2222", per_level_positions.shape)
+
+    strides = torch.tensor([8, 16, 32], dtype=torch.float)
+    image_w, image_h = 416, 416
+    fpn_feature_sizes = torch.tensor(
+        [[torch.ceil(image_w / stride),
+          torch.ceil(image_h / stride)] for stride in strides])
+    anchors = YOLOV3Anchors(anchor_sizes=[[12.48, 19.2], [31.36, 46.4],
+                                          [46.4, 113.92], [97.28, 55.04],
+                                          [133.12, 127.36], [79.04, 224.],
+                                          [301.12, 150.4], [172.16, 285.76],
+                                          [348.16, 341.12]],
+                            per_level_num_anchors=3,
+                            strides=strides)
+    all_anchors = anchors(1, fpn_feature_sizes)
+    for per_level_anchors in all_anchors:
+        print("3333", per_level_anchors.shape)

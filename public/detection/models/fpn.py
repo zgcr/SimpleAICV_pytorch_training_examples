@@ -86,6 +86,222 @@ class RetinaFPN(nn.Module):
         return [P3, P4, P5, P6, P7]
 
 
+class ConvBnActBlock(nn.Module):
+    def __init__(self,
+                 inplanes,
+                 planes,
+                 kernel_size,
+                 stride,
+                 padding=1,
+                 groups=1,
+                 has_bn=True,
+                 has_act=True):
+        super(ConvBnActBlock, self).__init__()
+        self.has_bn = has_bn
+        self.has_act = has_act
+        self.conv = nn.Conv2d(inplanes,
+                              planes,
+                              kernel_size,
+                              stride=stride,
+                              padding=padding,
+                              groups=groups,
+                              bias=False)
+        if self.has_bn:
+            self.bn = nn.BatchNorm2d(planes)
+        if self.has_act:
+            self.act = nn.LeakyReLU(0.1, inplace=True)
+
+    def forward(self, x):
+        x = self.conv(x)
+        if self.has_bn:
+            x = self.bn(x)
+        if self.has_act:
+            x = self.act(x)
+
+        return x
+
+
+class YOLOV3FPNHead(nn.Module):
+    def __init__(self,
+                 C3_inplanes,
+                 C4_inplanes,
+                 C5_inplanes,
+                 num_anchors=3,
+                 num_classes=80):
+        super(YOLOV3FPNHead, self).__init__()
+        P5_1_layers = []
+        for i in range(5):
+            if i % 2 == 0:
+                P5_1_layers.append(
+                    ConvBnActBlock(C5_inplanes,
+                                   C5_inplanes // 2,
+                                   kernel_size=1,
+                                   stride=1,
+                                   padding=0,
+                                   has_bn=True,
+                                   has_act=True))
+            else:
+                P5_1_layers.append(
+                    ConvBnActBlock(C5_inplanes // 2,
+                                   C5_inplanes,
+                                   kernel_size=3,
+                                   stride=1,
+                                   padding=1,
+                                   has_bn=True,
+                                   has_act=True))
+        self.P5_1 = nn.Sequential(*P5_1_layers)
+        self.P5_up_conv = ConvBnActBlock(C5_inplanes // 2,
+                                         C4_inplanes // 2,
+                                         kernel_size=1,
+                                         stride=1,
+                                         padding=0,
+                                         has_bn=True,
+                                         has_act=True)
+        self.P5_2 = ConvBnActBlock(C5_inplanes // 2,
+                                   C5_inplanes,
+                                   kernel_size=3,
+                                   stride=1,
+                                   padding=1,
+                                   has_bn=True,
+                                   has_act=True)
+        self.P5_pred_conv = nn.Conv2d(C5_inplanes,
+                                      num_anchors * (1 + 4 + num_classes),
+                                      kernel_size=1,
+                                      stride=1,
+                                      padding=0,
+                                      bias=True)
+
+        P4_1_layers = []
+        for i in range(5):
+            if i == 0:
+                P4_1_layers.append(
+                    ConvBnActBlock((C4_inplanes // 2) + C4_inplanes,
+                                   C4_inplanes // 2,
+                                   kernel_size=1,
+                                   stride=1,
+                                   padding=0,
+                                   has_bn=True,
+                                   has_act=True))
+            elif i % 2 == 1:
+                P4_1_layers.append(
+                    ConvBnActBlock(C4_inplanes // 2,
+                                   C4_inplanes,
+                                   kernel_size=3,
+                                   stride=1,
+                                   padding=1,
+                                   has_bn=True,
+                                   has_act=True))
+            elif i % 2 == 0:
+                P4_1_layers.append(
+                    ConvBnActBlock(C4_inplanes,
+                                   C4_inplanes // 2,
+                                   kernel_size=1,
+                                   stride=1,
+                                   padding=0,
+                                   has_bn=True,
+                                   has_act=True))
+        self.P4_1 = nn.Sequential(*P4_1_layers)
+        self.P4_up_conv = ConvBnActBlock(C4_inplanes // 2,
+                                         C3_inplanes // 2,
+                                         kernel_size=1,
+                                         stride=1,
+                                         padding=0,
+                                         has_bn=True,
+                                         has_act=True)
+        self.P4_2 = ConvBnActBlock(C4_inplanes // 2,
+                                   C4_inplanes,
+                                   kernel_size=3,
+                                   stride=1,
+                                   padding=1,
+                                   has_bn=True,
+                                   has_act=True)
+        self.P4_pred_conv = nn.Conv2d(C4_inplanes,
+                                      num_anchors * (1 + 4 + num_classes),
+                                      kernel_size=1,
+                                      stride=1,
+                                      padding=0,
+                                      bias=True)
+
+        P3_1_layers = []
+        for i in range(5):
+            if i == 0:
+                P3_1_layers.append(
+                    ConvBnActBlock((C3_inplanes // 2) + C3_inplanes,
+                                   C3_inplanes // 2,
+                                   kernel_size=1,
+                                   stride=1,
+                                   padding=0,
+                                   has_bn=True,
+                                   has_act=True))
+            elif i % 2 == 1:
+                P3_1_layers.append(
+                    ConvBnActBlock(C3_inplanes // 2,
+                                   C3_inplanes,
+                                   kernel_size=3,
+                                   stride=1,
+                                   padding=1,
+                                   has_bn=True,
+                                   has_act=True))
+            elif i % 2 == 0:
+                P3_1_layers.append(
+                    ConvBnActBlock(C3_inplanes,
+                                   C3_inplanes // 2,
+                                   kernel_size=1,
+                                   stride=1,
+                                   padding=0,
+                                   has_bn=True,
+                                   has_act=True))
+        self.P3_1 = nn.Sequential(*P3_1_layers)
+        self.P3_2 = ConvBnActBlock(C3_inplanes // 2,
+                                   C3_inplanes,
+                                   kernel_size=3,
+                                   stride=1,
+                                   padding=1,
+                                   has_bn=True,
+                                   has_act=True)
+        self.P3_pred_conv = nn.Conv2d(C3_inplanes,
+                                      num_anchors * (1 + 4 + num_classes),
+                                      kernel_size=1,
+                                      stride=1,
+                                      padding=0,
+                                      bias=True)
+
+    def forward(self, inputs):
+        [C3, C4, C5] = inputs
+
+        P5 = self.P5_1(C5)
+        del C5
+        C5_upsample = self.P5_up_conv(P5)
+        C5_upsample = F.interpolate(C5_upsample,
+                                    size=(C4.shape[2], C4.shape[3]),
+                                    mode='nearest')
+
+        C4 = torch.cat([C4, C5_upsample], axis=1)
+        del C5_upsample
+        P4 = self.P4_1(C4)
+        del C4
+        C4_upsample = self.P4_up_conv(P4)
+        C4_upsample = F.interpolate(C4_upsample,
+                                    size=(C3.shape[2], C3.shape[3]),
+                                    mode='nearest')
+
+        C3 = torch.cat([C3, C4_upsample], axis=1)
+        del C4_upsample
+        P3 = self.P3_1(C3)
+        del C3
+
+        P5 = self.P5_2(P5)
+        P5 = self.P5_pred_conv(P5)
+
+        P4 = self.P4_2(P4)
+        P4 = self.P4_pred_conv(P4)
+
+        P3 = self.P3_2(P3)
+        P3 = self.P3_pred_conv(P3)
+
+        return [P3, P4, P5]
+
+
 class HardSwish(nn.Module):
     def __init__(self, inplace=False):
         super(HardSwish, self).__init__()
@@ -334,44 +550,54 @@ class EfficientDetBiFPN(nn.Module):
 
 
 if __name__ == '__main__':
-    image_h, image_w = 640, 640
-    fpn = RetinaFPN(512, 1024, 2048, 256)
-    C3, C4, C5 = torch.randn(3, 512, 80, 80), torch.randn(3, 1024, 40,
-                                                          40), torch.randn(
-                                                              3, 2048, 20, 20)
+    # image_h, image_w = 640, 640
+    # fpn = RetinaFPN(512, 1024, 2048, 256)
+    # C3, C4, C5 = torch.randn(3, 512, 80, 80), torch.randn(3, 1024, 40,
+    #                                                       40), torch.randn(
+    #                                                           3, 2048, 20, 20)
+    # features = fpn([C3, C4, C5])
+
+    # for feature in features:
+    #     print("1111", feature.shape)
+
+    # image_h, image_w = 640, 640
+    # fpn = EfficientDetBiFPN(512,
+    #                         1024,
+    #                         2048,
+    #                         256,
+    #                         first_time=True,
+    #                         epsilon=1e-4)
+    # C3, C4, C5 = torch.randn(3, 512, 80, 80), torch.randn(3, 1024, 40,
+    #                                                       40), torch.randn(
+    #                                                           3, 2048, 20, 20)
+    # features = fpn([C3, C4, C5])
+
+    # for feature in features:
+    #     print("2222", feature.shape)
+
+    # image_h, image_w = 640, 640
+    # fpn = EfficientDetBiFPN(512,
+    #                         1024,
+    #                         2048,
+    #                         256,
+    #                         first_time=False,
+    #                         epsilon=1e-4)
+    # P3, P4, P5, P6, P7 = torch.randn(3, 256, 80, 80), torch.randn(
+    #     3, 256, 40,
+    #     40), torch.randn(3, 256, 20,
+    #                      20), torch.randn(3, 256, 10,
+    #                                       10), torch.randn(3, 256, 5, 5)
+    # features = fpn([P3, P4, P5, P6, P7])
+
+    # for feature in features:
+    #     print("3333", feature.shape)
+
+    image_h, image_w = 416, 416
+    fpn = YOLOV3FPNHead(256, 512, 1024, num_anchors=3, num_classes=80)
+    C3, C4, C5 = torch.randn(3, 256, 52, 52), torch.randn(3, 512, 26,
+                                                          26), torch.randn(
+                                                              3, 1024, 13, 13)
     features = fpn([C3, C4, C5])
 
     for feature in features:
-        print("1111", feature.shape)
-
-    image_h, image_w = 640, 640
-    fpn = EfficientDetBiFPN(512,
-                            1024,
-                            2048,
-                            256,
-                            first_time=True,
-                            epsilon=1e-4)
-    C3, C4, C5 = torch.randn(3, 512, 80, 80), torch.randn(3, 1024, 40,
-                                                          40), torch.randn(
-                                                              3, 2048, 20, 20)
-    features = fpn([C3, C4, C5])
-
-    for feature in features:
-        print("2222", feature.shape)
-
-    image_h, image_w = 640, 640
-    fpn = EfficientDetBiFPN(512,
-                            1024,
-                            2048,
-                            256,
-                            first_time=False,
-                            epsilon=1e-4)
-    P3, P4, P5, P6, P7 = torch.randn(3, 256, 80, 80), torch.randn(
-        3, 256, 40,
-        40), torch.randn(3, 256, 20,
-                         20), torch.randn(3, 256, 10,
-                                          10), torch.randn(3, 256, 5, 5)
-    features = fpn([P3, P4, P5, P6, P7])
-
-    for feature in features:
-        print("3333", feature.shape)
+        print("4444", feature.shape)

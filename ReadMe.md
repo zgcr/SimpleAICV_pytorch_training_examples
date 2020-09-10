@@ -31,6 +31,11 @@ Using apex to train can reduce video memory usage by 25%-30%, but the training s
 # My pretrained models
 You can download all my pretrained models from here:https://drive.google.com/drive/folders/1rewWULfXsvE0voA-A_ooTWwadq9lsk3X?usp=sharing .
 
+If you are in China,you can download from here:
+```
+链接：https://pan.baidu.com/s/1b6m70EQclE8aG-A2tkWrhQ 
+提取码：aieg 
+```
 
 # Preparing the dataset
 If you want to reproduce my imagenet pretrained models,you need download ILSVRC2012 dataset,and make sure the folder architecture as follows:
