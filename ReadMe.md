@@ -51,9 +51,11 @@ pip install -v --no-cache-dir ./
 Using apex to train can reduce video memory usage by 25%-30%, but the training speed will be slower, the trained model has the same performance as not using apex.
 
 How to use DCNv2 with apex mixed precision training opt_level='O1' (for CenterNet:Objects as Points training)?
+
 I trained and tested centernet on 4 RTX2080Ti graphics card, and no errors were reported during the training process and testing process.
 
-Download DCNv2 from here: https://github.com/CharlesShang/DCNv2 (master branch)
+Download DCNv2 from here: https://github.com/CharlesShang/DCNv2 (master branch).
+
 Unzip and modify dcn_v2.py:
 ```
 add:
@@ -197,6 +199,7 @@ For RetinaNet training,I use yolov3 resize method,this method resize=667 has sam
 | ResNet101-RetinaNet  | 667 | 16 | 2 RTX2080Ti | yes | no | 0.254,0.362,0.60 | 0.290,0.398,0.51 | 0.296,0.402,0.48 |
 
 For ResNet50-RetinaNet resize=1000 training,I use ResNet50-RetinaNet resize=667 trained model(mAP=0.293) as a pretrained model parameters to initialize the ResNet50-RetinaNet resize=1000 model.
+
 For RetinaNet training,I use yolov3 resize method,this method resize=1000 has same flops as the resize=600 method proposed in the RetinaNet paper.
 
 | Network | resize | batch | gpu-num | apex | syncbn | epoch12-mAP-mAR-loss | epoch24-mAP-mAR-loss |
@@ -204,6 +207,7 @@ For RetinaNet training,I use yolov3 resize method,this method resize=1000 has sa
 | ResNet50-RetinaNet | 1000 | 16 | 4 RTX2080Ti | yes | no | 0.333,0.456,0.46 | 0.339,0.460,0.42 |
 
 **Inference time**:
+
 Using one RTX2080Ti to test RetinaNet model inference speed.The test is performed COCO2017_val dataset,compute average per image inference time(ms).Testing num_workers=8.
 
 | Network | resize | batch |per image inference time(ms)|
@@ -229,6 +233,7 @@ For FCOS training,I use yolov3 resize method,this method resize=667 has same flo
 | ResNet101-FCOS | 667 | 16 | 2 RTX2080Ti | yes | no | 0.261,0.390,1.14 | 0.307,0.438,1.06 | 0.325,0.455,1.05 |
 
 For ResNet50-FCOS resize=1000 training,I use ResNet50-FCOS resize=667 trained model(mAP=) as a pretrained model parameters to initialize the ResNet50-FCOS resize=1000 model.
+
 For FCOS training,I use yolov3 resize method,this method resize=1000 has same flops as the resize=600 method proposed in the FCOS paper.
 
 | Network | resize | batch | gpu-num | apex | syncbn | epoch12-mAP-mAR-loss | epoch24-mAP-mAR-loss |
@@ -236,6 +241,7 @@ For FCOS training,I use yolov3 resize method,this method resize=1000 has same fl
 | ResNet50-FCOS | 1000 | 16 | 4 RTX2080Ti | yes | no | 0.352,0.490,1.03 | 0.352,0.491,1.01 |
 
 **Inference time**:
+
 Using one RTX2080Ti to test FCOS model inference speed.The test is performed COCO2017_val dataset,compute average per image inference time(ms).Testing num_workers=8.
 
 | Network | resize | batch |per image inference time(ms)|
@@ -257,10 +263,10 @@ In CenterNet paper,the author use yolov3 resize method,my resize method is same 
 
 | Network | resize | batch | gpu-num | apex | syncbn | epoch30-mAP-mAR-loss | epoch60-mAP-mAR-loss | epoch90-mAP-mAR-loss | epoch120-mAP-mAR-loss | epoch150-mAP-mAR-loss |
 | --- | --- |  --- |  --- |  --- |  --- |  --- |  --- |  --- |  --- |  --- | 
-| ResNet18DCN-CenterNet | 512 | 96 | 2 RTX2080Ti | yes | no |  |  |  |  |  |
-| ResNet101DCN-CenterNet | 512 | 40 | 2 RTX2080Ti | yes | no |  |  |  |  |  |
+| ResNet18DCN-CenterNet | 512 | 128 | 4 RTX2080Ti | yes | no |  |  |  |  |  |
 
 **Inference time**:
+
 Using one RTX2080Ti to test CenterNet model inference speed.The test is performed COCO2017_val dataset,compute average per image inference time(ms).Testing num_workers=8.
 
 
@@ -276,6 +282,7 @@ You can find more model training details in detection_experiments/experiment_fol
 
 # CIFAR100 classification training results
 Training in nn.parallel mode result:
+
 | Network       | gpu-num | warm up | lr decay | total epochs | Top-1 error |
 | --- | --- |  --- |  --- |  --- |  --- | 
 | ResNet-18     | 1 RTX2080Ti | no | multistep | 200 | 21.59 | 
