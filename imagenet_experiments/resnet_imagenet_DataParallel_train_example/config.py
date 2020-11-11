@@ -34,6 +34,7 @@ class Config(object):
             transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                  std=[0.229, 0.224, 0.225]),
         ]))
+
     val_dataset = datasets.ImageFolder(
         val_dataset_path,
         transforms.Compose([
@@ -43,6 +44,7 @@ class Config(object):
             transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                  std=[0.229, 0.224, 0.225]),
         ]))
+    # val_dataset.class_to_idx保存了类别对应的索引，所谓类别即每个子类文件夹的名字，索引即模型训练时的target
 
     milestones = [30, 60, 90]
     epochs = 100

@@ -1,0 +1,1 @@
+python ../../public/test_scripts/test_on_imagenet.py --backbone RegNetY_200MF --classifier regnet --batch_size 256 --num_workers 8 --num_classes 1000 --pretrained_model_path /home/zgcr/Downloads/pretrained_models/regnet/RegNetY_200MF-epoch100-acc70.096.pth --seed 0 --input_image_size 224 --use_gpu --use_pretrained_model

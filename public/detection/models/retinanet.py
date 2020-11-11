@@ -176,3 +176,5 @@ if __name__ == '__main__':
                                       [-1, -1, -1, -1, -1]],
                                      [[-1, -1, -1, -1, -1],
                                       [-1, -1, -1, -1, -1]]])
+    print("1111", cls_heads[0].shape, reg_heads[0].shape,
+          batch_anchors[0].shape)

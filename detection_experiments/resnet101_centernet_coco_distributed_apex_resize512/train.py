@@ -336,7 +336,7 @@ def main():
                 f"train: epoch {epoch:0>3d}, heatmap_loss: {heatmap_losses:.2f}, offset_loss: {offset_losses:.2f}, wh_loss: {wh_losses:.2f}, loss: {losses:.2f}"
             )
 
-        if epoch % 5 == 0 or epoch == args.epochs:
+        if epoch % 10 == 0 or epoch == args.epochs:
             if local_rank == 0:
                 logger.info(f"start eval.")
                 all_eval_result = validate(Config.val_dataset, model, decoder)

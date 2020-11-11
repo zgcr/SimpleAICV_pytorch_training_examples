@@ -21,7 +21,7 @@ class Config(object):
     val_dataset_path = os.path.join(COCO2017_path, 'images/val2017')
     dataset_annotations_path = os.path.join(COCO2017_path, 'annotations')
 
-    network = "resnet50_retinanet"
+    network = "darknet53_yolov3"
     pretrained = False
     num_classes = 80
     seed = 0
@@ -43,10 +43,10 @@ class Config(object):
                                     Resize(resize=input_image_size),
                                 ]))
 
-    epochs = 12
-    per_node_batch_size = 12
+    epochs = 100
+    per_node_batch_size = 24
     lr = 1e-4
     num_workers = 4
-    print_interval = 100
+    print_interval = 1
     apex = True
     sync_bn = False

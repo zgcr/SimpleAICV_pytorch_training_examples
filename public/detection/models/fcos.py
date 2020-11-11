@@ -12,7 +12,7 @@ from public.path import pretrained_models_path
 
 from public.detection.models.backbone import ResNetBackbone
 from public.detection.models.fpn import RetinaFPN
-from public.detection.models.head import FCOSClsHead, FCOSRegCenterHead
+from public.detection.models.head import FCOSClsRegCntHead
 from public.detection.models.anchor import FCOSPositions
 
 import torch
@@ -33,10 +33,10 @@ model_urls = {
     'resnet34_fcos':
     'empty',
     'resnet50_fcos':
-    '{}/detection_models/resnet50_fcos_coco_resize667_mAP0.286.pth'.format(
+    '{}/detection_models/resnet50_fcos_coco_resize667_mAP0.312.pth'.format(
         pretrained_models_path),
     'resnet101_fcos':
-    '{}/detection_models/resnet101_fcos_coco_resize667_mAP0.291.pth'.format(
+    '{}/detection_models/resnet101_fcos_coco_resize667_mAP0.325.pth'.format(
         pretrained_models_path),
     'resnet152_fcos':
     'empty',
@@ -68,16 +68,18 @@ class FCOS(nn.Module):
         self.num_classes = num_classes
         self.planes = planes
 
-        self.cls_head = FCOSClsHead(self.planes,
-                                    self.num_classes,
-                                    num_layers=4,
-                                    prior=0.01)
-        self.regcenter_head = FCOSRegCenterHead(self.planes, num_layers=4)
+        self.clsregcnt_head = FCOSClsRegCntHead(self.planes,
+                                                self.num_classes,
+                                                num_layers=4,
+                                                prior=0.01,
+                                                use_gn=True,
+                                                cnt_on_reg=True)
 
         self.strides = torch.tensor([8, 16, 32, 64, 128], dtype=torch.float)
         self.positions = FCOSPositions(self.strides)
 
-        self.scales = nn.Parameter(torch.FloatTensor([1., 1., 1., 1., 1.]))
+        self.scales = nn.Parameter(
+            torch.tensor([1., 1., 1., 1., 1.], dtype=torch.float32))
 
     def forward(self, inputs):
         self.batch_size, _, _, _ = inputs.shape
@@ -94,15 +96,15 @@ class FCOS(nn.Module):
         cls_heads, reg_heads, center_heads = [], [], []
         for feature, scale in zip(features, self.scales):
             self.fpn_feature_sizes.append([feature.shape[3], feature.shape[2]])
-            cls_outs = self.cls_head(feature)
+
+            cls_outs, reg_outs, center_outs = self.clsregcnt_head(feature)
+
             # [N,num_classes,H,W] -> [N,H,W,num_classes]
             cls_outs = cls_outs.permute(0, 2, 3, 1).contiguous()
             cls_heads.append(cls_outs)
-
-            reg_outs, center_outs = self.regcenter_head(feature)
             # [N,4,H,W] -> [N,H,W,4]
             reg_outs = reg_outs.permute(0, 2, 3, 1).contiguous()
-            reg_outs = reg_outs * scale
+            reg_outs = reg_outs * torch.exp(scale)
             reg_heads.append(reg_outs)
             # [N,1,H,W] -> [N,H,W,1]
             center_outs = center_outs.permute(0, 2, 3, 1).contiguous()

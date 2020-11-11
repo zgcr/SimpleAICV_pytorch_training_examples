@@ -7,44 +7,73 @@ import sys
 import warnings
 
 BASE_DIR = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.dirname(
-        os.path.abspath(__file__)))))
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(BASE_DIR)
 warnings.filterwarnings('ignore')
 
+from tqdm import tqdm
 from thop import profile
 from thop import clever_format
 import torch
 import torch.nn as nn
 import torch.backends.cudnn as cudnn
 import torchvision.transforms as transforms
+from torch.utils.data import DataLoader
 from public.path import COCO2017_path
+from public.detection.dataset.cocodataset import collater
 from public.detection.models.retinanet import RetinaNet
 from public.detection.models.fcos import FCOS
-from public.detection.models.decode import RetinaDecoder, FCOSDecoder
+from public.detection.models.centernet import CenterNet
+from public.detection.models.yolov3 import YOLOV3
+from public.detection.models.decode import RetinaDecoder, FCOSDecoder, CenterNetDecoder, YOLOV3Decoder
 from public.detection.dataset.cocodataset import CocoDetection, Resize
 from pycocotools.cocoeval import COCOeval
 
 
-def _retinanet(arch, pretrained_model_path, num_classes):
+def _retinanet(arch, use_pretrained_model, pretrained_model_path, num_classes):
     model = RetinaNet(arch, num_classes=num_classes)
-    pretrained_models = torch.load(pretrained_model_path,
-                                   map_location=torch.device('cpu'))
+    if use_pretrained_model:
+        pretrained_models = torch.load(pretrained_model_path,
+                                       map_location=torch.device('cpu'))
 
-    # only load state_dict()
-    model.load_state_dict(pretrained_models, strict=False)
+        # only load state_dict()
+        model.load_state_dict(pretrained_models, strict=False)
 
     return model
 
 
-def _fcos(arch, pretrained_model_path, num_classes):
+def _fcos(arch, use_pretrained_model, pretrained_model_path, num_classes):
     model = FCOS(arch, num_classes=num_classes)
+    if use_pretrained_model:
+        pretrained_models = torch.load(pretrained_model_path,
+                                       map_location=torch.device('cpu'))
 
-    pretrained_models = torch.load(pretrained_model_path,
-                                   map_location=torch.device('cpu'))
+        # only load state_dict()
+        model.load_state_dict(pretrained_models, strict=False)
 
-    # only load state_dict()
-    model.load_state_dict(pretrained_models, strict=False)
+    return model
+
+
+def _centernet(arch, use_pretrained_model, pretrained_model_path, num_classes):
+    model = CenterNet(arch, num_classes=num_classes)
+    if use_pretrained_model:
+        pretrained_models = torch.load(pretrained_model_path,
+                                       map_location=torch.device('cpu'))
+
+        # only load state_dict()
+        model.load_state_dict(pretrained_models, strict=False)
+
+    return model
+
+
+def _yolov3(arch, use_pretrained_model, pretrained_model_path, num_classes):
+    model = YOLOV3(arch, num_classes=num_classes)
+    if use_pretrained_model:
+        pretrained_models = torch.load(pretrained_model_path,
+                                       map_location=torch.device('cpu'))
+
+        # only load state_dict()
+        model.load_state_dict(pretrained_models, strict=False)
 
     return model
 
@@ -62,73 +91,76 @@ def validate(val_dataset, model, decoder, args):
 
 def evaluate_coco(val_dataset, model, decoder, args):
     results, image_ids = [], []
-    start_time = time.time()
+    indexes = []
     for index in range(len(val_dataset)):
-        data = val_dataset[index]
-        scale = data['scale']
+        indexes.append(index)
 
+    val_loader = DataLoader(val_dataset,
+                            batch_size=args.batch_size,
+                            shuffle=False,
+                            num_workers=args.num_workers,
+                            collate_fn=collater)
+
+    start_time = time.time()
+
+    for i, data in tqdm(enumerate(val_loader)):
+        images, scales = torch.tensor(data['img']), torch.tensor(data['scale'])
+        per_batch_indexes = indexes[i * args.batch_size:(i + 1) *
+                                    args.batch_size]
         if args.use_gpu:
-            if args.detector == "retinanet":
-                cls_heads, reg_heads, batch_anchors = model(
-                    data['img'].cuda().permute(2, 0,
-                                               1).float().unsqueeze(dim=0))
-            elif args.detector == "fcos":
-                cls_heads, reg_heads, center_heads, batch_positions = model(
-                    data['img'].cuda().permute(2, 0,
-                                               1).float().unsqueeze(dim=0))
+            images = images.cuda().float()
         else:
-            if args.detector == "retinanet":
-                cls_heads, reg_heads, batch_anchors = model(
-                    data['img'].permute(2, 0, 1).float().unsqueeze(dim=0))
-            elif args.detector == "fcos":
-                cls_heads, reg_heads, center_heads, batch_positions = model(
-                    data['img'].permute(2, 0, 1).float().unsqueeze(dim=0))
+            images = images.float()
 
         if args.detector == "retinanet":
+            cls_heads, reg_heads, batch_anchors = model(images)
             scores, classes, boxes = decoder(cls_heads, reg_heads,
                                              batch_anchors)
         elif args.detector == "fcos":
+            cls_heads, reg_heads, center_heads, batch_positions = model(images)
             scores, classes, boxes = decoder(cls_heads, reg_heads,
                                              center_heads, batch_positions)
+        elif args.detector == "centernet":
+            heatmap_output, offset_output, wh_output = model(images)
+            scores, classes, boxes = decoder(heatmap_output, offset_output,
+                                             wh_output)
+        elif args.detector == "yolov3":
+            obj_heads, reg_heads, cls_heads, batch_anchors = model(images)
+            scores, classes, boxes = decoder(obj_heads, reg_heads, cls_heads,
+                                             batch_anchors)
+
         scores, classes, boxes = scores.cpu(), classes.cpu(), boxes.cpu()
-        boxes /= scale
+        scales = scales.unsqueeze(-1).unsqueeze(-1)
+        boxes /= scales
 
-        # make sure decode batch_size=1
-        # scores shape:[1,max_detection_num]
-        # classes shape:[1,max_detection_num]
-        # bboxes shape[1,max_detection_num,4]
-        assert scores.shape[0] == 1
+        for per_image_scores, per_image_classes, per_image_boxes, index in zip(
+                scores, classes, boxes, per_batch_indexes):
+            # for coco_eval,we need [x_min,y_min,w,h] format pred boxes
+            per_image_boxes[:, 2:] -= per_image_boxes[:, :2]
 
-        scores = scores.squeeze(0)
-        classes = classes.squeeze(0)
-        boxes = boxes.squeeze(0)
+            for object_score, object_class, object_box in zip(
+                    per_image_scores, per_image_classes, per_image_boxes):
+                object_score = float(object_score)
+                object_class = int(object_class)
+                object_box = object_box.tolist()
+                if object_class == -1:
+                    break
 
-        # for coco_eval,we need [x_min,y_min,w,h] format pred boxes
-        boxes[:, 2:] -= boxes[:, :2]
+                image_result = {
+                    'image_id':
+                    val_dataset.image_ids[index],
+                    'category_id':
+                    val_dataset.find_category_id_from_coco_label(object_class),
+                    'score':
+                    object_score,
+                    'bbox':
+                    object_box,
+                }
+                results.append(image_result)
 
-        for object_score, object_class, object_box in zip(
-                scores, classes, boxes):
-            object_score = float(object_score)
-            object_class = int(object_class)
-            object_box = object_box.tolist()
-            if object_class == -1:
-                break
+            image_ids.append(val_dataset.image_ids[index])
 
-            image_result = {
-                'image_id':
-                val_dataset.image_ids[index],
-                'category_id':
-                val_dataset.find_category_id_from_coco_label(object_class),
-                'score':
-                object_score,
-                'bbox':
-                object_box,
-            }
-            results.append(image_result)
-
-        image_ids.append(val_dataset.image_ids[index])
-
-        print('{}/{}'.format(index, len(val_dataset)), end='\r')
+            print('{}/{}'.format(index, len(val_dataset)), end='\r')
 
     testing_time = (time.time() - start_time)
     per_image_testing_time = testing_time / len(val_dataset)
@@ -161,6 +193,8 @@ def evaluate_coco(val_dataset, model, decoder, args):
 def test_model(args):
     print(args)
     if args.use_gpu:
+        # use one Graphics card to test
+        os.environ["CUDA_VISIBLE_DEVICES"] = "0"
         if not torch.cuda.is_available():
             raise Exception("need gpu to test network!")
         torch.cuda.empty_cache()
@@ -184,15 +218,25 @@ def test_model(args):
         ]))
 
     if args.detector == "retinanet":
-        model = _retinanet(args.backbone, args.pretrained_model_path,
-                           args.num_classes)
+        model = _retinanet(args.backbone, args.use_pretrained_model,
+                           args.pretrained_model_path, args.num_classes)
         decoder = RetinaDecoder(image_w=args.input_image_size,
                                 image_h=args.input_image_size)
     elif args.detector == "fcos":
-        model = _fcos(args.backbone, args.pretrained_model_path,
-                      args.num_classes)
+        model = _fcos(args.backbone, args.use_pretrained_model,
+                      args.pretrained_model_path, args.num_classes)
         decoder = FCOSDecoder(image_w=args.input_image_size,
                               image_h=args.input_image_size)
+    elif args.detector == "centernet":
+        model = _centernet(args.backbone, args.use_pretrained_model,
+                           args.pretrained_model_path, args.num_classes)
+        decoder = CenterNetDecoder(image_w=args.input_image_size,
+                                   image_h=args.input_image_size)
+    elif args.detector == "yolov3":
+        model = _yolov3(args.backbone, args.use_pretrained_model,
+                        args.pretrained_model_path, args.num_classes)
+        decoder = YOLOV3Decoder(image_w=args.input_image_size,
+                                image_h=args.input_image_size)
     else:
         print("unsupport detection model!")
         return
@@ -223,13 +267,24 @@ def test_model(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description='PyTorch COCO Detection Distributed Training')
+        description='PyTorch COCO Detection Testing')
     parser.add_argument('--backbone', type=str, help='name of backbone')
     parser.add_argument('--detector', type=str, help='name of detector')
+    parser.add_argument('--batch_size',
+                        type=int,
+                        default=1,
+                        help='inference batch size')
+    parser.add_argument('--num_workers',
+                        type=int,
+                        default=1,
+                        help='num workers')
     parser.add_argument('--num_classes',
                         type=int,
                         default=80,
                         help='model class num')
+    parser.add_argument("--use_pretrained_model",
+                        action="store_true",
+                        help="use pretrained model or not")
     parser.add_argument('--pretrained_model_path',
                         type=str,
                         help='pretrained model path')

@@ -1,0 +1,1 @@
+python ../../public/test_scripts/test_on_imagenet.py --backbone VoVNet19_slim_depthwise_se --classifier vovnet --batch_size 256 --num_workers 8 --num_classes 1000 --pretrained_model_path /home/zgcr/Downloads/pretrained_models/vovnet/VoVNet19_slim_depthwise_se-epoch100-acc66.724.pth --seed 0 --input_image_size 224 --use_gpu --use_pretrained_model

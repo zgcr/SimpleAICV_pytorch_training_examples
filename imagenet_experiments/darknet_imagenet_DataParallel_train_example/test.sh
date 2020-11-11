@@ -1,0 +1,1 @@
+python ../../public/test_scripts/test_on_imagenet.py --backbone darknet53 --classifier darknet --batch_size 256 --num_workers 8 --num_classes 1000 --pretrained_model_path /home/zgcr/Downloads/pretrained_models/darknet/darknet53-input256-epoch100-acc77.008.pth --seed 0 --input_image_size 256 --use_gpu --use_pretrained_model

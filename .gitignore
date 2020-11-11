@@ -3,3 +3,4 @@ __pycache__
 checkpoints
 log
 *.json
+test_data

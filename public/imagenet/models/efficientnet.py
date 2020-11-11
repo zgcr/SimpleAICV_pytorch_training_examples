@@ -377,13 +377,11 @@ class MBConvBlock(nn.Module):
 
 
 class EfficientNet(nn.Module):
-    def __init__(
-        self,
-        efficientnet_type,
-        origin_globalparams=origin_globalparams,
-        origin_blocks_args=origin_blocks_args,
-        num_classes=1000,
-    ):
+    def __init__(self,
+                 efficientnet_type,
+                 origin_globalparams=origin_globalparams,
+                 origin_blocks_args=origin_blocks_args,
+                 num_classes=1000):
         super(EfficientNet, self).__init__()
         self.efficientnet_type = efficientnet_types_config[efficientnet_type]
         self.efficientnet_superparams = self.get_efficientnet_superparams(

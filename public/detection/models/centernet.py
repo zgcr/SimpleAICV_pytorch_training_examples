@@ -10,7 +10,7 @@ sys.path.append(BASE_DIR)
 from public.path import pretrained_models_path
 
 from public.detection.models.backbone import ResNetBackbone
-from public.detection.models.head import CenrerNetHetRegWhHead
+from public.detection.models.head import CenterNetHetRegWhHead
 
 import torch
 import torch.nn as nn
@@ -35,7 +35,7 @@ model_urls = {
 
 # assert input annotations are[x_min,y_min,x_max,y_max]
 class CenterNet(nn.Module):
-    def __init__(self, resnet_type, num_classes=80, planes=256):
+    def __init__(self, resnet_type, num_classes=80):
         super(CenterNet, self).__init__()
         self.backbone = ResNetBackbone(resnet_type=resnet_type)
         expand_ratio = {
@@ -47,13 +47,11 @@ class CenterNet(nn.Module):
         }
         C5_inplanes = int(512 * expand_ratio[resnet_type])
 
-        self.num_classes = num_classes
-        self.planes = planes
-
-        self.centernet_head = CenrerNetHetRegWhHead(C5_inplanes,
-                                                    self.planes,
-                                                    self.num_classes,
-                                                    num_layers=3)
+        self.centernet_head = CenterNetHetRegWhHead(
+            C5_inplanes,
+            num_classes,
+            num_layers=3,
+            out_channels=[256, 128, 64])
 
     def forward(self, inputs):
         [C3, C4, C5] = self.backbone(inputs)
@@ -106,7 +104,7 @@ def resnet152_centernet(pretrained=False, **kwargs):
 
 
 if __name__ == '__main__':
-    net = CenterNet(resnet_type="resnet50")
+    net = CenterNet(resnet_type="resnet18")
     image_h, image_w = 600, 600
     heatmap_output, offset_output, wh_output = net(
         torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))

@@ -28,9 +28,9 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from config import Config
 from public.detection.dataset.cocodataset import COCODataPrefetcher, collater
-from public.detection.models.loss import YOLOV3Loss
-from public.detection.models.decode import YOLOV3Decoder
-from public.detection.models import yolov3
+from public.detection.models.loss import CenterNetLoss
+from public.detection.models.decode import CenterNetDecoder
+from public.detection.models import centernet
 from public.imagenet.utils import get_logger
 from pycocotools.cocoeval import COCOeval
 
@@ -50,6 +50,10 @@ def parse_args():
                         type=int,
                         default=Config.epochs,
                         help='num of training epochs')
+    parser.add_argument('--milestones',
+                        type=list,
+                        default=Config.milestones,
+                        help='optimizer milestones')
     parser.add_argument('--per_node_batch_size',
                         type=int,
                         default=Config.per_node_batch_size,
@@ -122,11 +126,12 @@ def evaluate_coco(val_dataset, model, decoder):
     for index in range(len(val_dataset)):
         data = val_dataset[index]
         scale = data['scale']
-        obj_heads, reg_heads, cls_heads, batch_anchors = model(
+        heatmap_output, offset_output, wh_output = model(
             data['img'].cuda().permute(2, 0, 1).float().unsqueeze(dim=0))
-        scores, classes, boxes = decoder(obj_heads, reg_heads, cls_heads,
-                                         batch_anchors)
+        scores, classes, boxes = decoder(heatmap_output, offset_output,
+                                         wh_output)
         scores, classes, boxes = scores.cpu(), classes.cpu(), boxes.cpu()
+
         boxes /= scale
 
         # make sure decode batch_size=1
@@ -231,10 +236,11 @@ def main():
     if local_rank == 0:
         logger.info('finish loading data')
 
-    model = yolov3.__dict__[args.network](**{
+    model = centernet.__dict__[args.network](**{
         "pretrained": args.pretrained,
         "num_classes": args.num_classes,
     })
+
     for name, param in model.named_parameters():
         if local_rank == 0:
             logger.info(f"{name},{param.requires_grad}")
@@ -247,15 +253,14 @@ def main():
         logger.info(
             f"model: '{args.network}', flops: {flops}, params: {params}")
 
-    criterion = YOLOV3Loss().cuda()
-    decoder = YOLOV3Decoder(image_w=args.input_image_size,
-                            image_h=args.input_image_size).cuda()
+    criterion = CenterNetLoss().cuda()
+    decoder = CenterNetDecoder(image_w=args.input_image_size,
+                               image_h=args.input_image_size).cuda()
 
     model = model.cuda()
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer,
-                                                           patience=3,
-                                                           verbose=True)
+    scheduler = torch.optim.lr_scheduler.MultiStepLR(
+        optimizer, milestones=args.milestones, gamma=0.1)
 
     if args.sync_bn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
@@ -312,7 +317,7 @@ def main():
         if local_rank == 0:
             logger.info(
                 f"finish resuming model from {args.resume}, epoch {checkpoint['epoch']}, best_map: {checkpoint['best_map']}, "
-                f"loss: {checkpoint['loss']:3f}, obj_loss: {checkpoint['obj_loss']:2f}, reg_loss: {checkpoint['reg_loss']:2f},  cls_loss: {checkpoint['cls_loss']:2f}"
+                f"loss: {checkpoint['loss']:3f}, heatmap_loss: {checkpoint['heatmap_loss']:2f}, offset_loss: {checkpoint['offset_loss']:2f},wh_loss: {checkpoint['wh_loss']:2f}"
             )
 
     if local_rank == 0:
@@ -323,14 +328,15 @@ def main():
         logger.info('start training')
     for epoch in range(start_epoch, args.epochs + 1):
         train_sampler.set_epoch(epoch)
-        obj_losses, reg_losses, cls_losses, losses = train(
+        heatmap_losses, offset_losses, wh_losses, losses = train(
             train_loader, model, criterion, optimizer, scheduler, epoch, args)
+
         if local_rank == 0:
             logger.info(
-                f"train: epoch {epoch:0>3d}, obj_loss: {obj_losses:.2f}, reg_loss: {reg_losses:.2f}, cls_loss: {cls_losses:.2f}, loss: {losses:.2f}"
+                f"train: epoch {epoch:0>3d}, heatmap_loss: {heatmap_losses:.2f}, offset_loss: {offset_losses:.2f}, wh_loss: {wh_losses:.2f}, loss: {losses:.2f}"
             )
 
-        if epoch % 1 == 0 or epoch == args.epochs:
+        if epoch % 10 == 0 or epoch == args.epochs:
             if local_rank == 0:
                 logger.info(f"start eval.")
                 all_eval_result = validate(Config.val_dataset, model, decoder)
@@ -348,9 +354,9 @@ def main():
                 {
                     'epoch': epoch,
                     'best_map': best_map,
-                    'obj_loss': obj_losses,
-                    'reg_loss': reg_losses,
-                    'cls_loss': cls_losses,
+                    'heatmap_loss': heatmap_losses,
+                    'offset_loss': offset_losses,
+                    'wh_loss': wh_losses,
                     'loss': losses,
                     'model_state_dict': model.state_dict(),
                     'optimizer_state_dict': optimizer.state_dict(),
@@ -366,7 +372,7 @@ def main():
 
 
 def train(train_loader, model, criterion, optimizer, scheduler, epoch, args):
-    obj_losses, reg_losses, cls_losses, losses = [], [], [], []
+    heatmap_losses, offset_losses, wh_losses, losses = [], [], [], []
 
     # switch to train mode
     model.train()
@@ -378,14 +384,11 @@ def train(train_loader, model, criterion, optimizer, scheduler, epoch, args):
 
     while images is not None:
         images, annotations = images.cuda().float(), annotations.cuda()
-        obj_heads, reg_heads, cls_heads, batch_anchors = model(images)
-        obj_loss, reg_loss, cls_loss = criterion(obj_heads, reg_heads,
-                                                 cls_heads, batch_anchors,
-                                                 annotations)
-        loss = obj_loss + reg_loss + cls_loss
-        if obj_loss == 0.0 or reg_loss == 0.0 or cls_loss == 0.0:
-            optimizer.zero_grad()
-            continue
+        heatmap_output, offset_output, wh_output = model(images)
+        heatmap_loss, offset_loss, wh_loss = criterion(heatmap_output,
+                                                       offset_output,
+                                                       wh_output, annotations)
+        loss = heatmap_loss + offset_loss + wh_loss
 
         if args.apex:
             with amp.scale_loss(loss, optimizer) as scaled_loss:
@@ -397,24 +400,24 @@ def train(train_loader, model, criterion, optimizer, scheduler, epoch, args):
         optimizer.step()
         optimizer.zero_grad()
 
-        obj_losses.append(obj_loss.item())
-        reg_losses.append(reg_loss.item())
-        cls_losses.append(cls_loss.item())
+        heatmap_losses.append(heatmap_loss.item())
+        offset_losses.append(offset_loss.item())
+        wh_losses.append(wh_loss.item())
         losses.append(loss.item())
 
         images, annotations = prefetcher.next()
 
         if local_rank == 0 and iter_index % args.print_interval == 0:
             logger.info(
-                f"train: epoch {epoch:0>3d}, iter [{iter_index:0>5d}, {iters:0>5d}], obj_loss: {obj_loss.item():.2f}, reg_loss: {reg_loss.item():.2f}, cls_loss: {cls_loss.item():.2f}, loss_total: {loss.item():.2f}"
+                f"train: epoch {epoch:0>3d}, iter [{iter_index:0>5d}, {iters:0>5d}], heatmap_loss: {heatmap_loss.item():.2f}, offset_loss: {offset_loss.item():.2f}, wh_loss: {wh_loss.item():.2f}, loss_total: {loss.item():.2f}"
             )
 
         iter_index += 1
 
-    scheduler.step(np.mean(losses))
+    scheduler.step()
 
-    return np.mean(obj_losses), np.mean(reg_losses), np.mean(
-        cls_losses), np.mean(losses)
+    return np.mean(heatmap_losses), np.mean(offset_losses), np.mean(
+        wh_losses), np.mean(losses)
 
 
 if __name__ == '__main__':
