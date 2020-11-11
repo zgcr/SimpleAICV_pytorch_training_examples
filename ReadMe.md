@@ -1,3 +1,21 @@
+   * [My ZhiHu column](#my-zhihu-column)
+   * [Requirements](#requirements)
+   * [How to download my pretrained models](#how-to-download-my-pretrained-models)
+   * [How to prepare dataset directory structure for training and testing](#how-to-prepare-dataset-directory-structure-for-training-and-testing)
+   * [How to reproduce my experiment results](#how-to-reproduce-my-experiment-results)
+   * [How to test my pretrained models](#how-to-test-my-pretrained-models)
+   * [How to use a object detection pretrained model to detect a single image?](#how-to-use-a-object-detection-pretrained-model-to-detect-a-single-image)
+   * [COCO2017 detection training results](#coco2017-detection-training-results)
+      * [RetinaNet](#retinanet)
+      * [FCOS](#fcos)
+      * [CenterNet(Objects as Points)](#centernetobjects-as-points)
+   * [VOC2007 2012 detection training results](#voc20072012-detection-training-results)
+   * [CIFAR100 classification training results](#cifar100-classification-training-results)
+   * [ILSVRC2012(ImageNet) classification training results](#ilsvrc2012imagenet-classification-training-results)
+      * [Training in nn.parallel mode results](#training-in-nnparallel-mode-results)
+      * [Training in nn.DistributedDataParallel mode results](#training-in-nndistributeddataparallel-mode-results)
+   * [Citation](#citation)
+
 # My ZhiHu column
 https://www.zhihu.com/column/c_1249719688055193600
 
@@ -67,7 +85,7 @@ If you are in China,you can download from here:
 提取码：aieg 
 ```
 
-# How to prepare the dataset directory structure for training and testing
+# How to prepare dataset directory structure for training and testing
 If you want to reproduce my imagenet pretrained models,you need download ILSVRC2012 dataset,and make sure the folder architecture as follows:
 ```
 ILSVRC2012
@@ -105,21 +123,6 @@ VOCdataset
 |                 |----SegmentationObject
 ```
 
-# How to test my pretrained models
-I provide two scripts for testing on COCO2017 and ILSVRC2012.You can find testing codes in public/test_scripts/.I give two example to run testing on COCO2017 and ILSVRC2012.
-
-COCO2017 testing example:
-```
-# enter in detection_experiments/resnet50_retinanet_coco_distributed_apex_resize667/
-./test.sh
-```
-
-ILSVRC2012 testing example:
-```
-# enter in imagenet_experiments/resnet_imagenet_DataParallel_train_example/
-./test.sh
-```
-
 # How to reproduce my experiment results
 If you want to reproduce my experiment result,just enter a category experiments folder,then enter a specific experiment folder.Each experiment folder has it's own config.py and train.py.
 
@@ -152,6 +155,21 @@ CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.launch --nproc_per_node=2 -
 ```
 
 Please make sure the nproc_per_node number is correct and master_addr/master_port are different from other experiments.
+
+# How to test my pretrained models
+I provide two scripts for testing on COCO2017 and ILSVRC2012.You can find testing codes in public/test_scripts/.I give two example to run testing on COCO2017 and ILSVRC2012.
+
+COCO2017 testing example:
+```
+# enter in detection_experiments/resnet50_retinanet_coco_distributed_apex_resize667/
+./test.sh
+```
+
+ILSVRC2012 testing example:
+```
+# enter in imagenet_experiments/resnet_imagenet_DataParallel_train_example/
+./test.sh
+```
 
 # How to use a object detection pretrained model to detect a single image?
 I provided an example in public/test_scripts/detect_single_image.py.run this command to detect a single image and save the detected image.
