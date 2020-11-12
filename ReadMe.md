@@ -9,6 +9,7 @@
       * [RetinaNet](#retinanet)
       * [FCOS](#fcos)
       * [CenterNet(Objects as Points)](#centernetobjects-as-points)
+      * [YOLOv3](#YOLOv3)
    * [VOC2007 2012 detection training results](#voc20072012-detection-training-results)
    * [CIFAR100 classification training results](#cifar100-classification-training-results)
    * [ILSVRC2012(ImageNet) classification training results](#ilsvrc2012imagenet-classification-training-results)
@@ -17,9 +18,11 @@
    * [Citation](#citation)
 
 # My ZhiHu column
+
 https://www.zhihu.com/column/c_1249719688055193600
 
 # Requirements
+
 Platform:Ubuntu 18.04.4
 ```
 1.pytorch==1.4.0
@@ -72,13 +75,15 @@ build DCNv2:
 ```
 ./make.sh
 ```
-Attention:Please make sure your Python environment is not an Anaconda virtual environment,otherwise, the following mistake may happened:
+**Attention:**
+Please make sure your Python environment is not an Anaconda virtual environment,otherwise, the following mistake may happened:
 ```
 RuntimeError: Not compiled with GPU support
 ```
 Related issue:https://github.com/CharlesShang/DCNv2/issues/82 
 
 # How to download my pretrained models
+
 You can download all my pretrained models from here:https://drive.google.com/drive/folders/1rewWULfXsvE0voA-A_ooTWwadq9lsk3X?usp=sharing .
 
 If you are in China,you can download from here:
@@ -88,6 +93,7 @@ If you are in China,you can download from here:
 ```
 
 # How to prepare dataset directory structure for training and testing
+
 If you want to reproduce my imagenet pretrained models,you need download ILSVRC2012 dataset,and make sure the folder architecture as follows:
 ```
 ILSVRC2012
@@ -126,6 +132,7 @@ VOCdataset
 ```
 
 # How to reproduce my experiment results
+
 If you want to reproduce my experiment result,just enter a category experiments folder,then enter a specific experiment folder.Each experiment folder has it's own config.py and train.py.
 
 If the experiment use nn.parallel mode to train,you should add this in train.py to specify the GPU for training:
@@ -159,6 +166,7 @@ CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.launch --nproc_per_node=2 -
 Please make sure the nproc_per_node number is correct and master_addr/master_port are different from other experiments.
 
 # How to test my pretrained models
+
 I provide two scripts for testing on COCO2017 and ILSVRC2012.You can find testing codes in public/test_scripts/.I give two example to run testing on COCO2017 and ILSVRC2012.
 
 COCO2017 testing example:
@@ -174,6 +182,7 @@ ILSVRC2012 testing example:
 ```
 
 # How to use a object detection pretrained model to detect a single image?
+
 I provided an example in public/test_scripts/detect_single_image.py.run this command to detect a single image and save the detected image.
 ```
 ./detect_single_image.sh
@@ -181,6 +190,7 @@ I provided an example in public/test_scripts/detect_single_image.py.run this com
 You can read the codes in detect_single_image.py to find more details.
 
 # COCO2017 detection training results
+
 Trained on COCO2017_train dataset, tested on COCO2017_val dataset.
 
 mAP is IoU=0.5:0.95,area=all,maxDets=100,mAP(COCOeval,stats[0]).
@@ -189,6 +199,7 @@ mAR is IoU=0.5:0.95,area=all,maxDets=100,mAR(COCOeval,stats[8]).
 You can find more model training details in detection_experiments/experiment_folder/.
 
 ## RetinaNet
+
 Paper:https://arxiv.org/abs/1708.02002
 
 For RetinaNet training,I use yolov3 resize method,this method resize=667 has same flops as the resize=400 method proposed in the RetinaNet paper.
@@ -223,6 +234,7 @@ Using one RTX2080Ti to test RetinaNet model inference speed.The test is performe
 | ResNet50-RetinaNet | 1000 | 16 | 64 |
 
 ## FCOS
+
 Paper:https://arxiv.org/abs/1904.01355 
 
 For FCOS training,I use yolov3 resize method,this method resize=667 has same flops as the resize=400 method proposed in the FCOS paper.
@@ -257,6 +269,7 @@ Using one RTX2080Ti to test FCOS model inference speed.The test is performed COC
 | ResNet50-FCOS | 1000 | 16 | 64 |
 
 ## CenterNet(Objects as Points)
+
 Paper:https://arxiv.org/abs/1904.07850
 
 In CenterNet paper,the author use yolov3 resize method,my resize method is same as yolov3 resize method.
@@ -269,8 +282,22 @@ In CenterNet paper,the author use yolov3 resize method,my resize method is same 
 
 Using one RTX2080Ti to test CenterNet model inference speed.The test is performed COCO2017_val dataset,compute average per image inference time(ms).Testing num_workers=8.
 
+## YOLOv3
+
+Paper:https://arxiv.org/abs/1804.02767
+
+**How to use yolov3 anchor clustering method to generate a set of custom anchors for your own datset?**
+
+I provide a script in public/detection/yolov3_anchor_cluster.py,and I give two examples for generate anchors on COCO2017 and VOC2007+2012 datasets.
+
+If you want to generate anchors for your dataset,just modify the part of input code,get width and height of all annotaion boxes,then use the script to compute anchors.
+
+**Attention:**
+The anchors size will change with different datasets and different input resizes.
+
 
 # VOC2007+2012 detection training results
+
 Trained on VOC2007 trainval + VOC2012 trainval, tested on VOC2007,using 11-point interpolated AP.
 
 | Network | resize | batch | gpu-num | apex | syncbn | epoch5-mAP-loss | epoch10-mAP-loss | epoch15-mAP-loss | epoch20-mAP-loss |
@@ -281,6 +308,7 @@ Trained on VOC2007 trainval + VOC2012 trainval, tested on VOC2007,using 11-point
 You can find more model training details in detection_experiments/experiment_folder/.
 
 # CIFAR100 classification training results
+
 Training in nn.parallel mode result:
 
 | Network       | gpu-num | warm up | lr decay | total epochs | Top-1 error |
@@ -296,6 +324,7 @@ You can find more model training details in cifar100_experiments/resnet50cifar/.
 # ILSVRC2012(ImageNet) classification training results
 
 ##  Training in nn.parallel mode results
+
 | Network       | gpu-num | warm up | lr decay | total epochs | Top-1 error |
 | --- | --- |  --- |  --- |  --- |  --- | 
 | ResNet-18     | 4 RTX2080Ti | no | multistep | 100 | 29.684 | 
@@ -332,6 +361,7 @@ All nets are trained by input_size=224x224 except DarkNet(input size 256x256) an
 For training resnet50 with batch_size=256,you need at least 4 2080ti gpus,and need about three or four days.
 
 ## Training in nn.DistributedDataParallel mode results
+
 | Network       | gpu-num | sync-BN |warm up | lr decay | total epochs | Top-1 error |
 | --- | --- |  --- |  --- |  --- |  --- |  --- | 
 | ResNet-50     | 4 RTX2080Ti | no | no | multistep | 100 | 23.72 |
@@ -340,6 +370,7 @@ For training resnet50 with batch_size=256,you need at least 4 2080ti gpus,and ne
 You can find more model training details in imagenet_experiments/experiment_folder/.
 
 # Citation
+
 If you find my work useful in your research, please consider citing:
 ```
 @inproceedings{zgcr,
