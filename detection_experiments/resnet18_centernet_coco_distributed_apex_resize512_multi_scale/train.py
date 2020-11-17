@@ -27,7 +27,7 @@ import torch.backends.cudnn as cudnn
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from config import Config
-from public.detection.dataset.cocodataset import COCODataPrefetcher, collater
+from public.detection.dataset.cocodataset import COCODataPrefetcher, randomscalecollater
 from public.detection.models.loss import CenterNetLoss
 from public.detection.models.decode import CenterNetDecoder
 from public.detection.models import centernet
@@ -231,7 +231,7 @@ def main():
                               batch_size=args.per_node_batch_size,
                               shuffle=False,
                               num_workers=args.num_workers,
-                              collate_fn=collater,
+                              collate_fn=randomscalecollater,
                               sampler=train_sampler)
     if local_rank == 0:
         logger.info('finish loading data')
@@ -384,6 +384,7 @@ def train(train_loader, model, criterion, optimizer, scheduler, epoch, args):
 
     while images is not None:
         images, annotations = images.cuda().float(), annotations.cuda()
+
         heatmap_output, offset_output, wh_output = model(images)
         heatmap_loss, offset_loss, wh_loss = criterion(heatmap_output,
                                                        offset_output,

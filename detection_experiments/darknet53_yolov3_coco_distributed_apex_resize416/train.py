@@ -393,7 +393,7 @@ def train(train_loader, model, criterion, optimizer, scheduler, epoch, args):
         else:
             loss.backward()
 
-        torch.nn.utils.clip_grad_norm_(model.parameters(), 0.1)
+        torch.nn.utils.clip_grad_norm_(model.parameters(), 0.01)
         optimizer.step()
         optimizer.zero_grad()
 

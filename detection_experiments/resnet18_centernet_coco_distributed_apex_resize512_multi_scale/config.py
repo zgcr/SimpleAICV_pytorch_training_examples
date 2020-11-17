@@ -6,7 +6,7 @@ BASE_DIR = os.path.dirname(
 sys.path.append(BASE_DIR)
 
 from public.path import COCO2017_path
-from public.detection.dataset.cocodataset import CocoDetection, Resize, RandomFlip, RandomCrop, RandomTranslate
+from public.detection.dataset.cocodataset import CocoDetection, CenterNetRandomScaleResize, Resize, RandomFlip, RandomCrop, RandomTranslate
 
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
@@ -21,7 +21,7 @@ class Config(object):
     val_dataset_path = os.path.join(COCO2017_path, 'images/val2017')
     dataset_annotations_path = os.path.join(COCO2017_path, 'annotations')
 
-    network = "resnet101_centernet"
+    network = "resnet18_centernet"
     pretrained = False
     num_classes = 80
     seed = 0
@@ -34,7 +34,9 @@ class Config(object):
                                       RandomFlip(flip_prob=0.5),
                                       RandomCrop(crop_prob=0.5),
                                       RandomTranslate(translate_prob=0.5),
-                                      Resize(resize=input_image_size),
+                                      CenterNetRandomScaleResize(
+                                          resize=input_image_size,
+                                          scale_factor=0.4),
                                   ]))
     val_dataset = CocoDetection(image_root_dir=val_dataset_path,
                                 annotation_root_dir=dataset_annotations_path,
@@ -43,7 +45,7 @@ class Config(object):
                                     Resize(resize=input_image_size),
                                 ]))
 
-    epochs = 150
+    epochs = 140
     milestones = [90, 120]
     per_node_batch_size = 32
     lr = 5e-4

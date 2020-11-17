@@ -43,7 +43,7 @@ class Config(object):
                                     Resize(resize=input_image_size),
                                 ]))
 
-    epochs = 150
+    epochs = 140
     milestones = [90, 120]
     per_node_batch_size = 32
     lr = 5e-4

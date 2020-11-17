@@ -25,11 +25,17 @@ __all__ = [
 ]
 
 model_urls = {
-    'resnet18_centernet': 'empty',
-    'resnet34_centernet': 'empty',
-    'resnet50_centernet': 'empty',
-    'resnet101_centernet': 'empty',
-    'resnet152_centernet': 'empty',
+    'resnet18_centernet':
+    '{}/detection_models/resnet18dcn_centernet_coco_resize512_mAP0.248.pth'.
+    format(pretrained_models_path),
+    'resnet34_centernet':
+    'empty',
+    'resnet50_centernet':
+    'empty',
+    'resnet101_centernet':
+    'empty',
+    'resnet152_centernet':
+    'empty',
 }
 
 

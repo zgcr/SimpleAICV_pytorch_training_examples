@@ -61,21 +61,22 @@ Download DCNv2 from here: https://github.com/CharlesShang/DCNv2 (master branch).
 
 Unzip and modify dcn_v2.py:
 ```
-add:
+# add:
 try:
     from apex import amp
 except ImportError:
     raise ImportError("Please install apex from https://www.github.com/nvidia/apex to run this example.")
 
-for class _DCNv2(Function),add:
+# for class _DCNv2(Function),add:
 @amp.float_function
-at the previous line of the "def forward()" and "def backward()"
+# at the previous line of the "def forward()" and "def backward()"
 ```
 build DCNv2:
 ```
 ./make.sh
 ```
 **Attention:**
+
 Please make sure your Python environment is not an Anaconda virtual environment,otherwise, the following mistake may happened:
 ```
 RuntimeError: Not compiled with GPU support
@@ -175,6 +176,12 @@ COCO2017 testing example:
 ./test.sh
 ```
 
+VOC2007 testing example:
+```
+# enter in detection_experiments/resnet50_retinanet_voc_distributed_apex_resize667_usecocopre/
+./test.sh
+```
+
 ILSVRC2012 testing example:
 ```
 # enter in imagenet_experiments/resnet_imagenet_DataParallel_train_example/
@@ -204,18 +211,19 @@ Paper:https://arxiv.org/abs/1708.02002
 
 For RetinaNet training,I use yolov3 resize method,this method resize=667 has same flops as the resize=400 method proposed in the RetinaNet paper.
 
-| Network | resize | batch | gpu-num | apex | syncbn | epoch5-mAP-mAR-loss | epoch10-mAP-mAR-loss | epoch12-mAP-mAR-loss |
-| --- | --- |  --- |  --- |  --- |  --- |  --- |  --- |  --- | 
-| ResNet50-RetinaNet | 667 | 24 | 2 RTX2080Ti | yes | no | 0.253,0.361,0.61 | 0.287,0.398,0.51 | 0.293,0.401,0.49 | 
-| ResNet101-RetinaNet  | 667 | 16 | 2 RTX2080Ti | yes | no | 0.254,0.362,0.60 | 0.290,0.398,0.51 | 0.296,0.402,0.48 |
+| Network | resize | batch | gpu-num | apex | syncbn | epoch | mAP-mAR-loss |
+| --- | --- |  --- |  --- |  --- |  --- |  --- |  --- | 
+| ResNet50-RetinaNet | 667 | 24 | 2 RTX2080Ti | yes | no | 12 | 0.293,0.401,0.49 | 
+| ResNet101-RetinaNet  | 667 | 16 | 2 RTX2080Ti | yes | no | 12 | 0.296,0.402,0.48 |
 
 For ResNet50-RetinaNet resize=1000 training,I use ResNet50-RetinaNet resize=667 trained model(mAP=0.293) as a pretrained model parameters to initialize the ResNet50-RetinaNet resize=1000 model.
 
 For RetinaNet training,I use yolov3 resize method,this method resize=1000 has same flops as the resize=600 method proposed in the RetinaNet paper.
 
-| Network | resize | batch | gpu-num | apex | syncbn | epoch12-mAP-mAR-loss | epoch24-mAP-mAR-loss |
+| Network | resize | batch | gpu-num | apex | syncbn | epoch | mAP-mAR-loss |
 | --- | --- |  --- |  --- |  --- |  --- |  --- |  --- |
-| ResNet50-RetinaNet | 1000 | 16 | 4 RTX2080Ti | yes | no | 0.333,0.456,0.46 | 0.339,0.460,0.42 |
+| ResNet50-RetinaNet | 1000 | 16 | 4 RTX2080Ti | yes | no | 12 | 0.333,0.456,0.46 |
+| ResNet50-RetinaNet | 1000 | 16 | 4 RTX2080Ti | yes | no | 24 | 0.339,0.460,0.42 |
 
 **Inference time**:
 
@@ -239,18 +247,19 @@ Paper:https://arxiv.org/abs/1904.01355
 
 For FCOS training,I use yolov3 resize method,this method resize=667 has same flops as the resize=400 method proposed in the FCOS paper.
 
-| Network | resize | batch | gpu-num | apex | syncbn | epoch5-mAP-mAR-loss | epoch10-mAP-mAR-loss | epoch12-mAP-mAR-loss |
-| --- | --- |  --- |  --- |  --- |  --- |  --- |  --- |  --- |
-| ResNet50-FCOS | 667 | 24 | 2 RTX2080Ti | yes | no | 0.272,0.399,1.15 | 0.293,0.422,1.07 | 0.312,0.445,1.06 |
-| ResNet101-FCOS | 667 | 16 | 2 RTX2080Ti | yes | no | 0.261,0.390,1.14 | 0.307,0.438,1.06 | 0.325,0.455,1.05 |
+| Network | resize | batch | gpu-num | apex | syncbn | epoch | mAP-mAR-loss |
+| --- | --- |  --- |  --- |  --- |  --- |  --- |  --- |
+| ResNet50-FCOS | 667 | 24 | 2 RTX2080Ti | yes | no | 12 | 0.311,0.444,1.06 |
+| ResNet101-FCOS | 667 | 16 | 2 RTX2080Ti | yes | no | 12 | 0.325,0.455,1.05 |
 
 For ResNet50-FCOS resize=1000 training,I use ResNet50-FCOS resize=667 trained model(mAP=) as a pretrained model parameters to initialize the ResNet50-FCOS resize=1000 model.
 
 For FCOS training,I use yolov3 resize method,this method resize=1000 has same flops as the resize=600 method proposed in the FCOS paper.
 
-| Network | resize | batch | gpu-num | apex | syncbn | epoch12-mAP-mAR-loss | epoch24-mAP-mAR-loss |
+| Network | resize | batch | gpu-num | apex | syncbn | epoch | mAP-mAR-loss |
 | --- | --- |  --- |  --- |  --- |  --- |  --- |  --- |
-| ResNet50-FCOS | 1000 | 16 | 4 RTX2080Ti | yes | no | 0.352,0.490,1.03 | 0.352,0.491,1.01 |
+| ResNet50-FCOS | 1000 | 16 | 4 RTX2080Ti | yes | no | 12 | 0.352,0.490,1.03 |
+| ResNet50-FCOS | 1000 | 16 | 4 RTX2080Ti | yes | no | 24 | 0.352,0.491,1.01 |
 
 **Inference time**:
 
@@ -274,9 +283,9 @@ Paper:https://arxiv.org/abs/1904.07850
 
 In CenterNet paper,the author use yolov3 resize method,my resize method is same as yolov3 resize method.
 
-| Network | resize | batch | gpu-num | apex | syncbn | epoch30-mAP-mAR-loss | epoch60-mAP-mAR-loss | epoch90-mAP-mAR-loss | epoch120-mAP-mAR-loss | epoch150-mAP-mAR-loss |
-| --- | --- |  --- |  --- |  --- |  --- |  --- |  --- |  --- |  --- |  --- | 
-| ResNet18DCN-CenterNet | 512 | 128 | 4 RTX2080Ti | yes | no |  |  |  |  |  |
+| Network | resize | batch | gpu-num | apex | syncbn | epoch | mAP-mAR-loss |
+| --- | --- |  --- |  --- |  --- |  --- |  --- |  --- |
+| ResNet18DCN-CenterNet | 512 | 128 | 4 RTX2080Ti | yes | no | 140 | 0.248,0.366,1.41 |
 
 **Inference time**:
 
@@ -286,14 +295,11 @@ Using one RTX2080Ti to test CenterNet model inference speed.The test is performe
 
 Paper:https://arxiv.org/abs/1804.02767
 
-**How to use yolov3 anchor clustering method to generate a set of custom anchors for your own datset?**
+**How to use yolov3 anchor clustering method to generate a set of custom anchors for your own dataset?**
 
 I provide a script in public/detection/yolov3_anchor_cluster.py,and I give two examples for generate anchors on COCO2017 and VOC2007+2012 datasets.
 
-If you want to generate anchors for your dataset,just modify the part of input code,get width and height of all annotaion boxes,then use the script to compute anchors.
-
-**Attention:**
-The anchors size will change with different datasets and different input resizes.
+If you want to generate anchors for your dataset,just modify the part of input code,get width and height of all annotaion boxes,then use the script to compute anchors.The anchors size will change with different datasets or different input resizes.
 
 
 # VOC2007+2012 detection training results

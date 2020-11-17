@@ -154,7 +154,7 @@ class FCOSDecoder(nn.Module):
                  image_h,
                  strides=[8, 16, 32, 64, 128],
                  top_n=1000,
-                 min_score_threshold=0.01,
+                 min_score_threshold=0.05,
                  nms_threshold=0.6,
                  max_detection_num=100):
         super(FCOSDecoder, self).__init__()
@@ -301,15 +301,24 @@ class FCOSDecoder(nn.Module):
 
 
 class CenterNetDecoder(nn.Module):
-    def __init__(self, image_w, image_h, topk=100, stride=4):
+    def __init__(self,
+                 image_w,
+                 image_h,
+                 min_score_threshold=0.05,
+                 max_detection_num=100,
+                 topk=100,
+                 stride=4):
         super(CenterNetDecoder, self).__init__()
         self.image_w = image_w
         self.image_h = image_h
+        self.min_score_threshold = min_score_threshold
+        self.max_detection_num = max_detection_num
         self.topk = topk
         self.stride = stride
 
     def forward(self, heatmap_heads, offset_heads, wh_heads):
         with torch.no_grad():
+            device = heatmap_heads.device
             heatmap_heads = torch.sigmoid(heatmap_heads)
 
             batch_scores, batch_classes, batch_pred_bboxes = [], [], []
@@ -349,9 +358,33 @@ class CenterNetDecoder(nn.Module):
                 topk_bboxes[:, 3] = torch.clamp(topk_bboxes[:, 3],
                                                 max=self.image_h - 1)
 
-                batch_scores.append(topk_score.unsqueeze(0))
-                batch_classes.append(topk_classes.unsqueeze(0))
-                batch_pred_bboxes.append(topk_bboxes.unsqueeze(0))
+                one_image_scores = (-1) * torch.ones(
+                    (self.max_detection_num, ), device=device)
+                one_image_classes = (-1) * torch.ones(
+                    (self.max_detection_num, ), device=device)
+                one_image_pred_bboxes = (-1) * torch.ones(
+                    (self.max_detection_num, 4), device=device)
+
+                topk_classes = topk_classes[
+                    topk_score > self.min_score_threshold].float()
+                topk_bboxes = topk_bboxes[
+                    topk_score > self.min_score_threshold].float()
+                topk_score = topk_score[
+                    topk_score > self.min_score_threshold].float()
+
+                final_detection_num = min(self.max_detection_num,
+                                          topk_score.shape[0])
+
+                one_image_scores[0:final_detection_num] = topk_score[
+                    0:final_detection_num]
+                one_image_classes[0:final_detection_num] = topk_classes[
+                    0:final_detection_num]
+                one_image_pred_bboxes[0:final_detection_num, :] = topk_bboxes[
+                    0:final_detection_num, :]
+
+                batch_scores.append(one_image_scores.unsqueeze(0))
+                batch_classes.append(one_image_classes.unsqueeze(0))
+                batch_pred_bboxes.append(one_image_pred_bboxes.unsqueeze(0))
 
             batch_scores = torch.cat(batch_scores, axis=0)
             batch_classes = torch.cat(batch_classes, axis=0)
@@ -376,6 +409,7 @@ class CenterNetDecoder(nn.Module):
             0], per_image_heatmap_heads.shape[
                 1], per_image_heatmap_heads.shape[2]
 
+        per_image_heatmap_heads = per_image_heatmap_heads.view(num_classes, -1)
         # 先取每个类别的heatmap上前k个最大激活点
         topk_scores, topk_indexes = torch.topk(per_image_heatmap_heads.view(
             num_classes, -1),
@@ -391,6 +425,7 @@ class CenterNetDecoder(nn.Module):
         topk_score, topk_score_indexes = torch.topk(topk_scores.view(-1),
                                                     K,
                                                     dim=-1)
+
         # 整除K得到预测的类编号，因为heatmap view前第一个维度是类别数
         topk_classes = (topk_score_indexes / K).int()
 

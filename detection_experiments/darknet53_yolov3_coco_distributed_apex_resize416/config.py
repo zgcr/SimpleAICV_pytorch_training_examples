@@ -44,8 +44,8 @@ class Config(object):
                                 ]))
 
     epochs = 100
-    per_node_batch_size = 24
-    lr = 1e-4
+    per_node_batch_size = 20
+    lr = 1e-5
     num_workers = 4
     print_interval = 1
     apex = True

@@ -104,22 +104,27 @@ def test_model(args):
         model = _retinanet(args.backbone, args.pretrained_model_path,
                            args.num_classes)
         decoder = RetinaDecoder(image_w=args.input_image_size,
-                                image_h=args.input_image_size)
+                                image_h=args.input_image_size,
+                                min_score_threshold=args.min_score_threshold)
     elif args.detector == "fcos":
         model = _fcos(args.backbone, args.pretrained_model_path,
                       args.num_classes)
         decoder = FCOSDecoder(image_w=args.input_image_size,
-                              image_h=args.input_image_size)
+                              image_h=args.input_image_size,
+                              min_score_threshold=args.min_score_threshold)
     elif args.detector == "centernet":
         model = _centernet(args.backbone, args.pretrained_model_path,
                            args.num_classes)
-        decoder = CenterNetDecoder(image_w=args.input_image_size,
-                                   image_h=args.input_image_size)
+        decoder = CenterNetDecoder(
+            image_w=args.input_image_size,
+            image_h=args.input_image_size,
+            min_score_threshold=args.min_score_threshold)
     elif args.detector == "yolov3":
         model = _yolov3(args.backbone, args.pretrained_model_path,
                         args.num_classes)
         decoder = YOLOV3Decoder(image_w=args.input_image_size,
-                                image_h=args.input_image_size)
+                                image_h=args.input_image_size,
+                                min_score_threshold=args.min_score_threshold)
     else:
         print("unsupport detection model!")
         return
@@ -154,7 +159,9 @@ def test_model(args):
     resized_img[0:resize_height, 0:resize_width] = img
     scale = resize_factor
     resized_img = torch.tensor(resized_img)
+
     print(resized_img.shape)
+
     if args.use_gpu:
         resized_img = resized_img.cuda()
     # inference image
@@ -175,12 +182,9 @@ def test_model(args):
         per_class_index = per_class_index.numpy().astype(np.int32)
         per_box = per_box.numpy().astype(np.int32)
 
-        #filter boxes which classification scores less than the threshold
-        if per_score < args.show_threshold:
-            continue
-
         class_name = COCO_CLASSES[per_class_index]
         color = coco_class_colors[per_class_index]
+
         text = '{}:{:.3f}'.format(class_name, per_score)
 
         cv2.putText(origin_img,
@@ -213,10 +217,10 @@ if __name__ == "__main__":
                         type=int,
                         default=80,
                         help='model class num')
-    parser.add_argument('--show_threshold',
+    parser.add_argument('--min_score_threshold',
                         type=float,
                         default=0.3,
-                        help='show threshold')
+                        help='min score threshold')
     parser.add_argument('--pretrained_model_path',
                         type=str,
                         help='pretrained model path')
