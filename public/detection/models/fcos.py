@@ -33,10 +33,10 @@ model_urls = {
     'resnet34_fcos':
     'empty',
     'resnet50_fcos':
-    '{}/detection_models/resnet50_fcos_coco_resize667_mAP0.311.pth'.format(
+    '{}/detection_models/resnet50_fcos_coco_resize667_mAP0.321.pth'.format(
         pretrained_models_path),
     'resnet101_fcos':
-    '{}/detection_models/resnet101_fcos_coco_resize667_mAP0.325.pth'.format(
+    '{}/detection_models/resnet101_fcos_coco_resize667_mAP0.342.pth'.format(
         pretrained_models_path),
     'resnet152_fcos':
     'empty',

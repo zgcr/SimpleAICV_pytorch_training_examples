@@ -27,7 +27,7 @@ import torch.backends.cudnn as cudnn
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from config import Config
-from public.detection.dataset.cocodataset import COCODataPrefetcher, collater
+from public.detection.dataset.cocodataset_mosaic_multiscale import COCODataPrefetcher, MultiScaleCollater, Collater
 from public.detection.models.loss import YOLOV3Loss
 from public.detection.models.decode import YOLOV3Decoder
 from public.detection.models import yolov3
@@ -66,6 +66,22 @@ def parse_args():
                         type=int,
                         default=Config.input_image_size,
                         help='input image size')
+    parser.add_argument('--use_mosaic',
+                        type=bool,
+                        default=Config.use_mosaic,
+                        help='use mosaic or not')
+    parser.add_argument('--use_multi_scale',
+                        type=bool,
+                        default=Config.use_multi_scale,
+                        help='use multi scale or not')
+    parser.add_argument('--multi_scale_range',
+                        type=list,
+                        default=Config.multi_scale_range,
+                        help='input image size multi scale range')
+    parser.add_argument('--stride',
+                        type=int,
+                        default=Config.stride,
+                        help='model predict downsample stride')
     parser.add_argument('--num_workers',
                         type=int,
                         default=Config.num_workers,
@@ -222,11 +238,20 @@ def main():
         logger.info('start loading data')
     train_sampler = torch.utils.data.distributed.DistributedSampler(
         Config.train_dataset, shuffle=True)
+
+    if args.use_multi_scale:
+        collater = MultiScaleCollater(resize=args.input_image_size,
+                                      multi_scale_range=args.multi_scale_range,
+                                      stride=args.stride,
+                                      use_mosaic=args.use_mosaic)
+    else:
+        collater = Collater()
+
     train_loader = DataLoader(Config.train_dataset,
                               batch_size=args.per_node_batch_size,
                               shuffle=False,
                               num_workers=args.num_workers,
-                              collate_fn=collater,
+                              collate_fn=collater.next,
                               sampler=train_sampler)
     if local_rank == 0:
         logger.info('finish loading data')
@@ -378,6 +403,7 @@ def train(train_loader, model, criterion, optimizer, scheduler, epoch, args):
 
     while images is not None:
         images, annotations = images.cuda().float(), annotations.cuda()
+
         obj_heads, reg_heads, cls_heads, batch_anchors = model(images)
         obj_loss, reg_loss, cls_loss = criterion(obj_heads, reg_heads,
                                                  cls_heads, batch_anchors,

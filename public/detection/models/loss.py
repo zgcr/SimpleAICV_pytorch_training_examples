@@ -41,114 +41,100 @@ class RetinaLoss(nn.Module):
         batch_anchors_annotations = batch_anchors_annotations.type_as(
             cls_heads)
 
-        cls_loss, reg_loss = [], []
-        valid_image_num = 0
-        for per_image_cls_heads, per_image_reg_heads, per_image_anchors_annotations in zip(
-                cls_heads, reg_heads, batch_anchors_annotations):
-            # valid anchors contain all positive anchors
-            valid_anchors_num = (per_image_anchors_annotations[
-                per_image_anchors_annotations[:, 4] > 0]).shape[0]
+        cls_heads = cls_heads.view(-1, cls_heads.shape[-1])
+        reg_heads = reg_heads.view(-1, reg_heads.shape[-1])
+        batch_anchors_annotations = batch_anchors_annotations.view(
+            -1, batch_anchors_annotations.shape[-1])
 
-            if valid_anchors_num == 0:
-                cls_loss.append(torch.tensor(0.).to(device))
-                reg_loss.append(torch.tensor(0.).to(device))
-            else:
-                valid_image_num += 1
-                one_image_cls_loss = self.compute_one_image_focal_loss(
-                    per_image_cls_heads, per_image_anchors_annotations)
-                one_image_reg_loss = self.compute_one_image_smoothl1_loss(
-                    per_image_reg_heads, per_image_anchors_annotations)
-                cls_loss.append(one_image_cls_loss)
-                reg_loss.append(one_image_reg_loss)
+        positive_anchors_num = batch_anchors_annotations[
+            batch_anchors_annotations[:, 4] > 0].shape[0]
 
-        if valid_image_num == 0:
-            cls_loss = sum(cls_loss)
-            reg_loss = sum(reg_loss)
+        if positive_anchors_num > 0:
+            cls_loss = self.compute_batch_focal_loss(
+                cls_heads, batch_anchors_annotations)
+            reg_loss = self.compute_batch_smoothl1_loss(
+                reg_heads, batch_anchors_annotations)
         else:
-            cls_loss = sum(cls_loss) / valid_image_num
-            reg_loss = sum(reg_loss) / valid_image_num
+            cls_loss = torch.tensor(0.).to(device)
+            reg_loss = torch.tensor(0.).to(device)
 
         return cls_loss, reg_loss
 
-    def compute_one_image_focal_loss(self, per_image_cls_heads,
-                                     per_image_anchors_annotations):
+    def compute_batch_focal_loss(self, cls_heads, batch_anchors_annotations):
         """
-        compute one image focal loss(cls loss)
-        per_image_cls_heads:[anchor_num,num_classes]
-        per_image_anchors_annotations:[anchor_num,5]
+        compute batch focal loss(cls loss)
+        cls_heads:[batch_size*anchor_num,num_classes]
+        batch_anchors_annotations:[batch_size*anchor_num,5]
         """
         # Filter anchors with gt class=-1, this part of anchor doesn't calculate focal loss
-        device = per_image_cls_heads.device
-        per_image_cls_heads = per_image_cls_heads[
-            per_image_anchors_annotations[:, 4] >= 0]
-        per_image_anchors_annotations = per_image_anchors_annotations[
-            per_image_anchors_annotations[:, 4] >= 0]
-        positive_anchors_num = per_image_anchors_annotations[
-            per_image_anchors_annotations[:, 4] > 0].shape[0]
+        device = cls_heads.device
+        cls_heads = cls_heads[batch_anchors_annotations[:, 4] >= 0]
+        batch_anchors_annotations = batch_anchors_annotations[
+            batch_anchors_annotations[:, 4] >= 0]
+        positive_anchors_num = batch_anchors_annotations[
+            batch_anchors_annotations[:, 4] > 0].shape[0]
 
         if positive_anchors_num == 0:
             return torch.tensor(0.).to(device)
 
-        per_image_cls_heads = torch.clamp(per_image_cls_heads,
-                                          min=self.epsilon,
-                                          max=1. - self.epsilon)
-        num_classes = per_image_cls_heads.shape[1]
+        cls_heads = torch.clamp(cls_heads,
+                                min=self.epsilon,
+                                max=1. - self.epsilon)
+        num_classes = cls_heads.shape[1]
 
         # generate 80 binary ground truth classes for each anchor
-        loss_ground_truth = F.one_hot(per_image_anchors_annotations[:,
-                                                                    4].long(),
+        loss_ground_truth = F.one_hot(batch_anchors_annotations[:, 4].long(),
                                       num_classes=num_classes + 1)
         loss_ground_truth = loss_ground_truth[:, 1:]
         loss_ground_truth = loss_ground_truth.float()
 
-        alpha_factor = torch.ones_like(per_image_cls_heads) * self.alpha
+        alpha_factor = torch.ones_like(cls_heads) * self.alpha
         alpha_factor = torch.where(torch.eq(loss_ground_truth, 1.),
                                    alpha_factor, 1. - alpha_factor)
-        pt = torch.where(torch.eq(loss_ground_truth, 1.), per_image_cls_heads,
-                         1. - per_image_cls_heads)
+        pt = torch.where(torch.eq(loss_ground_truth, 1.), cls_heads,
+                         1. - cls_heads)
         focal_weight = alpha_factor * torch.pow((1. - pt), self.gamma)
 
-        bce_loss = -(
-            loss_ground_truth * torch.log(per_image_cls_heads) +
-            (1. - loss_ground_truth) * torch.log(1. - per_image_cls_heads))
+        batch_bce_loss = -(
+            loss_ground_truth * torch.log(cls_heads) +
+            (1. - loss_ground_truth) * torch.log(1. - cls_heads))
 
-        one_image_focal_loss = focal_weight * bce_loss
-
-        one_image_focal_loss = one_image_focal_loss.sum()
+        batch_focal_loss = focal_weight * batch_bce_loss
+        batch_focal_loss = batch_focal_loss.sum()
         # according to the original paper,We divide the focal loss by the number of positive sample anchors
-        one_image_focal_loss = one_image_focal_loss / positive_anchors_num
+        batch_focal_loss = batch_focal_loss / positive_anchors_num
 
-        return one_image_focal_loss
+        return batch_focal_loss
 
-    def compute_one_image_smoothl1_loss(self, per_image_reg_heads,
-                                        per_image_anchors_annotations):
+    def compute_batch_smoothl1_loss(self, reg_heads,
+                                    batch_anchors_annotations):
         """
-        compute one image smoothl1 loss(reg loss)
-        per_image_reg_heads:[anchor_num,4]
-        per_image_anchors_annotations:[anchor_num,5]
+        compute batch smoothl1 loss(reg loss)
+        per_image_reg_heads:[batch_size*anchor_num,4]
+        per_image_anchors_annotations:[batch_size*anchor_num,5]
         """
         # Filter anchors with gt class=-1, this part of anchor doesn't calculate smoothl1 loss
-        device = per_image_reg_heads.device
-        per_image_reg_heads = per_image_reg_heads[
-            per_image_anchors_annotations[:, 4] > 0]
-        per_image_anchors_annotations = per_image_anchors_annotations[
-            per_image_anchors_annotations[:, 4] > 0]
-        positive_anchor_num = per_image_anchors_annotations.shape[0]
+        device = reg_heads.device
+        reg_heads = reg_heads[batch_anchors_annotations[:, 4] > 0]
+        batch_anchors_annotations = batch_anchors_annotations[
+            batch_anchors_annotations[:, 4] > 0]
+        positive_anchor_num = batch_anchors_annotations.shape[0]
 
         if positive_anchor_num == 0:
             return torch.tensor(0.).to(device)
 
         # compute smoothl1 loss
-        loss_ground_truth = per_image_anchors_annotations[:, 0:4]
-        x = torch.abs(per_image_reg_heads - loss_ground_truth)
-        one_image_smoothl1_loss = torch.where(torch.ge(x, self.beta),
-                                              x - 0.5 * self.beta,
-                                              0.5 * (x**2) / self.beta)
-        one_image_smoothl1_loss = one_image_smoothl1_loss.mean(axis=1).sum()
-        # according to the original paper,We divide the smoothl1 loss by the number of positive sample anchors
-        one_image_smoothl1_loss = one_image_smoothl1_loss / positive_anchor_num
+        loss_ground_truth = batch_anchors_annotations[:, 0:4]
 
-        return one_image_smoothl1_loss
+        x = torch.abs(reg_heads - loss_ground_truth)
+        batch_smoothl1_loss = torch.where(torch.ge(x, self.beta),
+                                          x - 0.5 * self.beta,
+                                          0.5 * (x**2) / self.beta)
+        batch_smoothl1_loss = batch_smoothl1_loss.mean(axis=1).sum()
+        # according to the original paper,We divide the smoothl1 loss by the number of positive sample anchors
+        batch_smoothl1_loss = batch_smoothl1_loss / positive_anchor_num
+
+        return batch_smoothl1_loss
 
     def drop_out_border_anchors_and_heads(self, cls_heads, reg_heads,
                                           batch_anchors, image_w, image_h):
@@ -361,6 +347,7 @@ class FCOSLoss(nn.Module):
         """
         compute cls loss, reg loss and center-ness loss in one batch
         """
+        device = annotations.device
         cls_preds, reg_preds, center_preds, batch_targets = self.get_batch_position_annotations(
             cls_heads, reg_heads, center_heads, batch_positions, annotations)
 
@@ -372,112 +359,86 @@ class FCOSLoss(nn.Module):
         center_preds = center_preds.type_as(cls_preds)
         batch_targets = batch_targets.type_as(cls_preds)
 
-        device = annotations.device
-        cls_loss, reg_loss, center_ness_loss = [], [], []
-        valid_image_num = 0
-        for per_image_cls_preds, per_image_reg_preds, per_image_center_preds, per_image_targets in zip(
-                cls_preds, reg_preds, center_preds, batch_targets):
-            positive_points_num = (
-                per_image_targets[per_image_targets[:, 4] > 0]).shape[0]
-            if positive_points_num == 0:
-                cls_loss.append(torch.tensor(0.).to(device))
-                reg_loss.append(torch.tensor(0.).to(device))
-                center_ness_loss.append(torch.tensor(0.).to(device))
-            else:
-                valid_image_num += 1
-                one_image_cls_loss = self.compute_one_image_focal_loss(
-                    per_image_cls_preds, per_image_targets)
-                one_image_reg_loss = self.compute_one_image_giou_loss(
-                    per_image_reg_preds, per_image_targets)
-                one_image_center_ness_loss = self.compute_one_image_center_ness_loss(
-                    per_image_center_preds, per_image_targets)
+        cls_preds = cls_preds.view(-1, cls_preds.shape[-1])
+        reg_preds = reg_preds.view(-1, reg_preds.shape[-1])
+        center_preds = center_preds.view(-1, center_preds.shape[-1])
+        batch_targets = batch_targets.view(-1, batch_targets.shape[-1])
 
-                cls_loss.append(one_image_cls_loss)
-                reg_loss.append(one_image_reg_loss)
-                center_ness_loss.append(one_image_center_ness_loss)
+        positive_points_num = batch_targets[batch_targets[:, 4] > 0].shape[0]
 
-        if valid_image_num == 0:
-            cls_loss = sum(cls_loss)
-            reg_loss = sum(reg_loss)
-            center_ness_loss = sum(center_ness_loss)
+        if positive_points_num > 0:
+            cls_loss = self.compute_batch_focal_loss(cls_preds, batch_targets)
+            reg_loss = self.compute_batch_giou_loss(reg_preds, batch_targets)
+            center_ness_loss = self.compute_batch_centerness_loss(
+                center_preds, batch_targets)
         else:
-            cls_loss = sum(cls_loss) / valid_image_num
-            reg_loss = sum(reg_loss) / valid_image_num
-            center_ness_loss = sum(center_ness_loss) / valid_image_num
+            cls_loss = torch.tensor(0.).to(device)
+            reg_loss = torch.tensor(0.).to(device)
+            center_ness_loss = torch.tensor(0.).to(device)
 
         return cls_loss, reg_loss, center_ness_loss
 
-    def compute_one_image_focal_loss(self, per_image_cls_preds,
-                                     per_image_targets):
+    def compute_batch_focal_loss(self, cls_preds, batch_targets):
         """
-        compute one image focal loss(cls loss)
-        per_image_cls_preds:[points_num,num_classes]
-        per_image_targets:[points_num,8]
+        compute batch focal loss(cls loss)
+        cls_preds:[batch_size*points_num,num_classes]
+        batch_targets:[batch_size*points_num,8]
         """
-        device = per_image_cls_preds.device
-        per_image_cls_preds = torch.clamp(per_image_cls_preds,
-                                          min=self.epsilon,
-                                          max=1. - self.epsilon)
-        positive_points_num = per_image_targets[
-            per_image_targets[:, 4] > 0].shape[0]
-        num_classes = per_image_cls_preds.shape[1]
+        device = cls_preds.device
+        cls_preds = torch.clamp(cls_preds,
+                                min=self.epsilon,
+                                max=1. - self.epsilon)
+        positive_points_num = batch_targets[batch_targets[:, 4] > 0].shape[0]
+        num_classes = cls_preds.shape[1]
 
         if positive_points_num == 0:
             return torch.tensor(0.).to(device)
 
         # generate 80 binary ground truth classes for each anchor
-        loss_ground_truth = F.one_hot(per_image_targets[:, 4].long(),
+        loss_ground_truth = F.one_hot(batch_targets[:, 4].long(),
                                       num_classes=num_classes + 1)
         loss_ground_truth = loss_ground_truth[:, 1:]
         loss_ground_truth = loss_ground_truth.float()
 
-        alpha_factor = torch.ones_like(per_image_cls_preds) * self.alpha
+        alpha_factor = torch.ones_like(cls_preds) * self.alpha
         alpha_factor = torch.where(torch.eq(loss_ground_truth, 1.),
                                    alpha_factor, 1. - alpha_factor)
-        pt = torch.where(torch.eq(loss_ground_truth, 1.), per_image_cls_preds,
-                         1. - per_image_cls_preds)
+        pt = torch.where(torch.eq(loss_ground_truth, 1.), cls_preds,
+                         1. - cls_preds)
         focal_weight = alpha_factor * torch.pow((1. - pt), self.gamma)
 
-        bce_loss = -(
-            loss_ground_truth * torch.log(per_image_cls_preds) +
-            (1. - loss_ground_truth) * torch.log(1. - per_image_cls_preds))
+        batch_bce_loss = -(
+            loss_ground_truth * torch.log(cls_preds) +
+            (1. - loss_ground_truth) * torch.log(1. - cls_preds))
 
-        one_image_focal_loss = focal_weight * bce_loss
-
-        one_image_focal_loss = one_image_focal_loss.sum()
+        batch_focal_loss = focal_weight * batch_bce_loss
+        batch_focal_loss = batch_focal_loss.sum()
         # according to the original paper,We divide the focal loss by the number of positive sample anchors
-        one_image_focal_loss = one_image_focal_loss / positive_points_num
+        batch_focal_loss = batch_focal_loss / positive_points_num
 
-        return one_image_focal_loss
+        return batch_focal_loss
 
-    def compute_one_image_giou_loss(self, per_image_reg_preds,
-                                    per_image_targets):
+    def compute_batch_giou_loss(self, reg_preds, batch_targets):
         """
-        compute one image giou loss(reg loss)
-        per_image_reg_preds:[points_num,4]
-        per_image_targets:[anchor_num,8]
+        compute batch giou loss(reg loss)
+        reg_preds:[batch_size*points_num,4]
+        batch_targets:[batch_size*anchor_num,8]
         """
         # only use positive points sample to compute reg loss
-        device = per_image_reg_preds.device
-        per_image_reg_preds = per_image_reg_preds[per_image_targets[:, 4] > 0]
-        per_image_targets = per_image_targets[per_image_targets[:, 4] > 0]
-        positive_points_num = per_image_targets.shape[0]
+        device = reg_preds.device
+        reg_preds = reg_preds[batch_targets[:, 4] > 0]
+        batch_targets = batch_targets[batch_targets[:, 4] > 0]
+        positive_points_num = batch_targets.shape[0]
 
         if positive_points_num == 0:
             return torch.tensor(0.).to(device)
 
-        center_ness_targets = per_image_targets[:, 5]
+        center_ness_targets = batch_targets[:, 5]
 
-        pred_bboxes_xy_min = per_image_targets[:,
-                                               6:8] - per_image_reg_preds[:,
-                                                                          0:2]
-        pred_bboxes_xy_max = per_image_targets[:,
-                                               6:8] + per_image_reg_preds[:,
-                                                                          2:4]
-        gt_bboxes_xy_min = per_image_targets[:, 6:8] - per_image_targets[:,
-                                                                         0:2]
-        gt_bboxes_xy_max = per_image_targets[:, 6:8] + per_image_targets[:,
-                                                                         2:4]
+        pred_bboxes_xy_min = batch_targets[:, 6:8] - reg_preds[:, 0:2]
+        pred_bboxes_xy_max = batch_targets[:, 6:8] + reg_preds[:, 2:4]
+        gt_bboxes_xy_min = batch_targets[:, 6:8] - batch_targets[:, 0:2]
+        gt_bboxes_xy_max = batch_targets[:, 6:8] + batch_targets[:, 2:4]
 
         pred_bboxes = torch.cat([pred_bboxes_xy_min, pred_bboxes_xy_max],
                                 axis=1)
@@ -525,29 +486,26 @@ class FCOSLoss(nn.Module):
 
         return gious_loss
 
-    def compute_one_image_center_ness_loss(self, per_image_center_preds,
-                                           per_image_targets):
+    def compute_batch_centerness_loss(self, center_preds, batch_targets):
         """
-        compute one image center_ness loss(center ness loss)
-        per_image_center_preds:[points_num,4]
-        per_image_targets:[anchor_num,8]
+        compute batch center_ness loss(center ness loss)
+        center_preds:[batch_size*points_num,4]
+        batch_targets:[batch_size*anchor_num,8]
         """
         # only use positive points sample to compute center_ness loss
-        device = per_image_center_preds.device
-        per_image_center_preds = per_image_center_preds[
-            per_image_targets[:, 4] > 0]
-        per_image_targets = per_image_targets[per_image_targets[:, 4] > 0]
-        positive_points_num = per_image_targets.shape[0]
+        device = center_preds.device
+        center_preds = center_preds[batch_targets[:, 4] > 0]
+        batch_targets = batch_targets[batch_targets[:, 4] > 0]
+        positive_points_num = batch_targets.shape[0]
 
         if positive_points_num == 0:
             return torch.tensor(0.).to(device)
 
-        center_ness_targets = per_image_targets[:, 5:6]
+        center_ness_targets = batch_targets[:, 5:6]
 
         center_ness_loss = -(
-            center_ness_targets * torch.log(per_image_center_preds) +
-            (1. - center_ness_targets) *
-            torch.log(1. - per_image_center_preds))
+            center_ness_targets * torch.log(center_preds) +
+            (1. - center_ness_targets) * torch.log(1. - center_preds))
         center_ness_loss = center_ness_loss.sum() / positive_points_num
 
         return center_ness_loss
@@ -1654,52 +1612,52 @@ class YOLOV3Loss(nn.Module):
 #         #     batch_anchors, annotations)
 
 if __name__ == '__main__':
-    # from retinanet import RetinaNet
-    # net = RetinaNet(resnet_type="resnet50")
-    # image_h, image_w = 600, 600
-    # cls_heads, reg_heads, batch_anchors = net(
-    #     torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
-    # annotations = torch.FloatTensor([[[113, 120, 183, 255, 5],
-    #                                   [13, 45, 175, 210, 2]],
-    #                                  [[11, 18, 223, 225, 1],
-    #                                   [-1, -1, -1, -1, -1]],
-    #                                  [[-1, -1, -1, -1, -1],
-    #                                   [-1, -1, -1, -1, -1]]])
-    # loss = RetinaLoss(image_w, image_h)
-    # cls_loss, reg_loss = loss(cls_heads, reg_heads, batch_anchors, annotations)
-    # print("1111", cls_loss, reg_loss)
+    from retinanet import RetinaNet
+    net = RetinaNet(resnet_type="resnet50")
+    image_h, image_w = 600, 600
+    cls_heads, reg_heads, batch_anchors = net(
+        torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    annotations = torch.FloatTensor([[[113, 120, 183, 255, 5],
+                                      [13, 45, 175, 210, 2]],
+                                     [[11, 18, 223, 225, 1],
+                                      [-1, -1, -1, -1, -1]],
+                                     [[-1, -1, -1, -1, -1],
+                                      [-1, -1, -1, -1, -1]]])
+    loss = RetinaLoss(image_w, image_h)
+    cls_loss, reg_loss = loss(cls_heads, reg_heads, batch_anchors, annotations)
+    print("1111", cls_loss, reg_loss)
 
-    # from fcos import FCOS
-    # net = FCOS(resnet_type="resnet50")
-    # image_h, image_w = 600, 600
-    # cls_heads, reg_heads, center_heads, batch_positions = net(
-    #     torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
-    # annotations = torch.FloatTensor([[[113, 120, 183, 255, 5],
-    #                                   [13, 45, 175, 210, 2]],
-    #                                  [[11, 18, 223, 225, 1],
-    #                                   [-1, -1, -1, -1, -1]],
-    #                                  [[-1, -1, -1, -1, -1],
-    #                                   [-1, -1, -1, -1, -1]]])
-    # loss = FCOSLoss()
-    # cls_loss, reg_loss, center_loss = loss(cls_heads, reg_heads, center_heads,
-    #                                        batch_positions, annotations)
-    # print("2222", cls_loss, reg_loss, center_loss)
+    from fcos import FCOS
+    net = FCOS(resnet_type="resnet50")
+    image_h, image_w = 600, 600
+    cls_heads, reg_heads, center_heads, batch_positions = net(
+        torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    annotations = torch.FloatTensor([[[113, 120, 183, 255, 5],
+                                      [13, 45, 175, 210, 2]],
+                                     [[11, 18, 223, 225, 1],
+                                      [-1, -1, -1, -1, -1]],
+                                     [[-1, -1, -1, -1, -1],
+                                      [-1, -1, -1, -1, -1]]])
+    loss = FCOSLoss()
+    cls_loss, reg_loss, center_loss = loss(cls_heads, reg_heads, center_heads,
+                                           batch_positions, annotations)
+    print("2222", cls_loss, reg_loss, center_loss)
 
-    # from centernet import CenterNet
-    # net = CenterNet(resnet_type="resnet50")
-    # image_h, image_w = 640, 640
-    # heatmap_output, offset_output, wh_output = net(
-    #     torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
-    # annotations = torch.FloatTensor([[[113, 120, 183, 255, 5],
-    #                                   [13, 45, 175, 210, 2]],
-    #                                  [[11, 18, 223, 225, 1],
-    #                                   [-1, -1, -1, -1, -1]],
-    #                                  [[-1, -1, -1, -1, -1],
-    #                                   [-1, -1, -1, -1, -1]]])
-    # loss = CenterNetLoss()
-    # heatmap_loss, offset_loss, wh_loss = loss(heatmap_output, offset_output,
-    #                                           wh_output, annotations)
-    # print("3333", heatmap_loss, offset_loss, wh_loss)
+    from centernet import CenterNet
+    net = CenterNet(resnet_type="resnet50")
+    image_h, image_w = 640, 640
+    heatmap_output, offset_output, wh_output = net(
+        torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    annotations = torch.FloatTensor([[[113, 120, 183, 255, 5],
+                                      [13, 45, 175, 210, 2]],
+                                     [[11, 18, 223, 225, 1],
+                                      [-1, -1, -1, -1, -1]],
+                                     [[-1, -1, -1, -1, -1],
+                                      [-1, -1, -1, -1, -1]]])
+    loss = CenterNetLoss()
+    heatmap_loss, offset_loss, wh_loss = loss(heatmap_output, offset_output,
+                                              wh_output, annotations)
+    print("3333", heatmap_loss, offset_loss, wh_loss)
 
     from yolov3 import YOLOV3
     net = YOLOV3(backbone_type="darknet53")

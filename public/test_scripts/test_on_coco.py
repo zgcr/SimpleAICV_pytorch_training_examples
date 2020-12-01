@@ -20,7 +20,7 @@ import torch.backends.cudnn as cudnn
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 from public.path import COCO2017_path
-from public.detection.dataset.cocodataset import collater
+from public.detection.dataset.cocodataset import Collater
 from public.detection.models.retinanet import RetinaNet
 from public.detection.models.fcos import FCOS
 from public.detection.models.centernet import CenterNet
@@ -94,12 +94,12 @@ def evaluate_coco(val_dataset, model, decoder, args):
     indexes = []
     for index in range(len(val_dataset)):
         indexes.append(index)
-
+    eval_collater = Collater()
     val_loader = DataLoader(val_dataset,
                             batch_size=args.batch_size,
                             shuffle=False,
                             num_workers=args.num_workers,
-                            collate_fn=collater)
+                            collate_fn=eval_collater.next)
 
     start_time = time.time()
 

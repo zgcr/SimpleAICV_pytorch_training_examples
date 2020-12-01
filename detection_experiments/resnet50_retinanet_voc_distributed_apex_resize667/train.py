@@ -28,7 +28,7 @@ import torch.backends.cudnn as cudnn
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from config import Config
-from public.detection.dataset.cocodataset import COCODataPrefetcher, collater
+from public.detection.dataset.cocodataset import COCODataPrefetcher, Collater
 from public.detection.models.loss import RetinaLoss
 from public.detection.models.decode import RetinaDecoder
 import retinanet
@@ -164,7 +164,7 @@ def compute_ious(a, b):
     return iou
 
 
-def validate(val_dataset, model, decoder):
+def validate(val_dataset, model, decoder,args):
     model = model.module
     # switch to evaluate mode
     model.eval()
@@ -172,13 +172,13 @@ def validate(val_dataset, model, decoder):
         all_ap, mAP = evaluate_voc(val_dataset,
                                    model,
                                    decoder,
-                                   num_classes=20,
+                                   args,
                                    iou_thread=0.5)
 
     return all_ap, mAP
 
 
-def evaluate_voc(val_dataset, model, decoder, num_classes=20, iou_thread=0.5):
+def evaluate_voc(val_dataset, model, decoder, args, iou_thread=0.5):
     preds, gts = [], []
     for index in tqdm(range(len(val_dataset))):
         data = val_dataset[index]
@@ -216,7 +216,7 @@ def evaluate_voc(val_dataset, model, decoder, num_classes=20, iou_thread=0.5):
     print("all val sample decode done.")
 
     all_ap = {}
-    for class_index in tqdm(range(num_classes)):
+    for class_index in tqdm(range(args.num_classes)):
         per_class_gt_boxes = [
             image[0][image[1] == class_index] for image in gts
         ]
@@ -274,9 +274,137 @@ def evaluate_voc(val_dataset, model, decoder, num_classes=20, iou_thread=0.5):
     mAP = 0.
     for _, class_mAP in all_ap.items():
         mAP += float(class_mAP)
-    mAP /= num_classes
+    mAP /= args.num_classes
 
     return all_ap, mAP
+
+
+
+# def validate(val_dataset, model, decoder, args):
+#     model = model.module
+#     # switch to evaluate mode
+#     model.eval()
+#     with torch.no_grad():
+#         all_ap, mAP = evaluate_voc(val_dataset,
+#                                    model,
+#                                    decoder,
+#                                    args,
+#                                    iou_thread=0.5)
+
+#     return all_ap, mAP
+
+
+# def evaluate_voc(val_dataset, model, decoder, args, iou_thread=0.5):
+#     preds, gts = [], []
+#     indexes = []
+#     for index in range(len(val_dataset)):
+#         indexes.append(index)
+        
+#     eval_collater = Collater()
+#     val_loader = DataLoader(val_dataset,
+#                             batch_size=args.per_node_batch_size,
+#                             shuffle=False,
+#                             num_workers=args.num_workers,
+#                             collate_fn=eval_collater.next)
+
+#     start_time = time.time()
+
+#     for data in tqdm(val_loader):
+#         images, gt_annots, scales = torch.tensor(data['img']), torch.tensor(
+#             data['annot']), torch.tensor(data['scale'])
+#         gt_bboxes, gt_classes = gt_annots[:, :, 0:4], gt_annots[:, :, 4]
+#         gt_bboxes /= scales.unsqueeze(-1).unsqueeze(-1)
+
+#         for per_img_gt_bboxes, per_img_gt_classes in zip(
+#                 gt_bboxes, gt_classes):
+#             per_img_gt_bboxes = per_img_gt_bboxes[per_img_gt_classes > -1]
+#             per_img_gt_classes = per_img_gt_classes[per_img_gt_classes > -1]
+#             gts.append([per_img_gt_bboxes, per_img_gt_classes])
+
+#             images = images.cuda().float()
+#             cls_heads, reg_heads, batch_anchors = model(images)
+#             scores, classes, boxes = decoder(cls_heads, reg_heads,
+#                                              batch_anchors)
+
+#         scores, classes, boxes = scores.cpu(), classes.cpu(), boxes.cpu()
+#         scales = scales.unsqueeze(-1).unsqueeze(-1)
+#         boxes /= scales
+
+#         for per_img_scores, per_img_classes, per_img_boxes in zip(
+#                 scores, classes, boxes):
+#             per_img_scores = per_img_scores[per_img_classes > -1]
+#             per_img_boxes = per_img_boxes[per_img_classes > -1]
+#             per_img_classes = per_img_classes[per_img_classes > -1]
+#             preds.append([per_img_boxes, per_img_classes, per_img_scores])
+
+#     print("all val sample decode done.")
+#     testing_time = (time.time() - start_time)
+#     per_image_testing_time = testing_time / len(val_dataset)
+
+#     print(f"per_image_testing_time:{per_image_testing_time:.3f}")
+
+#     all_ap = {}
+#     for class_index in tqdm(range(args.num_classes)):
+#         per_class_gt_boxes = [
+#             image[0][image[1] == class_index] for image in gts
+#         ]
+#         per_class_pred_boxes = [
+#             image[0][image[1] == class_index] for image in preds
+#         ]
+#         per_class_pred_scores = [
+#             image[2][image[1] == class_index] for image in preds
+#         ]
+
+#         fp = np.zeros((0, ))
+#         tp = np.zeros((0, ))
+#         scores = np.zeros((0, ))
+#         total_gts = 0
+
+#         # loop for each sample
+#         for per_image_gt_boxes, per_image_pred_boxes, per_image_pred_scores in zip(
+#                 per_class_gt_boxes, per_class_pred_boxes,
+#                 per_class_pred_scores):
+#             total_gts = total_gts + len(per_image_gt_boxes)
+#             # one gt can only be assigned to one predicted bbox
+#             assigned_gt = []
+#             # loop for each predicted bbox
+#             for index in range(len(per_image_pred_boxes)):
+#                 scores = np.append(scores, per_image_pred_scores[index])
+#                 if per_image_gt_boxes.shape[0] == 0:
+#                     # if no gts found for the predicted bbox, assign the bbox to fp
+#                     fp = np.append(fp, 1)
+#                     tp = np.append(tp, 0)
+#                     continue
+#                 pred_box = np.expand_dims(per_image_pred_boxes[index], axis=0)
+#                 iou = compute_ious(per_image_gt_boxes, pred_box)
+#                 gt_for_box = np.argmax(iou, axis=0)
+#                 max_overlap = iou[gt_for_box, 0]
+#                 if max_overlap >= iou_thread and gt_for_box not in assigned_gt:
+#                     fp = np.append(fp, 0)
+#                     tp = np.append(tp, 1)
+#                     assigned_gt.append(gt_for_box)
+#                 else:
+#                     fp = np.append(fp, 1)
+#                     tp = np.append(tp, 0)
+#         # sort by score
+#         indices = np.argsort(-scores)
+#         fp = fp[indices]
+#         tp = tp[indices]
+#         # compute cumulative false positives and true positives
+#         fp = np.cumsum(fp)
+#         tp = np.cumsum(tp)
+#         # compute recall and precision
+#         recall = tp / total_gts
+#         precision = tp / np.maximum(tp + fp, np.finfo(np.float64).eps)
+#         ap = compute_voc_ap(recall, precision)
+#         all_ap[class_index] = ap
+
+#     mAP = 0.
+#     for _, class_mAP in all_ap.items():
+#         mAP += float(class_mAP)
+#     mAP /= args.num_classes
+
+#     return all_ap, mAP
 
 
 def main():
@@ -312,11 +440,12 @@ def main():
         logger.info('start loading data')
     train_sampler = torch.utils.data.distributed.DistributedSampler(
         Config.train_dataset, shuffle=True)
+    collater = Collater()
     train_loader = DataLoader(Config.train_dataset,
                               batch_size=args.per_node_batch_size,
                               shuffle=False,
                               num_workers=args.num_workers,
-                              collate_fn=collater,
+                              collate_fn=collater.next,
                               sampler=train_sampler)
     if local_rank == 0:
         logger.info('finish loading data')
@@ -382,7 +511,7 @@ def main():
         model.load_state_dict(checkpoint['model_state_dict'])
         if local_rank == 0:
             logger.info(f"start eval.")
-            all_ap, mAP = validate(Config.val_dataset, model, decoder)
+            all_ap, mAP = validate(Config.val_dataset, model, decoder,args)
             logger.info(f"eval done.")
             for class_index, class_AP in all_ap.items():
                 logger.info(f"class: {class_index},AP: {class_AP:.3f}")
@@ -427,7 +556,7 @@ def main():
         if epoch % 5 == 0 or epoch == args.epochs:
             if local_rank == 0:
                 logger.info(f"start eval.")
-                all_ap, mAP = validate(Config.val_dataset, model, decoder)
+                all_ap, mAP = validate(Config.val_dataset, model, decoder,args)
                 logger.info(f"eval done.")
                 for class_index, class_AP in all_ap.items():
                     logger.info(f"class: {class_index},AP: {class_AP:.3f}")

@@ -21,7 +21,7 @@ import torch.backends.cudnn as cudnn
 import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 from public.path import VOCdataset_path
-from public.detection.dataset.cocodataset import collater
+from public.detection.dataset.vocdataset import collater
 from public.detection.models.retinanet import RetinaNet
 from public.detection.models.fcos import FCOS
 from public.detection.models.centernet import CenterNet

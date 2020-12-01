@@ -13,7 +13,6 @@ from public.detection.models.backbone import ResNetBackbone
 from public.detection.models.fpn import RetinaFPN
 from public.detection.models.head import RetinaClsHead, RetinaRegHead
 from public.detection.models.anchor import RetinaAnchors
-from public.detection.models.module import PAN
 
 import torch
 import torch.nn as nn
@@ -33,11 +32,10 @@ model_urls = {
     'resnet34_retinanet':
     'empty',
     'resnet50_retinanet':
-    '{}/detection_models/resnet50_retinanet_coco_resize667_mAP0.293.pth'.
+    '{}/detection_models/resnet50_retinanet_coco_resize667_mAP0.305.pth'.
     format(pretrained_models_path),
     'resnet101_retinanet':
-    '{}/detection_models/resnet101_retinanet_coco_resize667_mAP0.296.pth'.
-    format(pretrained_models_path),
+    'empty',
     'resnet152_retinanet':
     'empty',
 }
@@ -60,7 +58,6 @@ class RetinaNet(nn.Module):
                 256 * expand_ratio[resnet_type]), int(
                     512 * expand_ratio[resnet_type])
         self.fpn = RetinaFPN(C3_inplanes, C4_inplanes, C5_inplanes, planes)
-        self.pan = PAN(planes)
 
         self.num_anchors = num_anchors
         self.num_classes = num_classes
@@ -94,7 +91,6 @@ class RetinaNet(nn.Module):
         del inputs
 
         features = self.fpn([C3, C4, C5])
-        features = self.pan(features)
 
         del C3, C4, C5
 
@@ -137,10 +133,10 @@ def _retinanet(arch, pretrained, progress, **kwargs):
         pretrained_models = torch.load(model_urls[arch + "_retinanet"],
                                        map_location=torch.device('cpu'))
 
-        # del pretrained_models['cls_head.cls_head.8.weight']
-        # del pretrained_models['cls_head.cls_head.8.bias']
-        # del pretrained_models['reg_head.reg_head.8.weight']
-        # del pretrained_models['reg_head.reg_head.8.bias']
+        del pretrained_models['cls_head.cls_head.8.weight']
+        del pretrained_models['cls_head.cls_head.8.bias']
+        del pretrained_models['reg_head.reg_head.8.weight']
+        del pretrained_models['reg_head.reg_head.8.bias']
 
         # only load state_dict()
         model.load_state_dict(pretrained_models, strict=False)

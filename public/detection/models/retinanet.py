@@ -32,10 +32,10 @@ model_urls = {
     'resnet34_retinanet':
     'empty',
     'resnet50_retinanet':
-    '{}/detection_models/resnet50_retinanet_coco_resize667_mAP0.293.pth'.
+    '{}/detection_models/resnet50_retinanet_coco_resize667_mAP0.305.pth'.
     format(pretrained_models_path),
     'resnet101_retinanet':
-    '{}/detection_models/resnet101_retinanet_coco_resize667_mAP0.296.pth'.
+    '{}/detection_models/resnet101_retinanet_coco_resize667_mAP0.306.pth'.
     format(pretrained_models_path),
     'resnet152_retinanet':
     'empty',

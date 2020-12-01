@@ -225,9 +225,9 @@ class RandomCrop(object):
                 0, int(max_bbox[0] - random.uniform(0, max_left_trans)))
             crop_ymin = max(0,
                             int(max_bbox[1] - random.uniform(0, max_up_trans)))
-            crop_xmax = max(
+            crop_xmax = min(
                 w, int(max_bbox[2] + random.uniform(0, max_right_trans)))
-            crop_ymax = max(
+            crop_ymax = min(
                 h, int(max_bbox[3] + random.uniform(0, max_down_trans)))
 
             image = image[crop_ymin:crop_ymax, crop_xmin:crop_xmax]

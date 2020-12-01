@@ -28,10 +28,10 @@ import torch.backends.cudnn as cudnn
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from config import Config
-from public.detection.dataset.cocodataset import COCODataPrefetcher, collater
-from public.detection.models.loss import RetinaLoss
-from public.detection.models.decode import RetinaDecoder
-import retinanet
+from public.detection.dataset.cocodataset import COCODataPrefetcher, Collater
+from public.detection.models.loss import FCOSLoss
+from public.detection.models.decode import FCOSDecoder
+from public.detection.models import fcos
 from public.imagenet.utils import get_logger
 from pycocotools.cocoeval import COCOeval
 
@@ -108,175 +108,100 @@ def parse_args():
     return parser.parse_args()
 
 
-def compute_voc_ap(recall, precision, use_07_metric=True):
-    if use_07_metric:
-        # use voc 2007 11 point metric
-        ap = 0.
-        for t in np.arange(0., 1.1, 0.1):
-            if np.sum(recall >= t) == 0:
-                p = 0
-            else:
-                # get max precision  for recall >= t
-                p = np.max(precision[recall >= t])
-            # average 11 recall point precision
-            ap = ap + p / 11.
-    else:
-        # use voc>=2010 metric,average all different recall precision as ap
-        # recall add first value 0. and last value 1.
-        mrecall = np.concatenate(([0.], recall, [1.]))
-        # precision add first value 0. and last value 0.
-        mprecision = np.concatenate(([0.], precision, [0.]))
-
-        # compute the precision envelope
-        for i in range(mprecision.size - 1, 0, -1):
-            mprecision[i - 1] = np.maximum(mprecision[i - 1], mprecision[i])
-
-        # to calculate area under PR curve, look for points where X axis (recall) changes value
-        i = np.where(mrecall[1:] != mrecall[:-1])[0]
-
-        # sum (\Delta recall) * prec
-        ap = np.sum((mrecall[i + 1] - mrecall[i]) * mprecision[i + 1])
-
-    return ap
-
-
-def compute_ious(a, b):
-    """
-    :param a: [N,(x1,y1,x2,y2)]
-    :param b: [M,(x1,y1,x2,y2)]
-    :return:  IoU [N,M]
-    """
-
-    a = np.expand_dims(a, axis=1)  # [N,1,4]
-    b = np.expand_dims(b, axis=0)  # [1,M,4]
-
-    overlap = np.maximum(0.0,
-                         np.minimum(a[..., 2:], b[..., 2:]) -
-                         np.maximum(a[..., :2], b[..., :2]))  # [N,M,(w,h)]
-
-    overlap = np.prod(overlap, axis=-1)  # [N,M]
-
-    area_a = np.prod(a[..., 2:] - a[..., :2], axis=-1)
-    area_b = np.prod(b[..., 2:] - b[..., :2], axis=-1)
-
-    iou = overlap / (area_a + area_b - overlap)
-
-    return iou
-
-
-def validate(val_dataset, model, decoder):
+def validate(val_dataset, model, decoder, args):
     model = model.module
     # switch to evaluate mode
     model.eval()
     with torch.no_grad():
-        all_ap, mAP = evaluate_voc(val_dataset,
-                                   model,
-                                   decoder,
-                                   num_classes=20,
-                                   iou_thread=0.5)
+        all_eval_result = evaluate_coco(val_dataset, model, decoder, args)
 
-    return all_ap, mAP
+    return all_eval_result
 
 
-def evaluate_voc(val_dataset, model, decoder, num_classes=20, iou_thread=0.5):
-    preds, gts = [], []
-    for index in tqdm(range(len(val_dataset))):
-        data = val_dataset[index]
-        img, gt_annot, scale = data['img'], data['annot'], data['scale']
+def evaluate_coco(val_dataset, model, decoder, args):
+    results, image_ids = [], []
+    indexes = []
+    for index in range(len(val_dataset)):
+        indexes.append(index)
 
-        gt_bboxes, gt_classes = gt_annot[:, 0:4], gt_annot[:, 4]
-        gt_bboxes /= scale
+    batch_size = args.per_node_batch_size
+    eval_collater = Collater()
+    val_loader = DataLoader(val_dataset,
+                            batch_size=batch_size,
+                            shuffle=False,
+                            num_workers=args.num_workers,
+                            collate_fn=eval_collater.next)
 
-        gts.append([gt_bboxes, gt_classes])
+    start_time = time.time()
 
-        cls_heads, reg_heads, batch_anchors = model(img.cuda().permute(
-            2, 0, 1).float().unsqueeze(dim=0))
-        preds_scores, preds_classes, preds_boxes = decoder(
-            cls_heads, reg_heads, batch_anchors)
-        preds_scores, preds_classes, preds_boxes = preds_scores.cpu(
-        ), preds_classes.cpu(), preds_boxes.cpu()
-        preds_boxes /= scale
+    for i, data in tqdm(enumerate(val_loader)):
+        images, scales = torch.tensor(data['img']), torch.tensor(data['scale'])
+        per_batch_indexes = indexes[i * batch_size:(i + 1) * batch_size]
 
-        # make sure decode batch_size=1
-        # preds_scores shape:[1,max_detection_num]
-        # preds_classes shape:[1,max_detection_num]
-        # preds_bboxes shape[1,max_detection_num,4]
-        assert preds_scores.shape[0] == 1
+        images = images.cuda().float()
+        cls_heads, reg_heads, center_heads, batch_positions = model(images)
+        scores, classes, boxes = decoder(cls_heads, reg_heads, center_heads,
+                                         batch_positions)
 
-        preds_scores = preds_scores.squeeze(0)
-        preds_classes = preds_classes.squeeze(0)
-        preds_boxes = preds_boxes.squeeze(0)
+        scores, classes, boxes = scores.cpu(), classes.cpu(), boxes.cpu()
+        scales = scales.unsqueeze(-1).unsqueeze(-1)
+        boxes /= scales
 
-        preds_scores = preds_scores[preds_classes > -1]
-        preds_boxes = preds_boxes[preds_classes > -1]
-        preds_classes = preds_classes[preds_classes > -1]
+        for per_image_scores, per_image_classes, per_image_boxes, index in zip(
+                scores, classes, boxes, per_batch_indexes):
+            # for coco_eval,we need [x_min,y_min,w,h] format pred boxes
+            per_image_boxes[:, 2:] -= per_image_boxes[:, :2]
 
-        preds.append([preds_boxes, preds_classes, preds_scores])
+            for object_score, object_class, object_box in zip(
+                    per_image_scores, per_image_classes, per_image_boxes):
+                object_score = float(object_score)
+                object_class = int(object_class)
+                object_box = object_box.tolist()
+                if object_class == -1:
+                    break
 
-    print("all val sample decode done.")
+                image_result = {
+                    'image_id':
+                    val_dataset.image_ids[index],
+                    'category_id':
+                    val_dataset.find_category_id_from_coco_label(object_class),
+                    'score':
+                    object_score,
+                    'bbox':
+                    object_box,
+                }
+                results.append(image_result)
 
-    all_ap = {}
-    for class_index in tqdm(range(num_classes)):
-        per_class_gt_boxes = [
-            image[0][image[1] == class_index] for image in gts
-        ]
-        per_class_pred_boxes = [
-            image[0][image[1] == class_index] for image in preds
-        ]
-        per_class_pred_scores = [
-            image[2][image[1] == class_index] for image in preds
-        ]
+            image_ids.append(val_dataset.image_ids[index])
 
-        fp = np.zeros((0, ))
-        tp = np.zeros((0, ))
-        scores = np.zeros((0, ))
-        total_gts = 0
+            print('{}/{}'.format(index, len(val_dataset)), end='\r')
 
-        # loop for each sample
-        for per_image_gt_boxes, per_image_pred_boxes, per_image_pred_scores in zip(
-                per_class_gt_boxes, per_class_pred_boxes,
-                per_class_pred_scores):
-            total_gts = total_gts + len(per_image_gt_boxes)
-            # one gt can only be assigned to one predicted bbox
-            assigned_gt = []
-            # loop for each predicted bbox
-            for index in range(len(per_image_pred_boxes)):
-                scores = np.append(scores, per_image_pred_scores[index])
-                if per_image_gt_boxes.shape[0] == 0:
-                    # if no gts found for the predicted bbox, assign the bbox to fp
-                    fp = np.append(fp, 1)
-                    tp = np.append(tp, 0)
-                    continue
-                pred_box = np.expand_dims(per_image_pred_boxes[index], axis=0)
-                iou = compute_ious(per_image_gt_boxes, pred_box)
-                gt_for_box = np.argmax(iou, axis=0)
-                max_overlap = iou[gt_for_box, 0]
-                if max_overlap >= iou_thread and gt_for_box not in assigned_gt:
-                    fp = np.append(fp, 0)
-                    tp = np.append(tp, 1)
-                    assigned_gt.append(gt_for_box)
-                else:
-                    fp = np.append(fp, 1)
-                    tp = np.append(tp, 0)
-        # sort by score
-        indices = np.argsort(-scores)
-        fp = fp[indices]
-        tp = tp[indices]
-        # compute cumulative false positives and true positives
-        fp = np.cumsum(fp)
-        tp = np.cumsum(tp)
-        # compute recall and precision
-        recall = tp / total_gts
-        precision = tp / np.maximum(tp + fp, np.finfo(np.float64).eps)
-        ap = compute_voc_ap(recall, precision)
-        all_ap[class_index] = ap
+    testing_time = (time.time() - start_time)
+    per_image_testing_time = testing_time / len(val_dataset)
 
-    mAP = 0.
-    for _, class_mAP in all_ap.items():
-        mAP += float(class_mAP)
-    mAP /= num_classes
+    print(f"per_image_testing_time:{per_image_testing_time:.3f}")
 
-    return all_ap, mAP
+    if not len(results):
+        print(f"No target detected in test set images")
+        return
+
+    json.dump(results,
+              open('{}_bbox_results.json'.format(val_dataset.set_name), 'w'),
+              indent=4)
+
+    # load results in COCO evaluation tool
+    coco_true = val_dataset.coco
+    coco_pred = coco_true.loadRes('{}_bbox_results.json'.format(
+        val_dataset.set_name))
+
+    coco_eval = COCOeval(coco_true, coco_pred, 'bbox')
+    coco_eval.params.imgIds = image_ids
+    coco_eval.evaluate()
+    coco_eval.accumulate()
+    coco_eval.summarize()
+    all_eval_result = coco_eval.stats
+
+    return all_eval_result
 
 
 def main():
@@ -312,16 +237,17 @@ def main():
         logger.info('start loading data')
     train_sampler = torch.utils.data.distributed.DistributedSampler(
         Config.train_dataset, shuffle=True)
+    collater = Collater()
     train_loader = DataLoader(Config.train_dataset,
                               batch_size=args.per_node_batch_size,
                               shuffle=False,
                               num_workers=args.num_workers,
-                              collate_fn=collater,
+                              collate_fn=collater.next,
                               sampler=train_sampler)
     if local_rank == 0:
         logger.info('finish loading data')
 
-    model = retinanet.__dict__[args.network](**{
+    model = fcos.__dict__[args.network](**{
         "pretrained": args.pretrained,
         "num_classes": args.num_classes,
     })
@@ -338,12 +264,9 @@ def main():
         logger.info(
             f"model: '{args.network}', flops: {flops}, params: {params}")
 
-    criterion = RetinaLoss(image_w=args.input_image_size,
-                           image_h=args.input_image_size,
-                           alpha=0.25,
-                           gamma=1.5).cuda()
-    decoder = RetinaDecoder(image_w=args.input_image_size,
-                            image_h=args.input_image_size).cuda()
+    criterion = FCOSLoss().cuda()
+    decoder = FCOSDecoder(image_w=args.input_image_size,
+                          image_h=args.input_image_size).cuda()
 
     model = model.cuda()
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
@@ -382,11 +305,13 @@ def main():
         model.load_state_dict(checkpoint['model_state_dict'])
         if local_rank == 0:
             logger.info(f"start eval.")
-            all_ap, mAP = validate(Config.val_dataset, model, decoder)
+            all_eval_result = validate(Config.val_dataset, model, decoder,
+                                       args)
             logger.info(f"eval done.")
-            for class_index, class_AP in all_ap.items():
-                logger.info(f"class: {class_index},AP: {class_AP:.3f}")
-            logger.info(f"mAP: {mAP:.3f}")
+            if all_eval_result is not None:
+                logger.info(
+                    f"val: epoch: {checkpoint['epoch']:0>5d}, IoU=0.5:0.95,area=all,maxDets=100,mAP:{all_eval_result[0]:.3f}, IoU=0.5,area=all,maxDets=100,mAP:{all_eval_result[1]:.3f}, IoU=0.75,area=all,maxDets=100,mAP:{all_eval_result[2]:.3f}, IoU=0.5:0.95,area=small,maxDets=100,mAP:{all_eval_result[3]:.3f}, IoU=0.5:0.95,area=medium,maxDets=100,mAP:{all_eval_result[4]:.3f}, IoU=0.5:0.95,area=large,maxDets=100,mAP:{all_eval_result[5]:.3f}, IoU=0.5:0.95,area=all,maxDets=1,mAR:{all_eval_result[6]:.3f}, IoU=0.5:0.95,area=all,maxDets=10,mAR:{all_eval_result[7]:.3f}, IoU=0.5:0.95,area=all,maxDets=100,mAR:{all_eval_result[8]:.3f}, IoU=0.5:0.95,area=small,maxDets=100,mAR:{all_eval_result[9]:.3f}, IoU=0.5:0.95,area=medium,maxDets=100,mAR:{all_eval_result[10]:.3f}, IoU=0.5:0.95,area=large,maxDets=100,mAR:{all_eval_result[11]:.3f}"
+                )
 
         return
 
@@ -405,7 +330,7 @@ def main():
         if local_rank == 0:
             logger.info(
                 f"finish resuming model from {args.resume}, epoch {checkpoint['epoch']}, best_map: {checkpoint['best_map']}, "
-                f"loss: {checkpoint['loss']:3f}, cls_loss: {checkpoint['cls_loss']:2f}, reg_loss: {checkpoint['reg_loss']:2f}"
+                f"loss: {checkpoint['loss']:3f}, cls_loss: {checkpoint['cls_loss']:2f}, reg_loss: {checkpoint['reg_loss']:2f}, center_ness_loss: {checkpoint['center_ness_loss']:2f}"
             )
 
     if local_rank == 0:
@@ -416,26 +341,28 @@ def main():
         logger.info('start training')
     for epoch in range(start_epoch, args.epochs + 1):
         train_sampler.set_epoch(epoch)
-        cls_losses, reg_losses, losses = train(train_loader, model, criterion,
-                                               optimizer, scheduler, epoch,
-                                               args)
+        cls_losses, reg_losses, center_ness_losses, losses = train(
+            train_loader, model, criterion, optimizer, scheduler, epoch, args)
+
         if local_rank == 0:
             logger.info(
-                f"train: epoch {epoch:0>3d}, cls_loss: {cls_losses:.2f}, reg_loss: {reg_losses:.2f}, loss: {losses:.2f}"
+                f"train: epoch {epoch:0>3d}, cls_loss: {cls_losses:.2f}, reg_loss: {reg_losses:.2f}, center_ness_loss: {center_ness_losses:.2f}, loss: {losses:.2f}"
             )
 
-        if epoch % 5 == 0 or epoch == args.epochs:
+        if epoch % 5 == 0 or epoch % 12 == 0 or epoch == args.epochs:
             if local_rank == 0:
                 logger.info(f"start eval.")
-                all_ap, mAP = validate(Config.val_dataset, model, decoder)
+                all_eval_result = validate(Config.val_dataset, model, decoder,
+                                           args)
                 logger.info(f"eval done.")
-                for class_index, class_AP in all_ap.items():
-                    logger.info(f"class: {class_index},AP: {class_AP:.3f}")
-                logger.info(f"mAP: {mAP:.3f}")
-                if mAP > best_map:
-                    torch.save(model.module.state_dict(),
-                               os.path.join(args.checkpoints, "best.pth"))
-                    best_map = mAP
+                if all_eval_result is not None:
+                    logger.info(
+                        f"val: epoch: {epoch:0>5d}, IoU=0.5:0.95,area=all,maxDets=100,mAP:{all_eval_result[0]:.3f}, IoU=0.5,area=all,maxDets=100,mAP:{all_eval_result[1]:.3f}, IoU=0.75,area=all,maxDets=100,mAP:{all_eval_result[2]:.3f}, IoU=0.5:0.95,area=small,maxDets=100,mAP:{all_eval_result[3]:.3f}, IoU=0.5:0.95,area=medium,maxDets=100,mAP:{all_eval_result[4]:.3f}, IoU=0.5:0.95,area=large,maxDets=100,mAP:{all_eval_result[5]:.3f}, IoU=0.5:0.95,area=all,maxDets=1,mAR:{all_eval_result[6]:.3f}, IoU=0.5:0.95,area=all,maxDets=10,mAR:{all_eval_result[7]:.3f}, IoU=0.5:0.95,area=all,maxDets=100,mAR:{all_eval_result[8]:.3f}, IoU=0.5:0.95,area=small,maxDets=100,mAR:{all_eval_result[9]:.3f}, IoU=0.5:0.95,area=medium,maxDets=100,mAR:{all_eval_result[10]:.3f}, IoU=0.5:0.95,area=large,maxDets=100,mAR:{all_eval_result[11]:.3f}"
+                    )
+                    if all_eval_result[0] > best_map:
+                        torch.save(model.module.state_dict(),
+                                   os.path.join(args.checkpoints, "best.pth"))
+                        best_map = all_eval_result[0]
         if local_rank == 0:
             torch.save(
                 {
@@ -443,6 +370,7 @@ def main():
                     'best_map': best_map,
                     'cls_loss': cls_losses,
                     'reg_loss': reg_losses,
+                    'center_ness_loss': center_ness_losses,
                     'loss': losses,
                     'model_state_dict': model.state_dict(),
                     'optimizer_state_dict': optimizer.state_dict(),
@@ -458,7 +386,7 @@ def main():
 
 
 def train(train_loader, model, criterion, optimizer, scheduler, epoch, args):
-    cls_losses, reg_losses, losses = [], [], []
+    cls_losses, reg_losses, center_ness_losses, losses = [], [], [], []
 
     # switch to train mode
     model.train()
@@ -470,10 +398,10 @@ def train(train_loader, model, criterion, optimizer, scheduler, epoch, args):
 
     while images is not None:
         images, annotations = images.cuda().float(), annotations.cuda()
-        cls_heads, reg_heads, batch_anchors = model(images)
-        cls_loss, reg_loss = criterion(cls_heads, reg_heads, batch_anchors,
-                                       annotations)
-        loss = cls_loss + reg_loss
+        cls_heads, reg_heads, center_heads, batch_positions = model(images)
+        cls_loss, reg_loss, center_ness_loss = criterion(
+            cls_heads, reg_heads, center_heads, batch_positions, annotations)
+        loss = cls_loss + reg_loss + center_ness_loss
         if cls_loss == 0.0 or reg_loss == 0.0:
             optimizer.zero_grad()
             continue
@@ -490,20 +418,22 @@ def train(train_loader, model, criterion, optimizer, scheduler, epoch, args):
 
         cls_losses.append(cls_loss.item())
         reg_losses.append(reg_loss.item())
+        center_ness_losses.append(center_ness_loss.item())
         losses.append(loss.item())
 
         images, annotations = prefetcher.next()
 
         if local_rank == 0 and iter_index % args.print_interval == 0:
             logger.info(
-                f"train: epoch {epoch:0>3d}, iter [{iter_index:0>5d}, {iters:0>5d}], cls_loss: {cls_loss.item():.2f}, reg_loss: {reg_loss.item():.2f}, loss_total: {loss.item():.2f}"
+                f"train: epoch {epoch:0>3d}, iter [{iter_index:0>5d}, {iters:0>5d}], cls_loss: {cls_loss.item():.2f}, reg_loss: {reg_loss.item():.2f}, center_ness_loss: {center_ness_loss.item():.2f}, loss_total: {loss.item():.2f}"
             )
 
         iter_index += 1
 
     scheduler.step(np.mean(losses))
 
-    return np.mean(cls_losses), np.mean(reg_losses), np.mean(losses)
+    return np.mean(cls_losses), np.mean(reg_losses), np.mean(
+        center_ness_losses), np.mean(losses)
 
 
 if __name__ == '__main__':

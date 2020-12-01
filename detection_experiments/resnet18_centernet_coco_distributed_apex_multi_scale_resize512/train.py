@@ -15,6 +15,7 @@ warnings.filterwarnings('ignore')
 import numpy as np
 from thop import profile
 from thop import clever_format
+from tqdm import tqdm
 import apex
 from apex import amp
 from apex.parallel import convert_syncbn_model
@@ -27,7 +28,7 @@ import torch.backends.cudnn as cudnn
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from config import Config
-from public.detection.dataset.cocodataset import COCODataPrefetcher, randomscalecollater
+from public.detection.dataset.cocodataset import COCODataPrefetcher, MultiScaleCollater, Collater
 from public.detection.models.loss import CenterNetLoss
 from public.detection.models.decode import CenterNetDecoder
 from public.detection.models import centernet
@@ -70,6 +71,18 @@ def parse_args():
                         type=int,
                         default=Config.input_image_size,
                         help='input image size')
+    parser.add_argument('--use_multi_scale',
+                        type=bool,
+                        default=Config.use_multi_scale,
+                        help='use multi scale or not')
+    parser.add_argument('--multi_scale_range',
+                        type=list,
+                        default=Config.multi_scale_range,
+                        help='input image size multi scale range')
+    parser.add_argument('--stride',
+                        type=int,
+                        default=Config.stride,
+                        help='model predict downsample stride')
     parser.add_argument('--num_workers',
                         type=int,
                         default=Config.num_workers,
@@ -111,68 +124,81 @@ def parse_args():
     return parser.parse_args()
 
 
-def validate(val_dataset, model, decoder):
+def validate(val_dataset, model, decoder, args):
     model = model.module
     # switch to evaluate mode
     model.eval()
     with torch.no_grad():
-        all_eval_result = evaluate_coco(val_dataset, model, decoder)
+        all_eval_result = evaluate_coco(val_dataset, model, decoder, args)
 
     return all_eval_result
 
 
-def evaluate_coco(val_dataset, model, decoder):
+def evaluate_coco(val_dataset, model, decoder, args):
     results, image_ids = [], []
+    indexes = []
     for index in range(len(val_dataset)):
-        data = val_dataset[index]
-        scale = data['scale']
-        heatmap_output, offset_output, wh_output = model(
-            data['img'].cuda().permute(2, 0, 1).float().unsqueeze(dim=0))
+        indexes.append(index)
+
+    batch_size = args.per_node_batch_size
+    eval_collater = Collater()
+    val_loader = DataLoader(val_dataset,
+                            batch_size=batch_size,
+                            shuffle=False,
+                            num_workers=args.num_workers,
+                            collate_fn=eval_collater.next)
+
+    start_time = time.time()
+
+    for i, data in tqdm(enumerate(val_loader)):
+        images, scales = torch.tensor(data['img']), torch.tensor(data['scale'])
+        per_batch_indexes = indexes[i * batch_size:(i + 1) * batch_size]
+
+        images = images.cuda().float()
+        heatmap_output, offset_output, wh_output = model(images)
         scores, classes, boxes = decoder(heatmap_output, offset_output,
                                          wh_output)
+
         scores, classes, boxes = scores.cpu(), classes.cpu(), boxes.cpu()
+        scales = scales.unsqueeze(-1).unsqueeze(-1)
+        boxes /= scales
 
-        boxes /= scale
+        for per_image_scores, per_image_classes, per_image_boxes, index in zip(
+                scores, classes, boxes, per_batch_indexes):
+            # for coco_eval,we need [x_min,y_min,w,h] format pred boxes
+            per_image_boxes[:, 2:] -= per_image_boxes[:, :2]
 
-        # make sure decode batch_size=1
-        # scores shape:[1,max_detection_num]
-        # classes shape:[1,max_detection_num]
-        # bboxes shape[1,max_detection_num,4]
-        assert scores.shape[0] == 1
+            for object_score, object_class, object_box in zip(
+                    per_image_scores, per_image_classes, per_image_boxes):
+                object_score = float(object_score)
+                object_class = int(object_class)
+                object_box = object_box.tolist()
+                if object_class == -1:
+                    break
 
-        scores = scores.squeeze(0)
-        classes = classes.squeeze(0)
-        boxes = boxes.squeeze(0)
+                image_result = {
+                    'image_id':
+                    val_dataset.image_ids[index],
+                    'category_id':
+                    val_dataset.find_category_id_from_coco_label(object_class),
+                    'score':
+                    object_score,
+                    'bbox':
+                    object_box,
+                }
+                results.append(image_result)
 
-        # for coco_eval,we need [x_min,y_min,w,h] format pred boxes
-        boxes[:, 2:] -= boxes[:, :2]
+            image_ids.append(val_dataset.image_ids[index])
 
-        for object_score, object_class, object_box in zip(
-                scores, classes, boxes):
-            object_score = float(object_score)
-            object_class = int(object_class)
-            object_box = object_box.tolist()
-            if object_class == -1:
-                break
+            print('{}/{}'.format(index, len(val_dataset)), end='\r')
 
-            image_result = {
-                'image_id':
-                val_dataset.image_ids[index],
-                'category_id':
-                val_dataset.find_category_id_from_coco_label(object_class),
-                'score':
-                object_score,
-                'bbox':
-                object_box,
-            }
-            results.append(image_result)
+    testing_time = (time.time() - start_time)
+    per_image_testing_time = testing_time / len(val_dataset)
 
-        image_ids.append(val_dataset.image_ids[index])
-
-        print('{}/{}'.format(index, len(val_dataset)), end='\r')
+    print(f"per_image_testing_time:{per_image_testing_time:.3f}")
 
     if not len(results):
-        print("No target detected in test set images")
+        print(f"No target detected in test set images")
         return
 
     json.dump(results,
@@ -227,11 +253,15 @@ def main():
         logger.info('start loading data')
     train_sampler = torch.utils.data.distributed.DistributedSampler(
         Config.train_dataset, shuffle=True)
+    collater = MultiScaleCollater(resize=args.input_image_size,
+                                  multi_scale_range=args.multi_scale_range,
+                                  stride=args.stride,
+                                  use_multi_scale=args.use_multi_scale)
     train_loader = DataLoader(Config.train_dataset,
                               batch_size=args.per_node_batch_size,
                               shuffle=False,
                               num_workers=args.num_workers,
-                              collate_fn=randomscalecollater,
+                              collate_fn=collater.next,
                               sampler=train_sampler)
     if local_rank == 0:
         logger.info('finish loading data')
@@ -293,7 +323,8 @@ def main():
         model.load_state_dict(checkpoint['model_state_dict'])
         if local_rank == 0:
             logger.info(f"start eval.")
-            all_eval_result = validate(Config.val_dataset, model, decoder)
+            all_eval_result = validate(Config.val_dataset, model, decoder,
+                                       args)
             logger.info(f"eval done.")
             if all_eval_result is not None:
                 logger.info(
@@ -339,7 +370,8 @@ def main():
         if epoch % 10 == 0 or epoch == args.epochs:
             if local_rank == 0:
                 logger.info(f"start eval.")
-                all_eval_result = validate(Config.val_dataset, model, decoder)
+                all_eval_result = validate(Config.val_dataset, model, decoder,
+                                           args)
                 logger.info(f"eval done.")
                 if all_eval_result is not None:
                     logger.info(

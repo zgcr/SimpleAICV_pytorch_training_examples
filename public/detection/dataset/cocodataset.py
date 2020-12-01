@@ -161,8 +161,10 @@ class CocoDetection(Dataset):
         annot = self.load_annotations(idx)
 
         sample = {'img': img, 'annot': annot, 'scale': 1.}
+
         if self.transform:
             sample = self.transform(sample)
+
         return sample
 
     def load_image(self, image_index):
@@ -245,61 +247,97 @@ class COCODataPrefetcher():
         return input, annot
 
 
-def collater(data):
-    imgs = [s['img'] for s in data]
-    annots = [s['annot'] for s in data]
-    scales = [s['scale'] for s in data]
+class Collater():
+    def __init__(self):
+        pass
 
-    imgs = torch.from_numpy(np.stack(imgs, axis=0))
+    def next(self, data):
+        imgs = [s['img'] for s in data]
+        annots = [s['annot'] for s in data]
+        scales = [s['scale'] for s in data]
 
-    max_num_annots = max(annot.shape[0] for annot in annots)
+        imgs = torch.from_numpy(np.stack(imgs, axis=0))
 
-    if max_num_annots > 0:
-
-        annot_padded = torch.ones((len(annots), max_num_annots, 5)) * (-1)
-
-        if max_num_annots > 0:
-            for idx, annot in enumerate(annots):
-                if annot.shape[0] > 0:
-                    annot_padded[idx, :annot.shape[0], :] = annot
-    else:
-        annot_padded = torch.ones((len(annots), 1, 5)) * (-1)
-
-    imgs = imgs.permute(0, 3, 1, 2)
-
-    return {'img': imgs, 'annot': annot_padded, 'scale': scales}
-
-
-def randomscalecollater(data):
-    imgs = [s['img'] for s in data]
-    annots = [s['annot'] for s in data]
-    scales = [s['scale'] for s in data]
-
-    max_h = max(img.shape[0] for img in imgs)
-    max_w = max(img.shape[1] for img in imgs)
-
-    padded_img = torch.zeros((len(imgs), max_h, max_w, 3))
-
-    for i, img in enumerate(imgs):
-        h, w = img.shape[0], img.shape[1]
-        padded_img[i, 0:h, 0:w, ] = img
-
-    max_num_annots = max(annot.shape[0] for annot in annots)
-
-    if max_num_annots > 0:
-
-        annot_padded = torch.ones((len(annots), max_num_annots, 5)) * (-1)
+        max_num_annots = max(annot.shape[0] for annot in annots)
 
         if max_num_annots > 0:
-            for idx, annot in enumerate(annots):
-                if annot.shape[0] > 0:
-                    annot_padded[idx, :annot.shape[0], :] = annot
-    else:
-        annot_padded = torch.ones((len(annots), 1, 5)) * (-1)
 
-    padded_img = padded_img.permute(0, 3, 1, 2)
+            annot_padded = torch.ones((len(annots), max_num_annots, 5)) * (-1)
 
-    return {'img': padded_img, 'annot': annot_padded, 'scale': scales}
+            if max_num_annots > 0:
+                for idx, annot in enumerate(annots):
+                    if annot.shape[0] > 0:
+                        annot_padded[idx, :annot.shape[0], :] = annot
+        else:
+            annot_padded = torch.ones((len(annots), 1, 5)) * (-1)
+
+        imgs = imgs.permute(0, 3, 1, 2)
+
+        return {'img': imgs, 'annot': annot_padded, 'scale': scales}
+
+
+class MultiScaleCollater():
+    def __init__(self,
+                 resize=512,
+                 multi_scale_range=[0.5, 1.5],
+                 stride=32,
+                 use_multi_scale=False):
+        self.resize = resize
+        self.multi_scale_range = multi_scale_range
+        self.stride = stride
+        self.use_multi_scale = use_multi_scale
+
+    def next(self, data):
+        if self.use_multi_scale:
+            min_resize = int(
+                ((self.resize + self.stride) * self.multi_scale_range[0]) //
+                self.stride * self.stride)
+            max_resize = int(
+                ((self.resize + self.stride) * self.multi_scale_range[1]) //
+                self.stride * self.stride)
+
+            final_resize = random.choice(
+                range(min_resize, max_resize, self.stride))
+        else:
+            final_resize = self.resize
+
+        imgs = [s['img'] for s in data]
+        annots = [s['annot'] for s in data]
+        scales = [s['scale'] for s in data]
+
+        padded_img = torch.zeros((len(imgs), final_resize, final_resize, 3))
+
+        for i, image in enumerate(imgs):
+            height, width, _ = image.shape
+            max_image_size = max(height, width)
+            resize_factor = final_resize / max_image_size
+            resize_height, resize_width = int(height * resize_factor), int(
+                width * resize_factor)
+
+            image = cv2.resize(image, (resize_width, resize_height))
+            padded_img[i, 0:resize_height,
+                       0:resize_width] = torch.from_numpy(image)
+
+            annots[i][:, :4] *= resize_factor
+            scales[i] = scales[i] * resize_factor
+
+        max_num_annots = max(annot.shape[0] for annot in annots)
+
+        if max_num_annots > 0:
+
+            annot_padded = torch.ones((len(annots), max_num_annots, 5)) * (-1)
+
+            if max_num_annots > 0:
+                for idx, annot in enumerate(annots):
+                    if annot.shape[0] > 0:
+                        annot_padded[
+                            idx, :annot.shape[0], :] = torch.from_numpy(annot)
+        else:
+            annot_padded = torch.ones((len(annots), 1, 5)) * (-1)
+
+        padded_img = padded_img.permute(0, 3, 1, 2)
+
+        return {'img': padded_img, 'annot': annot_padded, 'scale': scales}
 
 
 class RandomFlip(object):
@@ -348,9 +386,9 @@ class RandomCrop(object):
                 0, int(max_bbox[0] - random.uniform(0, max_left_trans)))
             crop_ymin = max(0,
                             int(max_bbox[1] - random.uniform(0, max_up_trans)))
-            crop_xmax = max(
+            crop_xmax = min(
                 w, int(max_bbox[2] + random.uniform(0, max_right_trans)))
-            crop_ymax = max(
+            crop_ymax = min(
                 h, int(max_bbox[3] + random.uniform(0, max_down_trans)))
 
             image = image[crop_ymin:crop_ymax, crop_xmin:crop_xmax]
@@ -421,71 +459,6 @@ class Resize(object):
         }
 
 
-# class RandomScaleResize(object):
-#     def __init__(self, resize=512, scale_range=[0.6, 1.3]):
-#         self.resize = resize
-#         self.scales = np.arange(scale_range[0], scale_range[1], 0.1)
-
-#     def __call__(self, sample):
-#         image, annots, scale = sample['img'], sample['annot'], sample['scale']
-#         height, width, _ = image.shape
-
-#         random_scale = np.random.choice(self.scales)
-#         final_resize = int(self.resize * random_scale)
-
-#         max_image_size = max(height, width)
-#         resize_factor = final_resize / max_image_size
-#         resize_height, resize_width = int(height * resize_factor), int(
-#             width * resize_factor)
-
-#         image = cv2.resize(image, (resize_width, resize_height))
-
-#         new_image = np.zeros((final_resize, final_resize, 3))
-#         new_image[0:resize_height, 0:resize_width] = image
-
-#         annots[:, :4] *= resize_factor
-#         scale = scale * resize_factor
-
-#         return {
-#             'img': torch.from_numpy(new_image),
-#             'annot': torch.from_numpy(annots),
-#             'scale': scale
-#         }
-
-
-class CenterNetRandomScaleResize(object):
-    def __init__(self, resize=512, scale_factor=0.4):
-        self.resize = resize
-        self.scale_factor = scale_factor
-
-    def __call__(self, sample):
-        image, annots, scale = sample['img'], sample['annot'], sample['scale']
-        height, width, _ = image.shape
-
-        max_image_size = max(height, width)
-        new_resize = int(self.resize *
-                         np.clip(np.random.randn() * self.scale_factor + 1,
-                                 1 - self.scale_factor, 1 + self.scale_factor))
-
-        resize_factor = new_resize / max_image_size
-        resize_height, resize_width = int(height * resize_factor), int(
-            width * resize_factor)
-
-        image = cv2.resize(image, (resize_width, resize_height))
-
-        new_image = np.zeros((new_resize, new_resize, 3))
-        new_image[0:resize_height, 0:resize_width] = image
-
-        annots[:, :4] *= resize_factor
-        scale = scale * resize_factor
-
-        return {
-            'img': torch.from_numpy(new_image),
-            'annot': torch.from_numpy(annots),
-            'scale': scale
-        }
-
-
 if __name__ == '__main__':
     import torchvision.transforms as transforms
     from tqdm import tqdm
@@ -512,7 +485,7 @@ if __name__ == '__main__':
     # resize=700,per_image_average_area=682333,input shape=[1166,1166]
     # resize=800,per_image_average_area=891169,input shape=[1333,1333]
 
-    # my resize method
+    # yolov3 resize method(my resize method)
     # resize=600,per_image_average_area=258182,input shape=[600,600]
     # resize=667,per_image_average_area=318986,input shape=[667,667]
     # resize=700,per_image_average_area=351427,input shape=[700,700]

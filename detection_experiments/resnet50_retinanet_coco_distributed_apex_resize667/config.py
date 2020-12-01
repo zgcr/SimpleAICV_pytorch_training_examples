@@ -44,7 +44,7 @@ class Config(object):
                                 ]))
 
     epochs = 12
-    per_node_batch_size = 12
+    per_node_batch_size = 10
     lr = 1e-4
     num_workers = 4
     print_interval = 100

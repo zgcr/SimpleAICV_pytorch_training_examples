@@ -25,7 +25,7 @@ https://www.zhihu.com/column/c_1249719688055193600
 
 Platform:Ubuntu 18.04.4
 ```
-1.pytorch==1.4.0
+1.torch==1.4.0
 2.torchvision==0.5.0
 3.python==3.6.9
 4.numpy==1.17.0
@@ -73,11 +73,12 @@ except ImportError:
 ```
 build DCNv2:
 ```
+sudo -s
 ./make.sh
 ```
 **Attention:**
 
-Please make sure your Python environment is not an Anaconda virtual environment,otherwise, the following mistake may happened:
+Please make sure your Python environment is not an Anaconda virtual environment,and your torch/torchvision packages installed by pip.Otherwise, the following mistake may happened:
 ```
 RuntimeError: Not compiled with GPU support
 ```
@@ -136,30 +137,14 @@ VOCdataset
 
 If you want to reproduce my experiment result,just enter a category experiments folder,then enter a specific experiment folder.Each experiment folder has it's own config.py and train.py.
 
-If the experiment use nn.parallel mode to train,you should add this in train.py to specify the GPU for training:
-```
-os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
-```
-then run this command to train:
-```
-python train.py
-```
-
-Or don't modify train.py, just run this command:
+If the experiment use nn.parallel mode to train,just run this command:
 ```
 CUDA_VISIBLE_DEVICES=0,1 python train.py
 ```
 
-If the experiment use nn.DistributedDataParallel mode to train,you should add this in train.py to specify the GPU for training:
-```
-os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
-```
-then run this command to train:
-```
-python -m torch.distributed.launch --nproc_per_node=2 --master_addr 127.0.0.1 --master_port 20001 train.py
-```
+CUDA_VISIBLE_DEVICES is used to specify the gpu ids for this training.
 
-Or don't modify train.py, just run this command:
+If the experiment use nn.DistributedDataParallel mode to train,just run this command:
 ```
 CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.launch --nproc_per_node=2 --master_addr 127.0.0.1 --master_port 20001 train.py
 ```
@@ -209,21 +194,18 @@ You can find more model training details in detection_experiments/experiment_fol
 
 Paper:https://arxiv.org/abs/1708.02002
 
-For RetinaNet training,I use yolov3 resize method,this method resize=667 has same flops as the resize=400 method proposed in the RetinaNet paper.
+For RetinaNet training,I use yolov3 resize method,this method resize=667 has same flops as the resize=400 method proposed in the RetinaNet paper,resize=1000 has same flops as the resize=600 method proposed in the RetinaNet paper,resize=1333 has same flops as the resize=800 method proposed in the RetinaNet paper.
 
-| Network | resize | batch | gpu-num | apex | syncbn | epoch | mAP-mAR-loss |
-| --- | --- |  --- |  --- |  --- |  --- |  --- |  --- | 
-| ResNet50-RetinaNet | 667 | 24 | 2 RTX2080Ti | yes | no | 12 | 0.293,0.401,0.49 | 
-| ResNet101-RetinaNet  | 667 | 16 | 2 RTX2080Ti | yes | no | 12 | 0.296,0.402,0.48 |
+| Network | resize | batch | gpu-num | apex | syncbn | epoch | mAP-mAR-loss | training-time(hours) |
+| --- | --- |  --- |  --- |  --- |  --- |  --- |  --- |  --- |
+| ResNet50-RetinaNet | 667 | 20 | 2 RTX2080Ti | yes | no | 12 | 0.305,0.421,0.56 | 17.43 |
+| ResNet101-RetinaNet  | 667 | 16 | 2 RTX2080Ti | yes | no | 12 | 0.306,0.420,0.55 | 22.06 |
 
-For ResNet50-RetinaNet resize=1000 training,I use ResNet50-RetinaNet resize=667 trained model(mAP=0.293) as a pretrained model parameters to initialize the ResNet50-RetinaNet resize=1000 model.
+For ResNet50-RetinaNet resize=1000 training,I use ResNet50-RetinaNet resize=667 trained model(mAP=0.305) as pretrained model parameters to initialize the ResNet50-RetinaNet resize=1000 model.
 
-For RetinaNet training,I use yolov3 resize method,this method resize=1000 has same flops as the resize=600 method proposed in the RetinaNet paper.
-
-| Network | resize | batch | gpu-num | apex | syncbn | epoch | mAP-mAR-loss |
-| --- | --- |  --- |  --- |  --- |  --- |  --- |  --- |
-| ResNet50-RetinaNet | 1000 | 16 | 4 RTX2080Ti | yes | no | 12 | 0.333,0.456,0.46 |
-| ResNet50-RetinaNet | 1000 | 16 | 4 RTX2080Ti | yes | no | 24 | 0.339,0.460,0.42 |
+| Network | resize | batch | gpu-num | apex | syncbn | epoch | mAP-mAR-loss | training-time(hours) |
+| --- | --- |  --- |  --- |  --- |  --- |  --- |  --- |  --- |
+| ResNet50-RetinaNet | 1000 | 16 | 4 RTX2080Ti | yes | no | 12 | 0.332,0.458,0.57 | 26.25 |
 
 **Inference time**:
 
@@ -245,21 +227,19 @@ Using one RTX2080Ti to test RetinaNet model inference speed.The test is performe
 
 Paper:https://arxiv.org/abs/1904.01355 
 
-For FCOS training,I use yolov3 resize method,this method resize=667 has same flops as the resize=400 method proposed in the FCOS paper.
+For FCOS training,I use yolov3 resize method,this method resize=667 has same flops as the resize=400 method proposed in the FCOS paper,resize=1000 has same flops as the resize=600 method proposed in the FCOS paper,resize=1333 has same flops as the resize=800 method proposed in the FCOS paper.
 
-| Network | resize | batch | gpu-num | apex | syncbn | epoch | mAP-mAR-loss |
-| --- | --- |  --- |  --- |  --- |  --- |  --- |  --- |
-| ResNet50-FCOS | 667 | 24 | 2 RTX2080Ti | yes | no | 12 | 0.311,0.444,1.06 |
-| ResNet101-FCOS | 667 | 16 | 2 RTX2080Ti | yes | no | 12 | 0.325,0.455,1.05 |
+| Network | resize | batch | gpu-num | apex | syncbn | epoch | mAP-mAR-loss | training-time(hours) |
+| --- | --- |  --- |  --- |  --- |  --- |  --- |  --- |  --- |
+| ResNet50-FCOS | 667 | 24 | 2 RTX2080Ti | yes | no | 12 | 0.318,0.452,1.09 | 14.17 |
+| ResNet101-FCOS | 667 | 20 | 2 RTX2080Ti | yes | no | 12 | 0.342,0.475,1.07 | 19.20 |
 
-For ResNet50-FCOS resize=1000 training,I use ResNet50-FCOS resize=667 trained model(mAP=) as a pretrained model parameters to initialize the ResNet50-FCOS resize=1000 model.
+For ResNet50-FCOS resize=1000/ResNet50-FCOS resize=1333 training,I use ResNet50-FCOS resize=667 trained model(mAP=0.318) as pretrained model parameters to initialize the ResNet50-FCOS resize=1000/ResNet50-FCOS resize=1333 model.
 
-For FCOS training,I use yolov3 resize method,this method resize=1000 has same flops as the resize=600 method proposed in the FCOS paper.
-
-| Network | resize | batch | gpu-num | apex | syncbn | epoch | mAP-mAR-loss |
-| --- | --- |  --- |  --- |  --- |  --- |  --- |  --- |
-| ResNet50-FCOS | 1000 | 16 | 4 RTX2080Ti | yes | no | 12 | 0.352,0.490,1.03 |
-| ResNet50-FCOS | 1000 | 16 | 4 RTX2080Ti | yes | no | 24 | 0.352,0.491,1.01 |
+| Network | resize | batch | gpu-num | apex | syncbn | epoch | mAP-mAR-loss | training-time(hours) |
+| --- | --- |  --- |  --- |  --- |  --- |  --- |  --- |  --- |
+| ResNet50-FCOS | 1000 | 20 | 4 RTX2080Ti | yes | no | 12 | 0.361,0.502,1.10 | 18.92 |
+| ResNet50-FCOS | 1333 | 12 | 4 RTX2080Ti | yes | no | 24 | 0.381,0.534,1.03 | 37.73 |
 
 **Inference time**:
 
@@ -283,13 +263,22 @@ Paper:https://arxiv.org/abs/1904.07850
 
 In CenterNet paper,the author use yolov3 resize method,my resize method is same as yolov3 resize method.
 
-| Network | resize | batch | gpu-num | apex | syncbn | epoch | mAP-mAR-loss |
-| --- | --- |  --- |  --- |  --- |  --- |  --- |  --- |
-| ResNet18DCN-CenterNet | 512 | 128 | 4 RTX2080Ti | yes | no | 140 | 0.248,0.366,1.41 |
+| Network | resize | batch | gpu-num | apex | syncbn | epoch | mAP-mAR-loss | training-time(hours) |
+| --- | --- |  --- |  --- |  --- |  --- |  --- |  --- |  --- |
+| ResNet18DCN-CenterNet | 512 | 128 | 4 RTX2080Ti | yes | no | 140 | 0.248,0.366,1.41 | 55.71 |
+| ResNet18DCN-CenterNet-MultiScale | 512 | 96 | 4 RTX2080Ti | yes | no | 140 | 0.266,0.401,1.86 | 57.26 |
 
 **Inference time**:
 
 Using one RTX2080Ti to test CenterNet model inference speed.The test is performed COCO2017_val dataset,compute average per image inference time(ms).Testing num_workers=8.
+| Network | resize | batch |per image inference time(ms)|
+| --- | --- |  --- |  --- |
+| ResNet18DCN-CenterNet | 512 | 1 | 15 |
+| ResNet18DCN-CenterNet | 512 | 4 | 9 |
+| ResNet18DCN-CenterNet | 512 | 8 | 10 |
+| ResNet18DCN-CenterNet | 512 | 16 | 10 |
+| ResNet18DCN-CenterNet | 512 | 32 | 10 |
+| ResNet18DCN-CenterNet | 512 | 64 | 10 |
 
 ## YOLOv3
 
@@ -306,10 +295,10 @@ If you want to generate anchors for your dataset,just modify the part of input c
 
 Trained on VOC2007 trainval + VOC2012 trainval, tested on VOC2007,using 11-point interpolated AP.
 
-| Network | resize | batch | gpu-num | apex | syncbn | epoch5-mAP-loss | epoch10-mAP-loss | epoch15-mAP-loss | epoch20-mAP-loss |
-| --- | --- | --- |  --- |  --- |  --- |  --- |  --- |  --- |  --- | 
-| ResNet50-RetinaNet | 667 | 24 | 2 RTX2080Ti | yes | no | 0.660,0.62 | 0.705,0.44 | 0.723,0.35 | 0.732,0.30 | 
-| ResNet50-RetinaNet-usecocopre | 667 | 24 | 2 RTX2080Ti | yes | no | 0.789,0.34 | 0.780,0.26 | 0.776,0.22 | 0.770,0.19 | 
+| Network | resize | batch | gpu-num | apex | syncbn | epoch5-mAP-loss | epoch10-mAP-loss | epoch15-mAP-loss | epoch20-mAP-loss |  training-time(hours) |
+| --- | --- | --- |  --- |  --- |  --- |  --- |  --- |  --- |  --- |  --- |
+| ResNet50-RetinaNet | 667 | 24 | 2 RTX2080Ti | yes | no | 0.697,0.69 | 0.729,0.50 | 0.741,0.40 | 0.730,0.34 | 3.75 |
+| ResNet50-RetinaNet-usecocopre | 667 | 24 | 2 RTX2080Ti | yes | no | 0.797,0.41 | 0.797,0.31 | 0.789,0.26 | 0.784,0.22 | 3.75 |
 
 You can find more model training details in detection_experiments/experiment_folder/.
 

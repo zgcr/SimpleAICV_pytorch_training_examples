@@ -125,12 +125,16 @@ class CocoDetection(Dataset):
                  image_root_dir,
                  annotation_root_dir,
                  set='train2017',
+                 resize=416,
                  use_mosaic=False,
+                 mosaic_center_range=[0.5, 1.5],
                  transform=None):
         self.image_root_dir = image_root_dir
         self.annotation_root_dir = annotation_root_dir
         self.set_name = set
+        self.resize = resize
         self.use_mosaic = use_mosaic
+        self.mosaic_center_range = mosaic_center_range
         self.transform = transform
 
         self.coco = COCO(
@@ -160,109 +164,113 @@ class CocoDetection(Dataset):
 
     def __getitem__(self, idx):
         if self.use_mosaic:
-            if np.random.uniform(0, 1.) < 0.5:
-                imgs, annots = [], []
-                img = self.load_image(idx)
-                imgs.append(img)
-                annot = self.load_annotations(idx)
-                annots.append(annot)
+            # mosaic center x, y
+            x_ctr, y_ctr = [
+                int(
+                    random.uniform(self.resize * self.mosaic_center_range[0],
+                                   self.resize * self.mosaic_center_range[1]))
+                for _ in range(2)
+            ]
+            # all 4 image indices
+            imgs_indices = [idx] + [
+                random.randint(0,
+                               len(self.image_ids) - 1) for _ in range(3)
+            ]
 
-                index_list, index = [idx], idx
-                for _ in range(3):
-                    while index in index_list:
-                        index = np.random.randint(0, len(self.image_ids))
-                    index_list.append(index)
-                    img = self.load_image(index)
-                    imgs.append(img)
-                    annot = self.load_annotations(index)
-                    annots.append(annot)
+            final_annots = []
+            # combined image by 4 images
+            combined_img = np.full((self.resize * 2, self.resize * 2, 3),
+                                   114,
+                                   dtype=np.uint8)
 
-                # 第1，2，3，4张图片按顺时针方向排列，1为左上角图片，先计算出第2张图片的scale，然后推算出其他图片的最大resize尺寸，为了不让四张图片中某几张图片太小造成模型学习困难，scale限制为在0.25到0.75之间生成的随机浮点数。
-                scale1 = np.random.uniform(0.2, 0.8)
-                height1, width1, _ = imgs[0].shape
+            for i, index in enumerate(imgs_indices):
+                img = self.load_image(index)
+                annot = self.load_annotations(index)
 
-                imgs[0] = cv2.resize(
-                    imgs[0], (int(width1 * scale1), int(height1 * scale1)))
+                origin_height, origin_width, _ = img.shape
+                resize_factor = self.resize / max(origin_height, origin_width)
+                resize_height, resize_width = int(
+                    origin_height * resize_factor), int(origin_width *
+                                                        resize_factor)
 
-                max_height2, max_width2 = int(
-                    height1 * scale1), width1 - int(width1 * scale1)
-                height2, width2, _ = imgs[1].shape
-                scale2 = max_height2 / height2
-                if int(scale2 * width2) > max_width2:
-                    scale2 = max_width2 / width2
-                imgs[1] = cv2.resize(
-                    imgs[1], (int(width2 * scale2), int(height2 * scale2)))
+                img = cv2.resize(img, (resize_width, resize_height))
+                annot[:, :4] *= resize_factor
 
-                max_height3, max_width3 = height1 - int(
-                    height1 * scale1), width1 - int(width1 * scale1)
-                height3, width3, _ = imgs[2].shape
-                scale3 = max_height3 / height3
-                if int(scale3 * width3) > max_width3:
-                    scale3 = max_width3 / width3
-                imgs[2] = cv2.resize(
-                    imgs[2], (int(width3 * scale3), int(height3 * scale3)))
+                # top left img
+                if i == 0:
+                    # combined image coordinates
+                    x1a, y1a, x2a, y2a = max(x_ctr - resize_width,
+                                             0), max(y_ctr - resize_height,
+                                                     0), x_ctr, y_ctr
+                    # single img choosen area
+                    x1b, y1b, x2b, y2b = resize_width - (
+                        x2a - x1a), resize_height - (
+                            y2a - y1a), resize_width, resize_height
+                # top right img
+                elif i == 1:
+                    x1a, y1a, x2a, y2a = x_ctr, max(y_ctr - resize_height,
+                                                    0), min(
+                                                        x_ctr + resize_width,
+                                                        self.resize * 2), y_ctr
+                    x1b, y1b, x2b, y2b = 0, resize_height - (y2a - y1a), min(
+                        resize_width, x2a - x1a), resize_height
+                # bottom left img
+                elif i == 2:
+                    x1a, y1a, x2a, y2a = max(x_ctr - resize_width,
+                                             0), y_ctr, x_ctr, min(
+                                                 self.resize * 2,
+                                                 y_ctr + resize_height)
+                    x1b, y1b, x2b, y2b = resize_width - (x2a - x1a), 0, max(
+                        x_ctr, resize_width), min(y2a - y1a, resize_height)
+                # bottom right img
+                elif i == 3:
+                    x1a, y1a, x2a, y2a = x_ctr, y_ctr, min(
+                        x_ctr + resize_width,
+                        self.resize * 2), min(self.resize * 2,
+                                              y_ctr + resize_height)
+                    x1b, y1b, x2b, y2b = 0, 0, min(
+                        resize_width, x2a - x1a), min(y2a - y1a, resize_height)
 
-                max_height4, max_width4 = height1 - int(height1 * scale1), int(
-                    width1 * scale1)
-                height4, width4, _ = imgs[3].shape
-                scale4 = max_height4 / height4
-                if int(scale4 * width4) > max_width4:
-                    scale4 = max_width4 / width4
-                imgs[3] = cv2.resize(
-                    imgs[3], (int(width4 * scale4), int(height4 * scale4)))
+                # combined_img[ymin:ymax, xmin:xmax]
+                combined_img[y1a:y2a, x1a:x2a] = img[y1b:y2b, x1b:x2b]
+                padw, padh = x1a - x1b, y1a - y1b
 
-                # 最后图片大小和原图一样
-                final_image = np.zeros((height1, width1, 3))
-                final_image[0:int(height1 * scale1),
-                            0:int(width1 * scale1)] = imgs[0]
-                final_image[0:int(height2 * scale2),
-                            int(width1 *
-                                scale1):(int(width1 * scale1) +
-                                         int(width2 * scale2))] = imgs[1]
-                final_image[int(height1 * scale1):(int(height1 * scale1) +
-                                                   int(height3 * scale3)),
-                            int(width1 *
-                                scale1):(int(width1 * scale1) +
-                                         int(width3 * scale3))] = imgs[2]
-                final_image[int(height1 * scale1):(int(height1 * scale1) +
-                                                   int(height4 * scale4)),
-                            0:int(width4 * scale4)] = imgs[3]
+                # annot coordinates transform
+                if annot.shape[0] > 0:
+                    annot[:, 0] = annot[:, 0] + padw
+                    annot[:, 1] = annot[:, 1] + padh
+                    annot[:, 2] = annot[:, 2] + padw
+                    annot[:, 3] = annot[:, 3] + padh
 
-                annots[0][:, :4] *= scale1
-                annots[1][:, :4] *= scale2
-                annots[2][:, :4] *= scale3
-                annots[3][:, :4] *= scale4
+                final_annots.append(annot)
 
-                annots[1][:, 0] += int(width1 * scale1)
-                annots[1][:, 2] += int(width1 * scale1)
+            final_annots = np.concatenate(final_annots, axis=0)
+            final_annots[:, 0:4] = np.clip(final_annots[:, 0:4], 0,
+                                           self.resize * 2)
 
-                annots[2][:, 0] += int(width1 * scale1)
-                annots[2][:, 2] += int(width1 * scale1)
-                annots[2][:, 1] += int(height1 * scale1)
-                annots[2][:, 3] += int(height1 * scale1)
+            final_annots = final_annots[final_annots[:, 2] -
+                                        final_annots[:, 0] > 1]
+            final_annots = final_annots[final_annots[:, 3] -
+                                        final_annots[:, 1] > 1]
 
-                annots[3][:, 1] += int(height1 * scale1)
-                annots[3][:, 3] += int(height1 * scale1)
-
-                final_annot = np.concatenate(
-                    (annots[0], annots[1], annots[2], annots[3]), axis=0)
-
-                sample = {
-                    'img': final_image,
-                    'annot': final_annot,
-                    'scale': 1.
-                }
-            else:
-                img = self.load_image(idx)
-                annot = self.load_annotations(idx)
-
-                sample = {'img': img, 'annot': annot, 'scale': 1.}
+            sample = {'img': combined_img, 'annot': final_annots, 'scale': 1.}
 
         else:
             img = self.load_image(idx)
             annot = self.load_annotations(idx)
+            scale = 1.
 
-            sample = {'img': img, 'annot': annot, 'scale': 1.}
+            origin_height, origin_width, _ = img.shape
+            resize_factor = self.resize / max(origin_height, origin_width)
+            resize_height, resize_width = int(
+                origin_height * resize_factor), int(origin_width *
+                                                    resize_factor)
+
+            img = cv2.resize(img, (resize_width, resize_height))
+            annot[:, :4] *= resize_factor
+            scale *= resize_factor
+
+            sample = {'img': img, 'annot': annot, 'scale': scale}
 
         if self.transform:
             sample = self.transform(sample)
@@ -349,29 +357,86 @@ class COCODataPrefetcher():
         return input, annot
 
 
-def collater(data):
-    imgs = [s['img'] for s in data]
-    annots = [s['annot'] for s in data]
-    scales = [s['scale'] for s in data]
+class Collater():
+    def __init__(self):
+        pass
 
-    imgs = torch.from_numpy(np.stack(imgs, axis=0))
+    def next(self, data):
+        imgs = [s['img'] for s in data]
+        annots = [s['annot'] for s in data]
+        scales = [s['scale'] for s in data]
 
-    max_num_annots = max(annot.shape[0] for annot in annots)
+        imgs = torch.from_numpy(np.stack(imgs, axis=0))
 
-    if max_num_annots > 0:
-
-        annot_padded = torch.ones((len(annots), max_num_annots, 5)) * (-1)
+        max_num_annots = max(annot.shape[0] for annot in annots)
 
         if max_num_annots > 0:
+
+            annot_padded = torch.ones((len(annots), max_num_annots, 5)) * (-1)
+
+            if max_num_annots > 0:
+                for idx, annot in enumerate(annots):
+                    if annot.shape[0] > 0:
+                        annot_padded[idx, :annot.shape[0], :] = annot
+        else:
+            annot_padded = torch.ones((len(annots), 1, 5)) * (-1)
+
+        imgs = imgs.permute(0, 3, 1, 2)
+
+        return {'img': imgs, 'annot': annot_padded, 'scale': scales}
+
+
+class MultiScaleCollater():
+    def __init__(self,
+                 resize=416,
+                 multi_scale_range=[0.5, 1.5],
+                 stride=32,
+                 use_mosaic=False):
+        if use_mosaic:
+            self.resize = resize * 2
+        else:
+            self.resize = resize
+
+        self.multi_scale_range = multi_scale_range
+        self.stride = stride
+
+    def next(self, data):
+        min_resize = int(
+            ((self.resize + self.stride) * self.multi_scale_range[0]) //
+            self.stride * self.stride)
+        max_resize = int(
+            ((self.resize + self.stride) * self.multi_scale_range[1]) //
+            self.stride * self.stride)
+
+        final_resize = random.choice(range(min_resize, max_resize,
+                                           self.stride))
+
+        imgs = [s['img'] for s in data]
+        annots = [s['annot'] for s in data]
+        scales = [s['scale'] for s in data]
+
+        imgs = torch.from_numpy(np.stack(imgs, axis=0))
+        imgs = imgs.permute(0, 3, 1, 2)
+        imgs = F.interpolate(imgs,
+                             size=(final_resize, final_resize),
+                             mode='bilinear',
+                             align_corners=False)
+
+        resize_factor = final_resize / self.resize
+
+        max_num_annots = max(annot.shape[0] for annot in annots)
+
+        if max_num_annots > 0:
+            annot_padded = torch.ones((len(annots), max_num_annots, 5)) * (-1)
+
             for idx, annot in enumerate(annots):
                 if annot.shape[0] > 0:
+                    annot[:, 0:4] = annot[:, 0:4] * resize_factor
                     annot_padded[idx, :annot.shape[0], :] = annot
-    else:
-        annot_padded = torch.ones((len(annots), 1, 5)) * (-1)
+        else:
+            annot_padded = torch.ones((len(annots), 1, 5)) * (-1)
 
-    imgs = imgs.permute(0, 3, 1, 2)
-
-    return {'img': imgs, 'annot': annot_padded, 'scale': scales}
+        return {'img': imgs, 'annot': annot_padded, 'scale': scales}
 
 
 class RandomFlip(object):
@@ -420,9 +485,9 @@ class RandomCrop(object):
                 0, int(max_bbox[0] - random.uniform(0, max_left_trans)))
             crop_ymin = max(0,
                             int(max_bbox[1] - random.uniform(0, max_up_trans)))
-            crop_xmax = max(
+            crop_xmax = min(
                 w, int(max_bbox[2] + random.uniform(0, max_right_trans)))
-            crop_ymax = max(
+            crop_ymax = min(
                 h, int(max_bbox[3] + random.uniform(0, max_down_trans)))
 
             image = image[crop_ymin:crop_ymax, crop_xmin:crop_xmax]
@@ -465,6 +530,27 @@ class RandomTranslate(object):
         return sample
 
 
+class PadToSquare(object):
+    def __init__(self, resize=416, use_mosaic=False):
+        if use_mosaic:
+            self.resize = resize * 2
+        else:
+            self.resize = resize
+
+    def __call__(self, sample):
+        image, annots, scale = sample['img'], sample['annot'], sample['scale']
+        height, width, _ = image.shape
+
+        new_image = np.zeros((self.resize, self.resize, 3))
+        new_image[0:height, 0:width] = image
+
+        return {
+            'img': torch.from_numpy(new_image),
+            'annot': torch.from_numpy(annots),
+            'scale': scale
+        }
+
+
 class Resize(object):
     def __init__(self, resize=600):
         self.resize = resize
@@ -502,15 +588,19 @@ if __name__ == '__main__':
         annotation_root_dir=
         "/home/zgcr/Downloads/datasets/COCO2017/annotations/",
         set='train2017',
+        resize=416,
         use_mosaic=True,
+        mosaic_center_range=[0.5, 1.5],
         transform=transforms.Compose([
-            RandomFlip(),
-            Resize(resize=600),
+            RandomFlip(flip_prob=0.5),
+            RandomTranslate(translate_prob=0.5),
+            PadToSquare(resize=416, use_mosaic=True),
         ]))
+
     print(len(coco.image_ids))
     print(coco.category_id_to_coco_label)
 
-    print(coco[0]['img'].shape, coco[0]['annot'], coco[0]['scale'])
+    print(coco[0]['img'].shape, coco[0]['annot'].shape, coco[0]['scale'])
 
     # retinanet resize method
     # resize=400,per_image_average_area=223743,input shape=[667,667]
@@ -519,7 +609,7 @@ if __name__ == '__main__':
     # resize=700,per_image_average_area=682333,input shape=[1166,1166]
     # resize=800,per_image_average_area=891169,input shape=[1333,1333]
 
-    # my resize method
+    # yolov3 resize method(my resize method)
     # resize=600,per_image_average_area=258182,input shape=[600,600]
     # resize=667,per_image_average_area=318986,input shape=[667,667]
     # resize=700,per_image_average_area=351427,input shape=[700,700]

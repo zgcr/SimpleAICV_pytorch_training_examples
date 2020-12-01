@@ -44,8 +44,8 @@ class Config(object):
                                 ]))
 
     epochs = 12
-    batch_size = 24
+    batch_size = 16
     lr = 1e-4
     num_workers = 4
-    print_interval = 100
+    print_interval = 1
     apex = True

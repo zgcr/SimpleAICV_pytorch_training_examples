@@ -27,6 +27,10 @@ class Config(object):
     seed = 0
     input_image_size = 512
 
+    use_multi_scale = False
+    multi_scale_range = [0.6, 1.4]
+    stride = 4
+
     train_dataset = CocoDetection(image_root_dir=train_dataset_path,
                                   annotation_root_dir=dataset_annotations_path,
                                   set="train2017",
@@ -34,8 +38,8 @@ class Config(object):
                                       RandomFlip(flip_prob=0.5),
                                       RandomCrop(crop_prob=0.5),
                                       RandomTranslate(translate_prob=0.5),
-                                      Resize(resize=input_image_size),
                                   ]))
+
     val_dataset = CocoDetection(image_root_dir=val_dataset_path,
                                 annotation_root_dir=dataset_annotations_path,
                                 set="val2017",

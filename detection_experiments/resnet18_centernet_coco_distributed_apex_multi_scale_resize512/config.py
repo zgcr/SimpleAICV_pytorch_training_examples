@@ -6,7 +6,7 @@ BASE_DIR = os.path.dirname(
 sys.path.append(BASE_DIR)
 
 from public.path import COCO2017_path
-from public.detection.dataset.cocodataset import CocoDetection, CenterNetRandomScaleResize, Resize, RandomFlip, RandomCrop, RandomTranslate
+from public.detection.dataset.cocodataset import CocoDetection, Resize, RandomFlip, RandomCrop, RandomTranslate
 
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
@@ -26,6 +26,10 @@ class Config(object):
     num_classes = 80
     seed = 0
     input_image_size = 512
+    
+    use_multi_scale = True
+    multi_scale_range = [0.6, 1.4]
+    stride = 4
 
     train_dataset = CocoDetection(image_root_dir=train_dataset_path,
                                   annotation_root_dir=dataset_annotations_path,
@@ -34,10 +38,8 @@ class Config(object):
                                       RandomFlip(flip_prob=0.5),
                                       RandomCrop(crop_prob=0.5),
                                       RandomTranslate(translate_prob=0.5),
-                                      CenterNetRandomScaleResize(
-                                          resize=input_image_size,
-                                          scale_factor=0.4),
                                   ]))
+
     val_dataset = CocoDetection(image_root_dir=val_dataset_path,
                                 annotation_root_dir=dataset_annotations_path,
                                 set="val2017",
@@ -47,7 +49,7 @@ class Config(object):
 
     epochs = 140
     milestones = [90, 120]
-    per_node_batch_size = 32
+    per_node_batch_size = 24
     lr = 5e-4
     num_workers = 4
     print_interval = 100
