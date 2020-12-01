@@ -1,4 +1,5 @@
    * [My ZhiHu column](#my-zhihu-column)
+   * [Update log](#Update-log)
    * [Requirements](#requirements)
    * [How to download my pretrained models](#how-to-download-my-pretrained-models)
    * [How to prepare dataset directory structure for training and testing](#how-to-prepare-dataset-directory-structure-for-training-and-testing)
@@ -20,6 +21,12 @@
 # My ZhiHu column
 
 https://www.zhihu.com/column/c_1249719688055193600
+
+# Update log
+
+**2020.12.1:**
+1. Modify RetinaNet/FCOS loss calculation method.Training time is reduced by 40% and model performance is improved.
+2. Add CenterNet multi scale training method.
 
 # Requirements
 
