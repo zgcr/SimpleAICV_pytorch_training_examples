@@ -26,7 +26,7 @@ from public.detection.models.fcos import FCOS
 from public.detection.models.centernet import CenterNet
 from public.detection.models.yolov3 import YOLOV3
 from public.detection.models.decode import RetinaDecoder, FCOSDecoder, CenterNetDecoder, YOLOV3Decoder
-from public.detection.dataset.cocodataset import CocoDetection, Resize
+from public.detection.dataset.cocodataset import CocoDetection, Normalize, Resize
 from pycocotools.cocoeval import COCOeval
 
 
@@ -214,6 +214,7 @@ def test_model(args):
         annotation_root_dir=os.path.join(COCO2017_path, 'annotations'),
         set="val2017",
         transform=transforms.Compose([
+            Normalize(),
             Resize(resize=args.input_image_size),
         ]))
 

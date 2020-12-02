@@ -6,7 +6,7 @@ BASE_DIR = os.path.dirname(
 sys.path.append(BASE_DIR)
 
 from public.path import VOCdataset_path
-from public.detection.dataset.vocdataset import VocDetection, Resize, RandomFlip, RandomCrop, RandomTranslate
+from public.detection.dataset.vocdataset import VocDetection, Resize, RandomFlip, RandomCrop, RandomTranslate, Normalize
 
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
@@ -32,12 +32,14 @@ class Config(object):
                                      RandomFlip(flip_prob=0.5),
                                      RandomCrop(crop_prob=0.5),
                                      RandomTranslate(translate_prob=0.5),
+                                     Normalize(),
                                      Resize(resize=input_image_size),
                                  ]),
                                  keep_difficult=False)
     val_dataset = VocDetection(root_dir=dataset_path,
                                image_sets=[('2007', 'test')],
                                transform=transforms.Compose([
+                                   Normalize(),
                                    Resize(resize=input_image_size),
                                ]),
                                keep_difficult=False)

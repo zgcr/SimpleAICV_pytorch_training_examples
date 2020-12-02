@@ -27,7 +27,7 @@ from public.detection.models.fcos import FCOS
 from public.detection.models.centernet import CenterNet
 from public.detection.models.yolov3 import YOLOV3
 from public.detection.models.decode import RetinaDecoder, FCOSDecoder, CenterNetDecoder, YOLOV3Decoder
-from public.detection.dataset.vocdataset import VocDetection, Resize
+from public.detection.dataset.vocdataset import VocDetection, Normalize, Resize
 
 
 def _retinanet(arch, use_pretrained_model, pretrained_model_path, num_classes):
@@ -299,6 +299,7 @@ def test_model(args):
     voc_val_dataset = VocDetection(root_dir=VOCdataset_path,
                                    image_sets=[('2007', 'test')],
                                    transform=transforms.Compose([
+                                       Normalize(),
                                        Resize(resize=args.input_image_size),
                                    ]),
                                    keep_difficult=False)

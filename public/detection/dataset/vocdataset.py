@@ -87,7 +87,7 @@ class VocDetection(Dataset):
         img = cv2.imread(self._imgpath % img_id)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-        return img.astype(np.float32) / 255.
+        return img.astype(np.float32)
 
     def load_annotations(self, target):
         annotations = []
@@ -184,9 +184,9 @@ class RandomFlip(object):
         self.flip_prob = flip_prob
 
     def __call__(self, sample):
+        image, annots, scale = sample['img'], sample['annot'], sample['scale']
+
         if np.random.uniform(0, 1) < self.flip_prob:
-            image, annots, scale = sample['img'], sample['annot'], sample[
-                'scale']
             image = image[:, ::-1, :]
 
             _, width, _ = image.shape
@@ -266,6 +266,19 @@ class RandomTranslate(object):
             annots[:, [1, 3]] = annots[:, [1, 3]] + ty
 
             sample = {'img': image, 'annot': annots, 'scale': scale}
+
+        return sample
+
+
+class Normalize(object):
+    def __init__(self):
+        pass
+
+    def __call__(self, sample):
+        image, annots, scale = sample['img'], sample['annot'], sample['scale']
+
+        image = image / 255.
+        sample = {'img': image, 'annot': annots, 'scale': scale}
 
         return sample
 

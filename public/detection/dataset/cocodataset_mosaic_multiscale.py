@@ -283,7 +283,7 @@ class CocoDetection(Dataset):
         img = cv2.imread(path)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
-        return img.astype(np.float32) / 255.
+        return img.astype(np.float32)
 
     def load_annotations(self, image_index):
         # get ground truth annotations
@@ -444,9 +444,9 @@ class RandomFlip(object):
         self.flip_prob = flip_prob
 
     def __call__(self, sample):
+        image, annots, scale = sample['img'], sample['annot'], sample['scale']
+
         if np.random.uniform(0, 1) < self.flip_prob:
-            image, annots, scale = sample['img'], sample['annot'], sample[
-                'scale']
             image = image[:, ::-1, :]
 
             _, width, _ = image.shape
@@ -551,6 +551,98 @@ class PadToSquare(object):
         }
 
 
+class Normalize(object):
+    def __init__(self):
+        pass
+
+    def __call__(self, sample):
+        image, annots, scale = sample['img'], sample['annot'], sample['scale']
+
+        image = image / 255.
+        sample = {'img': image, 'annot': annots, 'scale': scale}
+
+        return sample
+
+
+class RandomNoise(object):
+    def __init__(self, gaussian_noise=50, noise_prob=0.5):
+        self.noise_prob = noise_prob
+        self.gaussian_noise = gaussian_noise
+
+    def __call__(self, sample):
+        image, annots, scale = sample['img'], sample['annot'], sample['scale']
+
+        if np.random.uniform(0, 1) < self.noise_prob:
+            gaussian_noise = min(self.gaussian_noise, 127)
+            gaussian_noise = max(gaussian_noise, 0)
+            gaussian_noise = random.randint(0, gaussian_noise)
+            noise = np.random.normal(0, gaussian_noise, image.shape)
+            image = image + noise
+            image[image < 0] = 0
+            image[image > 255] = 255
+
+        return {'img': image, 'annot': annots, 'scale': scale}
+
+
+class RandomBlur(object):
+    def __init__(self, blur_kernel=3, blur_prob=0.5):
+        self.blur_prob = blur_prob
+        self.blur_kernel = blur_kernel
+
+    def __call__(self, sample):
+        image, annots, scale = sample['img'], sample['annot'], sample['scale']
+
+        if np.random.uniform(0, 1) < self.blur_prob:
+            image = cv2.GaussianBlur(image,
+                                     (self.blur_kernel, self.blur_kernel), 0)
+
+        return {'img': image, 'annot': annots, 'scale': scale}
+
+
+class RandomHSV(object):
+    def __init__(self, hue=0.1, saturation=1.5, exposure=1.5, hsv_prob=0.5):
+        self.hue = hue
+        self.saturation = saturation
+        self.exposure = exposure
+        self.hsv_prob = hsv_prob
+
+    def __call__(self, sample):
+        image, annots, scale = sample['img'], sample['annot'], sample['scale']
+
+        if np.random.uniform(0, 1) < self.hsv_prob:
+
+            final_hue = self.generate_random_number(-self.hue, self.hue)
+
+            final_sat = self.generate_random_number(1, self.saturation)
+            if random.randint(0, 1) % 2:
+                final_sat = 1. / final_sat
+
+            final_exp = self.generate_random_number(1, self.exposure)
+            if random.randint(0, 1) % 2:
+                final_exp = 1. / final_exp
+
+            if final_hue != 0 or final_sat != 1 or final_exp != 1:
+                # RGB to HSV
+                hsv_image = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
+                hsv_split = cv2.split(hsv_image)
+                hsv_split[1] *= final_sat
+                hsv_split[2] *= final_exp
+                hsv_split[0] += 179 * final_hue
+                hsv_image = cv2.merge(hsv_split)
+                # HSV to RGB
+                image = np.clip(cv2.cvtColor(hsv_image, cv2.COLOR_HSV2RGB), 0,
+                                255)
+
+        return {'img': image, 'annot': annots, 'scale': scale}
+
+    def generate_random_number(self, min_value, max_value):
+        if min_value > max_value:
+            temp = min_value
+            min_value = max_value
+            max_value = temp
+        return np.random.uniform(0, 1) * (max_value - min_value) + min_value
+
+
 class Resize(object):
     def __init__(self, resize=600):
         self.resize = resize
@@ -558,6 +650,9 @@ class Resize(object):
     def __call__(self, sample):
         image, annots, scale = sample['img'], sample['annot'], sample['scale']
         height, width, _ = image.shape
+
+        if annots.shape[0] == 0:
+            return sample
 
         max_image_size = max(height, width)
         resize_factor = self.resize / max_image_size

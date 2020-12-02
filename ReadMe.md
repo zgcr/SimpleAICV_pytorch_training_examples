@@ -93,12 +93,15 @@ Related issue:https://github.com/CharlesShang/DCNv2/issues/82
 
 # How to download my pretrained models
 
-You can download all my pretrained models from here:https://drive.google.com/drive/folders/1rewWULfXsvE0voA-A_ooTWwadq9lsk3X?usp=sharing .
+You can download all my pretrained models from here:
+```
+https://drive.google.com/drive/folders/1rewWULfXsvE0voA-A_ooTWwadq9lsk3X?usp=sharing
+```
 
 If you are in China,you can download from here:
 ```
-链接：https://pan.baidu.com/s/1b6m70EQclE8aG-A2tkWrhQ 
-提取码：aieg 
+链接: https://pan.baidu.com/s/1nrlexTJ1mdBo0zKv1mqTGg
+提取码: yph6
 ```
 
 # How to prepare dataset directory structure for training and testing
