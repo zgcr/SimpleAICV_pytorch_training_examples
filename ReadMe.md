@@ -45,6 +45,7 @@ Platform:Ubuntu 18.04.4
 11.apex==0.1
 12.DCNV2==0.1
 ```
+**How to install apex?**
 
 Please use the following orders to install apex:
 ```
@@ -60,7 +61,7 @@ pip install -v --no-cache-dir ./
 ```
 Using apex to train can reduce video memory usage by 25%-30%, but the training speed will be slower, the trained model has the same performance as not using apex.
 
-How to use DCNv2 with apex mixed precision training opt_level='O1' (for CenterNet:Objects as Points training)?
+**How to use DCNv2 with apex mixed precision training opt_level='O1' (for CenterNet:Objects as Points training)?**
 
 I trained and tested centernet on 4 RTX2080Ti graphics card, and no errors were reported during the training process and testing process.
 

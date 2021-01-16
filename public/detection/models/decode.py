@@ -481,9 +481,11 @@ class YOLOV3Decoder(nn.Module):
                     torch.sigmoid(per_level_reg_pred[:, :, 0:2]) +
                     per_level_anchors[:, :, 0:2]) * per_level_anchors[:, :,
                                                                       4:5]
+                # pred_bboxes_wh=exp(twh)*anchor_wh/stride
                 per_level_reg_pred[:, :, 2:4] = torch.exp(
-                    per_level_reg_pred[:, :, 2:4]) * per_level_anchors[:, :,
-                                                                       2:4]
+                    per_level_reg_pred[:, :, 2:4]
+                ) * per_level_anchors[:, :, 2:4] / per_level_anchors[:, :, 4:5]
+
                 per_level_reg_pred[:, :, 0:
                                    2] = per_level_reg_pred[:, :, 0:
                                                            2] - 0.5 * per_level_reg_pred[:, :,
@@ -595,56 +597,56 @@ class YOLOV3Decoder(nn.Module):
 
 
 if __name__ == '__main__':
-    from retinanet import RetinaNet
-    net = RetinaNet(resnet_type="resnet50")
-    image_h, image_w = 640, 640
-    cls_heads, reg_heads, batch_anchors = net(
-        torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
-    annotations = torch.FloatTensor([[[113, 120, 183, 255, 5],
-                                      [13, 45, 175, 210, 2]],
-                                     [[11, 18, 223, 225, 1],
-                                      [-1, -1, -1, -1, -1]],
-                                     [[-1, -1, -1, -1, -1],
-                                      [-1, -1, -1, -1, -1]]])
-    decode = RetinaDecoder(image_w, image_h)
-    batch_scores, batch_classes, batch_pred_bboxes = decode(
-        cls_heads, reg_heads, batch_anchors)
-    print("1111", batch_scores.shape, batch_classes.shape,
-          batch_pred_bboxes.shape)
+    # from retinanet import RetinaNet
+    # net = RetinaNet(resnet_type="resnet50")
+    # image_h, image_w = 640, 640
+    # cls_heads, reg_heads, batch_anchors = net(
+    #     torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    # annotations = torch.FloatTensor([[[113, 120, 183, 255, 5],
+    #                                   [13, 45, 175, 210, 2]],
+    #                                  [[11, 18, 223, 225, 1],
+    #                                   [-1, -1, -1, -1, -1]],
+    #                                  [[-1, -1, -1, -1, -1],
+    #                                   [-1, -1, -1, -1, -1]]])
+    # decode = RetinaDecoder(image_w, image_h)
+    # batch_scores, batch_classes, batch_pred_bboxes = decode(
+    #     cls_heads, reg_heads, batch_anchors)
+    # print("1111", batch_scores.shape, batch_classes.shape,
+    #       batch_pred_bboxes.shape)
 
-    from fcos import FCOS
-    net = FCOS(resnet_type="resnet50")
-    image_h, image_w = 600, 600
-    cls_heads, reg_heads, center_heads, batch_positions = net(
-        torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
-    annotations = torch.FloatTensor([[[113, 120, 183, 255, 5],
-                                      [13, 45, 175, 210, 2]],
-                                     [[11, 18, 223, 225, 1],
-                                      [-1, -1, -1, -1, -1]],
-                                     [[-1, -1, -1, -1, -1],
-                                      [-1, -1, -1, -1, -1]]])
-    decode = FCOSDecoder(image_w, image_h)
-    batch_scores2, batch_classes2, batch_pred_bboxes2 = decode(
-        cls_heads, reg_heads, center_heads, batch_positions)
-    print("2222", batch_scores2.shape, batch_classes2.shape,
-          batch_pred_bboxes2.shape)
+    # from fcos import FCOS
+    # net = FCOS(resnet_type="resnet50")
+    # image_h, image_w = 600, 600
+    # cls_heads, reg_heads, center_heads, batch_positions = net(
+    #     torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    # annotations = torch.FloatTensor([[[113, 120, 183, 255, 5],
+    #                                   [13, 45, 175, 210, 2]],
+    #                                  [[11, 18, 223, 225, 1],
+    #                                   [-1, -1, -1, -1, -1]],
+    #                                  [[-1, -1, -1, -1, -1],
+    #                                   [-1, -1, -1, -1, -1]]])
+    # decode = FCOSDecoder(image_w, image_h)
+    # batch_scores2, batch_classes2, batch_pred_bboxes2 = decode(
+    #     cls_heads, reg_heads, center_heads, batch_positions)
+    # print("2222", batch_scores2.shape, batch_classes2.shape,
+    #       batch_pred_bboxes2.shape)
 
-    from centernet import CenterNet
-    net = CenterNet(resnet_type="resnet50")
-    image_h, image_w = 640, 640
-    heatmap_output, offset_output, wh_output = net(
-        torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
-    annotations = torch.FloatTensor([[[113, 120, 183, 255, 5],
-                                      [13, 45, 175, 210, 2]],
-                                     [[11, 18, 223, 225, 1],
-                                      [-1, -1, -1, -1, -1]],
-                                     [[-1, -1, -1, -1, -1],
-                                      [-1, -1, -1, -1, -1]]])
-    decode = CenterNetDecoder(image_w, image_h)
-    batch_scores3, batch_classes3, batch_pred_bboxes3 = decode(
-        heatmap_output, offset_output, wh_output)
-    print("3333", batch_scores3.shape, batch_classes3.shape,
-          batch_pred_bboxes3.shape)
+    # from centernet import CenterNet
+    # net = CenterNet(resnet_type="resnet50")
+    # image_h, image_w = 640, 640
+    # heatmap_output, offset_output, wh_output = net(
+    #     torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    # annotations = torch.FloatTensor([[[113, 120, 183, 255, 5],
+    #                                   [13, 45, 175, 210, 2]],
+    #                                  [[11, 18, 223, 225, 1],
+    #                                   [-1, -1, -1, -1, -1]],
+    #                                  [[-1, -1, -1, -1, -1],
+    #                                   [-1, -1, -1, -1, -1]]])
+    # decode = CenterNetDecoder(image_w, image_h)
+    # batch_scores3, batch_classes3, batch_pred_bboxes3 = decode(
+    #     heatmap_output, offset_output, wh_output)
+    # print("3333", batch_scores3.shape, batch_classes3.shape,
+    #       batch_pred_bboxes3.shape)
 
     from yolov3 import YOLOV3
     net = YOLOV3(backbone_type="darknet53")

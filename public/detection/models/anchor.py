@@ -167,7 +167,7 @@ class YOLOV3Anchors(nn.Module):
             batch_anchors.append(per_level_featrue_anchors)
 
         # if input size:[B,3,416,416]
-        # batch_anchors shape:[[B,8112,5],[B,2028,5],[B,507,5]]
+        # batch_anchors shape:[[B, 52, 52, 3, 5],[B, 26, 26, 3, 5],[B, 13, 13, 3, 5]]
         # per anchor format:[grids_x_index,grids_y_index,anchor_w,anchor_h,stride]
         return batch_anchors
 

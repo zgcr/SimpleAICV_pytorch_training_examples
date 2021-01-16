@@ -15,6 +15,7 @@ warnings.filterwarnings('ignore')
 import numpy as np
 from thop import profile
 from thop import clever_format
+from tqdm import tqdm
 import apex
 from apex import amp
 from apex.parallel import convert_syncbn_model
@@ -123,67 +124,81 @@ def parse_args():
     return parser.parse_args()
 
 
-def validate(val_dataset, model, decoder):
+def validate(val_dataset, model, decoder, args):
     model = model.module
     # switch to evaluate mode
     model.eval()
     with torch.no_grad():
-        all_eval_result = evaluate_coco(val_dataset, model, decoder)
+        all_eval_result = evaluate_coco(val_dataset, model, decoder, args)
 
     return all_eval_result
 
 
-def evaluate_coco(val_dataset, model, decoder):
+def evaluate_coco(val_dataset, model, decoder, args):
     results, image_ids = [], []
+    indexes = []
     for index in range(len(val_dataset)):
-        data = val_dataset[index]
-        scale = data['scale']
-        obj_heads, reg_heads, cls_heads, batch_anchors = model(
-            data['img'].cuda().permute(2, 0, 1).float().unsqueeze(dim=0))
-        scores, classes, boxes = decoder(obj_heads, reg_heads, cls_heads,
-                                         batch_anchors)
+        indexes.append(index)
+
+    batch_size = args.per_node_batch_size
+    eval_collater = Collater()
+    val_loader = DataLoader(val_dataset,
+                            batch_size=batch_size,
+                            shuffle=False,
+                            num_workers=args.num_workers,
+                            collate_fn=eval_collater.next)
+
+    start_time = time.time()
+
+    for i, data in tqdm(enumerate(val_loader)):
+        images, scales = torch.tensor(data['img']), torch.tensor(data['scale'])
+        per_batch_indexes = indexes[i * batch_size:(i + 1) * batch_size]
+
+        images = images.cuda().float()
+        cls_heads, reg_heads, center_heads, batch_positions = model(images)
+        scores, classes, boxes = decoder(cls_heads, reg_heads, center_heads,
+                                         batch_positions)
+
         scores, classes, boxes = scores.cpu(), classes.cpu(), boxes.cpu()
-        boxes /= scale
+        scales = scales.unsqueeze(-1).unsqueeze(-1)
+        boxes /= scales
 
-        # make sure decode batch_size=1
-        # scores shape:[1,max_detection_num]
-        # classes shape:[1,max_detection_num]
-        # bboxes shape[1,max_detection_num,4]
-        assert scores.shape[0] == 1
+        for per_image_scores, per_image_classes, per_image_boxes, index in zip(
+                scores, classes, boxes, per_batch_indexes):
+            # for coco_eval,we need [x_min,y_min,w,h] format pred boxes
+            per_image_boxes[:, 2:] -= per_image_boxes[:, :2]
 
-        scores = scores.squeeze(0)
-        classes = classes.squeeze(0)
-        boxes = boxes.squeeze(0)
+            for object_score, object_class, object_box in zip(
+                    per_image_scores, per_image_classes, per_image_boxes):
+                object_score = float(object_score)
+                object_class = int(object_class)
+                object_box = object_box.tolist()
+                if object_class == -1:
+                    break
 
-        # for coco_eval,we need [x_min,y_min,w,h] format pred boxes
-        boxes[:, 2:] -= boxes[:, :2]
+                image_result = {
+                    'image_id':
+                    val_dataset.image_ids[index],
+                    'category_id':
+                    val_dataset.find_category_id_from_coco_label(object_class),
+                    'score':
+                    object_score,
+                    'bbox':
+                    object_box,
+                }
+                results.append(image_result)
 
-        for object_score, object_class, object_box in zip(
-                scores, classes, boxes):
-            object_score = float(object_score)
-            object_class = int(object_class)
-            object_box = object_box.tolist()
-            if object_class == -1:
-                break
+            image_ids.append(val_dataset.image_ids[index])
 
-            image_result = {
-                'image_id':
-                val_dataset.image_ids[index],
-                'category_id':
-                val_dataset.find_category_id_from_coco_label(object_class),
-                'score':
-                object_score,
-                'bbox':
-                object_box,
-            }
-            results.append(image_result)
+            print('{}/{}'.format(index, len(val_dataset)), end='\r')
 
-        image_ids.append(val_dataset.image_ids[index])
+    testing_time = (time.time() - start_time)
+    per_image_testing_time = testing_time / len(val_dataset)
 
-        print('{}/{}'.format(index, len(val_dataset)), end='\r')
+    print(f"per_image_testing_time:{per_image_testing_time:.3f}")
 
     if not len(results):
-        print("No target detected in test set images")
+        print(f"No target detected in test set images")
         return
 
     json.dump(results,
@@ -313,7 +328,8 @@ def main():
         model.load_state_dict(checkpoint['model_state_dict'])
         if local_rank == 0:
             logger.info(f"start eval.")
-            all_eval_result = validate(Config.val_dataset, model, decoder)
+            all_eval_result = validate(Config.val_dataset, model, decoder,
+                                       args)
             logger.info(f"eval done.")
             if all_eval_result is not None:
                 logger.info(
@@ -358,7 +374,8 @@ def main():
         if epoch % 1 == 0 or epoch == args.epochs:
             if local_rank == 0:
                 logger.info(f"start eval.")
-                all_eval_result = validate(Config.val_dataset, model, decoder)
+                all_eval_result = validate(Config.val_dataset, model, decoder,
+                                           args)
                 logger.info(f"eval done.")
                 if all_eval_result is not None:
                     logger.info(
