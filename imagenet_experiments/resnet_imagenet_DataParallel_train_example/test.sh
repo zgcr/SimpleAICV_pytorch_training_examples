@@ -1,1 +1,0 @@
-python ../../public/test_scripts/test_on_imagenet.py --backbone resnet50 --classifier resnet --batch_size 256 --num_workers 8 --num_classes 1000 --pretrained_model_path /home/zgcr/Downloads/pretrained_models/resnet/resnet50-epoch100-acc76.512.pth --seed 0 --input_image_size 224 --use_gpu --use_pretrained_model

@@ -1,1 +1,0 @@
-python detect_single_image.py --backbone resnet50 --detector retinanet --num_classes 80 --pretrained_model_path /home/zgcr/Downloads/pretrained_models/detection_models/resnet50_retinanet_coco_resize667_mAP0.293.pth --seed 0 --input_image_size 667 --test_image_path ../../test_data/detection/images/000000001551.jpg --min_score_threshold 0.3 --save_detected_image --use_gpu

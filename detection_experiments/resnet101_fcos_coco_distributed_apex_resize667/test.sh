@@ -1,1 +1,0 @@
-python ../../public/test_scripts/test_on_coco.py --backbone resnet101 --detector fcos --batch_size 16 --num_workers 8 --num_classes 80 --pretrained_model_path /home/zgcr/Downloads/pretrained_models/detection_models/resnet101_fcos_coco_resize667_mAP0.342.pth --seed 0 --input_image_size 667 --min_score_threshold 0.05 --use_gpu --use_pretrained_model
