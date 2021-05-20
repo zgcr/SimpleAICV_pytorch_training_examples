@@ -126,8 +126,8 @@ https://drive.google.com/drive/folders/1t8vmuxy_rTNczJo_Ej5zFd84fFMYap-I?usp=sha
 
 If you are in China,you can download from here:
 ```
-链接: https://pan.baidu.com/s/150MVtbEhzdlgSI6NM3bpg
-提取码: 93bf
+链接: https://pan.baidu.com/s/1leeoHAUZtnxc9ing38E3Nw
+提取码: 4epf
 ```
 
 # How to reproduce my model
