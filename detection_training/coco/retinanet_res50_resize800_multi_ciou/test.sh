@@ -1,1 +1,0 @@
-CUDA_VISIBLE_DEVICES=0,1 python ../../../tools/test_detection_model.py --work-dir ./

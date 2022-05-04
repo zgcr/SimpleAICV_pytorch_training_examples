@@ -1,0 +1,19 @@
+2022-02-27 09:03:22 - network: yolov4cspdarknet53
+2022-02-27 09:03:22 - num_classes: 1000
+2022-02-27 09:03:22 - input_image_size: 256
+2022-02-27 09:03:22 - scale: 1.1428571428571428
+2022-02-27 09:03:22 - trained_model_path: /root/code/simpleAICV-pytorch-ImageNet-COCO-training/classification_training/imagenet/yolov4cspdarknet53/checkpoints/yolov4cspdarknet53-acc77.448.pth
+2022-02-27 09:03:22 - criterion: CELoss(
+  (loss): CrossEntropyLoss()
+)
+2022-02-27 09:03:22 - val_dataset: <simpleAICV.classification.datasets.ilsvrc2012dataset.ILSVRC2012Dataset object at 0x7f958008bc70>
+2022-02-27 09:03:22 - collater: <simpleAICV.classification.common.ClassificationCollater object at 0x7f958008bc40>
+2022-02-27 09:03:22 - seed: 0
+2022-02-27 09:03:22 - batch_size: 256
+2022-02-27 09:03:22 - num_workers: 16
+2022-02-27 09:03:22 - distributed: True
+2022-02-27 09:03:22 - gpus_type: NVIDIA RTX A5000
+2022-02-27 09:03:22 - gpus_num: 2
+2022-02-27 09:03:22 - group: <torch._C._distributed_c10d.ProcessGroupNCCL object at 0x7f95669a7170>
+2022-02-27 09:03:22 - model: yolov4cspdarknet53, macs: 6.584G, params: 27.642M
+2022-02-27 09:04:42 - acc1: 77.418%, acc5: 93.704%, test_loss: 0.8808, per_image_load_time: 0.579ms, per_image_inference_time: 1.267ms

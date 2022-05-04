@@ -1,0 +1,666 @@
+2022-04-30 20:11:57 - network: resnet50_fcos
+2022-04-30 20:11:57 - num_classes: 20
+2022-04-30 20:11:57 - input_image_size: [640, 640]
+2022-04-30 20:11:57 - backbone_pretrained_path: /root/code/simpleAICV-pytorch-ImageNet-COCO-training/pretrained_models/resnet/resnet50-acc76.322.pth
+2022-04-30 20:11:57 - trained_model_path: 
+2022-04-30 20:11:57 - criterion: FCOSLoss()
+2022-04-30 20:11:57 - decoder: <simpleAICV.detection.decode.FCOSDecoder object at 0x7f90c51efd30>
+2022-04-30 20:11:57 - train_dataset: <simpleAICV.detection.datasets.vocdataset.VocDetection object at 0x7f90c51cd130>
+2022-04-30 20:11:57 - val_dataset: <simpleAICV.detection.datasets.vocdataset.VocDetection object at 0x7f90c51cd250>
+2022-04-30 20:11:57 - collater: <simpleAICV.detection.common.DetectionCollater object at 0x7f90c51cd220>
+2022-04-30 20:11:57 - seed: 0
+2022-04-30 20:11:57 - batch_size: 32
+2022-04-30 20:11:57 - num_workers: 4
+2022-04-30 20:11:57 - optimizer: ('AdamW', {'lr': 0.0001, 'weight_decay': 0.001})
+2022-04-30 20:11:57 - scheduler: ('MultiStepLR', {'warm_up_epochs': 0, 'gamma': 0.1, 'milestones': [8, 12]})
+2022-04-30 20:11:57 - epochs: 13
+2022-04-30 20:11:57 - eval_epoch: [1, 3, 5, 8, 10, 12, 13]
+2022-04-30 20:11:57 - print_interval: 100
+2022-04-30 20:11:57 - eval_type: VOC
+2022-04-30 20:11:57 - eval_voc_iou_threshold_list: [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
+2022-04-30 20:11:57 - save_model_metric: IoU=0.50,area=all,maxDets=100,mAP
+2022-04-30 20:11:57 - sync_bn: False
+2022-04-30 20:11:57 - apex: True
+2022-04-30 20:11:57 - gpus_type: NVIDIA RTX A5000
+2022-04-30 20:11:57 - gpus_num: 2
+2022-04-30 20:11:57 - group: <torch._C._distributed_c10d.ProcessGroupNCCL object at 0x7f90c4f61330>
+2022-04-30 20:11:58 - --------------------parameters--------------------
+2022-04-30 20:11:58 - name: scales, grad: True
+2022-04-30 20:11:58 - name: backbone.conv1.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.conv1.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.conv1.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer1.0.conv1.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer1.0.conv1.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer1.0.conv1.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer1.0.conv2.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer1.0.conv2.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer1.0.conv2.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer1.0.conv3.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer1.0.conv3.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer1.0.conv3.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer1.0.downsample_conv.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer1.0.downsample_conv.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer1.0.downsample_conv.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer1.1.conv1.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer1.1.conv1.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer1.1.conv1.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer1.1.conv2.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer1.1.conv2.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer1.1.conv2.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer1.1.conv3.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer1.1.conv3.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer1.1.conv3.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer1.2.conv1.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer1.2.conv1.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer1.2.conv1.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer1.2.conv2.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer1.2.conv2.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer1.2.conv2.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer1.2.conv3.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer1.2.conv3.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer1.2.conv3.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer2.0.conv1.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer2.0.conv1.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer2.0.conv1.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer2.0.conv2.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer2.0.conv2.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer2.0.conv2.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer2.0.conv3.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer2.0.conv3.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer2.0.conv3.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer2.0.downsample_conv.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer2.0.downsample_conv.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer2.0.downsample_conv.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer2.1.conv1.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer2.1.conv1.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer2.1.conv1.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer2.1.conv2.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer2.1.conv2.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer2.1.conv2.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer2.1.conv3.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer2.1.conv3.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer2.1.conv3.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer2.2.conv1.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer2.2.conv1.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer2.2.conv1.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer2.2.conv2.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer2.2.conv2.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer2.2.conv2.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer2.2.conv3.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer2.2.conv3.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer2.2.conv3.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer2.3.conv1.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer2.3.conv1.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer2.3.conv1.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer2.3.conv2.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer2.3.conv2.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer2.3.conv2.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer2.3.conv3.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer2.3.conv3.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer2.3.conv3.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.0.conv1.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.0.conv1.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.0.conv1.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.0.conv2.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.0.conv2.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.0.conv2.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.0.conv3.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.0.conv3.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.0.conv3.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.0.downsample_conv.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.0.downsample_conv.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.0.downsample_conv.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.1.conv1.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.1.conv1.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.1.conv1.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.1.conv2.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.1.conv2.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.1.conv2.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.1.conv3.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.1.conv3.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.1.conv3.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.2.conv1.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.2.conv1.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.2.conv1.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.2.conv2.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.2.conv2.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.2.conv2.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.2.conv3.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.2.conv3.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.2.conv3.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.3.conv1.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.3.conv1.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.3.conv1.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.3.conv2.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.3.conv2.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.3.conv2.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.3.conv3.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.3.conv3.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.3.conv3.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.4.conv1.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.4.conv1.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.4.conv1.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.4.conv2.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.4.conv2.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.4.conv2.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.4.conv3.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.4.conv3.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.4.conv3.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.5.conv1.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.5.conv1.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.5.conv1.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.5.conv2.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.5.conv2.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.5.conv2.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.5.conv3.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.5.conv3.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer3.5.conv3.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer4.0.conv1.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer4.0.conv1.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer4.0.conv1.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer4.0.conv2.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer4.0.conv2.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer4.0.conv2.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer4.0.conv3.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer4.0.conv3.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer4.0.conv3.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer4.0.downsample_conv.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer4.0.downsample_conv.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer4.0.downsample_conv.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer4.1.conv1.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer4.1.conv1.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer4.1.conv1.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer4.1.conv2.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer4.1.conv2.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer4.1.conv2.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer4.1.conv3.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer4.1.conv3.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer4.1.conv3.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer4.2.conv1.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer4.2.conv1.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer4.2.conv1.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer4.2.conv2.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer4.2.conv2.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer4.2.conv2.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: backbone.layer4.2.conv3.layer.0.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer4.2.conv3.layer.1.weight, grad: True
+2022-04-30 20:11:58 - name: backbone.layer4.2.conv3.layer.1.bias, grad: True
+2022-04-30 20:11:58 - name: fpn.P3_1.weight, grad: True
+2022-04-30 20:11:58 - name: fpn.P3_1.bias, grad: True
+2022-04-30 20:11:58 - name: fpn.P3_2.weight, grad: True
+2022-04-30 20:11:58 - name: fpn.P3_2.bias, grad: True
+2022-04-30 20:11:58 - name: fpn.P4_1.weight, grad: True
+2022-04-30 20:11:58 - name: fpn.P4_1.bias, grad: True
+2022-04-30 20:11:58 - name: fpn.P4_2.weight, grad: True
+2022-04-30 20:11:58 - name: fpn.P4_2.bias, grad: True
+2022-04-30 20:11:58 - name: fpn.P5_1.weight, grad: True
+2022-04-30 20:11:58 - name: fpn.P5_1.bias, grad: True
+2022-04-30 20:11:58 - name: fpn.P5_2.weight, grad: True
+2022-04-30 20:11:58 - name: fpn.P5_2.bias, grad: True
+2022-04-30 20:11:58 - name: fpn.P6.weight, grad: True
+2022-04-30 20:11:58 - name: fpn.P6.bias, grad: True
+2022-04-30 20:11:58 - name: fpn.P7.1.weight, grad: True
+2022-04-30 20:11:58 - name: fpn.P7.1.bias, grad: True
+2022-04-30 20:11:58 - name: clsregcnt_head.cls_head.0.weight, grad: True
+2022-04-30 20:11:58 - name: clsregcnt_head.cls_head.1.weight, grad: True
+2022-04-30 20:11:58 - name: clsregcnt_head.cls_head.1.bias, grad: True
+2022-04-30 20:11:58 - name: clsregcnt_head.cls_head.3.weight, grad: True
+2022-04-30 20:11:58 - name: clsregcnt_head.cls_head.4.weight, grad: True
+2022-04-30 20:11:58 - name: clsregcnt_head.cls_head.4.bias, grad: True
+2022-04-30 20:11:58 - name: clsregcnt_head.cls_head.6.weight, grad: True
+2022-04-30 20:11:58 - name: clsregcnt_head.cls_head.7.weight, grad: True
+2022-04-30 20:11:58 - name: clsregcnt_head.cls_head.7.bias, grad: True
+2022-04-30 20:11:58 - name: clsregcnt_head.cls_head.9.weight, grad: True
+2022-04-30 20:11:58 - name: clsregcnt_head.cls_head.10.weight, grad: True
+2022-04-30 20:11:58 - name: clsregcnt_head.cls_head.10.bias, grad: True
+2022-04-30 20:11:58 - name: clsregcnt_head.reg_head.0.weight, grad: True
+2022-04-30 20:11:58 - name: clsregcnt_head.reg_head.1.weight, grad: True
+2022-04-30 20:11:58 - name: clsregcnt_head.reg_head.1.bias, grad: True
+2022-04-30 20:11:58 - name: clsregcnt_head.reg_head.3.weight, grad: True
+2022-04-30 20:11:58 - name: clsregcnt_head.reg_head.4.weight, grad: True
+2022-04-30 20:11:58 - name: clsregcnt_head.reg_head.4.bias, grad: True
+2022-04-30 20:11:58 - name: clsregcnt_head.reg_head.6.weight, grad: True
+2022-04-30 20:11:58 - name: clsregcnt_head.reg_head.7.weight, grad: True
+2022-04-30 20:11:58 - name: clsregcnt_head.reg_head.7.bias, grad: True
+2022-04-30 20:11:58 - name: clsregcnt_head.reg_head.9.weight, grad: True
+2022-04-30 20:11:58 - name: clsregcnt_head.reg_head.10.weight, grad: True
+2022-04-30 20:11:58 - name: clsregcnt_head.reg_head.10.bias, grad: True
+2022-04-30 20:11:58 - name: clsregcnt_head.cls_out.weight, grad: True
+2022-04-30 20:11:58 - name: clsregcnt_head.cls_out.bias, grad: True
+2022-04-30 20:11:58 - name: clsregcnt_head.reg_out.weight, grad: True
+2022-04-30 20:11:58 - name: clsregcnt_head.reg_out.bias, grad: True
+2022-04-30 20:11:58 - name: clsregcnt_head.center_out.weight, grad: True
+2022-04-30 20:11:58 - name: clsregcnt_head.center_out.bias, grad: True
+2022-04-30 20:11:58 - --------------------buffers--------------------
+2022-04-30 20:11:58 - name: backbone.conv1.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.conv1.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.conv1.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer1.0.conv1.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer1.0.conv1.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer1.0.conv1.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer1.0.conv2.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer1.0.conv2.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer1.0.conv2.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer1.0.conv3.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer1.0.conv3.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer1.0.conv3.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer1.0.downsample_conv.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer1.0.downsample_conv.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer1.0.downsample_conv.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer1.1.conv1.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer1.1.conv1.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer1.1.conv1.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer1.1.conv2.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer1.1.conv2.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer1.1.conv2.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer1.1.conv3.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer1.1.conv3.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer1.1.conv3.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer1.2.conv1.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer1.2.conv1.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer1.2.conv1.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer1.2.conv2.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer1.2.conv2.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer1.2.conv2.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer1.2.conv3.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer1.2.conv3.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer1.2.conv3.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer2.0.conv1.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer2.0.conv1.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer2.0.conv1.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer2.0.conv2.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer2.0.conv2.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer2.0.conv2.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer2.0.conv3.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer2.0.conv3.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer2.0.conv3.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer2.0.downsample_conv.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer2.0.downsample_conv.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer2.0.downsample_conv.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer2.1.conv1.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer2.1.conv1.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer2.1.conv1.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer2.1.conv2.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer2.1.conv2.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer2.1.conv2.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer2.1.conv3.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer2.1.conv3.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer2.1.conv3.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer2.2.conv1.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer2.2.conv1.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer2.2.conv1.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer2.2.conv2.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer2.2.conv2.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer2.2.conv2.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer2.2.conv3.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer2.2.conv3.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer2.2.conv3.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer2.3.conv1.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer2.3.conv1.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer2.3.conv1.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer2.3.conv2.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer2.3.conv2.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer2.3.conv2.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer2.3.conv3.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer2.3.conv3.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer2.3.conv3.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.0.conv1.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.0.conv1.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.0.conv1.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.0.conv2.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.0.conv2.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.0.conv2.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.0.conv3.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.0.conv3.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.0.conv3.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.0.downsample_conv.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.0.downsample_conv.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.0.downsample_conv.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.1.conv1.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.1.conv1.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.1.conv1.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.1.conv2.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.1.conv2.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.1.conv2.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.1.conv3.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.1.conv3.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.1.conv3.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.2.conv1.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.2.conv1.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.2.conv1.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.2.conv2.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.2.conv2.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.2.conv2.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.2.conv3.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.2.conv3.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.2.conv3.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.3.conv1.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.3.conv1.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.3.conv1.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.3.conv2.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.3.conv2.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.3.conv2.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.3.conv3.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.3.conv3.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.3.conv3.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.4.conv1.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.4.conv1.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.4.conv1.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.4.conv2.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.4.conv2.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.4.conv2.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.4.conv3.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.4.conv3.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.4.conv3.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.5.conv1.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.5.conv1.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.5.conv1.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.5.conv2.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.5.conv2.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.5.conv2.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.5.conv3.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.5.conv3.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer3.5.conv3.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer4.0.conv1.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer4.0.conv1.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer4.0.conv1.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer4.0.conv2.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer4.0.conv2.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer4.0.conv2.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer4.0.conv3.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer4.0.conv3.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer4.0.conv3.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer4.0.downsample_conv.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer4.0.downsample_conv.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer4.0.downsample_conv.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer4.1.conv1.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer4.1.conv1.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer4.1.conv1.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer4.1.conv2.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer4.1.conv2.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer4.1.conv2.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer4.1.conv3.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer4.1.conv3.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer4.1.conv3.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer4.2.conv1.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer4.2.conv1.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer4.2.conv1.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer4.2.conv2.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer4.2.conv2.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer4.2.conv2.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - name: backbone.layer4.2.conv3.layer.1.running_mean, grad: False
+2022-04-30 20:11:58 - name: backbone.layer4.2.conv3.layer.1.running_var, grad: False
+2022-04-30 20:11:58 - name: backbone.layer4.2.conv3.layer.1.num_batches_tracked, grad: False
+2022-04-30 20:11:58 - epoch 001 lr: 0.0001
+2022-04-30 20:12:34 - train: epoch 0001, iter [00100, 00517], lr: 0.000100, total_loss: 1.4563, cls_loss: 0.5444, reg_loss: 0.2841, center_ness_loss: 0.6279
+2022-04-30 20:13:09 - train: epoch 0001, iter [00200, 00517], lr: 0.000100, total_loss: 1.2368, cls_loss: 0.3612, reg_loss: 0.2660, center_ness_loss: 0.6096
+2022-04-30 20:13:44 - train: epoch 0001, iter [00300, 00517], lr: 0.000100, total_loss: 1.1886, cls_loss: 0.3428, reg_loss: 0.2373, center_ness_loss: 0.6084
+2022-04-30 20:14:19 - train: epoch 0001, iter [00400, 00517], lr: 0.000100, total_loss: 1.1667, cls_loss: 0.3509, reg_loss: 0.2100, center_ness_loss: 0.6058
+2022-04-30 20:14:54 - train: epoch 0001, iter [00500, 00517], lr: 0.000100, total_loss: 1.1584, cls_loss: 0.3413, reg_loss: 0.2125, center_ness_loss: 0.6045
+2022-04-30 20:15:01 - train: epoch 001, train_loss: 1.3323
+2022-04-30 20:21:30 - eval: epoch: 001
+per_image_load_time: 1.638ms
+per_image_inference_time: 17.071ms
+IoU=0.50,area=all,maxDets=100,mAP: 44.53169355068871
+IoU=0.55,area=all,maxDets=100,mAP: 40.715198176348736
+IoU=0.60,area=all,maxDets=100,mAP: 34.759220837537164
+IoU=0.65,area=all,maxDets=100,mAP: 27.88700763607742
+IoU=0.70,area=all,maxDets=100,mAP: 18.977400321741737
+IoU=0.75,area=all,maxDets=100,mAP: 10.52223782802648
+IoU=0.80,area=all,maxDets=100,mAP: 4.00346318659208
+IoU=0.85,area=all,maxDets=100,mAP: 0.9658029106456893
+IoU=0.90,area=all,maxDets=100,mAP: 0.10778610628902756
+IoU=0.95,area=all,maxDets=100,mAP: 0.004411364876598679
+IoU=0.50,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 43.48392449282644), (1, 58.947990375810164), (2, 48.81322405317615), (3, 23.84002821753996), (4, 32.39844207905348), (5, 49.03158634843894), (6, 62.24299465506095), (7, 62.67111575678012), (8, 34.786199373623916), (9, 19.01669281800539), (10, 36.0648489183305), (11, 60.18909145643499), (12, 45.70398250467713), (13, 26.585408245101345), (14, 65.2521284247139), (15, 27.644127594787005), (16, 36.027248380375276), (17, 46.416081945729296), (18, 54.738009104892505), (19, 56.78074626841683)])
+IoU=0.55,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 38.396192355889525), (1, 54.166516048807075), (2, 43.9906629926263), (3, 20.85914992919643), (4, 27.20585386638853), (5, 47.243990527607984), (6, 59.0314491683095), (7, 60.84260321760886), (8, 29.944665048573206), (9, 16.941962470220957), (10, 32.694919060008324), (11, 57.212679471786444), (12, 40.991363547835526), (13, 24.05079138779348), (14, 56.4619736859398), (15, 23.00478501225875), (16, 34.39169682852266), (17, 43.77767408649908), (18, 48.073220991976484), (19, 55.021813829125875)])
+IoU=0.60,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 27.184752852745408), (1, 46.78648408409266), (2, 39.520638583779544), (3, 15.445167503760409), (4, 18.56943639093218), (5, 42.502360290559906), (6, 54.33739625955691), (7, 54.45451402164584), (8, 24.591940038230664), (9, 15.022008022903947), (10, 25.012679077847288), (11, 49.37570117734959), (12, 29.2301685188048), (13, 21.975316809338032), (14, 46.62036839913824), (15, 18.274483913364104), (16, 31.984478465316084), (17, 38.84039955696309), (18, 42.29059933491638), (19, 53.16552344949823)])
+IoU=0.65,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 15.777792140102415), (1, 39.65576428966193), (2, 29.034076705921375), (3, 11.754781743642791), (4, 10.848189975432055), (5, 38.03349369031609), (6, 45.71252173451169), (7, 46.59873030556938), (8, 19.657919958007778), (9, 13.952124504862926), (10, 18.779017725519985), (11, 41.938473963850385), (12, 21.336034153692204), (13, 17.821656914010457), (14, 32.67406026977255), (15, 12.288885077080899), (16, 28.319526816776886), (17, 32.73999160753207), (18, 33.65245986887339), (19, 47.16465127641109)])
+IoU=0.70,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 8.13094022689709), (1, 24.74183287079056), (2, 18.116067963765765), (3, 7.6393481012233755), (4, 5.399279385527497), (5, 28.85655599778478), (6, 35.40902917889148), (7, 34.79411980275334), (8, 11.673221202019274), (9, 10.140783170278095), (10, 11.767355948265468), (11, 28.583689465145103), (12, 12.298582022334703), (13, 10.035100260933557), (14, 17.867821302144467), (15, 7.428108845668449), (16, 19.808423991021073), (17, 22.305290216241), (18, 23.652455283156126), (19, 40.90000119999347)])
+IoU=0.75,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 3.7475744888357894), (1, 13.13835372180645), (2, 7.444376366564062), (3, 5.138836602527952), (4, 2.030508796957944), (5, 19.461171426075364), (6, 24.693257031342426), (7, 20.72345482924596), (8, 4.623503311538853), (9, 5.847197285560634), (10, 5.930763559136699), (11, 15.51816242714752), (12, 5.335984353310158), (13, 5.5439956392613485), (14, 7.7270815026582245), (15, 3.487205509111818), (16, 11.042950812198635), (17, 10.103467184477283), (18, 13.677434665797982), (19, 25.2294770469745)])
+IoU=0.80,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 1.0880014489573937), (1, 4.577504151156902), (2, 2.13777927019128), (3, 2.093306224873426), (4, 0.5664639998604245), (5, 12.55821816549933), (6, 10.756181365750022), (7, 5.372962957089548), (8, 1.1261462752277562), (9, 2.460740824293778), (10, 1.199365113610696), (11, 6.91082268220408), (12, 1.88389106560593), (13, 1.8563359118131875), (14, 2.3723925197373337), (15, 0.9103579810145186), (16, 3.9725811190735225), (17, 2.959141649842422), (18, 5.729313964896191), (19, 9.537757041143843)])
+IoU=0.85,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 0.07608326864433272), (1, 0.7695987983951245), (2, 0.2740621102153172), (3, 0.3928279249636125), (4, 0.08299701259309436), (5, 5.471754363688622), (6, 2.581832394558709), (7, 1.3250669837893998), (8, 0.1860627313158073), (9, 0.18546706345802005), (10, 0.13828114225794796), (11, 1.4121678046683577), (12, 0.3563672024632848), (13, 0.30498496206394343), (14, 0.4331352441997164), (15, 0.22710565789180692), (16, 1.706217494873297), (17, 0.4398831882094422), (18, 0.6897670526286683), (19, 2.2623958120352823)])
+IoU=0.90,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 0.017765933821896514), (1, 0.12473469304513385), (2, 0.01876249877048281), (3, 0.06299557007902169), (4, 8.039955362167829e-05), (5, 0.6723350202645457), (6, 0.192552825076808), (7, 0.17952132312614585), (8, 0.014921916851091049), (9, 0.08069204894101878), (10, 0.10629863108979326), (11, 0.15970853499928464), (12, 0.033524928075378504), (13, 0.025130716278257262), (14, 0.04719643820718144), (15, 0.015315621375111688), (16, 0.01564943430107996), (17, 0.030383077611827534), (18, 0.013527690017963568), (19, 0.3446248242949076)])
+IoU=0.95,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 0.0), (1, 0.028260562385191465), (2, 0.000449669605257537), (3, 0.0), (4, 0.0), (5, 0.033452498887309584), (6, 0.002284402934455405), (7, 0.009632055480639569), (8, 0.0), (9, 0.0), (10, 0.012143496236273556), (11, 0.0012781186094069532), (12, 0.0), (13, 0.0), (14, 0.000726493393439507), (15, 0.0), (16, 0.0), (17, 0.0), (18, 0.0), (19, 0.0)])
+
+2022-04-30 20:21:31 - until epoch: 001, best_metric: 44.532%
+2022-04-30 20:21:31 - epoch 002 lr: 0.0001
+2022-04-30 20:22:06 - train: epoch 0002, iter [00100, 00517], lr: 0.000100, total_loss: 1.1840, cls_loss: 0.3694, reg_loss: 0.1992, center_ness_loss: 0.6155
+2022-04-30 20:22:41 - train: epoch 0002, iter [00200, 00517], lr: 0.000100, total_loss: 1.1345, cls_loss: 0.3258, reg_loss: 0.1974, center_ness_loss: 0.6113
+2022-04-30 20:23:16 - train: epoch 0002, iter [00300, 00517], lr: 0.000100, total_loss: 1.1504, cls_loss: 0.3309, reg_loss: 0.2104, center_ness_loss: 0.6091
+2022-04-30 20:23:52 - train: epoch 0002, iter [00400, 00517], lr: 0.000100, total_loss: 1.1087, cls_loss: 0.2869, reg_loss: 0.2042, center_ness_loss: 0.6175
+2022-04-30 20:24:27 - train: epoch 0002, iter [00500, 00517], lr: 0.000100, total_loss: 1.1017, cls_loss: 0.3210, reg_loss: 0.1805, center_ness_loss: 0.6002
+2022-04-30 20:24:33 - train: epoch 002, train_loss: 1.1302
+2022-04-30 20:24:34 - until epoch: 002, best_metric: 44.532%
+2022-04-30 20:24:34 - epoch 003 lr: 0.0001
+2022-04-30 20:25:10 - train: epoch 0003, iter [00100, 00517], lr: 0.000100, total_loss: 1.1283, cls_loss: 0.3249, reg_loss: 0.1974, center_ness_loss: 0.6059
+2022-04-30 20:25:45 - train: epoch 0003, iter [00200, 00517], lr: 0.000100, total_loss: 1.0799, cls_loss: 0.2973, reg_loss: 0.1765, center_ness_loss: 0.6060
+2022-04-30 20:26:21 - train: epoch 0003, iter [00300, 00517], lr: 0.000100, total_loss: 1.0401, cls_loss: 0.2679, reg_loss: 0.1665, center_ness_loss: 0.6057
+2022-04-30 20:26:56 - train: epoch 0003, iter [00400, 00517], lr: 0.000100, total_loss: 1.1017, cls_loss: 0.3109, reg_loss: 0.1834, center_ness_loss: 0.6074
+2022-04-30 20:27:32 - train: epoch 0003, iter [00500, 00517], lr: 0.000100, total_loss: 1.0183, cls_loss: 0.2440, reg_loss: 0.1663, center_ness_loss: 0.6080
+2022-04-30 20:27:38 - train: epoch 003, train_loss: 1.0692
+2022-04-30 20:34:10 - eval: epoch: 003
+per_image_load_time: 1.652ms
+per_image_inference_time: 16.261ms
+IoU=0.50,area=all,maxDets=100,mAP: 66.30126986985815
+IoU=0.55,area=all,maxDets=100,mAP: 63.24124827556251
+IoU=0.60,area=all,maxDets=100,mAP: 59.309014277478255
+IoU=0.65,area=all,maxDets=100,mAP: 53.09645272651606
+IoU=0.70,area=all,maxDets=100,mAP: 44.895267797353384
+IoU=0.75,area=all,maxDets=100,mAP: 32.50317148218089
+IoU=0.80,area=all,maxDets=100,mAP: 18.894234336517794
+IoU=0.85,area=all,maxDets=100,mAP: 7.668014062109042
+IoU=0.90,area=all,maxDets=100,mAP: 1.812406342197838
+IoU=0.95,area=all,maxDets=100,mAP: 0.2121138624549256
+IoU=0.50,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 75.30533358221862), (1, 77.51379985904462), (2, 69.37210222479435), (3, 53.51814314180575), (4, 52.86419515197046), (5, 72.98172013657268), (6, 82.86753361463505), (7, 81.03348577624008), (8, 41.8405582914076), (9, 67.30713736110621), (10, 53.708124569270566), (11, 75.75264237257885), (12, 71.7934275168433), (13, 67.58275456379927), (14, 77.19708393380999), (15, 36.03657231626396), (16, 67.54003040798933), (17, 61.02952794604254), (18, 69.35338448342463), (19, 71.42784014734501)])
+IoU=0.55,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 72.1751909702202), (1, 74.2576564535923), (2, 65.91769237851248), (3, 45.31867355136656), (4, 49.092967215165054), (5, 70.74471722445772), (6, 80.64831019837197), (7, 79.22563249846503), (8, 37.914911588554766), (9, 65.77580815489328), (10, 51.70916512318937), (11, 73.766460166411), (12, 67.19242368959641), (13, 64.3561010637711), (14, 72.9813013236658), (15, 31.427184495440745), (16, 65.33613129857538), (17, 60.30948597925514), (18, 65.42726308137192), (19, 71.247889056374)])
+IoU=0.60,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 64.60968949564037), (1, 70.23455825534471), (2, 60.80782383425398), (3, 40.06363639011771), (4, 44.78677372457285), (5, 67.75192237029492), (6, 77.02488298841001), (7, 76.62420737460285), (8, 34.16704904342289), (9, 64.53583060145776), (10, 48.18009230655406), (11, 70.45109645159245), (12, 60.94283409414998), (13, 60.637957995425914), (14, 67.56248857637217), (15, 27.720400280221334), (16, 61.099412741558424), (17, 59.12118381802287), (18, 61.665654279764425), (19, 68.19279092778542)])
+IoU=0.65,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 54.87961394629599), (1, 63.7735778521618), (2, 54.162631509590895), (3, 29.326519889518664), (4, 38.65032576272232), (5, 63.60909284317589), (6, 71.77353902669574), (7, 68.48302149129636), (8, 29.037920787033748), (9, 58.184820844869314), (10, 42.84196413835303), (11, 65.71343079055454), (12, 53.35328600278652), (13, 54.874305367920016), (14, 59.07479319300256), (15, 21.474928148429562), (16, 55.69507898918867), (17, 55.96886936872332), (18, 55.08687324998306), (19, 65.96446132801962)])
+IoU=0.70,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 41.70122850726724), (1, 54.36030130258707), (2, 46.194512454604855), (3, 21.263657173373822), (4, 28.02812862689441), (5, 60.202826426011846), (6, 64.04270800159442), (7, 58.05131833141043), (8, 22.88152171260336), (9, 50.34518786404823), (10, 37.377825657997775), (11, 55.389325825951865), (12, 44.95974880283434), (13, 43.18370438312087), (14, 46.53412877479982), (15, 14.485520155124215), (16, 51.28949095958924), (17, 54.66432028446933), (18, 43.02981191573247), (19, 59.920088787052016)])
+IoU=0.75,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 25.505886092264017), (1, 41.02931427650039), (2, 30.29771283327446), (3, 12.647475015984844), (4, 15.816977610014515), (5, 50.398435537734), (6, 49.33645928150328), (7, 42.377766103548865), (8, 14.356677044293178), (9, 39.27290594894002), (10, 30.935719004392688), (11, 38.66308102307592), (12, 31.86558472672366), (13, 31.1824325909971), (14, 30.912774441479364), (15, 7.829588929312847), (16, 40.12713242297995), (17, 41.76338518926588), (18, 29.63299592239437), (19, 46.11112564893846)])
+IoU=0.80,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 11.396842503225038), (1, 20.690636896560065), (2, 14.472841449081052), (3, 4.540778622579864), (4, 7.328108142445422), (5, 34.49705778175464), (6, 31.28320484602464), (7, 28.000428033774106), (8, 6.7601578399357205), (9, 26.008608573768054), (10, 24.743179968042863), (11, 20.88898118586432), (12, 19.784355139034865), (13, 13.968827181595522), (14, 16.774819653529132), (15, 3.473566789924994), (16, 23.600907517676593), (17, 25.630299424693405), (18, 15.428253333102413), (19, 28.612831847743227)])
+IoU=0.85,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 2.3200513808379273), (1, 10.434346284322785), (2, 4.03437516755481), (3, 2.4491909805762266), (4, 2.4192350594648104), (5, 14.270272605811234), (6, 10.103305768808365), (7, 14.17728889178015), (8, 2.4716019755802834), (9, 10.684372237482698), (10, 16.85704036886431), (11, 6.882522557927019), (12, 7.283758216610215), (13, 4.356966150651247), (14, 6.012686333664028), (15, 1.1203800579716556), (16, 8.579104951087203), (17, 14.229635378663874), (18, 6.417881752189711), (19, 8.256265122332252)])
+IoU=0.90,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 0.6574217205796153), (1, 1.4440353878264347), (2, 0.2791769960220808), (3, 0.4089189977018159), (4, 1.3344996147404402), (5, 1.8797580747164941), (6, 1.2860957752125284), (7, 2.612824714263357), (8, 0.164368825555121), (9, 1.2873132906782605), (10, 11.460854523047054), (11, 1.481199643343548), (12, 1.2605997490143734), (13, 0.525267394449064), (14, 1.2847995973117914), (15, 0.1882906838549621), (16, 1.7246012930294055), (17, 4.398622462740073), (18, 1.1582787761371585), (19, 1.4111993237331801)])
+IoU=0.95,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 0.03527174579806159), (1, 0.11990200814298532), (2, 0.00205740101084742), (3, 0.0), (4, 0.12240705092236909), (5, 0.03929179798555344), (6, 0.04966550492018195), (7, 0.10286850407869529), (8, 0.0023541349376558773), (9, 0.030059258347942874), (10, 3.213002140930024), (11, 0.08045821352290444), (12, 0.0), (13, 0.005494505494505494), (14, 0.04217307682631984), (15, 0.0038196172778054314), (16, 0.0), (17, 0.2777337327047915), (18, 0.06923756416960951), (19, 0.04648099202825818)])
+
+2022-04-30 20:34:11 - until epoch: 003, best_metric: 66.301%
+2022-04-30 20:34:11 - epoch 004 lr: 0.0001
+2022-04-30 20:34:46 - train: epoch 0004, iter [00100, 00517], lr: 0.000100, total_loss: 1.0161, cls_loss: 0.2637, reg_loss: 0.1508, center_ness_loss: 0.6016
+2022-04-30 20:35:22 - train: epoch 0004, iter [00200, 00517], lr: 0.000100, total_loss: 0.9820, cls_loss: 0.2218, reg_loss: 0.1590, center_ness_loss: 0.6012
+2022-04-30 20:35:57 - train: epoch 0004, iter [00300, 00517], lr: 0.000100, total_loss: 1.0190, cls_loss: 0.2654, reg_loss: 0.1615, center_ness_loss: 0.5920
+2022-04-30 20:36:33 - train: epoch 0004, iter [00400, 00517], lr: 0.000100, total_loss: 0.9914, cls_loss: 0.2675, reg_loss: 0.1352, center_ness_loss: 0.5888
+2022-04-30 20:37:08 - train: epoch 0004, iter [00500, 00517], lr: 0.000100, total_loss: 0.9597, cls_loss: 0.2142, reg_loss: 0.1442, center_ness_loss: 0.6013
+2022-04-30 20:37:15 - train: epoch 004, train_loss: 1.0335
+2022-04-30 20:37:15 - until epoch: 004, best_metric: 66.301%
+2022-04-30 20:37:15 - epoch 005 lr: 0.0001
+2022-04-30 20:37:51 - train: epoch 0005, iter [00100, 00517], lr: 0.000100, total_loss: 1.0177, cls_loss: 0.2644, reg_loss: 0.1619, center_ness_loss: 0.5914
+2022-04-30 20:38:26 - train: epoch 0005, iter [00200, 00517], lr: 0.000100, total_loss: 0.9797, cls_loss: 0.2435, reg_loss: 0.1469, center_ness_loss: 0.5893
+2022-04-30 20:39:01 - train: epoch 0005, iter [00300, 00517], lr: 0.000100, total_loss: 0.9509, cls_loss: 0.2186, reg_loss: 0.1410, center_ness_loss: 0.5914
+2022-04-30 20:39:36 - train: epoch 0005, iter [00400, 00517], lr: 0.000100, total_loss: 1.0044, cls_loss: 0.2599, reg_loss: 0.1402, center_ness_loss: 0.6043
+2022-04-30 20:40:12 - train: epoch 0005, iter [00500, 00517], lr: 0.000100, total_loss: 0.9747, cls_loss: 0.2255, reg_loss: 0.1403, center_ness_loss: 0.6090
+2022-04-30 20:40:18 - train: epoch 005, train_loss: 1.0088
+2022-04-30 20:46:38 - eval: epoch: 005
+per_image_load_time: 1.667ms
+per_image_inference_time: 17.180ms
+IoU=0.50,area=all,maxDets=100,mAP: 69.546067792051
+IoU=0.55,area=all,maxDets=100,mAP: 66.96937548060512
+IoU=0.60,area=all,maxDets=100,mAP: 63.33140237728234
+IoU=0.65,area=all,maxDets=100,mAP: 57.78286942271137
+IoU=0.70,area=all,maxDets=100,mAP: 49.66216216500218
+IoU=0.75,area=all,maxDets=100,mAP: 38.73985604608644
+IoU=0.80,area=all,maxDets=100,mAP: 25.89249992275911
+IoU=0.85,area=all,maxDets=100,mAP: 11.535917083008107
+IoU=0.90,area=all,maxDets=100,mAP: 2.183933810872945
+IoU=0.95,area=all,maxDets=100,mAP: 0.04430368153920716
+IoU=0.50,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 70.67170275128201), (1, 82.34121095602124), (2, 67.58603264839822), (3, 49.20764419634156), (4, 60.84834623834736), (5, 72.26832130467335), (6, 84.44848694469994), (7, 79.6206197161416), (8, 52.004916865360414), (9, 76.2236492856044), (10, 62.72319751886939), (11, 76.39423102586754), (12, 78.76503897784306), (13, 73.42687313916403), (14, 82.50979905852007), (15, 44.37524808303671), (16, 72.296220167554), (17, 55.91478267763057), (18, 78.84163206761937), (19, 70.45340221804534)])
+IoU=0.55,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 68.02288443467998), (1, 81.24460769720483), (2, 64.90732340995172), (3, 43.344894305949204), (4, 58.39633564167108), (5, 70.77558244631066), (6, 82.66500027230683), (7, 78.28582948330339), (8, 49.17595286723328), (9, 73.3912033159624), (10, 59.85892966469029), (11, 73.41058362025494), (12, 75.00722375900155), (13, 70.62652199079844), (14, 78.40703535493289), (15, 41.98796681523507), (16, 71.48691941901201), (17, 54.26123018133079), (18, 75.15601638508), (19, 68.9754685471929)])
+IoU=0.60,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 65.063712888559), (1, 75.80006904539238), (2, 59.854590538316124), (3, 39.8298678596855), (4, 54.17547598309563), (5, 68.44736256827039), (6, 79.39674794314361), (7, 75.7898843175268), (8, 45.61190318555271), (9, 71.1885522192486), (10, 54.77599506156139), (11, 70.17455003736309), (12, 69.52334781821911), (13, 67.59369030322449), (14, 71.86469994757807), (15, 36.808515458743344), (16, 68.01899362312933), (17, 52.62090830879414), (18, 72.64040476149454), (19, 67.44877567674834)])
+IoU=0.65,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 57.02108104336438), (1, 69.11332012789731), (2, 54.03624562435262), (3, 35.388571307936346), (4, 48.51612687166171), (5, 64.93703063415677), (6, 75.20920532638615), (7, 69.2841079666921), (8, 39.97901065191133), (9, 65.90655886066045), (10, 49.17290362606705), (11, 65.67556054835218), (12, 63.282933496172376), (13, 61.39392271685193), (14, 61.94148879211654), (15, 29.883768884276883), (16, 65.12682450092389), (17, 48.618980320780956), (18, 66.94897191895691), (19, 64.22077523470966)])
+IoU=0.70,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 49.22207738250966), (1, 57.73471777958776), (2, 44.81135509094553), (3, 25.15835294859255), (4, 35.35130748277639), (5, 58.27866689754308), (6, 68.88128416804736), (7, 61.12351389572035), (8, 32.418747686876884), (9, 59.53334699241609), (10, 40.25336591697049), (11, 59.86948573463331), (12, 54.070033198430664), (13, 52.77624579340867), (14, 49.696317466671395), (15, 21.95110512292377), (16, 61.82277850659105), (17, 45.49188018841488), (18, 57.228634021110324), (19, 57.57002702587357)])
+IoU=0.75,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 38.07196398255513), (1, 46.071634227109435), (2, 35.166520051664364), (3, 16.11457697298498), (4, 23.260489078861426), (5, 51.67235451532615), (6, 58.41262532921243), (7, 50.764578429850516), (8, 25.022350145371604), (9, 47.952573149400514), (10, 28.697872364974742), (11, 43.94530731107585), (12, 41.715158799611174), (13, 41.84609548506185), (14, 34.977853230014574), (15, 14.191427836330256), (16, 50.924190247835135), (17, 36.49910728693529), (18, 45.00540664713162), (19, 44.485035830421715)])
+IoU=0.80,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 26.10324319243719), (1, 35.45385945980849), (2, 22.24555665558314), (3, 9.036590915910574), (4, 9.27237615294616), (5, 43.41054336030079), (6, 44.40238424957072), (7, 33.25161928181946), (8, 13.212782867562215), (9, 31.571367670130357), (10, 19.163499848969558), (11, 29.959136963715082), (12, 32.23477113260941), (13, 26.98045994287109), (14, 18.624591048994688), (15, 6.791918875379772), (16, 32.72547176717639), (17, 23.080278917118097), (18, 30.978598724193706), (19, 29.350947428085316)])
+IoU=0.85,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 11.451386206469936), (1, 16.480490093630177), (2, 9.195037911690287), (3, 4.065140615564861), (4, 2.230025650752445), (5, 25.042078445698973), (6, 21.275940610044408), (7, 15.341041806515534), (8, 5.911600596604047), (9, 14.518960320833008), (10, 9.617685746148902), (11, 12.57769078200727), (12, 16.110059525541054), (13, 8.751537321764067), (14, 6.507212951837432), (15, 1.75677775562243), (16, 16.68560912369925), (17, 6.291476571187697), (18, 12.843527633352425), (19, 14.065061991197897)])
+IoU=0.90,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 2.7410482960423024), (1, 4.891832111108394), (2, 0.9183625904762751), (3, 0.43525363028829817), (4, 0.37564281414979633), (5, 6.2024802991271235), (6, 3.6051678001539385), (7, 2.864593759851821), (8, 0.6996802327329592), (9, 1.7572540496164062), (10, 2.938866244694517), (11, 1.7275633910804746), (12, 3.927713758817482), (13, 0.3832368706450685), (14, 0.9996154723689098), (15, 0.2950598284204036), (16, 2.3936386922299873), (17, 0.8674299720288313), (18, 3.9387650795146523), (19, 1.7154713241112556)])
+IoU=0.95,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 0.011970984371497852), (1, 0.09663936501719454), (2, 0.01944495230883366), (3, 0.0), (4, 0.004005346429583041), (5, 0.03380281690140845), (6, 0.08690451193893756), (7, 0.0479241976120057), (8, 0.06228659233089332), (9, 0.0), (10, 0.0), (11, 0.007575716336147691), (12, 0.0959097339567824), (13, 0.019165495729817534), (14, 0.011531886428843846), (15, 0.0), (16, 0.0701948935173657), (17, 0.03937976864385921), (18, 0.15533884948778567), (19, 0.12399851977318722)])
+
+2022-04-30 20:46:38 - until epoch: 005, best_metric: 69.546%
+2022-04-30 20:46:38 - epoch 006 lr: 0.0001
+2022-04-30 20:47:17 - train: epoch 0006, iter [00100, 00517], lr: 0.000100, total_loss: 1.0320, cls_loss: 0.2611, reg_loss: 0.1704, center_ness_loss: 0.6005
+2022-04-30 20:47:53 - train: epoch 0006, iter [00200, 00517], lr: 0.000100, total_loss: 0.9784, cls_loss: 0.2388, reg_loss: 0.1449, center_ness_loss: 0.5947
+2022-04-30 20:48:28 - train: epoch 0006, iter [00300, 00517], lr: 0.000100, total_loss: 0.9748, cls_loss: 0.2183, reg_loss: 0.1464, center_ness_loss: 0.6101
+2022-04-30 20:49:03 - train: epoch 0006, iter [00400, 00517], lr: 0.000100, total_loss: 0.9864, cls_loss: 0.2351, reg_loss: 0.1562, center_ness_loss: 0.5951
+2022-04-30 20:49:38 - train: epoch 0006, iter [00500, 00517], lr: 0.000100, total_loss: 0.9367, cls_loss: 0.2025, reg_loss: 0.1331, center_ness_loss: 0.6012
+2022-04-30 20:49:45 - train: epoch 006, train_loss: 0.9872
+2022-04-30 20:49:45 - until epoch: 006, best_metric: 69.546%
+2022-04-30 20:49:45 - epoch 007 lr: 0.0001
+2022-04-30 20:50:21 - train: epoch 0007, iter [00100, 00517], lr: 0.000100, total_loss: 0.9856, cls_loss: 0.2420, reg_loss: 0.1427, center_ness_loss: 0.6009
+2022-04-30 20:50:57 - train: epoch 0007, iter [00200, 00517], lr: 0.000100, total_loss: 0.9645, cls_loss: 0.2184, reg_loss: 0.1455, center_ness_loss: 0.6006
+2022-04-30 20:51:32 - train: epoch 0007, iter [00300, 00517], lr: 0.000100, total_loss: 0.9362, cls_loss: 0.2081, reg_loss: 0.1332, center_ness_loss: 0.5949
+2022-04-30 20:52:08 - train: epoch 0007, iter [00400, 00517], lr: 0.000100, total_loss: 0.9760, cls_loss: 0.2265, reg_loss: 0.1543, center_ness_loss: 0.5953
+2022-04-30 20:52:43 - train: epoch 0007, iter [00500, 00517], lr: 0.000100, total_loss: 0.9527, cls_loss: 0.2089, reg_loss: 0.1416, center_ness_loss: 0.6022
+2022-04-30 20:52:49 - train: epoch 007, train_loss: 0.9697
+2022-04-30 20:52:50 - until epoch: 007, best_metric: 69.546%
+2022-04-30 20:52:50 - epoch 008 lr: 0.0001
+2022-04-30 20:53:26 - train: epoch 0008, iter [00100, 00517], lr: 0.000100, total_loss: 0.8909, cls_loss: 0.1671, reg_loss: 0.1258, center_ness_loss: 0.5981
+2022-04-30 20:54:01 - train: epoch 0008, iter [00200, 00517], lr: 0.000100, total_loss: 0.9023, cls_loss: 0.1840, reg_loss: 0.1288, center_ness_loss: 0.5895
+2022-04-30 20:54:37 - train: epoch 0008, iter [00300, 00517], lr: 0.000100, total_loss: 0.9668, cls_loss: 0.2238, reg_loss: 0.1494, center_ness_loss: 0.5935
+2022-04-30 20:55:12 - train: epoch 0008, iter [00400, 00517], lr: 0.000100, total_loss: 0.9659, cls_loss: 0.2268, reg_loss: 0.1320, center_ness_loss: 0.6070
+2022-04-30 20:55:47 - train: epoch 0008, iter [00500, 00517], lr: 0.000100, total_loss: 0.9359, cls_loss: 0.1952, reg_loss: 0.1301, center_ness_loss: 0.6105
+2022-04-30 20:55:53 - train: epoch 008, train_loss: 0.9528
+2022-04-30 21:02:06 - eval: epoch: 008
+per_image_load_time: 1.612ms
+per_image_inference_time: 15.503ms
+IoU=0.50,area=all,maxDets=100,mAP: 74.79832106004963
+IoU=0.55,area=all,maxDets=100,mAP: 72.60823907921511
+IoU=0.60,area=all,maxDets=100,mAP: 69.28890321582364
+IoU=0.65,area=all,maxDets=100,mAP: 64.40221581659355
+IoU=0.70,area=all,maxDets=100,mAP: 57.55242430420135
+IoU=0.75,area=all,maxDets=100,mAP: 46.41325812726284
+IoU=0.80,area=all,maxDets=100,mAP: 33.210370884577245
+IoU=0.85,area=all,maxDets=100,mAP: 17.200554177697978
+IoU=0.90,area=all,maxDets=100,mAP: 3.923610910640362
+IoU=0.95,area=all,maxDets=100,mAP: 0.17355674555953451
+IoU=0.50,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 82.07748095880844), (1, 83.65797924578499), (2, 79.12618663562003), (3, 70.33678531453874), (4, 64.18227639302953), (5, 81.36472638900682), (6, 87.65283603189954), (7, 83.43767991787881), (8, 52.53124826496158), (9, 76.37042245106622), (10, 55.57967164237323), (11, 77.60684956479419), (12, 79.58991465671276), (13, 78.2976984078031), (14, 82.92038999805685), (15, 49.489847192626925), (16, 79.21061612307369), (17, 65.6488792502046), (18, 87.35217930083354), (19, 79.53275346191865)])
+IoU=0.55,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 81.02355735852731), (1, 80.76540848093882), (2, 77.34600994670593), (3, 65.05775837241315), (4, 62.06986880002238), (5, 80.00377657705016), (6, 86.06542767552253), (7, 81.4192646221661), (8, 50.594598261460355), (9, 75.33532923429524), (10, 53.669159131449376), (11, 74.91753675770623), (12, 76.77914330867503), (13, 75.35914114774292), (14, 79.22277166668627), (15, 46.065765677077664), (16, 78.01183782032405), (17, 64.26074598350586), (18, 85.87998052769856), (19, 78.31770023433441)])
+IoU=0.60,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 76.73610131488341), (1, 78.80811553125855), (2, 72.4667816097759), (3, 58.0496503500336), (4, 60.02735672593502), (5, 78.19406551609256), (6, 83.2108658473461), (7, 78.09603996243682), (8, 46.946901981977675), (9, 72.81317424982457), (10, 49.4456629450925), (11, 71.33135283045269), (12, 71.82641541404108), (13, 73.33813557745681), (14, 74.1047394169152), (15, 41.77556967011413), (16, 75.19111581534854), (17, 62.445194147289044), (18, 85.01708246933866), (19, 75.95374294085998)])
+IoU=0.65,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 72.27296279225763), (1, 72.66867653924213), (2, 66.1539778495692), (3, 47.650370301115764), (4, 55.209991367057484), (5, 75.07326420200424), (6, 79.14632142612376), (7, 73.37753138589716), (8, 42.076667221835216), (9, 70.04612891769182), (10, 46.380440936785114), (11, 66.49301827154277), (12, 63.559256802306344), (13, 68.88913549086033), (14, 66.66299806857764), (15, 37.02580249714208), (16, 71.32474745379339), (17, 59.59796366360358), (18, 80.71534199987691), (19, 73.71971914458837)])
+IoU=0.70,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 64.29648254355864), (1, 66.038326339702), (2, 56.56073066232229), (3, 39.876350895649345), (4, 43.93702872408163), (5, 71.2434782390147), (6, 73.20848546424612), (7, 67.85849688817133), (8, 36.438955331353554), (9, 64.40379234587257), (10, 41.87111714286145), (11, 59.04620001132732), (12, 58.69529703755569), (13, 60.97331210114436), (14, 55.05779619248171), (15, 29.916116811208344), (16, 63.63368486267022), (17, 56.18501659770951), (18, 74.55580004373176), (19, 67.25201784936452)])
+IoU=0.75,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 53.21346512174585), (1, 51.82319821021658), (2, 45.36492613918276), (3, 28.809334039271917), (4, 29.32536976008244), (5, 65.88468279078195), (6, 63.6761105924944), (7, 55.788827810630856), (8, 24.701250478378647), (9, 55.712537074923944), (10, 32.497854275810695), (11, 48.43729412186632), (12, 43.33949234245546), (13, 46.59769620191841), (14, 40.9083532408892), (15, 22.150237300150533), (16, 54.148360851940666), (17, 45.50491152754731), (18, 62.68832948278402), (19, 57.69293118218503)])
+IoU=0.80,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 39.80414962959894), (1, 36.551510028693734), (2, 28.23957977628349), (3, 15.01040927889406), (4, 14.229152460181261), (5, 57.141313953351805), (6, 49.98738735000959), (7, 43.119441859281906), (8, 13.84899771790663), (9, 39.4937747973825), (10, 25.08800110908853), (11, 33.73213683693357), (12, 29.965232404730678), (13, 30.901332809766117), (14, 24.430868709014284), (15, 10.701441780970402), (16, 45.916711728045726), (17, 34.218682077851746), (18, 46.11312291699707), (19, 45.71417046656262)])
+IoU=0.85,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 21.474576914257142), (1, 13.689081637048073), (2, 13.07346093454923), (3, 7.480716023389104), (4, 4.757408449766279), (5, 37.00619496101311), (6, 28.00922415537766), (7, 26.46644508876628), (8, 5.61547670597212), (9, 21.22513500937049), (10, 18.644242685999835), (11, 17.52368009829586), (12, 13.497555102233688), (13, 14.541948774564926), (14, 9.190286468788734), (15, 4.366537076728227), (16, 22.07864321371837), (17, 19.730265909124466), (18, 23.42233088423374), (19, 22.217873460762153)])
+IoU=0.90,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 5.082072683335038), (1, 2.498703128369888), (2, 2.11842269846786), (3, 1.361113955948868), (4, 1.487208342215412), (5, 8.52433681824944), (6, 4.766850382955777), (7, 8.78905678862863), (8, 0.8437289808176466), (9, 3.7258794862439215), (10, 8.414132791870939), (11, 2.9237567975193537), (12, 3.0629264754901757), (13, 2.0230001146420933), (14, 1.343593539369789), (15, 0.4604375989886727), (16, 4.1450090726958155), (17, 7.067013633574451), (18, 7.188031190807667), (19, 2.6469437326158)])
+IoU=0.95,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 0.42818022758439833), (1, 0.11270762071137544), (2, 0.0911635659219903), (3, 0.4030022283231254), (4, 0.15686871763630825), (5, 0.17868307052956234), (6, 0.1694788213417324), (7, 0.5058864083904271), (8, 0.015075296071583451), (9, 0.022354694485842028), (10, 0.38380201656082535), (11, 0.14292514271291476), (12, 0.12284924166181116), (13, 0.16881188327622304), (14, 0.03938586870877174), (15, 0.028600122069203635), (16, 0.018782870022539446), (17, 0.08987009737982028), (18, 0.2342366679418039), (19, 0.15847034986043226)])
+
+2022-04-30 21:02:07 - until epoch: 008, best_metric: 74.798%
+2022-04-30 21:02:07 - epoch 009 lr: 1e-05
+2022-04-30 21:02:47 - train: epoch 0009, iter [00100, 00517], lr: 0.000010, total_loss: 0.8920, cls_loss: 0.1704, reg_loss: 0.1303, center_ness_loss: 0.5913
+2022-04-30 21:03:22 - train: epoch 0009, iter [00200, 00517], lr: 0.000010, total_loss: 0.8841, cls_loss: 0.1547, reg_loss: 0.1261, center_ness_loss: 0.6034
+2022-04-30 21:03:58 - train: epoch 0009, iter [00300, 00517], lr: 0.000010, total_loss: 0.8612, cls_loss: 0.1603, reg_loss: 0.1113, center_ness_loss: 0.5895
+2022-04-30 21:04:33 - train: epoch 0009, iter [00400, 00517], lr: 0.000010, total_loss: 0.9156, cls_loss: 0.1821, reg_loss: 0.1268, center_ness_loss: 0.6068
+2022-04-30 21:05:08 - train: epoch 0009, iter [00500, 00517], lr: 0.000010, total_loss: 0.8472, cls_loss: 0.1334, reg_loss: 0.1106, center_ness_loss: 0.6032
+2022-04-30 21:05:14 - train: epoch 009, train_loss: 0.8979
+2022-04-30 21:05:15 - until epoch: 009, best_metric: 74.798%
+2022-04-30 21:05:15 - epoch 010 lr: 1e-05
+2022-04-30 21:05:51 - train: epoch 0010, iter [00100, 00517], lr: 0.000010, total_loss: 0.9076, cls_loss: 0.1749, reg_loss: 0.1255, center_ness_loss: 0.6072
+2022-04-30 21:06:27 - train: epoch 0010, iter [00200, 00517], lr: 0.000010, total_loss: 0.8536, cls_loss: 0.1497, reg_loss: 0.1061, center_ness_loss: 0.5979
+2022-04-30 21:07:02 - train: epoch 0010, iter [00300, 00517], lr: 0.000010, total_loss: 0.8794, cls_loss: 0.1654, reg_loss: 0.1204, center_ness_loss: 0.5936
+2022-04-30 21:07:38 - train: epoch 0010, iter [00400, 00517], lr: 0.000010, total_loss: 0.8831, cls_loss: 0.1655, reg_loss: 0.1199, center_ness_loss: 0.5976
+2022-04-30 21:08:13 - train: epoch 0010, iter [00500, 00517], lr: 0.000010, total_loss: 0.9066, cls_loss: 0.1729, reg_loss: 0.1328, center_ness_loss: 0.6009
+2022-04-30 21:08:19 - train: epoch 010, train_loss: 0.8835
+2022-04-30 21:14:57 - eval: epoch: 010
+per_image_load_time: 1.745ms
+per_image_inference_time: 17.465ms
+IoU=0.50,area=all,maxDets=100,mAP: 79.69289065629906
+IoU=0.55,area=all,maxDets=100,mAP: 77.77782185899873
+IoU=0.60,area=all,maxDets=100,mAP: 75.2248964780047
+IoU=0.65,area=all,maxDets=100,mAP: 71.0234484992635
+IoU=0.70,area=all,maxDets=100,mAP: 64.79677517845019
+IoU=0.75,area=all,maxDets=100,mAP: 55.74813905978387
+IoU=0.80,area=all,maxDets=100,mAP: 43.92540365834326
+IoU=0.85,area=all,maxDets=100,mAP: 29.589685987211304
+IoU=0.90,area=all,maxDets=100,mAP: 12.550143272661003
+IoU=0.95,area=all,maxDets=100,mAP: 1.1545672953425674
+IoU=0.50,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 86.19933935321762), (1, 87.25143387638565), (2, 82.80436120142073), (3, 71.585936425299), (4, 67.5874252791345), (5, 85.21762675827762), (6, 89.86720942979544), (7, 90.28548499501665), (8, 59.31325230897746), (9, 83.6560184128124), (10, 67.23791123332241), (11, 87.51357667754219), (12, 85.5239320508302), (13, 82.63617721767874), (14, 86.40224052927991), (15, 56.951163240010885), (16, 80.60438283192912), (17, 71.16368975477201), (18, 88.94494441250575), (19, 83.1117071377729)])
+IoU=0.55,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 83.89698330510815), (1, 86.51769934529854), (2, 81.15633662694438), (3, 67.87253481324773), (4, 65.58719703023722), (5, 83.68097392899728), (6, 88.72073146831781), (7, 89.2999714695929), (8, 56.323544267535965), (9, 82.51069461848763), (10, 63.133331231305355), (11, 85.95360604405612), (12, 84.88322674625675), (13, 81.14548469712236), (14, 83.52393904152943), (15, 51.63962345667065), (16, 80.10916915334067), (17, 70.46387976856317), (18, 87.21876295208924), (19, 81.91874721527321)])
+IoU=0.60,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 81.18968683762142), (1, 83.98697381835495), (2, 78.42335826500108), (3, 62.92096293190623), (4, 62.81348351133415), (5, 83.1808216777855), (6, 86.89168395206445), (7, 87.70334704711621), (8, 53.135738221183956), (9, 80.07530174670552), (10, 61.59570120577696), (11, 83.51913065979097), (12, 81.9216123321772), (13, 78.31757282146106), (14, 79.23824274421939), (15, 46.96213162728428), (16, 76.93804013858457), (17, 68.81963198751131), (18, 86.27191482023994), (19, 80.59259321397478)])
+IoU=0.65,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 78.46599211918843), (1, 79.13018073802553), (2, 72.06214895054737), (3, 51.251999465015494), (4, 58.38594562915627), (5, 81.15576167607412), (6, 82.42297862448899), (7, 85.57767411543307), (8, 49.00605256035995), (9, 74.63026072738379), (10, 58.18324283877232), (11, 80.07191056762939), (12, 77.68275734362268), (13, 72.84355109332783), (14, 74.16515029842226), (15, 42.80212105257037), (16, 74.24754082283924), (17, 66.56040313202551), (18, 82.8571273680688), (19, 78.96617086231844)])
+IoU=0.70,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 68.39412813929668), (1, 73.81856626983627), (2, 65.19857671620493), (3, 41.57113091743396), (4, 50.965078003061116), (5, 79.44519509237799), (6, 77.13634022199705), (7, 80.5426323005362), (8, 40.92499169687442), (9, 70.99424584903569), (10, 54.15500279749661), (11, 75.16599480260186), (12, 66.12723154208433), (13, 67.32927735486561), (14, 64.7666810709782), (15, 34.925534820158944), (16, 68.3781901173956), (17, 62.594657681731725), (18, 78.06998310803426), (19, 75.43206506700264)])
+IoU=0.75,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 59.01117224384323), (1, 63.458382779185804), (2, 50.50203042370843), (3, 32.70525554352198), (4, 38.00658043163138), (5, 75.30307150515624), (6, 70.24029617563869), (7, 72.08106851333574), (8, 31.04999377564962), (9, 63.86431134739789), (10, 47.5258219298384), (11, 67.73225146076743), (12, 59.573019852827215), (13, 56.89655094652786), (14, 52.126357643032236), (15, 24.357990826895957), (16, 57.591208373247916), (17, 58.109656874997206), (18, 66.45020191586002), (19, 68.37755863261408)])
+IoU=0.80,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 49.106147709339474), (1, 51.43787238339009), (2, 35.524703509338664), (3, 22.791944749480955), (4, 21.644583053343577), (5, 66.88944145525666), (6, 61.16509692750762), (7, 59.91615711650362), (8, 23.08991988048606), (9, 50.60868001120235), (10, 38.03256060722136), (11, 55.64524541876285), (12, 46.89179048374403), (13, 39.0265773331694), (14, 37.65379737631286), (15, 16.40537771926719), (16, 48.40665564048757), (17, 48.5748151998874), (18, 50.078635480211176), (19, 55.61807111195214)])
+IoU=0.85,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 33.21636432902705), (1, 33.768062378128135), (2, 21.30182586798951), (3, 9.706682154519308), (4, 9.732058476018125), (5, 59.79695630608969), (6, 48.73187364340612), (7, 46.12175213093133), (8, 12.640159726227123), (9, 34.427480226233456), (10, 25.017547187649924), (11, 38.481344259466), (12, 30.884180131596978), (13, 22.901679130428835), (14, 21.20301762477528), (15, 7.215771035634157), (16, 35.085376839804944), (17, 32.733479453786416), (18, 33.88436660311084), (19, 34.94374223940297)])
+IoU=0.90,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 10.061649058549751), (1, 10.683720426736), (2, 7.159974341066835), (3, 3.922013880036905), (4, 2.006527843773828), (5, 41.671163830968524), (6, 24.805018695896784), (7, 21.925617614390386), (8, 3.497899862672683), (9, 12.42458887436984), (10, 12.095410054337474), (11, 19.02625294542641), (12, 13.82897177367513), (13, 3.7119641938041146), (14, 6.485771521158531), (15, 1.9354947081480705), (16, 15.698916538616306), (17, 16.210664854062728), (18, 12.167588497147653), (19, 11.683655938382095)])
+IoU=0.95,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 0.360773833910448), (1, 0.8102999546190646), (2, 0.6316365994329665), (3, 0.11675429766181454), (4, 0.12036591237361577), (5, 5.811502982279477), (6, 2.877685739656697), (7, 2.368202610985757), (8, 0.2879101310384215), (9, 1.4342261966458574), (10, 2.1647002104260564), (11, 1.0637542908530537), (12, 0.5928212146318435), (13, 0.10112627913091939), (14, 0.4399432826417423), (15, 0.11738824639161166), (16, 0.41961749660532655), (17, 1.6382784580294165), (18, 1.025945762915265), (19, 0.7084124066219967)])
+
+2022-04-30 21:14:58 - until epoch: 010, best_metric: 79.693%
+2022-04-30 21:14:58 - epoch 011 lr: 1e-05
+2022-04-30 21:15:34 - train: epoch 0011, iter [00100, 00517], lr: 0.000010, total_loss: 0.9489, cls_loss: 0.1866, reg_loss: 0.1392, center_ness_loss: 0.6231
+2022-04-30 21:16:09 - train: epoch 0011, iter [00200, 00517], lr: 0.000010, total_loss: 0.8933, cls_loss: 0.1676, reg_loss: 0.1275, center_ness_loss: 0.5981
+2022-04-30 21:16:44 - train: epoch 0011, iter [00300, 00517], lr: 0.000010, total_loss: 0.9409, cls_loss: 0.2147, reg_loss: 0.1246, center_ness_loss: 0.6016
+2022-04-30 21:17:20 - train: epoch 0011, iter [00400, 00517], lr: 0.000010, total_loss: 0.8725, cls_loss: 0.1681, reg_loss: 0.1133, center_ness_loss: 0.5911
+2022-04-30 21:17:55 - train: epoch 0011, iter [00500, 00517], lr: 0.000010, total_loss: 0.8736, cls_loss: 0.1635, reg_loss: 0.1180, center_ness_loss: 0.5921
+2022-04-30 21:18:01 - train: epoch 011, train_loss: 0.8776
+2022-04-30 21:18:02 - until epoch: 011, best_metric: 79.693%
+2022-04-30 21:18:02 - epoch 012 lr: 1e-05
+2022-04-30 21:18:37 - train: epoch 0012, iter [00100, 00517], lr: 0.000010, total_loss: 0.8663, cls_loss: 0.1558, reg_loss: 0.1143, center_ness_loss: 0.5962
+2022-04-30 21:19:13 - train: epoch 0012, iter [00200, 00517], lr: 0.000010, total_loss: 0.8284, cls_loss: 0.1447, reg_loss: 0.0997, center_ness_loss: 0.5839
+2022-04-30 21:19:48 - train: epoch 0012, iter [00300, 00517], lr: 0.000010, total_loss: 0.8494, cls_loss: 0.1468, reg_loss: 0.1062, center_ness_loss: 0.5964
+2022-04-30 21:20:23 - train: epoch 0012, iter [00400, 00517], lr: 0.000010, total_loss: 0.9793, cls_loss: 0.2166, reg_loss: 0.1604, center_ness_loss: 0.6023
+2022-04-30 21:20:58 - train: epoch 0012, iter [00500, 00517], lr: 0.000010, total_loss: 0.8725, cls_loss: 0.1555, reg_loss: 0.1244, center_ness_loss: 0.5926
+2022-04-30 21:21:05 - train: epoch 012, train_loss: 0.8722
+2022-04-30 21:27:39 - eval: epoch: 012
+per_image_load_time: 1.641ms
+per_image_inference_time: 17.454ms
+IoU=0.50,area=all,maxDets=100,mAP: 80.16344468159326
+IoU=0.55,area=all,maxDets=100,mAP: 78.35558733745047
+IoU=0.60,area=all,maxDets=100,mAP: 75.50856402503476
+IoU=0.65,area=all,maxDets=100,mAP: 71.92298445007519
+IoU=0.70,area=all,maxDets=100,mAP: 65.92489641665995
+IoU=0.75,area=all,maxDets=100,mAP: 56.953624156085255
+IoU=0.80,area=all,maxDets=100,mAP: 45.27173963940888
+IoU=0.85,area=all,maxDets=100,mAP: 30.8876866175142
+IoU=0.90,area=all,maxDets=100,mAP: 13.639041486843794
+IoU=0.95,area=all,maxDets=100,mAP: 1.388194877018885
+IoU=0.50,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 85.64438706750775), (1, 88.08365483314), (2, 83.98561120144412), (3, 73.7100829857961), (4, 70.01722313836301), (5, 84.72202632637362), (6, 89.80286302530116), (7, 88.92656554541088), (8, 59.41327567647032), (9, 85.29786168467469), (10, 67.50272196992466), (11, 89.30842669503679), (12, 84.97399243119624), (13, 83.94292130909975), (14, 86.95867582111899), (15, 57.049867861101035), (16, 80.97046290511858), (17, 72.28162789143975), (18, 88.02699101014746), (19, 82.6496542532001)])
+IoU=0.55,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 84.20942169003204), (1, 87.22570262157592), (2, 82.40621062282388), (3, 70.12739155479719), (4, 67.25600937504915), (5, 83.65591208740182), (6, 88.5849047645156), (7, 87.33938845851262), (8, 57.35961938279765), (9, 84.55631862716864), (10, 64.28396523435566), (11, 87.70736095343061), (12, 83.95239785025005), (13, 82.99774054675262), (14, 83.97452395561689), (15, 51.12693321950432), (16, 80.28720398704512), (17, 71.5676783960122), (18, 86.87247648010296), (19, 81.62058694126455)])
+IoU=0.60,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 81.18878108217412), (1, 83.18098263151154), (2, 78.84857480715888), (3, 63.109952404817385), (4, 63.59734549227281), (5, 82.47709579388825), (6, 86.50893794474636), (7, 86.53060664256991), (8, 54.16095793578406), (9, 81.86477625930999), (10, 61.95896198853883), (11, 84.17124284021415), (12, 81.67829587398043), (13, 79.15368528126963), (14, 79.50042748308206), (15, 46.89698027892174), (16, 78.61883685510108), (17, 70.67136712460875), (18, 85.08606453532865), (19, 80.96740724541675)])
+IoU=0.65,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 78.61710861872102), (1, 79.94674694160247), (2, 74.08991507970119), (3, 57.7833118239772), (4, 60.07724455144463), (5, 80.07785133761111), (6, 82.96552986248531), (7, 83.53850306157278), (8, 50.81538157343929), (9, 76.30786072111884), (10, 57.45974575902015), (11, 81.76819658686576), (12, 77.16112723849851), (13, 76.23946944289735), (14, 73.7671230403382), (15, 43.10569715623424), (16, 74.7996824526678), (17, 68.2116128805066), (18, 83.54650109960356), (19, 78.18107977319777)])
+IoU=0.70,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 72.83155557552803), (1, 73.49251418560847), (2, 66.29341786749026), (3, 45.05883001924686), (4, 51.83478135789351), (5, 78.30174438141199), (6, 76.59513165448453), (7, 81.12421049608953), (8, 43.05700190632989), (9, 73.04208076862136), (10, 53.450510548028696), (11, 75.95421720379025), (12, 69.42893126964901), (13, 68.53485919643049), (14, 65.35700009631853), (15, 36.89336023715137), (16, 70.25602346120854), (17, 64.08817040838247), (18, 78.31722120215674), (19, 74.58636649737838)])
+IoU=0.75,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 61.77407296609195), (1, 62.37867726769573), (2, 50.95091024392744), (3, 35.48990943415228), (4, 44.14237164263225), (5, 76.08448953615869), (6, 70.1915111720939), (7, 72.10288360063586), (8, 33.65109858533703), (9, 67.24772896422854), (10, 45.2094324383946), (11, 67.32147380578415), (12, 59.61086897134229), (13, 58.470440167736356), (14, 53.05062888679268), (15, 26.221532399443532), (16, 59.58854657033892), (17, 61.12981367476016), (18, 66.20995212758898), (19, 68.24614066656976)])
+IoU=0.80,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 52.31175287053232), (1, 51.15396590619652), (2, 37.30886862524), (3, 20.20152513948807), (4, 27.19865952809283), (5, 70.58317283362024), (6, 61.795242191993374), (7, 60.917068552115325), (8, 24.35397858835892), (9, 53.16520201702974), (10, 37.88884480769816), (11, 56.54010588782462), (12, 48.51040964144928), (13, 44.43277817675062), (14, 38.71010147438916), (15, 17.160260733105563), (16, 50.855848990652404), (17, 50.716852511173784), (18, 51.0089197490628), (19, 50.621234563403796)])
+IoU=0.85,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 37.20500582753464), (1, 35.53115267259721), (2, 23.06408393486951), (3, 11.32479403485402), (4, 12.125034253390476), (5, 60.884460935321115), (6, 48.20341954112505), (7, 46.558758884414345), (8, 12.856125686252467), (9, 35.048863773239084), (10, 25.010371215489226), (11, 40.453777881946884), (12, 34.473839338750025), (13, 23.261032649906113), (14, 22.72856269684409), (15, 7.032428228584216), (16, 36.51148753112012), (17, 36.56540746059683), (18, 32.418987771468785), (19, 36.49613803197972)])
+IoU=0.90,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 12.41060450142388), (1, 14.07480938479948), (2, 8.830234539938028), (3, 2.6124021473032975), (4, 3.2459862658681837), (5, 40.458362589457586), (6, 26.64616837558924), (7, 20.793010203420607), (8, 4.216058640371267), (9, 14.744089442107661), (10, 11.70370786619579), (11, 20.251267540017746), (12, 14.13255305408945), (13, 5.640860729103129), (14, 7.806820851826671), (15, 2.1964995901510957), (16, 16.53248253342169), (17, 22.168931151510645), (18, 13.30529087535034), (19, 11.010689454930116)])
+IoU=0.95,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 1.3773601849595591), (1, 0.8717891180460449), (2, 0.7699162910640414), (3, 0.08487865984972945), (4, 0.3281932178935682), (5, 4.787379271847204), (6, 2.92454918509037), (7, 3.4214545127436624), (8, 0.15770717270104576), (9, 2.320392429774052), (10, 3.9697715514560463), (11, 1.5056012521049171), (12, 0.8002153196179073), (13, 0.03371970495258166), (14, 0.5334402911191327), (15, 0.1806713794188227), (16, 0.7625142917045729), (17, 1.5662711084251206), (18, 0.8730761829403175), (19, 0.49499641466901045)])
+
+2022-04-30 21:27:40 - until epoch: 012, best_metric: 80.163%
+2022-04-30 21:27:40 - epoch 013 lr: 1.0000000000000002e-06
+2022-04-30 21:28:19 - train: epoch 0013, iter [00100, 00517], lr: 0.000001, total_loss: 0.8497, cls_loss: 0.1529, reg_loss: 0.1107, center_ness_loss: 0.5861
+2022-04-30 21:28:55 - train: epoch 0013, iter [00200, 00517], lr: 0.000001, total_loss: 0.8669, cls_loss: 0.1774, reg_loss: 0.1103, center_ness_loss: 0.5792
+2022-04-30 21:29:30 - train: epoch 0013, iter [00300, 00517], lr: 0.000001, total_loss: 0.8670, cls_loss: 0.1696, reg_loss: 0.1144, center_ness_loss: 0.5830
+2022-04-30 21:30:05 - train: epoch 0013, iter [00400, 00517], lr: 0.000001, total_loss: 0.8947, cls_loss: 0.1764, reg_loss: 0.1240, center_ness_loss: 0.5942
+2022-04-30 21:30:41 - train: epoch 0013, iter [00500, 00517], lr: 0.000001, total_loss: 0.8905, cls_loss: 0.1657, reg_loss: 0.1242, center_ness_loss: 0.6007
+2022-04-30 21:30:47 - train: epoch 013, train_loss: 0.8644
+2022-04-30 21:37:25 - eval: epoch: 013
+per_image_load_time: 1.659ms
+per_image_inference_time: 17.424ms
+IoU=0.50,area=all,maxDets=100,mAP: 80.48757668375853
+IoU=0.55,area=all,maxDets=100,mAP: 78.69865586113262
+IoU=0.60,area=all,maxDets=100,mAP: 75.77744340335734
+IoU=0.65,area=all,maxDets=100,mAP: 71.94759379256341
+IoU=0.70,area=all,maxDets=100,mAP: 65.97170616715931
+IoU=0.75,area=all,maxDets=100,mAP: 57.1411157990726
+IoU=0.80,area=all,maxDets=100,mAP: 45.35740894551327
+IoU=0.85,area=all,maxDets=100,mAP: 31.17734451289032
+IoU=0.90,area=all,maxDets=100,mAP: 13.733995339564093
+IoU=0.95,area=all,maxDets=100,mAP: 1.4368300552694033
+IoU=0.50,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 86.08652787375439), (1, 88.42969344154102), (2, 83.56725516065377), (3, 73.6824565497418), (4, 69.81247838590593), (5, 84.90431172917552), (6, 89.96738233563741), (7, 91.3158295029328), (8, 59.4527263972655), (9, 85.2923939256149), (10, 68.7755431112587), (11, 89.7004942154641), (12, 85.24899640127789), (13, 83.92478516274913), (14, 86.96369649783462), (15, 57.05091556954468), (16, 82.13804186335871), (17, 71.74943489683567), (18, 88.80186342573322), (19, 82.88670722889064)])
+IoU=0.55,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 84.56186216646108), (1, 86.98553521868132), (2, 82.07636210437094), (3, 69.56291085213351), (4, 67.80742215779505), (5, 83.0182783919301), (6, 88.86609751647853), (7, 89.54112546379022), (8, 57.554139155727114), (9, 84.24310583040358), (10, 65.6056680452923), (11, 88.50858176656001), (12, 84.89101348013757), (13, 82.96153987122007), (14, 84.1728024733315), (15, 51.843408166142716), (16, 81.64084281834323), (17, 70.80446468621463), (18, 87.27312215489411), (19, 82.05483490274436)])
+IoU=0.60,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 81.47024998769199), (1, 82.78797507321222), (2, 78.94904677207762), (3, 63.929527745632754), (4, 65.04406096294343), (5, 81.37630495382643), (6, 86.69335194486838), (7, 88.63153069886633), (8, 54.14686396700419), (9, 82.0561274053033), (10, 61.80642575213341), (11, 85.66094270570588), (12, 82.47625584301939), (13, 79.6290645856698), (14, 79.71386295823206), (15, 46.39385010510147), (16, 78.95325931473648), (17, 69.6072199575752), (18, 85.54303515703707), (19, 80.67991217650925)])
+IoU=0.65,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 78.78068086636934), (1, 79.65756845873237), (2, 73.73867552348545), (3, 54.3588343650373), (4, 60.54949412063285), (5, 79.64023055538429), (6, 82.80946412627739), (7, 85.84292038388386), (8, 50.09597735864835), (9, 76.32267558290323), (10, 58.10003894725995), (11, 82.48294464697359), (12, 77.78554463750507), (13, 75.90381245000835), (14, 74.06188954142901), (15, 42.93211777974659), (16, 76.2516498995382), (17, 67.35433827176112), (18, 83.62568862203281), (19, 78.65732971365908)])
+IoU=0.70,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 73.1780233919886), (1, 71.65232748632432), (2, 66.55900645605854), (3, 42.81245648467623), (4, 52.47962988678716), (5, 78.19171673308894), (6, 77.24675503622917), (7, 82.54196494995199), (8, 42.97265510074064), (9, 72.70480760983425), (10, 55.320834429043764), (11, 77.22968490302233), (12, 68.96539141824466), (13, 68.55758233511627), (14, 66.34459961037888), (15, 36.069550458447374), (16, 70.29984017812578), (17, 62.639347388158505), (18, 78.39656036485592), (19, 75.2713891221128)])
+IoU=0.75,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 60.38877278456138), (1, 62.502274696168726), (2, 51.75117592990577), (3, 35.39105463308482), (4, 43.60344765967788), (5, 76.06048743405074), (6, 69.69461938896605), (7, 74.13885899584079), (8, 32.885213634336054), (9, 66.78941560142896), (10, 46.33190416400353), (11, 70.01868037119802), (12, 59.209965868513734), (13, 59.39029882558729), (14, 52.78765835479857), (15, 25.385649046788018), (16, 61.064257104166316), (17, 59.97897718012904), (18, 66.84205938428163), (19, 68.6075449239648)])
+IoU=0.80,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 51.853578833381064), (1, 49.49705459521188), (2, 36.71989554646473), (3, 23.35675861016486), (4, 25.03670001664536), (5, 69.64663850412344), (6, 60.44768284113182), (7, 63.59030373341985), (8, 23.06268316474278), (9, 51.814565556203405), (10, 37.951552210977404), (11, 58.51341927426169), (12, 47.656672331831196), (13, 43.710084672151034), (14, 39.135710842448695), (15, 15.912330175464218), (16, 50.89245176870596), (17, 49.74590332213915), (18, 54.11549885267731), (19, 54.4886940581194)])
+IoU=0.85,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 38.02229638018293), (1, 35.65941145477603), (2, 24.650940296435213), (3, 10.785298934773705), (4, 12.000739187426568), (5, 57.0889597993147), (6, 48.82741197827664), (7, 49.21135678644911), (8, 13.131875773286103), (9, 33.93031550665902), (10, 24.437430451352146), (11, 42.05049431865041), (12, 36.053985136523686), (13, 24.490617457891833), (14, 22.948197159089293), (15, 7.44507061943117), (16, 35.69592263643987), (17, 37.43530530860225), (18, 34.43538437678107), (19, 35.24587669546463)])
+IoU=0.90,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 14.185049442462644), (1, 11.939029976274096), (2, 10.228925673356832), (3, 3.3435127597885903), (4, 2.7847617124181534), (5, 40.63150223738743), (6, 27.46701358034558), (7, 22.15097602598538), (8, 3.9487231452199816), (9, 13.986005888751649), (10, 11.199974811835114), (11, 25.044938957266538), (12, 15.126037026570085), (13, 5.6909806531101435), (14, 7.613640178998902), (15, 1.5448262818430205), (16, 16.357412628353153), (17, 18.195634516395792), (18, 11.916896470805874), (19, 11.32406482411289)])
+IoU=0.95,area=all,maxDets=100,per_class_ap: OrderedDict([(0, 0.7865642880165943), (1, 1.0664096968630659), (2, 0.5999058893014496), (3, 0.13490691817688014), (4, 0.2665000592045854), (5, 5.863242327182261), (6, 3.0025561634754596), (7, 3.63433556565453), (8, 0.2846926908815979), (9, 3.5130029533081766), (10, 2.3611871158189897), (11, 1.7800872236752894), (12, 0.6772012293306516), (13, 0.18016019002650524), (14, 0.47885299412950866), (15, 0.10730601375505831), (16, 0.816838247781478), (17, 1.5197954001570673), (18, 1.0364749776303972), (19, 0.6265811610185184)])
+
+2022-04-30 21:37:26 - until epoch: 013, best_metric: 80.488%
+2022-04-30 21:37:26 - train done. model: resnet50_fcos, train time: 1.422 hours, best_metric: 80.488%

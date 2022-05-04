@@ -1,11 +1,11 @@
 import cv2
-import math
 import numpy as np
 
 import torch
 
 
 class RetinaStyleResize:
+
     def __init__(self,
                  resize=400,
                  divisor=32,
@@ -23,8 +23,8 @@ class RetinaStyleResize:
         '''
         sample must be a dict,contains 'image'、'annots'、'scale' keys.
         '''
-        image, annots, scale, origin_hw = sample['image'], sample[
-            'annots'], sample['scale'], sample['origin_hw']
+        image, annots, scale, size = sample['image'], sample['annots'], sample[
+            'scale'], sample['size']
         h, w, _ = image.shape
 
         if self.multi_scale:
@@ -40,14 +40,14 @@ class RetinaStyleResize:
 
             random_idx = np.random.randint(0, len(resize_list))
             scales = (resize_list[random_idx],
-                      math.ceil(self.resize * self.ratio))
+                      int(round(self.resize * self.ratio)))
         else:
-            scales = (self.resize, math.ceil(self.resize * self.ratio))
+            scales = (self.resize, int(round(self.resize * self.ratio)))
 
         max_long_edge, max_short_edge = max(scales), min(scales)
         factor = min(max_long_edge / max(h, w), max_short_edge / min(h, w))
 
-        resize_h, resize_w = math.ceil(h * factor), math.ceil(w * factor)
+        resize_h, resize_w = int(round(h * factor)), int(round(w * factor))
         image = cv2.resize(image, (resize_w, resize_h))
 
         pad_w = 0 if resize_w % self.divisor == 0 else self.divisor - resize_w % self.divisor
@@ -65,13 +65,14 @@ class RetinaStyleResize:
             'image': padded_image,
             'annots': annots,
             'scale': scale,
-            'origin_hw': origin_hw,
+            'size': size,
         }
 
 
 class YoloStyleResize:
+
     def __init__(self,
-                 resize=600,
+                 resize=640,
                  divisor=32,
                  stride=32,
                  multi_scale=False,
@@ -86,8 +87,8 @@ class YoloStyleResize:
         '''
         sample must be a dict,contains 'image'、'annots'、'scale' keys.
         '''
-        image, annots, scale, origin_hw = sample['image'], sample[
-            'annots'], sample['scale'], sample['origin_hw']
+        image, annots, scale, size = sample['image'], sample['annots'], sample[
+            'scale'], sample['size']
         h, w, _ = image.shape
 
         if self.multi_scale:
@@ -108,7 +109,7 @@ class YoloStyleResize:
 
         factor = final_resize / max(h, w)
 
-        resize_h, resize_w = math.ceil(h * factor), math.ceil(w * factor)
+        resize_h, resize_w = int(round(h * factor)), int(round(w * factor))
         image = cv2.resize(image, (resize_w, resize_h))
 
         pad_w = 0 if resize_w % self.divisor == 0 else self.divisor - resize_w % self.divisor
@@ -126,25 +127,26 @@ class YoloStyleResize:
             'image': padded_image,
             'annots': annots,
             'scale': scale,
-            'origin_hw': origin_hw,
+            'size': size,
         }
 
 
 class RandomHorizontalFlip:
-    def __init__(self, flip_prob=0.5):
-        self.flip_prob = flip_prob
+
+    def __init__(self, prob=0.5):
+        self.prob = prob
 
     def __call__(self, sample):
         '''
         sample must be a dict,contains 'image'、'annots'、'scale' keys.
         '''
-        image, annots, scale, origin_hw = sample['image'], sample[
-            'annots'], sample['scale'], sample['origin_hw']
+        image, annots, scale, size = sample['image'], sample['annots'], sample[
+            'scale'], sample['size']
 
         if annots.shape[0] == 0:
             return sample
 
-        if np.random.uniform(0, 1) < self.flip_prob:
+        if np.random.uniform(0, 1) < self.prob:
             image = image[:, ::-1, :]
             _, w, _ = image.shape
 
@@ -158,25 +160,26 @@ class RandomHorizontalFlip:
             'image': image,
             'annots': annots,
             'scale': scale,
-            'origin_hw': origin_hw,
+            'size': size,
         }
 
 
 class RandomCrop:
-    def __init__(self, crop_prob=0.5):
-        self.crop_prob = crop_prob
+
+    def __init__(self, prob=0.5):
+        self.prob = prob
 
     def __call__(self, sample):
         '''
         sample must be a dict,contains 'image'、'annots'、'scale' keys.
         '''
-        image, annots, scale, origin_hw = sample['image'], sample[
-            'annots'], sample['scale'], sample['origin_hw']
+        image, annots, scale, size = sample['image'], sample['annots'], sample[
+            'scale'], sample['size']
 
         if annots.shape[0] == 0:
             return sample
 
-        if np.random.uniform(0, 1) < self.crop_prob:
+        if np.random.uniform(0, 1) < self.prob:
             h, w, _ = image.shape
             max_bbox = np.concatenate([
                 np.min(annots[:, 0:2], axis=0),
@@ -202,25 +205,26 @@ class RandomCrop:
             'image': image,
             'annots': annots,
             'scale': scale,
-            'origin_hw': origin_hw,
+            'size': size,
         }
 
 
 class RandomTranslate:
-    def __init__(self, translate_prob=0.5):
-        self.translate_prob = translate_prob
+
+    def __init__(self, prob=0.5):
+        self.prob = prob
 
     def __call__(self, sample):
         '''
         sample must be a dict,contains 'image'、'annots'、'scale' keys.
         '''
-        image, annots, scale, origin_hw = sample['image'], sample[
-            'annots'], sample['scale'], sample['origin_hw']
+        image, annots, scale, size = sample['image'], sample['annots'], sample[
+            'scale'], sample['size']
 
         if annots.shape[0] == 0:
             return sample
 
-        if np.random.uniform(0, 1) < self.translate_prob:
+        if np.random.uniform(0, 1) < self.prob:
             h, w, _ = image.shape
             max_bbox = np.concatenate([
                 np.min(annots[:, 0:2], axis=0),
@@ -241,11 +245,12 @@ class RandomTranslate:
             'image': image,
             'annots': annots,
             'scale': scale,
-            'origin_hw': origin_hw,
+            'size': size,
         }
 
 
 class Normalize:
+
     def __init__(self):
         pass
 
@@ -253,8 +258,8 @@ class Normalize:
         '''
         sample must be a dict,contains 'image'、'annots'、'scale' keys.
         '''
-        image, annots, scale, origin_hw = sample['image'], sample[
-            'annots'], sample['scale'], sample['origin_hw']
+        image, annots, scale, size = sample['image'], sample['annots'], sample[
+            'scale'], sample['size']
 
         image = image / 255.
 
@@ -262,24 +267,28 @@ class Normalize:
             'image': image,
             'annots': annots,
             'scale': scale,
-            'origin_hw': origin_hw,
+            'size': size,
         }
 
 
 class DetectionCollater:
-    def __init__(self):
-        pass
 
-    def next(self, data):
+    def __init__(self, divisor=32):
+        self.divisor = divisor
+
+    def __call__(self, data):
         images = [s['image'] for s in data]
         annots = [s['annots'] for s in data]
         scales = [s['scale'] for s in data]
-        origin_hws = [s['origin_hw'] for s in data]
+        sizes = [s['size'] for s in data]
 
         max_h = max(image.shape[0] for image in images)
         max_w = max(image.shape[1] for image in images)
 
-        input_images = np.zeros((len(images), max_h, max_w, 3),
+        pad_h = 0 if max_h % self.divisor == 0 else self.divisor - max_h % self.divisor
+        pad_w = 0 if max_w % self.divisor == 0 else self.divisor - max_w % self.divisor
+
+        input_images = np.zeros((len(images), max_h + pad_h, max_w + pad_w, 3),
                                 dtype=np.float32)
         for i, image in enumerate(images):
             input_images[i, 0:image.shape[0], 0:image.shape[1], :] = image
@@ -299,20 +308,20 @@ class DetectionCollater:
                 (len(annots), 1, 5), dtype=np.float32) * (-1)
 
         input_annots = torch.from_numpy(input_annots)
+
         scales = np.array(scales, dtype=np.float32)
-        scales = torch.from_numpy(scales)
-        origin_hws = np.array(origin_hws, dtype=np.float32)
-        origin_hws = torch.from_numpy(origin_hws)
+        sizes = np.array(sizes, dtype=np.float32)
 
         return {
             'image': input_images,
             'annots': input_annots,
             'scale': scales,
-            'origin_hw': origin_hws,
+            'size': sizes,
         }
 
 
 class DetectionDataPrefetcher:
+
     def __init__(self, loader):
         self.loader = iter(loader)
         self.stream = torch.cuda.Stream()
@@ -341,13 +350,20 @@ class DetectionDataPrefetcher:
         return inputs, annots
 
 
-def load_state_dict(saved_state_dict, model, excluded_layer_name=()):
+def load_state_dict(saved_model_path, model, excluded_layer_name=()):
     '''
-    saved_state_dict: a saved model.state_dict()
+    saved_model_path: a saved model.state_dict() .pth file path
     model: a new defined model
     excluded_layer_name: layer names that doesn't want to load parameters
     only load layer parameters which has same layer name and same layer weight shape
     '''
+    if not saved_model_path:
+        print('No pretrained model file!')
+        return
+
+    saved_state_dict = torch.load(saved_model_path,
+                                  map_location=torch.device('cpu'))
+
     filtered_state_dict = {
         name: weight
         for name, weight in saved_state_dict.items()
@@ -356,6 +372,9 @@ def load_state_dict(saved_state_dict, model, excluded_layer_name=()):
         and weight.shape == model.state_dict()[name].shape
     }
 
-    model.load_state_dict(filtered_state_dict, strict=False)
+    if len(filtered_state_dict) == 0:
+        print('No pretrained parameters to load!')
+    else:
+        model.load_state_dict(filtered_state_dict, strict=False)
 
     return

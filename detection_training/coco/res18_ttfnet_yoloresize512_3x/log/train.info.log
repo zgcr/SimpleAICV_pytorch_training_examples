@@ -1,0 +1,1158 @@
+2022-04-26 08:13:15 - network: resnet18_ttfnet
+2022-04-26 08:13:15 - num_classes: 80
+2022-04-26 08:13:15 - input_image_size: [512, 512]
+2022-04-26 08:13:15 - backbone_pretrained_path: /root/code/simpleAICV-pytorch-ImageNet-COCO-training/pretrained_models/resnet/resnet18-acc70.478.pth
+2022-04-26 08:13:15 - trained_model_path: 
+2022-04-26 08:13:15 - criterion: TTFNetLoss()
+2022-04-26 08:13:15 - decoder: TTFNetDecoder()
+2022-04-26 08:13:15 - train_dataset: <simpleAICV.detection.datasets.cocodataset.CocoDetection object at 0x7f1e3c199970>
+2022-04-26 08:13:15 - val_dataset: <simpleAICV.detection.datasets.cocodataset.CocoDetection object at 0x7f1e3c197e50>
+2022-04-26 08:13:15 - collater: <simpleAICV.detection.common.DetectionCollater object at 0x7f1e3c197e20>
+2022-04-26 08:13:15 - seed: 0
+2022-04-26 08:13:15 - batch_size: 64
+2022-04-26 08:13:15 - num_workers: 4
+2022-04-26 08:13:15 - optimizer: ('AdamW', {'lr': 0.0001, 'weight_decay': 0.001})
+2022-04-26 08:13:15 - scheduler: ('MultiStepLR', {'warm_up_epochs': 0, 'gamma': 0.1, 'milestones': [24, 36]})
+2022-04-26 08:13:15 - epochs: 39
+2022-04-26 08:13:15 - eval_epoch: [1, 0, 5, 10, 15, 20, 25, 30]
+2022-04-26 08:13:15 - print_interval: 100
+2022-04-26 08:13:15 - eval_type: COCO
+2022-04-26 08:13:15 - eval_voc_iou_threshold_list: [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
+2022-04-26 08:13:15 - save_model_metric: IoU=0.50:0.95,area=all,maxDets=100,mAP
+2022-04-26 08:13:15 - sync_bn: False
+2022-04-26 08:13:15 - apex: True
+2022-04-26 08:13:15 - gpus_type: NVIDIA RTX A5000
+2022-04-26 08:13:15 - gpus_num: 2
+2022-04-26 08:13:15 - group: <torch._C._distributed_c10d.ProcessGroupNCCL object at 0x7f1dfa1d1330>
+2022-04-26 08:13:15 - --------------------parameters--------------------
+2022-04-26 08:13:15 - name: backbone.conv1.layer.0.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.conv1.layer.1.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.conv1.layer.1.bias, grad: True
+2022-04-26 08:13:15 - name: backbone.layer1.0.conv1.layer.0.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.layer1.0.conv1.layer.1.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.layer1.0.conv1.layer.1.bias, grad: True
+2022-04-26 08:13:15 - name: backbone.layer1.0.conv2.layer.0.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.layer1.0.conv2.layer.1.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.layer1.0.conv2.layer.1.bias, grad: True
+2022-04-26 08:13:15 - name: backbone.layer1.1.conv1.layer.0.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.layer1.1.conv1.layer.1.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.layer1.1.conv1.layer.1.bias, grad: True
+2022-04-26 08:13:15 - name: backbone.layer1.1.conv2.layer.0.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.layer1.1.conv2.layer.1.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.layer1.1.conv2.layer.1.bias, grad: True
+2022-04-26 08:13:15 - name: backbone.layer2.0.conv1.layer.0.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.layer2.0.conv1.layer.1.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.layer2.0.conv1.layer.1.bias, grad: True
+2022-04-26 08:13:15 - name: backbone.layer2.0.conv2.layer.0.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.layer2.0.conv2.layer.1.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.layer2.0.conv2.layer.1.bias, grad: True
+2022-04-26 08:13:15 - name: backbone.layer2.0.downsample_conv.layer.0.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.layer2.0.downsample_conv.layer.1.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.layer2.0.downsample_conv.layer.1.bias, grad: True
+2022-04-26 08:13:15 - name: backbone.layer2.1.conv1.layer.0.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.layer2.1.conv1.layer.1.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.layer2.1.conv1.layer.1.bias, grad: True
+2022-04-26 08:13:15 - name: backbone.layer2.1.conv2.layer.0.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.layer2.1.conv2.layer.1.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.layer2.1.conv2.layer.1.bias, grad: True
+2022-04-26 08:13:15 - name: backbone.layer3.0.conv1.layer.0.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.layer3.0.conv1.layer.1.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.layer3.0.conv1.layer.1.bias, grad: True
+2022-04-26 08:13:15 - name: backbone.layer3.0.conv2.layer.0.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.layer3.0.conv2.layer.1.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.layer3.0.conv2.layer.1.bias, grad: True
+2022-04-26 08:13:15 - name: backbone.layer3.0.downsample_conv.layer.0.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.layer3.0.downsample_conv.layer.1.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.layer3.0.downsample_conv.layer.1.bias, grad: True
+2022-04-26 08:13:15 - name: backbone.layer3.1.conv1.layer.0.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.layer3.1.conv1.layer.1.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.layer3.1.conv1.layer.1.bias, grad: True
+2022-04-26 08:13:15 - name: backbone.layer3.1.conv2.layer.0.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.layer3.1.conv2.layer.1.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.layer3.1.conv2.layer.1.bias, grad: True
+2022-04-26 08:13:15 - name: backbone.layer4.0.conv1.layer.0.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.layer4.0.conv1.layer.1.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.layer4.0.conv1.layer.1.bias, grad: True
+2022-04-26 08:13:15 - name: backbone.layer4.0.conv2.layer.0.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.layer4.0.conv2.layer.1.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.layer4.0.conv2.layer.1.bias, grad: True
+2022-04-26 08:13:15 - name: backbone.layer4.0.downsample_conv.layer.0.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.layer4.0.downsample_conv.layer.1.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.layer4.0.downsample_conv.layer.1.bias, grad: True
+2022-04-26 08:13:15 - name: backbone.layer4.1.conv1.layer.0.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.layer4.1.conv1.layer.1.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.layer4.1.conv1.layer.1.bias, grad: True
+2022-04-26 08:13:15 - name: backbone.layer4.1.conv2.layer.0.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.layer4.1.conv2.layer.1.weight, grad: True
+2022-04-26 08:13:15 - name: backbone.layer4.1.conv2.layer.1.bias, grad: True
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.0.0.weight, grad: True
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.0.0.offset_conv.weight, grad: True
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.0.0.offset_conv.bias, grad: True
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.0.0.mask_conv.weight, grad: True
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.0.0.mask_conv.bias, grad: True
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.0.1.weight, grad: True
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.0.1.bias, grad: True
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.0.3.weight, grad: True
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.0.4.weight, grad: True
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.0.4.bias, grad: True
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.1.0.weight, grad: True
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.1.0.offset_conv.weight, grad: True
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.1.0.offset_conv.bias, grad: True
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.1.0.mask_conv.weight, grad: True
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.1.0.mask_conv.bias, grad: True
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.1.1.weight, grad: True
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.1.1.bias, grad: True
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.1.3.weight, grad: True
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.1.4.weight, grad: True
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.1.4.bias, grad: True
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.2.0.weight, grad: True
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.2.0.offset_conv.weight, grad: True
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.2.0.offset_conv.bias, grad: True
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.2.0.mask_conv.weight, grad: True
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.2.0.mask_conv.bias, grad: True
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.2.1.weight, grad: True
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.2.1.bias, grad: True
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.2.3.weight, grad: True
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.2.4.weight, grad: True
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.2.4.bias, grad: True
+2022-04-26 08:13:15 - name: ttf_head.shortcut_layers.0.0.weight, grad: True
+2022-04-26 08:13:15 - name: ttf_head.shortcut_layers.0.0.bias, grad: True
+2022-04-26 08:13:15 - name: ttf_head.shortcut_layers.1.0.weight, grad: True
+2022-04-26 08:13:15 - name: ttf_head.shortcut_layers.1.0.bias, grad: True
+2022-04-26 08:13:15 - name: ttf_head.shortcut_layers.1.2.weight, grad: True
+2022-04-26 08:13:15 - name: ttf_head.shortcut_layers.1.2.bias, grad: True
+2022-04-26 08:13:15 - name: ttf_head.heatmap_head.0.weight, grad: True
+2022-04-26 08:13:15 - name: ttf_head.heatmap_head.0.bias, grad: True
+2022-04-26 08:13:15 - name: ttf_head.heatmap_head.2.weight, grad: True
+2022-04-26 08:13:15 - name: ttf_head.heatmap_head.2.bias, grad: True
+2022-04-26 08:13:15 - name: ttf_head.wh_head.0.weight, grad: True
+2022-04-26 08:13:15 - name: ttf_head.wh_head.0.bias, grad: True
+2022-04-26 08:13:15 - name: ttf_head.wh_head.2.weight, grad: True
+2022-04-26 08:13:15 - name: ttf_head.wh_head.2.bias, grad: True
+2022-04-26 08:13:15 - --------------------buffers--------------------
+2022-04-26 08:13:15 - name: backbone.conv1.layer.1.running_mean, grad: False
+2022-04-26 08:13:15 - name: backbone.conv1.layer.1.running_var, grad: False
+2022-04-26 08:13:15 - name: backbone.conv1.layer.1.num_batches_tracked, grad: False
+2022-04-26 08:13:15 - name: backbone.layer1.0.conv1.layer.1.running_mean, grad: False
+2022-04-26 08:13:15 - name: backbone.layer1.0.conv1.layer.1.running_var, grad: False
+2022-04-26 08:13:15 - name: backbone.layer1.0.conv1.layer.1.num_batches_tracked, grad: False
+2022-04-26 08:13:15 - name: backbone.layer1.0.conv2.layer.1.running_mean, grad: False
+2022-04-26 08:13:15 - name: backbone.layer1.0.conv2.layer.1.running_var, grad: False
+2022-04-26 08:13:15 - name: backbone.layer1.0.conv2.layer.1.num_batches_tracked, grad: False
+2022-04-26 08:13:15 - name: backbone.layer1.1.conv1.layer.1.running_mean, grad: False
+2022-04-26 08:13:15 - name: backbone.layer1.1.conv1.layer.1.running_var, grad: False
+2022-04-26 08:13:15 - name: backbone.layer1.1.conv1.layer.1.num_batches_tracked, grad: False
+2022-04-26 08:13:15 - name: backbone.layer1.1.conv2.layer.1.running_mean, grad: False
+2022-04-26 08:13:15 - name: backbone.layer1.1.conv2.layer.1.running_var, grad: False
+2022-04-26 08:13:15 - name: backbone.layer1.1.conv2.layer.1.num_batches_tracked, grad: False
+2022-04-26 08:13:15 - name: backbone.layer2.0.conv1.layer.1.running_mean, grad: False
+2022-04-26 08:13:15 - name: backbone.layer2.0.conv1.layer.1.running_var, grad: False
+2022-04-26 08:13:15 - name: backbone.layer2.0.conv1.layer.1.num_batches_tracked, grad: False
+2022-04-26 08:13:15 - name: backbone.layer2.0.conv2.layer.1.running_mean, grad: False
+2022-04-26 08:13:15 - name: backbone.layer2.0.conv2.layer.1.running_var, grad: False
+2022-04-26 08:13:15 - name: backbone.layer2.0.conv2.layer.1.num_batches_tracked, grad: False
+2022-04-26 08:13:15 - name: backbone.layer2.0.downsample_conv.layer.1.running_mean, grad: False
+2022-04-26 08:13:15 - name: backbone.layer2.0.downsample_conv.layer.1.running_var, grad: False
+2022-04-26 08:13:15 - name: backbone.layer2.0.downsample_conv.layer.1.num_batches_tracked, grad: False
+2022-04-26 08:13:15 - name: backbone.layer2.1.conv1.layer.1.running_mean, grad: False
+2022-04-26 08:13:15 - name: backbone.layer2.1.conv1.layer.1.running_var, grad: False
+2022-04-26 08:13:15 - name: backbone.layer2.1.conv1.layer.1.num_batches_tracked, grad: False
+2022-04-26 08:13:15 - name: backbone.layer2.1.conv2.layer.1.running_mean, grad: False
+2022-04-26 08:13:15 - name: backbone.layer2.1.conv2.layer.1.running_var, grad: False
+2022-04-26 08:13:15 - name: backbone.layer2.1.conv2.layer.1.num_batches_tracked, grad: False
+2022-04-26 08:13:15 - name: backbone.layer3.0.conv1.layer.1.running_mean, grad: False
+2022-04-26 08:13:15 - name: backbone.layer3.0.conv1.layer.1.running_var, grad: False
+2022-04-26 08:13:15 - name: backbone.layer3.0.conv1.layer.1.num_batches_tracked, grad: False
+2022-04-26 08:13:15 - name: backbone.layer3.0.conv2.layer.1.running_mean, grad: False
+2022-04-26 08:13:15 - name: backbone.layer3.0.conv2.layer.1.running_var, grad: False
+2022-04-26 08:13:15 - name: backbone.layer3.0.conv2.layer.1.num_batches_tracked, grad: False
+2022-04-26 08:13:15 - name: backbone.layer3.0.downsample_conv.layer.1.running_mean, grad: False
+2022-04-26 08:13:15 - name: backbone.layer3.0.downsample_conv.layer.1.running_var, grad: False
+2022-04-26 08:13:15 - name: backbone.layer3.0.downsample_conv.layer.1.num_batches_tracked, grad: False
+2022-04-26 08:13:15 - name: backbone.layer3.1.conv1.layer.1.running_mean, grad: False
+2022-04-26 08:13:15 - name: backbone.layer3.1.conv1.layer.1.running_var, grad: False
+2022-04-26 08:13:15 - name: backbone.layer3.1.conv1.layer.1.num_batches_tracked, grad: False
+2022-04-26 08:13:15 - name: backbone.layer3.1.conv2.layer.1.running_mean, grad: False
+2022-04-26 08:13:15 - name: backbone.layer3.1.conv2.layer.1.running_var, grad: False
+2022-04-26 08:13:15 - name: backbone.layer3.1.conv2.layer.1.num_batches_tracked, grad: False
+2022-04-26 08:13:15 - name: backbone.layer4.0.conv1.layer.1.running_mean, grad: False
+2022-04-26 08:13:15 - name: backbone.layer4.0.conv1.layer.1.running_var, grad: False
+2022-04-26 08:13:15 - name: backbone.layer4.0.conv1.layer.1.num_batches_tracked, grad: False
+2022-04-26 08:13:15 - name: backbone.layer4.0.conv2.layer.1.running_mean, grad: False
+2022-04-26 08:13:15 - name: backbone.layer4.0.conv2.layer.1.running_var, grad: False
+2022-04-26 08:13:15 - name: backbone.layer4.0.conv2.layer.1.num_batches_tracked, grad: False
+2022-04-26 08:13:15 - name: backbone.layer4.0.downsample_conv.layer.1.running_mean, grad: False
+2022-04-26 08:13:15 - name: backbone.layer4.0.downsample_conv.layer.1.running_var, grad: False
+2022-04-26 08:13:15 - name: backbone.layer4.0.downsample_conv.layer.1.num_batches_tracked, grad: False
+2022-04-26 08:13:15 - name: backbone.layer4.1.conv1.layer.1.running_mean, grad: False
+2022-04-26 08:13:15 - name: backbone.layer4.1.conv1.layer.1.running_var, grad: False
+2022-04-26 08:13:15 - name: backbone.layer4.1.conv1.layer.1.num_batches_tracked, grad: False
+2022-04-26 08:13:15 - name: backbone.layer4.1.conv2.layer.1.running_mean, grad: False
+2022-04-26 08:13:15 - name: backbone.layer4.1.conv2.layer.1.running_var, grad: False
+2022-04-26 08:13:15 - name: backbone.layer4.1.conv2.layer.1.num_batches_tracked, grad: False
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.0.1.running_mean, grad: False
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.0.1.running_var, grad: False
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.0.1.num_batches_tracked, grad: False
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.0.4.running_mean, grad: False
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.0.4.running_var, grad: False
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.0.4.num_batches_tracked, grad: False
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.1.1.running_mean, grad: False
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.1.1.running_var, grad: False
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.1.1.num_batches_tracked, grad: False
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.1.4.running_mean, grad: False
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.1.4.running_var, grad: False
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.1.4.num_batches_tracked, grad: False
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.2.1.running_mean, grad: False
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.2.1.running_var, grad: False
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.2.1.num_batches_tracked, grad: False
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.2.4.running_mean, grad: False
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.2.4.running_var, grad: False
+2022-04-26 08:13:15 - name: ttf_head.deconv_layers.2.4.num_batches_tracked, grad: False
+2022-04-26 08:13:15 - epoch 001 lr: 0.0001
+2022-04-26 08:14:29 - train: epoch 0001, iter [00100, 01832], lr: 0.000100, total_loss: 7.8222, heatmap_loss: 4.5200, box_loss: 3.3022
+2022-04-26 08:15:40 - train: epoch 0001, iter [00200, 01832], lr: 0.000100, total_loss: 6.8082, heatmap_loss: 3.6956, box_loss: 3.1125
+2022-04-26 08:16:51 - train: epoch 0001, iter [00300, 01832], lr: 0.000100, total_loss: 6.2856, heatmap_loss: 3.4157, box_loss: 2.8698
+2022-04-26 08:18:06 - train: epoch 0001, iter [00400, 01832], lr: 0.000100, total_loss: 6.2229, heatmap_loss: 3.3096, box_loss: 2.9133
+2022-04-26 08:19:22 - train: epoch 0001, iter [00500, 01832], lr: 0.000100, total_loss: 5.9680, heatmap_loss: 3.4761, box_loss: 2.4919
+2022-04-26 08:20:37 - train: epoch 0001, iter [00600, 01832], lr: 0.000100, total_loss: 5.7193, heatmap_loss: 3.3751, box_loss: 2.3442
+2022-04-26 08:21:46 - train: epoch 0001, iter [00700, 01832], lr: 0.000100, total_loss: 5.6666, heatmap_loss: 3.2210, box_loss: 2.4455
+2022-04-26 08:22:57 - train: epoch 0001, iter [00800, 01832], lr: 0.000100, total_loss: 5.8305, heatmap_loss: 3.3383, box_loss: 2.4923
+2022-04-26 08:24:07 - train: epoch 0001, iter [00900, 01832], lr: 0.000100, total_loss: 5.4334, heatmap_loss: 3.1773, box_loss: 2.2561
+2022-04-26 08:25:17 - train: epoch 0001, iter [01000, 01832], lr: 0.000100, total_loss: 5.3325, heatmap_loss: 3.0496, box_loss: 2.2829
+2022-04-26 08:26:33 - train: epoch 0001, iter [01100, 01832], lr: 0.000100, total_loss: 5.0498, heatmap_loss: 2.9019, box_loss: 2.1479
+2022-04-26 08:27:45 - train: epoch 0001, iter [01200, 01832], lr: 0.000100, total_loss: 5.2747, heatmap_loss: 3.0814, box_loss: 2.1933
+2022-04-26 08:28:59 - train: epoch 0001, iter [01300, 01832], lr: 0.000100, total_loss: 5.0794, heatmap_loss: 2.9936, box_loss: 2.0858
+2022-04-26 08:30:12 - train: epoch 0001, iter [01400, 01832], lr: 0.000100, total_loss: 5.3877, heatmap_loss: 3.1258, box_loss: 2.2619
+2022-04-26 08:31:25 - train: epoch 0001, iter [01500, 01832], lr: 0.000100, total_loss: 5.0440, heatmap_loss: 2.9110, box_loss: 2.1330
+2022-04-26 08:32:40 - train: epoch 0001, iter [01600, 01832], lr: 0.000100, total_loss: 5.0751, heatmap_loss: 2.9244, box_loss: 2.1508
+2022-04-26 08:33:55 - train: epoch 0001, iter [01700, 01832], lr: 0.000100, total_loss: 5.1178, heatmap_loss: 2.8595, box_loss: 2.2583
+2022-04-26 08:35:11 - train: epoch 0001, iter [01800, 01832], lr: 0.000100, total_loss: 4.7669, heatmap_loss: 2.7014, box_loss: 2.0656
+2022-04-26 08:35:34 - train: epoch 001, train_loss: 5.7502
+2022-04-26 08:37:01 - eval: epoch: 001
+per_image_load_time: 4.306ms
+per_image_inference_time: 2.692ms
+IoU=0.50:0.95,area=all,maxDets=100,mAP: 0.9450460382951642
+IoU=0.50,area=all,maxDets=100,mAP: 2.090252871937768
+IoU=0.75,area=all,maxDets=100,mAP: 0.7689366129510042
+IoU=0.50:0.95,area=small,maxDets=100,mAP: 0.5055277972229671
+IoU=0.50:0.95,area=medium,maxDets=100,mAP: 1.5210822976234193
+IoU=0.50:0.95,area=large,maxDets=100,mAP: 1.3801504597504055
+IoU=0.50:0.95,area=all,maxDets=1,mAR: 5.683430509300299
+IoU=0.50:0.95,area=all,maxDets=10,mAR: 9.969377379347343
+IoU=0.50:0.95,area=all,maxDets=100,mAR: 10.257855091713703
+IoU=0.50:0.95,area=small,maxDets=100,mAR: 3.372834160402568
+IoU=0.50:0.95,area=medium,maxDets=100,mAR: 12.490776162930585
+IoU=0.50:0.95,area=large,maxDets=100,mAR: 13.82590835629739
+
+2022-04-26 08:37:02 - until epoch: 001, best_metric: 0.945%
+2022-04-26 08:37:02 - epoch 002 lr: 0.0001
+2022-04-26 08:38:16 - train: epoch 0002, iter [00100, 01832], lr: 0.000100, total_loss: 4.6273, heatmap_loss: 2.6551, box_loss: 1.9722
+2022-04-26 08:39:27 - train: epoch 0002, iter [00200, 01832], lr: 0.000100, total_loss: 4.6150, heatmap_loss: 2.5828, box_loss: 2.0322
+2022-04-26 08:40:42 - train: epoch 0002, iter [00300, 01832], lr: 0.000100, total_loss: 4.6062, heatmap_loss: 2.6472, box_loss: 1.9590
+2022-04-26 08:41:56 - train: epoch 0002, iter [00400, 01832], lr: 0.000100, total_loss: 4.7071, heatmap_loss: 2.5966, box_loss: 2.1105
+2022-04-26 08:43:11 - train: epoch 0002, iter [00500, 01832], lr: 0.000100, total_loss: 4.6996, heatmap_loss: 2.6176, box_loss: 2.0820
+2022-04-26 08:44:26 - train: epoch 0002, iter [00600, 01832], lr: 0.000100, total_loss: 4.7692, heatmap_loss: 2.7802, box_loss: 1.9890
+2022-04-26 08:45:40 - train: epoch 0002, iter [00700, 01832], lr: 0.000100, total_loss: 4.8800, heatmap_loss: 2.9191, box_loss: 1.9610
+2022-04-26 08:46:51 - train: epoch 0002, iter [00800, 01832], lr: 0.000100, total_loss: 4.5632, heatmap_loss: 2.5301, box_loss: 2.0331
+2022-04-26 08:48:04 - train: epoch 0002, iter [00900, 01832], lr: 0.000100, total_loss: 4.5311, heatmap_loss: 2.5285, box_loss: 2.0026
+2022-04-26 08:49:18 - train: epoch 0002, iter [01000, 01832], lr: 0.000100, total_loss: 4.4804, heatmap_loss: 2.4553, box_loss: 2.0250
+2022-04-26 08:50:33 - train: epoch 0002, iter [01100, 01832], lr: 0.000100, total_loss: 4.4757, heatmap_loss: 2.5720, box_loss: 1.9037
+2022-04-26 08:51:48 - train: epoch 0002, iter [01200, 01832], lr: 0.000100, total_loss: 4.5262, heatmap_loss: 2.5549, box_loss: 1.9713
+2022-04-26 08:53:01 - train: epoch 0002, iter [01300, 01832], lr: 0.000100, total_loss: 4.4990, heatmap_loss: 2.5570, box_loss: 1.9420
+2022-04-26 08:54:12 - train: epoch 0002, iter [01400, 01832], lr: 0.000100, total_loss: 4.5402, heatmap_loss: 2.6031, box_loss: 1.9371
+2022-04-26 08:55:24 - train: epoch 0002, iter [01500, 01832], lr: 0.000100, total_loss: 4.4935, heatmap_loss: 2.4842, box_loss: 2.0092
+2022-04-26 08:56:38 - train: epoch 0002, iter [01600, 01832], lr: 0.000100, total_loss: 4.7430, heatmap_loss: 2.7444, box_loss: 1.9986
+2022-04-26 08:57:52 - train: epoch 0002, iter [01700, 01832], lr: 0.000100, total_loss: 4.4071, heatmap_loss: 2.4720, box_loss: 1.9351
+2022-04-26 08:59:05 - train: epoch 0002, iter [01800, 01832], lr: 0.000100, total_loss: 4.1266, heatmap_loss: 2.3129, box_loss: 1.8137
+2022-04-26 08:59:29 - train: epoch 002, train_loss: 4.6150
+2022-04-26 08:59:30 - until epoch: 002, best_metric: 0.945%
+2022-04-26 08:59:30 - epoch 003 lr: 0.0001
+2022-04-26 09:00:46 - train: epoch 0003, iter [00100, 01832], lr: 0.000100, total_loss: 4.4443, heatmap_loss: 2.4270, box_loss: 2.0174
+2022-04-26 09:01:57 - train: epoch 0003, iter [00200, 01832], lr: 0.000100, total_loss: 4.2549, heatmap_loss: 2.3686, box_loss: 1.8863
+2022-04-26 09:03:09 - train: epoch 0003, iter [00300, 01832], lr: 0.000100, total_loss: 4.4960, heatmap_loss: 2.5021, box_loss: 1.9939
+2022-04-26 09:04:23 - train: epoch 0003, iter [00400, 01832], lr: 0.000100, total_loss: 4.4604, heatmap_loss: 2.3865, box_loss: 2.0739
+2022-04-26 09:05:36 - train: epoch 0003, iter [00500, 01832], lr: 0.000100, total_loss: 4.2806, heatmap_loss: 2.4328, box_loss: 1.8478
+2022-04-26 09:06:51 - train: epoch 0003, iter [00600, 01832], lr: 0.000100, total_loss: 4.4394, heatmap_loss: 2.4794, box_loss: 1.9600
+2022-04-26 09:08:07 - train: epoch 0003, iter [00700, 01832], lr: 0.000100, total_loss: 4.1372, heatmap_loss: 2.3054, box_loss: 1.8319
+2022-04-26 09:09:20 - train: epoch 0003, iter [00800, 01832], lr: 0.000100, total_loss: 4.0675, heatmap_loss: 2.1899, box_loss: 1.8776
+2022-04-26 09:10:35 - train: epoch 0003, iter [00900, 01832], lr: 0.000100, total_loss: 4.4077, heatmap_loss: 2.3838, box_loss: 2.0239
+2022-04-26 09:11:47 - train: epoch 0003, iter [01000, 01832], lr: 0.000100, total_loss: 4.3121, heatmap_loss: 2.4778, box_loss: 1.8342
+2022-04-26 09:13:00 - train: epoch 0003, iter [01100, 01832], lr: 0.000100, total_loss: 4.3227, heatmap_loss: 2.3693, box_loss: 1.9534
+2022-04-26 09:14:14 - train: epoch 0003, iter [01200, 01832], lr: 0.000100, total_loss: 4.1870, heatmap_loss: 2.3499, box_loss: 1.8370
+2022-04-26 09:15:29 - train: epoch 0003, iter [01300, 01832], lr: 0.000100, total_loss: 4.1669, heatmap_loss: 2.2701, box_loss: 1.8968
+2022-04-26 09:16:45 - train: epoch 0003, iter [01400, 01832], lr: 0.000100, total_loss: 4.0097, heatmap_loss: 2.2120, box_loss: 1.7978
+2022-04-26 09:17:58 - train: epoch 0003, iter [01500, 01832], lr: 0.000100, total_loss: 3.9426, heatmap_loss: 2.1266, box_loss: 1.8160
+2022-04-26 09:19:14 - train: epoch 0003, iter [01600, 01832], lr: 0.000100, total_loss: 4.0504, heatmap_loss: 2.1816, box_loss: 1.8688
+2022-04-26 09:20:28 - train: epoch 0003, iter [01700, 01832], lr: 0.000100, total_loss: 4.3313, heatmap_loss: 2.4258, box_loss: 1.9055
+2022-04-26 09:21:44 - train: epoch 0003, iter [01800, 01832], lr: 0.000100, total_loss: 3.9937, heatmap_loss: 2.1770, box_loss: 1.8167
+2022-04-26 09:22:08 - train: epoch 003, train_loss: 4.2343
+2022-04-26 09:22:08 - until epoch: 003, best_metric: 0.945%
+2022-04-26 09:22:08 - epoch 004 lr: 0.0001
+2022-04-26 09:23:25 - train: epoch 0004, iter [00100, 01832], lr: 0.000100, total_loss: 3.9710, heatmap_loss: 2.2151, box_loss: 1.7559
+2022-04-26 09:24:40 - train: epoch 0004, iter [00200, 01832], lr: 0.000100, total_loss: 3.9265, heatmap_loss: 2.1165, box_loss: 1.8100
+2022-04-26 09:25:53 - train: epoch 0004, iter [00300, 01832], lr: 0.000100, total_loss: 4.0197, heatmap_loss: 2.1668, box_loss: 1.8529
+2022-04-26 09:27:07 - train: epoch 0004, iter [00400, 01832], lr: 0.000100, total_loss: 3.8642, heatmap_loss: 2.0902, box_loss: 1.7740
+2022-04-26 09:28:21 - train: epoch 0004, iter [00500, 01832], lr: 0.000100, total_loss: 3.9925, heatmap_loss: 2.1958, box_loss: 1.7967
+2022-04-26 09:29:36 - train: epoch 0004, iter [00600, 01832], lr: 0.000100, total_loss: 4.0937, heatmap_loss: 2.2023, box_loss: 1.8913
+2022-04-26 09:30:51 - train: epoch 0004, iter [00700, 01832], lr: 0.000100, total_loss: 3.9615, heatmap_loss: 2.1151, box_loss: 1.8464
+2022-04-26 09:32:06 - train: epoch 0004, iter [00800, 01832], lr: 0.000100, total_loss: 3.8135, heatmap_loss: 2.0773, box_loss: 1.7361
+2022-04-26 09:33:20 - train: epoch 0004, iter [00900, 01832], lr: 0.000100, total_loss: 4.3101, heatmap_loss: 2.2227, box_loss: 2.0874
+2022-04-26 09:34:36 - train: epoch 0004, iter [01000, 01832], lr: 0.000100, total_loss: 3.9422, heatmap_loss: 2.1492, box_loss: 1.7931
+2022-04-26 09:35:49 - train: epoch 0004, iter [01100, 01832], lr: 0.000100, total_loss: 3.8683, heatmap_loss: 2.1655, box_loss: 1.7028
+2022-04-26 09:37:04 - train: epoch 0004, iter [01200, 01832], lr: 0.000100, total_loss: 4.0378, heatmap_loss: 2.1400, box_loss: 1.8978
+2022-04-26 09:38:20 - train: epoch 0004, iter [01300, 01832], lr: 0.000100, total_loss: 3.9930, heatmap_loss: 2.2499, box_loss: 1.7432
+2022-04-26 09:39:36 - train: epoch 0004, iter [01400, 01832], lr: 0.000100, total_loss: 3.9284, heatmap_loss: 2.0100, box_loss: 1.9184
+2022-04-26 09:40:52 - train: epoch 0004, iter [01500, 01832], lr: 0.000100, total_loss: 3.8536, heatmap_loss: 2.1614, box_loss: 1.6922
+2022-04-26 09:42:06 - train: epoch 0004, iter [01600, 01832], lr: 0.000100, total_loss: 3.7245, heatmap_loss: 1.9325, box_loss: 1.7920
+2022-04-26 09:43:22 - train: epoch 0004, iter [01700, 01832], lr: 0.000100, total_loss: 4.0244, heatmap_loss: 2.2192, box_loss: 1.8053
+2022-04-26 09:44:36 - train: epoch 0004, iter [01800, 01832], lr: 0.000100, total_loss: 3.7735, heatmap_loss: 2.1467, box_loss: 1.6267
+2022-04-26 09:45:01 - train: epoch 004, train_loss: 4.0023
+2022-04-26 09:45:02 - until epoch: 004, best_metric: 0.945%
+2022-04-26 09:45:02 - epoch 005 lr: 0.0001
+2022-04-26 09:46:17 - train: epoch 0005, iter [00100, 01832], lr: 0.000100, total_loss: 3.9773, heatmap_loss: 2.1404, box_loss: 1.8369
+2022-04-26 09:47:31 - train: epoch 0005, iter [00200, 01832], lr: 0.000100, total_loss: 3.9500, heatmap_loss: 2.0316, box_loss: 1.9184
+2022-04-26 09:48:46 - train: epoch 0005, iter [00300, 01832], lr: 0.000100, total_loss: 4.0229, heatmap_loss: 2.1150, box_loss: 1.9079
+2022-04-26 09:49:58 - train: epoch 0005, iter [00400, 01832], lr: 0.000100, total_loss: 3.9302, heatmap_loss: 2.1580, box_loss: 1.7722
+2022-04-26 09:51:12 - train: epoch 0005, iter [00500, 01832], lr: 0.000100, total_loss: 3.9120, heatmap_loss: 2.1211, box_loss: 1.7908
+2022-04-26 09:52:24 - train: epoch 0005, iter [00600, 01832], lr: 0.000100, total_loss: 3.6377, heatmap_loss: 1.9191, box_loss: 1.7186
+2022-04-26 09:53:37 - train: epoch 0005, iter [00700, 01832], lr: 0.000100, total_loss: 3.7991, heatmap_loss: 2.0562, box_loss: 1.7429
+2022-04-26 09:54:51 - train: epoch 0005, iter [00800, 01832], lr: 0.000100, total_loss: 3.6995, heatmap_loss: 1.9310, box_loss: 1.7685
+2022-04-26 09:56:03 - train: epoch 0005, iter [00900, 01832], lr: 0.000100, total_loss: 3.7679, heatmap_loss: 2.0948, box_loss: 1.6731
+2022-04-26 09:57:17 - train: epoch 0005, iter [01000, 01832], lr: 0.000100, total_loss: 4.1140, heatmap_loss: 2.2105, box_loss: 1.9035
+2022-04-26 09:58:31 - train: epoch 0005, iter [01100, 01832], lr: 0.000100, total_loss: 3.9320, heatmap_loss: 2.0657, box_loss: 1.8663
+2022-04-26 09:59:45 - train: epoch 0005, iter [01200, 01832], lr: 0.000100, total_loss: 3.9822, heatmap_loss: 2.1992, box_loss: 1.7831
+2022-04-26 10:00:57 - train: epoch 0005, iter [01300, 01832], lr: 0.000100, total_loss: 3.9336, heatmap_loss: 2.0230, box_loss: 1.9106
+2022-04-26 10:02:10 - train: epoch 0005, iter [01400, 01832], lr: 0.000100, total_loss: 3.8933, heatmap_loss: 2.1357, box_loss: 1.7575
+2022-04-26 10:03:21 - train: epoch 0005, iter [01500, 01832], lr: 0.000100, total_loss: 3.8383, heatmap_loss: 2.1067, box_loss: 1.7316
+2022-04-26 10:04:35 - train: epoch 0005, iter [01600, 01832], lr: 0.000100, total_loss: 3.6441, heatmap_loss: 1.8602, box_loss: 1.7839
+2022-04-26 10:05:48 - train: epoch 0005, iter [01700, 01832], lr: 0.000100, total_loss: 3.8140, heatmap_loss: 2.1306, box_loss: 1.6834
+2022-04-26 10:07:02 - train: epoch 0005, iter [01800, 01832], lr: 0.000100, total_loss: 3.9205, heatmap_loss: 2.0786, box_loss: 1.8419
+2022-04-26 10:07:26 - train: epoch 005, train_loss: 3.8391
+2022-04-26 10:08:54 - eval: epoch: 005
+per_image_load_time: 3.768ms
+per_image_inference_time: 2.689ms
+IoU=0.50:0.95,area=all,maxDets=100,mAP: 15.109406643314962
+IoU=0.50,area=all,maxDets=100,mAP: 25.775251997690113
+IoU=0.75,area=all,maxDets=100,mAP: 16.029697739235058
+IoU=0.50:0.95,area=small,maxDets=100,mAP: 4.304764587347681
+IoU=0.50:0.95,area=medium,maxDets=100,mAP: 16.34551535917715
+IoU=0.50:0.95,area=large,maxDets=100,mAP: 23.661734578184927
+IoU=0.50:0.95,area=all,maxDets=1,mAR: 19.187763857659817
+IoU=0.50:0.95,area=all,maxDets=10,mAR: 31.106669536484617
+IoU=0.50:0.95,area=all,maxDets=100,mAR: 32.55871356449669
+IoU=0.50:0.95,area=small,maxDets=100,mAR: 12.487906532462564
+IoU=0.50:0.95,area=medium,maxDets=100,mAR: 34.81796606829708
+IoU=0.50:0.95,area=large,maxDets=100,mAR: 50.403034419019875
+
+2022-04-26 10:08:54 - until epoch: 005, best_metric: 15.109%
+2022-04-26 10:08:54 - epoch 006 lr: 0.0001
+2022-04-26 10:10:11 - train: epoch 0006, iter [00100, 01832], lr: 0.000100, total_loss: 3.5841, heatmap_loss: 1.9383, box_loss: 1.6457
+2022-04-26 10:11:23 - train: epoch 0006, iter [00200, 01832], lr: 0.000100, total_loss: 3.4460, heatmap_loss: 1.8112, box_loss: 1.6348
+2022-04-26 10:12:36 - train: epoch 0006, iter [00300, 01832], lr: 0.000100, total_loss: 3.7437, heatmap_loss: 1.9923, box_loss: 1.7513
+2022-04-26 10:13:50 - train: epoch 0006, iter [00400, 01832], lr: 0.000100, total_loss: 3.7397, heatmap_loss: 1.9553, box_loss: 1.7843
+2022-04-26 10:15:02 - train: epoch 0006, iter [00500, 01832], lr: 0.000100, total_loss: 3.8199, heatmap_loss: 2.0256, box_loss: 1.7943
+2022-04-26 10:16:15 - train: epoch 0006, iter [00600, 01832], lr: 0.000100, total_loss: 3.6471, heatmap_loss: 2.0128, box_loss: 1.6343
+2022-04-26 10:17:29 - train: epoch 0006, iter [00700, 01832], lr: 0.000100, total_loss: 3.7734, heatmap_loss: 1.9259, box_loss: 1.8475
+2022-04-26 10:18:42 - train: epoch 0006, iter [00800, 01832], lr: 0.000100, total_loss: 3.6905, heatmap_loss: 1.9199, box_loss: 1.7705
+2022-04-26 10:19:55 - train: epoch 0006, iter [00900, 01832], lr: 0.000100, total_loss: 3.6820, heatmap_loss: 2.0119, box_loss: 1.6700
+2022-04-26 10:21:09 - train: epoch 0006, iter [01000, 01832], lr: 0.000100, total_loss: 3.9133, heatmap_loss: 2.0193, box_loss: 1.8940
+2022-04-26 10:22:21 - train: epoch 0006, iter [01100, 01832], lr: 0.000100, total_loss: 3.8865, heatmap_loss: 2.1192, box_loss: 1.7673
+2022-04-26 10:23:35 - train: epoch 0006, iter [01200, 01832], lr: 0.000100, total_loss: 3.5730, heatmap_loss: 1.8214, box_loss: 1.7517
+2022-04-26 10:24:49 - train: epoch 0006, iter [01300, 01832], lr: 0.000100, total_loss: 3.6622, heatmap_loss: 1.8887, box_loss: 1.7735
+2022-04-26 10:26:01 - train: epoch 0006, iter [01400, 01832], lr: 0.000100, total_loss: 3.7019, heatmap_loss: 1.9441, box_loss: 1.7578
+2022-04-26 10:27:16 - train: epoch 0006, iter [01500, 01832], lr: 0.000100, total_loss: 3.7015, heatmap_loss: 2.0620, box_loss: 1.6395
+2022-04-26 10:28:30 - train: epoch 0006, iter [01600, 01832], lr: 0.000100, total_loss: 3.7280, heatmap_loss: 1.8836, box_loss: 1.8444
+2022-04-26 10:29:42 - train: epoch 0006, iter [01700, 01832], lr: 0.000100, total_loss: 3.5715, heatmap_loss: 1.8255, box_loss: 1.7460
+2022-04-26 10:30:56 - train: epoch 0006, iter [01800, 01832], lr: 0.000100, total_loss: 3.7482, heatmap_loss: 2.0412, box_loss: 1.7070
+2022-04-26 10:31:21 - train: epoch 006, train_loss: 3.7170
+2022-04-26 10:31:21 - until epoch: 006, best_metric: 15.109%
+2022-04-26 10:31:21 - epoch 007 lr: 0.0001
+2022-04-26 10:32:37 - train: epoch 0007, iter [00100, 01832], lr: 0.000100, total_loss: 3.6580, heatmap_loss: 1.9294, box_loss: 1.7286
+2022-04-26 10:33:49 - train: epoch 0007, iter [00200, 01832], lr: 0.000100, total_loss: 3.8543, heatmap_loss: 2.0524, box_loss: 1.8019
+2022-04-26 10:35:03 - train: epoch 0007, iter [00300, 01832], lr: 0.000100, total_loss: 3.5096, heatmap_loss: 1.9614, box_loss: 1.5483
+2022-04-26 10:36:18 - train: epoch 0007, iter [00400, 01832], lr: 0.000100, total_loss: 3.6974, heatmap_loss: 2.0521, box_loss: 1.6453
+2022-04-26 10:37:30 - train: epoch 0007, iter [00500, 01832], lr: 0.000100, total_loss: 3.5491, heatmap_loss: 1.8862, box_loss: 1.6630
+2022-04-26 10:38:45 - train: epoch 0007, iter [00600, 01832], lr: 0.000100, total_loss: 3.5300, heatmap_loss: 1.7597, box_loss: 1.7703
+2022-04-26 10:40:00 - train: epoch 0007, iter [00700, 01832], lr: 0.000100, total_loss: 3.8637, heatmap_loss: 2.0507, box_loss: 1.8130
+2022-04-26 10:41:13 - train: epoch 0007, iter [00800, 01832], lr: 0.000100, total_loss: 3.7958, heatmap_loss: 1.9162, box_loss: 1.8795
+2022-04-26 10:42:29 - train: epoch 0007, iter [00900, 01832], lr: 0.000100, total_loss: 3.6400, heatmap_loss: 1.9374, box_loss: 1.7026
+2022-04-26 10:43:45 - train: epoch 0007, iter [01000, 01832], lr: 0.000100, total_loss: 3.7723, heatmap_loss: 1.9848, box_loss: 1.7875
+2022-04-26 10:44:59 - train: epoch 0007, iter [01100, 01832], lr: 0.000100, total_loss: 3.6417, heatmap_loss: 1.9174, box_loss: 1.7243
+2022-04-26 10:46:14 - train: epoch 0007, iter [01200, 01832], lr: 0.000100, total_loss: 3.7094, heatmap_loss: 1.9801, box_loss: 1.7292
+2022-04-26 10:47:28 - train: epoch 0007, iter [01300, 01832], lr: 0.000100, total_loss: 3.7161, heatmap_loss: 1.9848, box_loss: 1.7313
+2022-04-26 10:48:41 - train: epoch 0007, iter [01400, 01832], lr: 0.000100, total_loss: 3.5336, heatmap_loss: 1.8493, box_loss: 1.6843
+2022-04-26 10:49:56 - train: epoch 0007, iter [01500, 01832], lr: 0.000100, total_loss: 3.7442, heatmap_loss: 2.0014, box_loss: 1.7427
+2022-04-26 10:51:11 - train: epoch 0007, iter [01600, 01832], lr: 0.000100, total_loss: 3.5360, heatmap_loss: 1.7956, box_loss: 1.7404
+2022-04-26 10:52:24 - train: epoch 0007, iter [01700, 01832], lr: 0.000100, total_loss: 3.5875, heatmap_loss: 1.8778, box_loss: 1.7097
+2022-04-26 10:53:40 - train: epoch 0007, iter [01800, 01832], lr: 0.000100, total_loss: 3.7013, heatmap_loss: 2.0358, box_loss: 1.6655
+2022-04-26 10:54:04 - train: epoch 007, train_loss: 3.6221
+2022-04-26 10:54:04 - until epoch: 007, best_metric: 15.109%
+2022-04-26 10:54:04 - epoch 008 lr: 0.0001
+2022-04-26 10:55:21 - train: epoch 0008, iter [00100, 01832], lr: 0.000100, total_loss: 3.4961, heatmap_loss: 1.9310, box_loss: 1.5650
+2022-04-26 10:56:34 - train: epoch 0008, iter [00200, 01832], lr: 0.000100, total_loss: 3.4043, heatmap_loss: 1.8471, box_loss: 1.5572
+2022-04-26 10:57:48 - train: epoch 0008, iter [00300, 01832], lr: 0.000100, total_loss: 3.5639, heatmap_loss: 1.8291, box_loss: 1.7348
+2022-04-26 10:59:03 - train: epoch 0008, iter [00400, 01832], lr: 0.000100, total_loss: 3.3767, heatmap_loss: 1.7879, box_loss: 1.5889
+2022-04-26 11:00:15 - train: epoch 0008, iter [00500, 01832], lr: 0.000100, total_loss: 3.4778, heatmap_loss: 1.8344, box_loss: 1.6434
+2022-04-26 11:01:30 - train: epoch 0008, iter [00600, 01832], lr: 0.000100, total_loss: 3.4334, heatmap_loss: 1.7570, box_loss: 1.6764
+2022-04-26 11:02:45 - train: epoch 0008, iter [00700, 01832], lr: 0.000100, total_loss: 3.6770, heatmap_loss: 1.9315, box_loss: 1.7455
+2022-04-26 11:03:59 - train: epoch 0008, iter [00800, 01832], lr: 0.000100, total_loss: 3.5588, heatmap_loss: 1.8599, box_loss: 1.6988
+2022-04-26 11:05:11 - train: epoch 0008, iter [00900, 01832], lr: 0.000100, total_loss: 3.4435, heatmap_loss: 1.7964, box_loss: 1.6471
+2022-04-26 11:06:26 - train: epoch 0008, iter [01000, 01832], lr: 0.000100, total_loss: 3.5135, heatmap_loss: 1.8538, box_loss: 1.6597
+2022-04-26 11:07:39 - train: epoch 0008, iter [01100, 01832], lr: 0.000100, total_loss: 3.4894, heatmap_loss: 1.8972, box_loss: 1.5922
+2022-04-26 11:08:54 - train: epoch 0008, iter [01200, 01832], lr: 0.000100, total_loss: 3.4733, heatmap_loss: 1.7811, box_loss: 1.6922
+2022-04-26 11:10:09 - train: epoch 0008, iter [01300, 01832], lr: 0.000100, total_loss: 3.3382, heatmap_loss: 1.7104, box_loss: 1.6279
+2022-04-26 11:11:24 - train: epoch 0008, iter [01400, 01832], lr: 0.000100, total_loss: 3.5063, heatmap_loss: 1.8270, box_loss: 1.6793
+2022-04-26 11:12:36 - train: epoch 0008, iter [01500, 01832], lr: 0.000100, total_loss: 3.7646, heatmap_loss: 1.8886, box_loss: 1.8760
+2022-04-26 11:13:50 - train: epoch 0008, iter [01600, 01832], lr: 0.000100, total_loss: 3.5169, heatmap_loss: 1.7927, box_loss: 1.7242
+2022-04-26 11:15:04 - train: epoch 0008, iter [01700, 01832], lr: 0.000100, total_loss: 3.3651, heatmap_loss: 1.8268, box_loss: 1.5383
+2022-04-26 11:16:19 - train: epoch 0008, iter [01800, 01832], lr: 0.000100, total_loss: 3.6335, heatmap_loss: 1.9685, box_loss: 1.6650
+2022-04-26 11:16:43 - train: epoch 008, train_loss: 3.5491
+2022-04-26 11:16:44 - until epoch: 008, best_metric: 15.109%
+2022-04-26 11:16:44 - epoch 009 lr: 0.0001
+2022-04-26 11:18:00 - train: epoch 0009, iter [00100, 01832], lr: 0.000100, total_loss: 3.5251, heatmap_loss: 1.8890, box_loss: 1.6362
+2022-04-26 11:19:12 - train: epoch 0009, iter [00200, 01832], lr: 0.000100, total_loss: 3.5343, heatmap_loss: 1.8826, box_loss: 1.6517
+2022-04-26 11:20:27 - train: epoch 0009, iter [00300, 01832], lr: 0.000100, total_loss: 3.5712, heatmap_loss: 1.7398, box_loss: 1.8314
+2022-04-26 11:21:40 - train: epoch 0009, iter [00400, 01832], lr: 0.000100, total_loss: 3.5175, heatmap_loss: 1.8428, box_loss: 1.6748
+2022-04-26 11:22:54 - train: epoch 0009, iter [00500, 01832], lr: 0.000100, total_loss: 3.5599, heatmap_loss: 1.7906, box_loss: 1.7693
+2022-04-26 11:24:08 - train: epoch 0009, iter [00600, 01832], lr: 0.000100, total_loss: 3.2308, heatmap_loss: 1.6821, box_loss: 1.5488
+2022-04-26 11:25:23 - train: epoch 0009, iter [00700, 01832], lr: 0.000100, total_loss: 3.4908, heatmap_loss: 1.7867, box_loss: 1.7041
+2022-04-26 11:26:38 - train: epoch 0009, iter [00800, 01832], lr: 0.000100, total_loss: 3.3008, heatmap_loss: 1.5766, box_loss: 1.7242
+2022-04-26 11:27:50 - train: epoch 0009, iter [00900, 01832], lr: 0.000100, total_loss: 3.4394, heatmap_loss: 1.7058, box_loss: 1.7336
+2022-04-26 11:29:02 - train: epoch 0009, iter [01000, 01832], lr: 0.000100, total_loss: 3.4351, heatmap_loss: 1.7942, box_loss: 1.6409
+2022-04-26 11:30:17 - train: epoch 0009, iter [01100, 01832], lr: 0.000100, total_loss: 3.6034, heatmap_loss: 1.8495, box_loss: 1.7539
+2022-04-26 11:31:33 - train: epoch 0009, iter [01200, 01832], lr: 0.000100, total_loss: 3.2348, heatmap_loss: 1.7066, box_loss: 1.5282
+2022-04-26 11:32:48 - train: epoch 0009, iter [01300, 01832], lr: 0.000100, total_loss: 3.3005, heatmap_loss: 1.7301, box_loss: 1.5704
+2022-04-26 11:34:04 - train: epoch 0009, iter [01400, 01832], lr: 0.000100, total_loss: 3.5837, heatmap_loss: 1.9222, box_loss: 1.6616
+2022-04-26 11:35:18 - train: epoch 0009, iter [01500, 01832], lr: 0.000100, total_loss: 3.3185, heatmap_loss: 1.7404, box_loss: 1.5781
+2022-04-26 11:36:32 - train: epoch 0009, iter [01600, 01832], lr: 0.000100, total_loss: 3.4136, heatmap_loss: 1.7641, box_loss: 1.6495
+2022-04-26 11:37:47 - train: epoch 0009, iter [01700, 01832], lr: 0.000100, total_loss: 3.5151, heatmap_loss: 1.9374, box_loss: 1.5777
+2022-04-26 11:39:03 - train: epoch 0009, iter [01800, 01832], lr: 0.000100, total_loss: 3.4458, heatmap_loss: 1.8510, box_loss: 1.5948
+2022-04-26 11:39:28 - train: epoch 009, train_loss: 3.4862
+2022-04-26 11:39:29 - until epoch: 009, best_metric: 15.109%
+2022-04-26 11:39:29 - epoch 010 lr: 0.0001
+2022-04-26 11:40:46 - train: epoch 0010, iter [00100, 01832], lr: 0.000100, total_loss: 3.4000, heatmap_loss: 1.6537, box_loss: 1.7463
+2022-04-26 11:42:01 - train: epoch 0010, iter [00200, 01832], lr: 0.000100, total_loss: 3.5250, heatmap_loss: 1.8996, box_loss: 1.6254
+2022-04-26 11:43:13 - train: epoch 0010, iter [00300, 01832], lr: 0.000100, total_loss: 3.1673, heatmap_loss: 1.6603, box_loss: 1.5070
+2022-04-26 11:44:26 - train: epoch 0010, iter [00400, 01832], lr: 0.000100, total_loss: 3.3297, heatmap_loss: 1.6819, box_loss: 1.6478
+2022-04-26 11:45:41 - train: epoch 0010, iter [00500, 01832], lr: 0.000100, total_loss: 3.6514, heatmap_loss: 1.8693, box_loss: 1.7821
+2022-04-26 11:46:56 - train: epoch 0010, iter [00600, 01832], lr: 0.000100, total_loss: 3.5276, heatmap_loss: 1.7905, box_loss: 1.7371
+2022-04-26 11:48:11 - train: epoch 0010, iter [00700, 01832], lr: 0.000100, total_loss: 3.3767, heatmap_loss: 1.7110, box_loss: 1.6656
+2022-04-26 11:49:25 - train: epoch 0010, iter [00800, 01832], lr: 0.000100, total_loss: 3.5749, heatmap_loss: 1.8580, box_loss: 1.7169
+2022-04-26 11:50:39 - train: epoch 0010, iter [00900, 01832], lr: 0.000100, total_loss: 3.4963, heatmap_loss: 1.7578, box_loss: 1.7385
+2022-04-26 11:51:52 - train: epoch 0010, iter [01000, 01832], lr: 0.000100, total_loss: 3.2043, heatmap_loss: 1.5841, box_loss: 1.6202
+2022-04-26 11:53:04 - train: epoch 0010, iter [01100, 01832], lr: 0.000100, total_loss: 3.3501, heatmap_loss: 1.7618, box_loss: 1.5882
+2022-04-26 11:54:19 - train: epoch 0010, iter [01200, 01832], lr: 0.000100, total_loss: 3.4696, heatmap_loss: 1.8366, box_loss: 1.6330
+2022-04-26 11:55:34 - train: epoch 0010, iter [01300, 01832], lr: 0.000100, total_loss: 3.0376, heatmap_loss: 1.5764, box_loss: 1.4612
+2022-04-26 11:56:49 - train: epoch 0010, iter [01400, 01832], lr: 0.000100, total_loss: 3.2722, heatmap_loss: 1.7185, box_loss: 1.5537
+2022-04-26 11:58:02 - train: epoch 0010, iter [01500, 01832], lr: 0.000100, total_loss: 3.5082, heatmap_loss: 1.7519, box_loss: 1.7562
+2022-04-26 11:59:17 - train: epoch 0010, iter [01600, 01832], lr: 0.000100, total_loss: 3.4239, heatmap_loss: 1.8522, box_loss: 1.5717
+2022-04-26 12:00:29 - train: epoch 0010, iter [01700, 01832], lr: 0.000100, total_loss: 3.4806, heatmap_loss: 1.7248, box_loss: 1.7557
+2022-04-26 12:01:44 - train: epoch 0010, iter [01800, 01832], lr: 0.000100, total_loss: 3.2764, heatmap_loss: 1.7188, box_loss: 1.5576
+2022-04-26 12:02:08 - train: epoch 010, train_loss: 3.4291
+2022-04-26 12:03:37 - eval: epoch: 010
+per_image_load_time: 3.179ms
+per_image_inference_time: 2.854ms
+IoU=0.50:0.95,area=all,maxDets=100,mAP: 19.761590870260832
+IoU=0.50,area=all,maxDets=100,mAP: 33.484052800195705
+IoU=0.75,area=all,maxDets=100,mAP: 21.107925172433166
+IoU=0.50:0.95,area=small,maxDets=100,mAP: 6.1510958355862995
+IoU=0.50:0.95,area=medium,maxDets=100,mAP: 21.314241350701508
+IoU=0.50:0.95,area=large,maxDets=100,mAP: 31.125786290632078
+IoU=0.50:0.95,area=all,maxDets=1,mAR: 21.406005420987118
+IoU=0.50:0.95,area=all,maxDets=10,mAR: 34.51120500041201
+IoU=0.50:0.95,area=all,maxDets=100,mAR: 36.22935369260873
+IoU=0.50:0.95,area=small,maxDets=100,mAR: 15.412057996217523
+IoU=0.50:0.95,area=medium,maxDets=100,mAR: 39.05752322413535
+IoU=0.50:0.95,area=large,maxDets=100,mAR: 55.158716363773166
+
+2022-04-26 12:03:37 - until epoch: 010, best_metric: 19.762%
+2022-04-26 12:03:37 - epoch 011 lr: 0.0001
+2022-04-26 12:04:55 - train: epoch 0011, iter [00100, 01832], lr: 0.000100, total_loss: 3.4991, heatmap_loss: 1.7854, box_loss: 1.7138
+2022-04-26 12:06:09 - train: epoch 0011, iter [00200, 01832], lr: 0.000100, total_loss: 3.1144, heatmap_loss: 1.5706, box_loss: 1.5437
+2022-04-26 12:07:25 - train: epoch 0011, iter [00300, 01832], lr: 0.000100, total_loss: 3.4397, heatmap_loss: 1.8424, box_loss: 1.5973
+2022-04-26 12:08:38 - train: epoch 0011, iter [00400, 01832], lr: 0.000100, total_loss: 3.4813, heatmap_loss: 1.7898, box_loss: 1.6915
+2022-04-26 12:09:50 - train: epoch 0011, iter [00500, 01832], lr: 0.000100, total_loss: 3.5329, heatmap_loss: 1.7960, box_loss: 1.7369
+2022-04-26 12:11:05 - train: epoch 0011, iter [00600, 01832], lr: 0.000100, total_loss: 3.3983, heatmap_loss: 1.7655, box_loss: 1.6328
+2022-04-26 12:12:19 - train: epoch 0011, iter [00700, 01832], lr: 0.000100, total_loss: 3.1791, heatmap_loss: 1.6832, box_loss: 1.4960
+2022-04-26 12:13:33 - train: epoch 0011, iter [00800, 01832], lr: 0.000100, total_loss: 3.6063, heatmap_loss: 1.9525, box_loss: 1.6538
+2022-04-26 12:14:48 - train: epoch 0011, iter [00900, 01832], lr: 0.000100, total_loss: 3.1848, heatmap_loss: 1.6870, box_loss: 1.4978
+2022-04-26 12:16:03 - train: epoch 0011, iter [01000, 01832], lr: 0.000100, total_loss: 3.3228, heatmap_loss: 1.7354, box_loss: 1.5874
+2022-04-26 12:17:13 - train: epoch 0011, iter [01100, 01832], lr: 0.000100, total_loss: 3.3127, heatmap_loss: 1.6458, box_loss: 1.6669
+2022-04-26 12:18:29 - train: epoch 0011, iter [01200, 01832], lr: 0.000100, total_loss: 3.3506, heatmap_loss: 1.7002, box_loss: 1.6504
+2022-04-26 12:19:43 - train: epoch 0011, iter [01300, 01832], lr: 0.000100, total_loss: 3.3290, heatmap_loss: 1.7634, box_loss: 1.5656
+2022-04-26 12:20:57 - train: epoch 0011, iter [01400, 01832], lr: 0.000100, total_loss: 3.4663, heatmap_loss: 1.7667, box_loss: 1.6996
+2022-04-26 12:22:12 - train: epoch 0011, iter [01500, 01832], lr: 0.000100, total_loss: 3.0990, heatmap_loss: 1.5538, box_loss: 1.5451
+2022-04-26 12:23:25 - train: epoch 0011, iter [01600, 01832], lr: 0.000100, total_loss: 3.2637, heatmap_loss: 1.7901, box_loss: 1.4735
+2022-04-26 12:24:38 - train: epoch 0011, iter [01700, 01832], lr: 0.000100, total_loss: 3.6829, heatmap_loss: 1.8530, box_loss: 1.8299
+2022-04-26 12:25:51 - train: epoch 0011, iter [01800, 01832], lr: 0.000100, total_loss: 3.2951, heatmap_loss: 1.6904, box_loss: 1.6047
+2022-04-26 12:26:15 - train: epoch 011, train_loss: 3.3821
+2022-04-26 12:26:16 - until epoch: 011, best_metric: 19.762%
+2022-04-26 12:26:16 - epoch 012 lr: 0.0001
+2022-04-26 12:27:33 - train: epoch 0012, iter [00100, 01832], lr: 0.000100, total_loss: 3.5373, heatmap_loss: 1.7237, box_loss: 1.8136
+2022-04-26 12:28:49 - train: epoch 0012, iter [00200, 01832], lr: 0.000100, total_loss: 3.4199, heatmap_loss: 1.8422, box_loss: 1.5777
+2022-04-26 12:30:04 - train: epoch 0012, iter [00300, 01832], lr: 0.000100, total_loss: 3.3450, heatmap_loss: 1.6750, box_loss: 1.6700
+2022-04-26 12:31:17 - train: epoch 0012, iter [00400, 01832], lr: 0.000100, total_loss: 3.4159, heatmap_loss: 1.8050, box_loss: 1.6109
+2022-04-26 12:32:32 - train: epoch 0012, iter [00500, 01832], lr: 0.000100, total_loss: 3.4457, heatmap_loss: 1.7596, box_loss: 1.6860
+2022-04-26 12:33:47 - train: epoch 0012, iter [00600, 01832], lr: 0.000100, total_loss: 3.0883, heatmap_loss: 1.5744, box_loss: 1.5139
+2022-04-26 12:35:01 - train: epoch 0012, iter [00700, 01832], lr: 0.000100, total_loss: 3.4677, heatmap_loss: 1.8322, box_loss: 1.6355
+2022-04-26 12:36:16 - train: epoch 0012, iter [00800, 01832], lr: 0.000100, total_loss: 3.6064, heatmap_loss: 1.9451, box_loss: 1.6613
+2022-04-26 12:37:31 - train: epoch 0012, iter [00900, 01832], lr: 0.000100, total_loss: 3.3958, heatmap_loss: 1.6897, box_loss: 1.7061
+2022-04-26 12:38:45 - train: epoch 0012, iter [01000, 01832], lr: 0.000100, total_loss: 3.1932, heatmap_loss: 1.5640, box_loss: 1.6293
+2022-04-26 12:39:58 - train: epoch 0012, iter [01100, 01832], lr: 0.000100, total_loss: 3.3098, heatmap_loss: 1.7112, box_loss: 1.5986
+2022-04-26 12:41:13 - train: epoch 0012, iter [01200, 01832], lr: 0.000100, total_loss: 3.4263, heatmap_loss: 1.7291, box_loss: 1.6972
+2022-04-26 12:42:25 - train: epoch 0012, iter [01300, 01832], lr: 0.000100, total_loss: 3.5465, heatmap_loss: 1.9286, box_loss: 1.6179
+2022-04-26 12:43:39 - train: epoch 0012, iter [01400, 01832], lr: 0.000100, total_loss: 3.3783, heatmap_loss: 1.7190, box_loss: 1.6593
+2022-04-26 12:44:54 - train: epoch 0012, iter [01500, 01832], lr: 0.000100, total_loss: 3.3634, heatmap_loss: 1.7499, box_loss: 1.6134
+2022-04-26 12:46:09 - train: epoch 0012, iter [01600, 01832], lr: 0.000100, total_loss: 3.1615, heatmap_loss: 1.6255, box_loss: 1.5360
+2022-04-26 12:47:22 - train: epoch 0012, iter [01700, 01832], lr: 0.000100, total_loss: 3.3553, heatmap_loss: 1.6971, box_loss: 1.6582
+2022-04-26 12:48:37 - train: epoch 0012, iter [01800, 01832], lr: 0.000100, total_loss: 3.3016, heatmap_loss: 1.6372, box_loss: 1.6645
+2022-04-26 12:48:59 - train: epoch 012, train_loss: 3.3380
+2022-04-26 12:48:59 - until epoch: 012, best_metric: 19.762%
+2022-04-26 12:48:59 - epoch 013 lr: 0.0001
+2022-04-26 12:50:17 - train: epoch 0013, iter [00100, 01832], lr: 0.000100, total_loss: 3.3460, heatmap_loss: 1.6510, box_loss: 1.6949
+2022-04-26 12:51:32 - train: epoch 0013, iter [00200, 01832], lr: 0.000100, total_loss: 3.3755, heatmap_loss: 1.8266, box_loss: 1.5489
+2022-04-26 12:52:45 - train: epoch 0013, iter [00300, 01832], lr: 0.000100, total_loss: 3.4459, heatmap_loss: 1.7304, box_loss: 1.7155
+2022-04-26 12:53:59 - train: epoch 0013, iter [00400, 01832], lr: 0.000100, total_loss: 3.1171, heatmap_loss: 1.5590, box_loss: 1.5581
+2022-04-26 12:55:12 - train: epoch 0013, iter [00500, 01832], lr: 0.000100, total_loss: 3.2110, heatmap_loss: 1.6244, box_loss: 1.5866
+2022-04-26 12:56:24 - train: epoch 0013, iter [00600, 01832], lr: 0.000100, total_loss: 3.3705, heatmap_loss: 1.7317, box_loss: 1.6388
+2022-04-26 12:57:39 - train: epoch 0013, iter [00700, 01832], lr: 0.000100, total_loss: 3.5742, heatmap_loss: 1.9075, box_loss: 1.6667
+2022-04-26 12:58:53 - train: epoch 0013, iter [00800, 01832], lr: 0.000100, total_loss: 3.3834, heatmap_loss: 1.7890, box_loss: 1.5944
+2022-04-26 13:00:07 - train: epoch 0013, iter [00900, 01832], lr: 0.000100, total_loss: 3.2940, heatmap_loss: 1.6087, box_loss: 1.6853
+2022-04-26 13:01:21 - train: epoch 0013, iter [01000, 01832], lr: 0.000100, total_loss: 3.2781, heatmap_loss: 1.6734, box_loss: 1.6047
+2022-04-26 13:02:35 - train: epoch 0013, iter [01100, 01832], lr: 0.000100, total_loss: 3.3702, heatmap_loss: 1.7257, box_loss: 1.6445
+2022-04-26 13:03:48 - train: epoch 0013, iter [01200, 01832], lr: 0.000100, total_loss: 3.5394, heatmap_loss: 1.8993, box_loss: 1.6401
+2022-04-26 13:05:01 - train: epoch 0013, iter [01300, 01832], lr: 0.000100, total_loss: 3.2496, heatmap_loss: 1.7026, box_loss: 1.5470
+2022-04-26 13:06:14 - train: epoch 0013, iter [01400, 01832], lr: 0.000100, total_loss: 3.3974, heatmap_loss: 1.7854, box_loss: 1.6119
+2022-04-26 13:07:28 - train: epoch 0013, iter [01500, 01832], lr: 0.000100, total_loss: 3.2461, heatmap_loss: 1.7179, box_loss: 1.5281
+2022-04-26 13:08:42 - train: epoch 0013, iter [01600, 01832], lr: 0.000100, total_loss: 3.3914, heatmap_loss: 1.6728, box_loss: 1.7186
+2022-04-26 13:09:56 - train: epoch 0013, iter [01700, 01832], lr: 0.000100, total_loss: 3.5988, heatmap_loss: 1.7799, box_loss: 1.8189
+2022-04-26 13:11:08 - train: epoch 0013, iter [01800, 01832], lr: 0.000100, total_loss: 3.0688, heatmap_loss: 1.5279, box_loss: 1.5410
+2022-04-26 13:11:31 - train: epoch 013, train_loss: 3.2996
+2022-04-26 13:11:31 - until epoch: 013, best_metric: 19.762%
+2022-04-26 13:11:31 - epoch 014 lr: 0.0001
+2022-04-26 13:12:47 - train: epoch 0014, iter [00100, 01832], lr: 0.000100, total_loss: 3.2940, heatmap_loss: 1.6251, box_loss: 1.6688
+2022-04-26 13:14:02 - train: epoch 0014, iter [00200, 01832], lr: 0.000100, total_loss: 3.2972, heatmap_loss: 1.6736, box_loss: 1.6236
+2022-04-26 13:15:15 - train: epoch 0014, iter [00300, 01832], lr: 0.000100, total_loss: 3.2339, heatmap_loss: 1.6772, box_loss: 1.5567
+2022-04-26 13:16:30 - train: epoch 0014, iter [00400, 01832], lr: 0.000100, total_loss: 3.3805, heatmap_loss: 1.6832, box_loss: 1.6972
+2022-04-26 13:17:42 - train: epoch 0014, iter [00500, 01832], lr: 0.000100, total_loss: 2.9730, heatmap_loss: 1.5171, box_loss: 1.4559
+2022-04-26 13:18:57 - train: epoch 0014, iter [00600, 01832], lr: 0.000100, total_loss: 3.2869, heatmap_loss: 1.7505, box_loss: 1.5365
+2022-04-26 13:20:09 - train: epoch 0014, iter [00700, 01832], lr: 0.000100, total_loss: 3.3124, heatmap_loss: 1.6824, box_loss: 1.6300
+2022-04-26 13:21:24 - train: epoch 0014, iter [00800, 01832], lr: 0.000100, total_loss: 3.0627, heatmap_loss: 1.6006, box_loss: 1.4621
+2022-04-26 13:22:40 - train: epoch 0014, iter [00900, 01832], lr: 0.000100, total_loss: 3.2858, heatmap_loss: 1.6751, box_loss: 1.6107
+2022-04-26 13:23:55 - train: epoch 0014, iter [01000, 01832], lr: 0.000100, total_loss: 3.2504, heatmap_loss: 1.6791, box_loss: 1.5712
+2022-04-26 13:25:09 - train: epoch 0014, iter [01100, 01832], lr: 0.000100, total_loss: 3.5467, heatmap_loss: 1.8343, box_loss: 1.7124
+2022-04-26 13:26:23 - train: epoch 0014, iter [01200, 01832], lr: 0.000100, total_loss: 3.2035, heatmap_loss: 1.6340, box_loss: 1.5695
+2022-04-26 13:27:36 - train: epoch 0014, iter [01300, 01832], lr: 0.000100, total_loss: 3.3765, heatmap_loss: 1.7061, box_loss: 1.6703
+2022-04-26 13:28:51 - train: epoch 0014, iter [01400, 01832], lr: 0.000100, total_loss: 3.3952, heatmap_loss: 1.7285, box_loss: 1.6667
+2022-04-26 13:30:07 - train: epoch 0014, iter [01500, 01832], lr: 0.000100, total_loss: 3.2306, heatmap_loss: 1.6592, box_loss: 1.5714
+2022-04-26 13:31:22 - train: epoch 0014, iter [01600, 01832], lr: 0.000100, total_loss: 3.0737, heatmap_loss: 1.6042, box_loss: 1.4695
+2022-04-26 13:32:38 - train: epoch 0014, iter [01700, 01832], lr: 0.000100, total_loss: 3.2193, heatmap_loss: 1.6652, box_loss: 1.5541
+2022-04-26 13:33:51 - train: epoch 0014, iter [01800, 01832], lr: 0.000100, total_loss: 3.3963, heatmap_loss: 1.7677, box_loss: 1.6287
+2022-04-26 13:34:16 - train: epoch 014, train_loss: 3.2661
+2022-04-26 13:34:16 - until epoch: 014, best_metric: 19.762%
+2022-04-26 13:34:16 - epoch 015 lr: 0.0001
+2022-04-26 13:35:31 - train: epoch 0015, iter [00100, 01832], lr: 0.000100, total_loss: 3.4720, heatmap_loss: 1.7237, box_loss: 1.7483
+2022-04-26 13:36:47 - train: epoch 0015, iter [00200, 01832], lr: 0.000100, total_loss: 3.0689, heatmap_loss: 1.5136, box_loss: 1.5552
+2022-04-26 13:38:02 - train: epoch 0015, iter [00300, 01832], lr: 0.000100, total_loss: 3.2265, heatmap_loss: 1.6550, box_loss: 1.5715
+2022-04-26 13:39:16 - train: epoch 0015, iter [00400, 01832], lr: 0.000100, total_loss: 3.1991, heatmap_loss: 1.5922, box_loss: 1.6069
+2022-04-26 13:40:29 - train: epoch 0015, iter [00500, 01832], lr: 0.000100, total_loss: 3.4313, heatmap_loss: 1.7552, box_loss: 1.6760
+2022-04-26 13:41:42 - train: epoch 0015, iter [00600, 01832], lr: 0.000100, total_loss: 3.2322, heatmap_loss: 1.6452, box_loss: 1.5870
+2022-04-26 13:42:56 - train: epoch 0015, iter [00700, 01832], lr: 0.000100, total_loss: 3.1109, heatmap_loss: 1.5788, box_loss: 1.5321
+2022-04-26 13:44:09 - train: epoch 0015, iter [00800, 01832], lr: 0.000100, total_loss: 3.2549, heatmap_loss: 1.6283, box_loss: 1.6266
+2022-04-26 13:45:23 - train: epoch 0015, iter [00900, 01832], lr: 0.000100, total_loss: 3.0571, heatmap_loss: 1.4708, box_loss: 1.5863
+2022-04-26 13:46:36 - train: epoch 0015, iter [01000, 01832], lr: 0.000100, total_loss: 3.4219, heatmap_loss: 1.7383, box_loss: 1.6836
+2022-04-26 13:47:49 - train: epoch 0015, iter [01100, 01832], lr: 0.000100, total_loss: 3.1629, heatmap_loss: 1.6102, box_loss: 1.5527
+2022-04-26 13:49:01 - train: epoch 0015, iter [01200, 01832], lr: 0.000100, total_loss: 3.2823, heatmap_loss: 1.6904, box_loss: 1.5919
+2022-04-26 13:50:15 - train: epoch 0015, iter [01300, 01832], lr: 0.000100, total_loss: 3.3202, heatmap_loss: 1.6206, box_loss: 1.6996
+2022-04-26 13:51:27 - train: epoch 0015, iter [01400, 01832], lr: 0.000100, total_loss: 3.1593, heatmap_loss: 1.6418, box_loss: 1.5175
+2022-04-26 13:52:42 - train: epoch 0015, iter [01500, 01832], lr: 0.000100, total_loss: 3.2695, heatmap_loss: 1.7200, box_loss: 1.5495
+2022-04-26 13:53:57 - train: epoch 0015, iter [01600, 01832], lr: 0.000100, total_loss: 3.2504, heatmap_loss: 1.6360, box_loss: 1.6144
+2022-04-26 13:55:11 - train: epoch 0015, iter [01700, 01832], lr: 0.000100, total_loss: 3.2984, heatmap_loss: 1.6327, box_loss: 1.6657
+2022-04-26 13:56:22 - train: epoch 0015, iter [01800, 01832], lr: 0.000100, total_loss: 3.4089, heatmap_loss: 1.8322, box_loss: 1.5767
+2022-04-26 13:56:47 - train: epoch 015, train_loss: 3.2338
+2022-04-26 13:58:12 - eval: epoch: 015
+per_image_load_time: 3.436ms
+per_image_inference_time: 3.113ms
+IoU=0.50:0.95,area=all,maxDets=100,mAP: 22.742031879952098
+IoU=0.50,area=all,maxDets=100,mAP: 37.27721654415197
+IoU=0.75,area=all,maxDets=100,mAP: 24.12676763973386
+IoU=0.50:0.95,area=small,maxDets=100,mAP: 6.882480384244019
+IoU=0.50:0.95,area=medium,maxDets=100,mAP: 23.841550958898168
+IoU=0.50:0.95,area=large,maxDets=100,mAP: 35.93524477410692
+IoU=0.50:0.95,area=all,maxDets=1,mAR: 22.89740943393437
+IoU=0.50:0.95,area=all,maxDets=10,mAR: 36.764073209559264
+IoU=0.50:0.95,area=all,maxDets=100,mAR: 38.59979152411335
+IoU=0.50:0.95,area=small,maxDets=100,mAR: 16.731172810958768
+IoU=0.50:0.95,area=medium,maxDets=100,mAR: 41.094266291639634
+IoU=0.50:0.95,area=large,maxDets=100,mAR: 58.62512843830493
+
+2022-04-26 13:58:12 - until epoch: 015, best_metric: 22.742%
+2022-04-26 13:58:12 - epoch 016 lr: 0.0001
+2022-04-26 13:59:28 - train: epoch 0016, iter [00100, 01832], lr: 0.000100, total_loss: 3.2699, heatmap_loss: 1.7395, box_loss: 1.5304
+2022-04-26 14:00:41 - train: epoch 0016, iter [00200, 01832], lr: 0.000100, total_loss: 3.2514, heatmap_loss: 1.6264, box_loss: 1.6251
+2022-04-26 14:01:55 - train: epoch 0016, iter [00300, 01832], lr: 0.000100, total_loss: 3.1549, heatmap_loss: 1.6025, box_loss: 1.5524
+2022-04-26 14:03:10 - train: epoch 0016, iter [00400, 01832], lr: 0.000100, total_loss: 3.1928, heatmap_loss: 1.5442, box_loss: 1.6487
+2022-04-26 14:04:21 - train: epoch 0016, iter [00500, 01832], lr: 0.000100, total_loss: 3.3757, heatmap_loss: 1.7381, box_loss: 1.6375
+2022-04-26 14:05:35 - train: epoch 0016, iter [00600, 01832], lr: 0.000100, total_loss: 3.2854, heatmap_loss: 1.6768, box_loss: 1.6087
+2022-04-26 14:06:50 - train: epoch 0016, iter [00700, 01832], lr: 0.000100, total_loss: 3.1705, heatmap_loss: 1.6533, box_loss: 1.5172
+2022-04-26 14:08:04 - train: epoch 0016, iter [00800, 01832], lr: 0.000100, total_loss: 3.3186, heatmap_loss: 1.6689, box_loss: 1.6498
+2022-04-26 14:09:20 - train: epoch 0016, iter [00900, 01832], lr: 0.000100, total_loss: 3.2396, heatmap_loss: 1.6268, box_loss: 1.6128
+2022-04-26 14:10:34 - train: epoch 0016, iter [01000, 01832], lr: 0.000100, total_loss: 3.3215, heatmap_loss: 1.6154, box_loss: 1.7061
+2022-04-26 14:11:49 - train: epoch 0016, iter [01100, 01832], lr: 0.000100, total_loss: 3.1810, heatmap_loss: 1.5598, box_loss: 1.6213
+2022-04-26 14:13:02 - train: epoch 0016, iter [01200, 01832], lr: 0.000100, total_loss: 3.0462, heatmap_loss: 1.5609, box_loss: 1.4853
+2022-04-26 14:14:17 - train: epoch 0016, iter [01300, 01832], lr: 0.000100, total_loss: 3.0882, heatmap_loss: 1.5250, box_loss: 1.5632
+2022-04-26 14:15:32 - train: epoch 0016, iter [01400, 01832], lr: 0.000100, total_loss: 3.1443, heatmap_loss: 1.6568, box_loss: 1.4875
+2022-04-26 14:16:49 - train: epoch 0016, iter [01500, 01832], lr: 0.000100, total_loss: 3.4672, heatmap_loss: 1.7820, box_loss: 1.6852
+2022-04-26 14:18:04 - train: epoch 0016, iter [01600, 01832], lr: 0.000100, total_loss: 3.1563, heatmap_loss: 1.5345, box_loss: 1.6218
+2022-04-26 14:19:18 - train: epoch 0016, iter [01700, 01832], lr: 0.000100, total_loss: 3.1913, heatmap_loss: 1.6208, box_loss: 1.5705
+2022-04-26 14:20:32 - train: epoch 0016, iter [01800, 01832], lr: 0.000100, total_loss: 3.1622, heatmap_loss: 1.5741, box_loss: 1.5881
+2022-04-26 14:20:57 - train: epoch 016, train_loss: 3.2038
+2022-04-26 14:20:57 - until epoch: 016, best_metric: 22.742%
+2022-04-26 14:20:57 - epoch 017 lr: 0.0001
+2022-04-26 14:22:13 - train: epoch 0017, iter [00100, 01832], lr: 0.000100, total_loss: 3.1004, heatmap_loss: 1.6597, box_loss: 1.4407
+2022-04-26 14:23:26 - train: epoch 0017, iter [00200, 01832], lr: 0.000100, total_loss: 3.1731, heatmap_loss: 1.6374, box_loss: 1.5357
+2022-04-26 14:24:41 - train: epoch 0017, iter [00300, 01832], lr: 0.000100, total_loss: 3.3733, heatmap_loss: 1.7402, box_loss: 1.6331
+2022-04-26 14:25:54 - train: epoch 0017, iter [00400, 01832], lr: 0.000100, total_loss: 3.2883, heatmap_loss: 1.7217, box_loss: 1.5666
+2022-04-26 14:27:09 - train: epoch 0017, iter [00500, 01832], lr: 0.000100, total_loss: 3.1669, heatmap_loss: 1.6440, box_loss: 1.5229
+2022-04-26 14:28:22 - train: epoch 0017, iter [00600, 01832], lr: 0.000100, total_loss: 3.1450, heatmap_loss: 1.5696, box_loss: 1.5754
+2022-04-26 14:29:36 - train: epoch 0017, iter [00700, 01832], lr: 0.000100, total_loss: 3.0562, heatmap_loss: 1.5512, box_loss: 1.5050
+2022-04-26 14:30:50 - train: epoch 0017, iter [00800, 01832], lr: 0.000100, total_loss: 3.3905, heatmap_loss: 1.6750, box_loss: 1.7156
+2022-04-26 14:32:04 - train: epoch 0017, iter [00900, 01832], lr: 0.000100, total_loss: 3.2342, heatmap_loss: 1.6095, box_loss: 1.6247
+2022-04-26 14:33:16 - train: epoch 0017, iter [01000, 01832], lr: 0.000100, total_loss: 3.2445, heatmap_loss: 1.6694, box_loss: 1.5751
+2022-04-26 14:34:30 - train: epoch 0017, iter [01100, 01832], lr: 0.000100, total_loss: 3.0676, heatmap_loss: 1.6140, box_loss: 1.4536
+2022-04-26 14:35:42 - train: epoch 0017, iter [01200, 01832], lr: 0.000100, total_loss: 3.0147, heatmap_loss: 1.5202, box_loss: 1.4945
+2022-04-26 14:36:56 - train: epoch 0017, iter [01300, 01832], lr: 0.000100, total_loss: 3.2709, heatmap_loss: 1.6481, box_loss: 1.6227
+2022-04-26 14:38:10 - train: epoch 0017, iter [01400, 01832], lr: 0.000100, total_loss: 3.4146, heatmap_loss: 1.8042, box_loss: 1.6104
+2022-04-26 14:39:25 - train: epoch 0017, iter [01500, 01832], lr: 0.000100, total_loss: 2.8756, heatmap_loss: 1.5119, box_loss: 1.3637
+2022-04-26 14:40:37 - train: epoch 0017, iter [01600, 01832], lr: 0.000100, total_loss: 2.9018, heatmap_loss: 1.5234, box_loss: 1.3784
+2022-04-26 14:41:52 - train: epoch 0017, iter [01700, 01832], lr: 0.000100, total_loss: 2.9838, heatmap_loss: 1.5320, box_loss: 1.4518
+2022-04-26 14:43:06 - train: epoch 0017, iter [01800, 01832], lr: 0.000100, total_loss: 3.0917, heatmap_loss: 1.4889, box_loss: 1.6028
+2022-04-26 14:43:28 - train: epoch 017, train_loss: 3.1760
+2022-04-26 14:43:29 - until epoch: 017, best_metric: 22.742%
+2022-04-26 14:43:29 - epoch 018 lr: 0.0001
+2022-04-26 14:44:45 - train: epoch 0018, iter [00100, 01832], lr: 0.000100, total_loss: 3.1679, heatmap_loss: 1.5574, box_loss: 1.6105
+2022-04-26 14:45:59 - train: epoch 0018, iter [00200, 01832], lr: 0.000100, total_loss: 2.8916, heatmap_loss: 1.5109, box_loss: 1.3806
+2022-04-26 14:47:13 - train: epoch 0018, iter [00300, 01832], lr: 0.000100, total_loss: 3.0827, heatmap_loss: 1.5611, box_loss: 1.5216
+2022-04-26 14:48:28 - train: epoch 0018, iter [00400, 01832], lr: 0.000100, total_loss: 3.2515, heatmap_loss: 1.6049, box_loss: 1.6466
+2022-04-26 14:49:44 - train: epoch 0018, iter [00500, 01832], lr: 0.000100, total_loss: 2.8901, heatmap_loss: 1.4950, box_loss: 1.3951
+2022-04-26 14:50:59 - train: epoch 0018, iter [00600, 01832], lr: 0.000100, total_loss: 3.0414, heatmap_loss: 1.4905, box_loss: 1.5509
+2022-04-26 14:52:12 - train: epoch 0018, iter [00700, 01832], lr: 0.000100, total_loss: 3.1784, heatmap_loss: 1.5548, box_loss: 1.6236
+2022-04-26 14:53:29 - train: epoch 0018, iter [00800, 01832], lr: 0.000100, total_loss: 3.4026, heatmap_loss: 1.7024, box_loss: 1.7002
+2022-04-26 14:54:43 - train: epoch 0018, iter [00900, 01832], lr: 0.000100, total_loss: 3.0769, heatmap_loss: 1.5887, box_loss: 1.4881
+2022-04-26 14:55:56 - train: epoch 0018, iter [01000, 01832], lr: 0.000100, total_loss: 3.5664, heatmap_loss: 1.7793, box_loss: 1.7871
+2022-04-26 14:57:12 - train: epoch 0018, iter [01100, 01832], lr: 0.000100, total_loss: 3.2745, heatmap_loss: 1.6717, box_loss: 1.6028
+2022-04-26 14:58:27 - train: epoch 0018, iter [01200, 01832], lr: 0.000100, total_loss: 3.2154, heatmap_loss: 1.6710, box_loss: 1.5444
+2022-04-26 14:59:42 - train: epoch 0018, iter [01300, 01832], lr: 0.000100, total_loss: 3.0654, heatmap_loss: 1.5884, box_loss: 1.4770
+2022-04-26 15:00:55 - train: epoch 0018, iter [01400, 01832], lr: 0.000100, total_loss: 3.2093, heatmap_loss: 1.6695, box_loss: 1.5398
+2022-04-26 15:02:12 - train: epoch 0018, iter [01500, 01832], lr: 0.000100, total_loss: 3.1217, heatmap_loss: 1.6581, box_loss: 1.4635
+2022-04-26 15:03:29 - train: epoch 0018, iter [01600, 01832], lr: 0.000100, total_loss: 3.0993, heatmap_loss: 1.6585, box_loss: 1.4408
+2022-04-26 15:04:46 - train: epoch 0018, iter [01700, 01832], lr: 0.000100, total_loss: 3.2926, heatmap_loss: 1.6569, box_loss: 1.6357
+2022-04-26 15:05:59 - train: epoch 0018, iter [01800, 01832], lr: 0.000100, total_loss: 3.1308, heatmap_loss: 1.6170, box_loss: 1.5139
+2022-04-26 15:06:24 - train: epoch 018, train_loss: 3.1517
+2022-04-26 15:06:24 - until epoch: 018, best_metric: 22.742%
+2022-04-26 15:06:24 - epoch 019 lr: 0.0001
+2022-04-26 15:07:39 - train: epoch 0019, iter [00100, 01832], lr: 0.000100, total_loss: 3.2725, heatmap_loss: 1.6501, box_loss: 1.6224
+2022-04-26 15:08:54 - train: epoch 0019, iter [00200, 01832], lr: 0.000100, total_loss: 3.1805, heatmap_loss: 1.6059, box_loss: 1.5746
+2022-04-26 15:10:08 - train: epoch 0019, iter [00300, 01832], lr: 0.000100, total_loss: 3.3084, heatmap_loss: 1.6973, box_loss: 1.6111
+2022-04-26 15:11:22 - train: epoch 0019, iter [00400, 01832], lr: 0.000100, total_loss: 3.1016, heatmap_loss: 1.5400, box_loss: 1.5616
+2022-04-26 15:12:35 - train: epoch 0019, iter [00500, 01832], lr: 0.000100, total_loss: 3.1083, heatmap_loss: 1.6542, box_loss: 1.4540
+2022-04-26 15:13:49 - train: epoch 0019, iter [00600, 01832], lr: 0.000100, total_loss: 2.8925, heatmap_loss: 1.4638, box_loss: 1.4288
+2022-04-26 15:15:03 - train: epoch 0019, iter [00700, 01832], lr: 0.000100, total_loss: 3.2199, heatmap_loss: 1.6548, box_loss: 1.5651
+2022-04-26 15:16:15 - train: epoch 0019, iter [00800, 01832], lr: 0.000100, total_loss: 3.0473, heatmap_loss: 1.4477, box_loss: 1.5996
+2022-04-26 15:17:29 - train: epoch 0019, iter [00900, 01832], lr: 0.000100, total_loss: 3.0936, heatmap_loss: 1.5827, box_loss: 1.5108
+2022-04-26 15:18:43 - train: epoch 0019, iter [01000, 01832], lr: 0.000100, total_loss: 3.0911, heatmap_loss: 1.5236, box_loss: 1.5675
+2022-04-26 15:19:56 - train: epoch 0019, iter [01100, 01832], lr: 0.000100, total_loss: 3.0180, heatmap_loss: 1.4596, box_loss: 1.5583
+2022-04-26 15:21:11 - train: epoch 0019, iter [01200, 01832], lr: 0.000100, total_loss: 3.1412, heatmap_loss: 1.6038, box_loss: 1.5375
+2022-04-26 15:22:25 - train: epoch 0019, iter [01300, 01832], lr: 0.000100, total_loss: 3.2260, heatmap_loss: 1.5787, box_loss: 1.6473
+2022-04-26 15:23:37 - train: epoch 0019, iter [01400, 01832], lr: 0.000100, total_loss: 3.2619, heatmap_loss: 1.6965, box_loss: 1.5653
+2022-04-26 15:24:51 - train: epoch 0019, iter [01500, 01832], lr: 0.000100, total_loss: 3.1912, heatmap_loss: 1.6681, box_loss: 1.5231
+2022-04-26 15:26:06 - train: epoch 0019, iter [01600, 01832], lr: 0.000100, total_loss: 3.1445, heatmap_loss: 1.5531, box_loss: 1.5914
+2022-04-26 15:27:18 - train: epoch 0019, iter [01700, 01832], lr: 0.000100, total_loss: 3.1876, heatmap_loss: 1.5707, box_loss: 1.6168
+2022-04-26 15:28:32 - train: epoch 0019, iter [01800, 01832], lr: 0.000100, total_loss: 3.1428, heatmap_loss: 1.5906, box_loss: 1.5522
+2022-04-26 15:28:56 - train: epoch 019, train_loss: 3.1258
+2022-04-26 15:28:57 - until epoch: 019, best_metric: 22.742%
+2022-04-26 15:28:57 - epoch 020 lr: 0.0001
+2022-04-26 15:30:13 - train: epoch 0020, iter [00100, 01832], lr: 0.000100, total_loss: 3.2306, heatmap_loss: 1.5889, box_loss: 1.6417
+2022-04-26 15:31:25 - train: epoch 0020, iter [00200, 01832], lr: 0.000100, total_loss: 3.0971, heatmap_loss: 1.5816, box_loss: 1.5155
+2022-04-26 15:32:40 - train: epoch 0020, iter [00300, 01832], lr: 0.000100, total_loss: 3.2404, heatmap_loss: 1.6590, box_loss: 1.5814
+2022-04-26 15:33:52 - train: epoch 0020, iter [00400, 01832], lr: 0.000100, total_loss: 3.0096, heatmap_loss: 1.4934, box_loss: 1.5163
+2022-04-26 15:35:06 - train: epoch 0020, iter [00500, 01832], lr: 0.000100, total_loss: 3.1343, heatmap_loss: 1.5543, box_loss: 1.5800
+2022-04-26 15:36:20 - train: epoch 0020, iter [00600, 01832], lr: 0.000100, total_loss: 2.9838, heatmap_loss: 1.5014, box_loss: 1.4824
+2022-04-26 15:37:36 - train: epoch 0020, iter [00700, 01832], lr: 0.000100, total_loss: 3.1094, heatmap_loss: 1.6410, box_loss: 1.4684
+2022-04-26 15:38:50 - train: epoch 0020, iter [00800, 01832], lr: 0.000100, total_loss: 3.3739, heatmap_loss: 1.7421, box_loss: 1.6318
+2022-04-26 15:40:02 - train: epoch 0020, iter [00900, 01832], lr: 0.000100, total_loss: 2.9180, heatmap_loss: 1.5383, box_loss: 1.3797
+2022-04-26 15:41:14 - train: epoch 0020, iter [01000, 01832], lr: 0.000100, total_loss: 3.1222, heatmap_loss: 1.6375, box_loss: 1.4848
+2022-04-26 15:42:29 - train: epoch 0020, iter [01100, 01832], lr: 0.000100, total_loss: 3.3289, heatmap_loss: 1.7125, box_loss: 1.6163
+2022-04-26 15:43:43 - train: epoch 0020, iter [01200, 01832], lr: 0.000100, total_loss: 2.8594, heatmap_loss: 1.4900, box_loss: 1.3694
+2022-04-26 15:44:57 - train: epoch 0020, iter [01300, 01832], lr: 0.000100, total_loss: 3.2589, heatmap_loss: 1.6340, box_loss: 1.6249
+2022-04-26 15:46:12 - train: epoch 0020, iter [01400, 01832], lr: 0.000100, total_loss: 3.2366, heatmap_loss: 1.5937, box_loss: 1.6429
+2022-04-26 15:47:24 - train: epoch 0020, iter [01500, 01832], lr: 0.000100, total_loss: 3.1288, heatmap_loss: 1.6532, box_loss: 1.4756
+2022-04-26 15:48:40 - train: epoch 0020, iter [01600, 01832], lr: 0.000100, total_loss: 2.7996, heatmap_loss: 1.3709, box_loss: 1.4288
+2022-04-26 15:49:55 - train: epoch 0020, iter [01700, 01832], lr: 0.000100, total_loss: 3.0546, heatmap_loss: 1.4534, box_loss: 1.6012
+2022-04-26 15:51:07 - train: epoch 0020, iter [01800, 01832], lr: 0.000100, total_loss: 3.0601, heatmap_loss: 1.5985, box_loss: 1.4616
+2022-04-26 15:51:31 - train: epoch 020, train_loss: 3.1039
+2022-04-26 15:53:00 - eval: epoch: 020
+per_image_load_time: 3.759ms
+per_image_inference_time: 3.164ms
+IoU=0.50:0.95,area=all,maxDets=100,mAP: 24.355543080561777
+IoU=0.50,area=all,maxDets=100,mAP: 39.44661822424602
+IoU=0.75,area=all,maxDets=100,mAP: 25.880016634899032
+IoU=0.50:0.95,area=small,maxDets=100,mAP: 8.417030495105045
+IoU=0.50:0.95,area=medium,maxDets=100,mAP: 26.499018815017916
+IoU=0.50:0.95,area=large,maxDets=100,mAP: 38.38312340821688
+IoU=0.50:0.95,area=all,maxDets=1,mAR: 23.860283943292394
+IoU=0.50:0.95,area=all,maxDets=10,mAR: 38.23635867071242
+IoU=0.50:0.95,area=all,maxDets=100,mAR: 40.05392983837935
+IoU=0.50:0.95,area=small,maxDets=100,mAR: 18.13945211581569
+IoU=0.50:0.95,area=medium,maxDets=100,mAR: 43.715535329841785
+IoU=0.50:0.95,area=large,maxDets=100,mAR: 60.36829430059022
+
+2022-04-26 15:53:00 - until epoch: 020, best_metric: 24.356%
+2022-04-26 15:53:00 - epoch 021 lr: 0.0001
+2022-04-26 15:54:16 - train: epoch 0021, iter [00100, 01832], lr: 0.000100, total_loss: 2.8743, heatmap_loss: 1.4921, box_loss: 1.3821
+2022-04-26 15:55:31 - train: epoch 0021, iter [00200, 01832], lr: 0.000100, total_loss: 2.8057, heatmap_loss: 1.4177, box_loss: 1.3880
+2022-04-26 15:56:48 - train: epoch 0021, iter [00300, 01832], lr: 0.000100, total_loss: 3.2169, heatmap_loss: 1.6962, box_loss: 1.5207
+2022-04-26 15:58:02 - train: epoch 0021, iter [00400, 01832], lr: 0.000100, total_loss: 3.3343, heatmap_loss: 1.6345, box_loss: 1.6999
+2022-04-26 15:59:14 - train: epoch 0021, iter [00500, 01832], lr: 0.000100, total_loss: 3.2269, heatmap_loss: 1.5526, box_loss: 1.6743
+2022-04-26 16:00:29 - train: epoch 0021, iter [00600, 01832], lr: 0.000100, total_loss: 3.1860, heatmap_loss: 1.5986, box_loss: 1.5873
+2022-04-26 16:01:44 - train: epoch 0021, iter [00700, 01832], lr: 0.000100, total_loss: 3.3127, heatmap_loss: 1.6950, box_loss: 1.6177
+2022-04-26 16:02:57 - train: epoch 0021, iter [00800, 01832], lr: 0.000100, total_loss: 2.9515, heatmap_loss: 1.5041, box_loss: 1.4475
+2022-04-26 16:04:11 - train: epoch 0021, iter [00900, 01832], lr: 0.000100, total_loss: 3.2792, heatmap_loss: 1.6932, box_loss: 1.5861
+2022-04-26 16:05:27 - train: epoch 0021, iter [01000, 01832], lr: 0.000100, total_loss: 2.9333, heatmap_loss: 1.5663, box_loss: 1.3670
+2022-04-26 16:06:41 - train: epoch 0021, iter [01100, 01832], lr: 0.000100, total_loss: 3.4348, heatmap_loss: 1.7949, box_loss: 1.6399
+2022-04-26 16:07:54 - train: epoch 0021, iter [01200, 01832], lr: 0.000100, total_loss: 3.1359, heatmap_loss: 1.5890, box_loss: 1.5469
+2022-04-26 16:09:08 - train: epoch 0021, iter [01300, 01832], lr: 0.000100, total_loss: 3.1452, heatmap_loss: 1.6039, box_loss: 1.5413
+2022-04-26 16:10:20 - train: epoch 0021, iter [01400, 01832], lr: 0.000100, total_loss: 3.2085, heatmap_loss: 1.6244, box_loss: 1.5841
+2022-04-26 16:11:35 - train: epoch 0021, iter [01500, 01832], lr: 0.000100, total_loss: 2.9514, heatmap_loss: 1.4495, box_loss: 1.5019
+2022-04-26 16:12:50 - train: epoch 0021, iter [01600, 01832], lr: 0.000100, total_loss: 3.0232, heatmap_loss: 1.4567, box_loss: 1.5665
+2022-04-26 16:14:04 - train: epoch 0021, iter [01700, 01832], lr: 0.000100, total_loss: 2.9074, heatmap_loss: 1.4577, box_loss: 1.4497
+2022-04-26 16:15:17 - train: epoch 0021, iter [01800, 01832], lr: 0.000100, total_loss: 3.0296, heatmap_loss: 1.4813, box_loss: 1.5483
+2022-04-26 16:15:41 - train: epoch 021, train_loss: 3.0890
+2022-04-26 16:15:41 - until epoch: 021, best_metric: 24.356%
+2022-04-26 16:15:41 - epoch 022 lr: 0.0001
+2022-04-26 16:16:57 - train: epoch 0022, iter [00100, 01832], lr: 0.000100, total_loss: 3.2169, heatmap_loss: 1.5947, box_loss: 1.6221
+2022-04-26 16:18:11 - train: epoch 0022, iter [00200, 01832], lr: 0.000100, total_loss: 3.0202, heatmap_loss: 1.5504, box_loss: 1.4698
+2022-04-26 16:19:25 - train: epoch 0022, iter [00300, 01832], lr: 0.000100, total_loss: 2.7864, heatmap_loss: 1.3958, box_loss: 1.3907
+2022-04-26 16:20:40 - train: epoch 0022, iter [00400, 01832], lr: 0.000100, total_loss: 2.8675, heatmap_loss: 1.4209, box_loss: 1.4465
+2022-04-26 16:21:54 - train: epoch 0022, iter [00500, 01832], lr: 0.000100, total_loss: 3.3620, heatmap_loss: 1.7850, box_loss: 1.5770
+2022-04-26 16:23:08 - train: epoch 0022, iter [00600, 01832], lr: 0.000100, total_loss: 3.1811, heatmap_loss: 1.6451, box_loss: 1.5360
+2022-04-26 16:24:18 - train: epoch 0022, iter [00700, 01832], lr: 0.000100, total_loss: 3.0452, heatmap_loss: 1.5484, box_loss: 1.4968
+2022-04-26 16:25:33 - train: epoch 0022, iter [00800, 01832], lr: 0.000100, total_loss: 3.0899, heatmap_loss: 1.5348, box_loss: 1.5550
+2022-04-26 16:26:48 - train: epoch 0022, iter [00900, 01832], lr: 0.000100, total_loss: 3.0352, heatmap_loss: 1.5156, box_loss: 1.5196
+2022-04-26 16:28:03 - train: epoch 0022, iter [01000, 01832], lr: 0.000100, total_loss: 3.1009, heatmap_loss: 1.6519, box_loss: 1.4490
+2022-04-26 16:29:18 - train: epoch 0022, iter [01100, 01832], lr: 0.000100, total_loss: 3.0874, heatmap_loss: 1.5852, box_loss: 1.5021
+2022-04-26 16:30:31 - train: epoch 0022, iter [01200, 01832], lr: 0.000100, total_loss: 3.0751, heatmap_loss: 1.5417, box_loss: 1.5334
+2022-04-26 16:31:44 - train: epoch 0022, iter [01300, 01832], lr: 0.000100, total_loss: 2.9807, heatmap_loss: 1.5577, box_loss: 1.4230
+2022-04-26 16:32:56 - train: epoch 0022, iter [01400, 01832], lr: 0.000100, total_loss: 2.9543, heatmap_loss: 1.5096, box_loss: 1.4446
+2022-04-26 16:34:10 - train: epoch 0022, iter [01500, 01832], lr: 0.000100, total_loss: 3.2371, heatmap_loss: 1.6316, box_loss: 1.6055
+2022-04-26 16:35:23 - train: epoch 0022, iter [01600, 01832], lr: 0.000100, total_loss: 2.9687, heatmap_loss: 1.5504, box_loss: 1.4183
+2022-04-26 16:36:38 - train: epoch 0022, iter [01700, 01832], lr: 0.000100, total_loss: 3.1811, heatmap_loss: 1.6481, box_loss: 1.5330
+2022-04-26 16:37:54 - train: epoch 0022, iter [01800, 01832], lr: 0.000100, total_loss: 3.1536, heatmap_loss: 1.6546, box_loss: 1.4990
+2022-04-26 16:38:18 - train: epoch 022, train_loss: 3.0611
+2022-04-26 16:38:18 - until epoch: 022, best_metric: 24.356%
+2022-04-26 16:38:18 - epoch 023 lr: 0.0001
+2022-04-26 16:39:33 - train: epoch 0023, iter [00100, 01832], lr: 0.000100, total_loss: 3.0040, heatmap_loss: 1.5519, box_loss: 1.4521
+2022-04-26 16:40:46 - train: epoch 0023, iter [00200, 01832], lr: 0.000100, total_loss: 2.9967, heatmap_loss: 1.5695, box_loss: 1.4272
+2022-04-26 16:42:01 - train: epoch 0023, iter [00300, 01832], lr: 0.000100, total_loss: 3.0288, heatmap_loss: 1.5415, box_loss: 1.4873
+2022-04-26 16:43:15 - train: epoch 0023, iter [00400, 01832], lr: 0.000100, total_loss: 3.1020, heatmap_loss: 1.6048, box_loss: 1.4973
+2022-04-26 16:44:29 - train: epoch 0023, iter [00500, 01832], lr: 0.000100, total_loss: 3.1605, heatmap_loss: 1.5858, box_loss: 1.5746
+2022-04-26 16:45:43 - train: epoch 0023, iter [00600, 01832], lr: 0.000100, total_loss: 2.9971, heatmap_loss: 1.5078, box_loss: 1.4894
+2022-04-26 16:46:55 - train: epoch 0023, iter [00700, 01832], lr: 0.000100, total_loss: 3.1637, heatmap_loss: 1.6289, box_loss: 1.5348
+2022-04-26 16:48:07 - train: epoch 0023, iter [00800, 01832], lr: 0.000100, total_loss: 3.1008, heatmap_loss: 1.4684, box_loss: 1.6324
+2022-04-26 16:49:21 - train: epoch 0023, iter [00900, 01832], lr: 0.000100, total_loss: 3.1445, heatmap_loss: 1.5634, box_loss: 1.5812
+2022-04-26 16:50:36 - train: epoch 0023, iter [01000, 01832], lr: 0.000100, total_loss: 3.0449, heatmap_loss: 1.5648, box_loss: 1.4801
+2022-04-26 16:51:50 - train: epoch 0023, iter [01100, 01832], lr: 0.000100, total_loss: 2.9244, heatmap_loss: 1.4963, box_loss: 1.4281
+2022-04-26 16:53:02 - train: epoch 0023, iter [01200, 01832], lr: 0.000100, total_loss: 3.1526, heatmap_loss: 1.6259, box_loss: 1.5268
+2022-04-26 16:54:17 - train: epoch 0023, iter [01300, 01832], lr: 0.000100, total_loss: 2.8166, heatmap_loss: 1.3582, box_loss: 1.4584
+2022-04-26 16:55:32 - train: epoch 0023, iter [01400, 01832], lr: 0.000100, total_loss: 3.1682, heatmap_loss: 1.5422, box_loss: 1.6260
+2022-04-26 16:56:44 - train: epoch 0023, iter [01500, 01832], lr: 0.000100, total_loss: 3.0984, heatmap_loss: 1.6193, box_loss: 1.4791
+2022-04-26 16:57:58 - train: epoch 0023, iter [01600, 01832], lr: 0.000100, total_loss: 3.1076, heatmap_loss: 1.5107, box_loss: 1.5970
+2022-04-26 16:59:12 - train: epoch 0023, iter [01700, 01832], lr: 0.000100, total_loss: 3.2204, heatmap_loss: 1.6036, box_loss: 1.6168
+2022-04-26 17:00:26 - train: epoch 0023, iter [01800, 01832], lr: 0.000100, total_loss: 3.1115, heatmap_loss: 1.7028, box_loss: 1.4086
+2022-04-26 17:00:50 - train: epoch 023, train_loss: 3.0441
+2022-04-26 17:00:51 - until epoch: 023, best_metric: 24.356%
+2022-04-26 17:00:51 - epoch 024 lr: 0.0001
+2022-04-26 17:02:05 - train: epoch 0024, iter [00100, 01832], lr: 0.000100, total_loss: 2.9588, heatmap_loss: 1.4427, box_loss: 1.5161
+2022-04-26 17:03:19 - train: epoch 0024, iter [00200, 01832], lr: 0.000100, total_loss: 2.7900, heatmap_loss: 1.4414, box_loss: 1.3486
+2022-04-26 17:04:34 - train: epoch 0024, iter [00300, 01832], lr: 0.000100, total_loss: 3.1785, heatmap_loss: 1.5894, box_loss: 1.5891
+2022-04-26 17:05:47 - train: epoch 0024, iter [00400, 01832], lr: 0.000100, total_loss: 3.2305, heatmap_loss: 1.6860, box_loss: 1.5445
+2022-04-26 17:07:02 - train: epoch 0024, iter [00500, 01832], lr: 0.000100, total_loss: 3.0621, heatmap_loss: 1.5508, box_loss: 1.5114
+2022-04-26 17:08:16 - train: epoch 0024, iter [00600, 01832], lr: 0.000100, total_loss: 2.7647, heatmap_loss: 1.3695, box_loss: 1.3952
+2022-04-26 17:09:28 - train: epoch 0024, iter [00700, 01832], lr: 0.000100, total_loss: 3.2537, heatmap_loss: 1.6930, box_loss: 1.5607
+2022-04-26 17:10:43 - train: epoch 0024, iter [00800, 01832], lr: 0.000100, total_loss: 3.1670, heatmap_loss: 1.5985, box_loss: 1.5685
+2022-04-26 17:11:58 - train: epoch 0024, iter [00900, 01832], lr: 0.000100, total_loss: 2.8655, heatmap_loss: 1.4726, box_loss: 1.3929
+2022-04-26 17:13:09 - train: epoch 0024, iter [01000, 01832], lr: 0.000100, total_loss: 2.9188, heatmap_loss: 1.4798, box_loss: 1.4390
+2022-04-26 17:14:24 - train: epoch 0024, iter [01100, 01832], lr: 0.000100, total_loss: 3.1918, heatmap_loss: 1.5873, box_loss: 1.6045
+2022-04-26 17:15:38 - train: epoch 0024, iter [01200, 01832], lr: 0.000100, total_loss: 3.2885, heatmap_loss: 1.5981, box_loss: 1.6904
+2022-04-26 17:16:51 - train: epoch 0024, iter [01300, 01832], lr: 0.000100, total_loss: 3.1041, heatmap_loss: 1.6582, box_loss: 1.4459
+2022-04-26 17:18:07 - train: epoch 0024, iter [01400, 01832], lr: 0.000100, total_loss: 3.1298, heatmap_loss: 1.5696, box_loss: 1.5602
+2022-04-26 17:19:24 - train: epoch 0024, iter [01500, 01832], lr: 0.000100, total_loss: 2.7864, heatmap_loss: 1.5177, box_loss: 1.2687
+2022-04-26 17:20:38 - train: epoch 0024, iter [01600, 01832], lr: 0.000100, total_loss: 3.0098, heatmap_loss: 1.5303, box_loss: 1.4795
+2022-04-26 17:21:52 - train: epoch 0024, iter [01700, 01832], lr: 0.000100, total_loss: 3.1390, heatmap_loss: 1.5374, box_loss: 1.6016
+2022-04-26 17:23:07 - train: epoch 0024, iter [01800, 01832], lr: 0.000100, total_loss: 3.0657, heatmap_loss: 1.5705, box_loss: 1.4952
+2022-04-26 17:23:31 - train: epoch 024, train_loss: 3.0234
+2022-04-26 17:23:31 - until epoch: 024, best_metric: 24.356%
+2022-04-26 17:23:31 - epoch 025 lr: 1e-05
+2022-04-26 17:24:46 - train: epoch 0025, iter [00100, 01832], lr: 0.000010, total_loss: 2.7795, heatmap_loss: 1.3818, box_loss: 1.3977
+2022-04-26 17:26:01 - train: epoch 0025, iter [00200, 01832], lr: 0.000010, total_loss: 2.8727, heatmap_loss: 1.4221, box_loss: 1.4506
+2022-04-26 17:27:16 - train: epoch 0025, iter [00300, 01832], lr: 0.000010, total_loss: 2.8773, heatmap_loss: 1.3934, box_loss: 1.4839
+2022-04-26 17:28:30 - train: epoch 0025, iter [00400, 01832], lr: 0.000010, total_loss: 2.8466, heatmap_loss: 1.4367, box_loss: 1.4099
+2022-04-26 17:29:43 - train: epoch 0025, iter [00500, 01832], lr: 0.000010, total_loss: 3.0016, heatmap_loss: 1.4982, box_loss: 1.5034
+2022-04-26 17:30:57 - train: epoch 0025, iter [00600, 01832], lr: 0.000010, total_loss: 3.0007, heatmap_loss: 1.5059, box_loss: 1.4947
+2022-04-26 17:32:09 - train: epoch 0025, iter [00700, 01832], lr: 0.000010, total_loss: 2.9158, heatmap_loss: 1.4161, box_loss: 1.4997
+2022-04-26 17:33:24 - train: epoch 0025, iter [00800, 01832], lr: 0.000010, total_loss: 2.9021, heatmap_loss: 1.4653, box_loss: 1.4368
+2022-04-26 17:34:39 - train: epoch 0025, iter [00900, 01832], lr: 0.000010, total_loss: 2.9129, heatmap_loss: 1.5260, box_loss: 1.3869
+2022-04-26 17:35:53 - train: epoch 0025, iter [01000, 01832], lr: 0.000010, total_loss: 2.9828, heatmap_loss: 1.4666, box_loss: 1.5161
+2022-04-26 17:37:05 - train: epoch 0025, iter [01100, 01832], lr: 0.000010, total_loss: 2.9229, heatmap_loss: 1.4578, box_loss: 1.4651
+2022-04-26 17:38:19 - train: epoch 0025, iter [01200, 01832], lr: 0.000010, total_loss: 2.6482, heatmap_loss: 1.3050, box_loss: 1.3433
+2022-04-26 17:39:34 - train: epoch 0025, iter [01300, 01832], lr: 0.000010, total_loss: 2.9745, heatmap_loss: 1.4318, box_loss: 1.5428
+2022-04-26 17:40:46 - train: epoch 0025, iter [01400, 01832], lr: 0.000010, total_loss: 2.9534, heatmap_loss: 1.4787, box_loss: 1.4746
+2022-04-26 17:42:00 - train: epoch 0025, iter [01500, 01832], lr: 0.000010, total_loss: 2.6777, heatmap_loss: 1.3099, box_loss: 1.3678
+2022-04-26 17:43:15 - train: epoch 0025, iter [01600, 01832], lr: 0.000010, total_loss: 2.9184, heatmap_loss: 1.4566, box_loss: 1.4618
+2022-04-26 17:44:29 - train: epoch 0025, iter [01700, 01832], lr: 0.000010, total_loss: 2.9197, heatmap_loss: 1.4037, box_loss: 1.5160
+2022-04-26 17:45:42 - train: epoch 0025, iter [01800, 01832], lr: 0.000010, total_loss: 2.7295, heatmap_loss: 1.3320, box_loss: 1.3975
+2022-04-26 17:46:07 - train: epoch 025, train_loss: 2.8880
+2022-04-26 17:47:31 - eval: epoch: 025
+per_image_load_time: 3.523ms
+per_image_inference_time: 2.759ms
+IoU=0.50:0.95,area=all,maxDets=100,mAP: 27.07009441779016
+IoU=0.50,area=all,maxDets=100,mAP: 42.73614487523093
+IoU=0.75,area=all,maxDets=100,mAP: 28.71872827593466
+IoU=0.50:0.95,area=small,maxDets=100,mAP: 9.420618258556997
+IoU=0.50:0.95,area=medium,maxDets=100,mAP: 28.597646326351335
+IoU=0.50:0.95,area=large,maxDets=100,mAP: 42.86561299213331
+IoU=0.50:0.95,area=all,maxDets=1,mAR: 25.359153393258648
+IoU=0.50:0.95,area=all,maxDets=10,mAR: 40.42057198248419
+IoU=0.50:0.95,area=all,maxDets=100,mAR: 42.21824486639736
+IoU=0.50:0.95,area=small,maxDets=100,mAR: 19.146028826155135
+IoU=0.50:0.95,area=medium,maxDets=100,mAR: 45.75998407281389
+IoU=0.50:0.95,area=large,maxDets=100,mAR: 63.548420758685666
+
+2022-04-26 17:47:31 - until epoch: 025, best_metric: 27.070%
+2022-04-26 17:47:31 - epoch 026 lr: 1e-05
+2022-04-26 17:48:48 - train: epoch 0026, iter [00100, 01832], lr: 0.000010, total_loss: 2.8846, heatmap_loss: 1.3937, box_loss: 1.4909
+2022-04-26 17:50:03 - train: epoch 0026, iter [00200, 01832], lr: 0.000010, total_loss: 2.8863, heatmap_loss: 1.5071, box_loss: 1.3793
+2022-04-26 17:51:17 - train: epoch 0026, iter [00300, 01832], lr: 0.000010, total_loss: 2.8170, heatmap_loss: 1.4551, box_loss: 1.3618
+2022-04-26 17:52:32 - train: epoch 0026, iter [00400, 01832], lr: 0.000010, total_loss: 2.9599, heatmap_loss: 1.4570, box_loss: 1.5029
+2022-04-26 17:53:43 - train: epoch 0026, iter [00500, 01832], lr: 0.000010, total_loss: 2.6119, heatmap_loss: 1.2476, box_loss: 1.3643
+2022-04-26 17:54:56 - train: epoch 0026, iter [00600, 01832], lr: 0.000010, total_loss: 2.9762, heatmap_loss: 1.4541, box_loss: 1.5221
+2022-04-26 17:56:10 - train: epoch 0026, iter [00700, 01832], lr: 0.000010, total_loss: 2.7913, heatmap_loss: 1.4201, box_loss: 1.3712
+2022-04-26 17:57:24 - train: epoch 0026, iter [00800, 01832], lr: 0.000010, total_loss: 2.8136, heatmap_loss: 1.3681, box_loss: 1.4455
+2022-04-26 17:58:38 - train: epoch 0026, iter [00900, 01832], lr: 0.000010, total_loss: 2.9685, heatmap_loss: 1.4211, box_loss: 1.5474
+2022-04-26 17:59:54 - train: epoch 0026, iter [01000, 01832], lr: 0.000010, total_loss: 2.9694, heatmap_loss: 1.5158, box_loss: 1.4535
+2022-04-26 18:01:08 - train: epoch 0026, iter [01100, 01832], lr: 0.000010, total_loss: 2.6611, heatmap_loss: 1.3697, box_loss: 1.2914
+2022-04-26 18:02:23 - train: epoch 0026, iter [01200, 01832], lr: 0.000010, total_loss: 2.8629, heatmap_loss: 1.4202, box_loss: 1.4426
+2022-04-26 18:03:39 - train: epoch 0026, iter [01300, 01832], lr: 0.000010, total_loss: 2.7242, heatmap_loss: 1.3488, box_loss: 1.3755
+2022-04-26 18:04:52 - train: epoch 0026, iter [01400, 01832], lr: 0.000010, total_loss: 2.9314, heatmap_loss: 1.4454, box_loss: 1.4860
+2022-04-26 18:06:07 - train: epoch 0026, iter [01500, 01832], lr: 0.000010, total_loss: 2.8709, heatmap_loss: 1.4246, box_loss: 1.4463
+2022-04-26 18:07:24 - train: epoch 0026, iter [01600, 01832], lr: 0.000010, total_loss: 2.7752, heatmap_loss: 1.4494, box_loss: 1.3259
+2022-04-26 18:08:41 - train: epoch 0026, iter [01700, 01832], lr: 0.000010, total_loss: 2.9225, heatmap_loss: 1.3778, box_loss: 1.5447
+2022-04-26 18:09:57 - train: epoch 0026, iter [01800, 01832], lr: 0.000010, total_loss: 3.0253, heatmap_loss: 1.4980, box_loss: 1.5273
+2022-04-26 18:10:23 - train: epoch 026, train_loss: 2.8544
+2022-04-26 18:10:23 - until epoch: 026, best_metric: 27.070%
+2022-04-26 18:10:23 - epoch 027 lr: 1e-05
+2022-04-26 18:11:43 - train: epoch 0027, iter [00100, 01832], lr: 0.000010, total_loss: 2.6086, heatmap_loss: 1.2296, box_loss: 1.3790
+2022-04-26 18:12:59 - train: epoch 0027, iter [00200, 01832], lr: 0.000010, total_loss: 2.8871, heatmap_loss: 1.4000, box_loss: 1.4871
+2022-04-26 18:14:17 - train: epoch 0027, iter [00300, 01832], lr: 0.000010, total_loss: 2.7360, heatmap_loss: 1.3652, box_loss: 1.3708
+2022-04-26 18:15:35 - train: epoch 0027, iter [00400, 01832], lr: 0.000010, total_loss: 2.8768, heatmap_loss: 1.4115, box_loss: 1.4653
+2022-04-26 18:16:51 - train: epoch 0027, iter [00500, 01832], lr: 0.000010, total_loss: 2.7049, heatmap_loss: 1.3709, box_loss: 1.3340
+2022-04-26 18:18:04 - train: epoch 0027, iter [00600, 01832], lr: 0.000010, total_loss: 2.8490, heatmap_loss: 1.4132, box_loss: 1.4358
+2022-04-26 18:19:18 - train: epoch 0027, iter [00700, 01832], lr: 0.000010, total_loss: 3.0229, heatmap_loss: 1.4344, box_loss: 1.5885
+2022-04-26 18:20:32 - train: epoch 0027, iter [00800, 01832], lr: 0.000010, total_loss: 2.9407, heatmap_loss: 1.3996, box_loss: 1.5411
+2022-04-26 18:21:47 - train: epoch 0027, iter [00900, 01832], lr: 0.000010, total_loss: 2.8279, heatmap_loss: 1.3570, box_loss: 1.4709
+2022-04-26 18:23:02 - train: epoch 0027, iter [01000, 01832], lr: 0.000010, total_loss: 2.9390, heatmap_loss: 1.5191, box_loss: 1.4200
+2022-04-26 18:24:18 - train: epoch 0027, iter [01100, 01832], lr: 0.000010, total_loss: 2.7202, heatmap_loss: 1.3233, box_loss: 1.3970
+2022-04-26 18:25:32 - train: epoch 0027, iter [01200, 01832], lr: 0.000010, total_loss: 2.9694, heatmap_loss: 1.5203, box_loss: 1.4492
+2022-04-26 18:26:48 - train: epoch 0027, iter [01300, 01832], lr: 0.000010, total_loss: 3.0314, heatmap_loss: 1.4750, box_loss: 1.5564
+2022-04-26 18:28:03 - train: epoch 0027, iter [01400, 01832], lr: 0.000010, total_loss: 2.7635, heatmap_loss: 1.4108, box_loss: 1.3527
+2022-04-26 18:29:21 - train: epoch 0027, iter [01500, 01832], lr: 0.000010, total_loss: 2.7962, heatmap_loss: 1.4190, box_loss: 1.3773
+2022-04-26 18:30:37 - train: epoch 0027, iter [01600, 01832], lr: 0.000010, total_loss: 2.9326, heatmap_loss: 1.4368, box_loss: 1.4959
+2022-04-26 18:31:53 - train: epoch 0027, iter [01700, 01832], lr: 0.000010, total_loss: 2.9220, heatmap_loss: 1.4621, box_loss: 1.4599
+2022-04-26 18:33:09 - train: epoch 0027, iter [01800, 01832], lr: 0.000010, total_loss: 2.6867, heatmap_loss: 1.3329, box_loss: 1.3538
+2022-04-26 18:33:32 - train: epoch 027, train_loss: 2.8408
+2022-04-26 18:33:32 - until epoch: 027, best_metric: 27.070%
+2022-04-26 18:33:32 - epoch 028 lr: 1e-05
+2022-04-26 18:34:50 - train: epoch 0028, iter [00100, 01832], lr: 0.000010, total_loss: 2.7184, heatmap_loss: 1.3395, box_loss: 1.3789
+2022-04-26 18:36:03 - train: epoch 0028, iter [00200, 01832], lr: 0.000010, total_loss: 2.9453, heatmap_loss: 1.4113, box_loss: 1.5340
+2022-04-26 18:37:20 - train: epoch 0028, iter [00300, 01832], lr: 0.000010, total_loss: 2.5734, heatmap_loss: 1.3519, box_loss: 1.2215
+2022-04-26 18:38:35 - train: epoch 0028, iter [00400, 01832], lr: 0.000010, total_loss: 2.7842, heatmap_loss: 1.3941, box_loss: 1.3901
+2022-04-26 18:39:51 - train: epoch 0028, iter [00500, 01832], lr: 0.000010, total_loss: 2.8029, heatmap_loss: 1.4145, box_loss: 1.3884
+2022-04-26 18:41:09 - train: epoch 0028, iter [00600, 01832], lr: 0.000010, total_loss: 2.8199, heatmap_loss: 1.4653, box_loss: 1.3546
+2022-04-26 18:42:25 - train: epoch 0028, iter [00700, 01832], lr: 0.000010, total_loss: 2.7458, heatmap_loss: 1.3769, box_loss: 1.3688
+2022-04-26 18:43:40 - train: epoch 0028, iter [00800, 01832], lr: 0.000010, total_loss: 2.9841, heatmap_loss: 1.5099, box_loss: 1.4742
+2022-04-26 18:44:57 - train: epoch 0028, iter [00900, 01832], lr: 0.000010, total_loss: 2.8421, heatmap_loss: 1.3343, box_loss: 1.5078
+2022-04-26 18:46:16 - train: epoch 0028, iter [01000, 01832], lr: 0.000010, total_loss: 2.7936, heatmap_loss: 1.4092, box_loss: 1.3844
+2022-04-26 18:47:34 - train: epoch 0028, iter [01100, 01832], lr: 0.000010, total_loss: 2.6091, heatmap_loss: 1.3119, box_loss: 1.2971
+2022-04-26 18:48:51 - train: epoch 0028, iter [01200, 01832], lr: 0.000010, total_loss: 2.9765, heatmap_loss: 1.5247, box_loss: 1.4518
+2022-04-26 18:50:06 - train: epoch 0028, iter [01300, 01832], lr: 0.000010, total_loss: 2.8467, heatmap_loss: 1.3912, box_loss: 1.4555
+2022-04-26 18:51:23 - train: epoch 0028, iter [01400, 01832], lr: 0.000010, total_loss: 2.7676, heatmap_loss: 1.3408, box_loss: 1.4268
+2022-04-26 18:52:39 - train: epoch 0028, iter [01500, 01832], lr: 0.000010, total_loss: 2.6963, heatmap_loss: 1.3557, box_loss: 1.3406
+2022-04-26 18:53:56 - train: epoch 0028, iter [01600, 01832], lr: 0.000010, total_loss: 2.7039, heatmap_loss: 1.3988, box_loss: 1.3051
+2022-04-26 18:55:13 - train: epoch 0028, iter [01700, 01832], lr: 0.000010, total_loss: 2.7254, heatmap_loss: 1.3701, box_loss: 1.3553
+2022-04-26 18:56:30 - train: epoch 0028, iter [01800, 01832], lr: 0.000010, total_loss: 2.5017, heatmap_loss: 1.2996, box_loss: 1.2020
+2022-04-26 18:56:56 - train: epoch 028, train_loss: 2.8319
+2022-04-26 18:56:56 - until epoch: 028, best_metric: 27.070%
+2022-04-26 18:56:56 - epoch 029 lr: 1e-05
+2022-04-26 18:58:12 - train: epoch 0029, iter [00100, 01832], lr: 0.000010, total_loss: 2.6819, heatmap_loss: 1.3098, box_loss: 1.3721
+2022-04-26 18:59:28 - train: epoch 0029, iter [00200, 01832], lr: 0.000010, total_loss: 2.7929, heatmap_loss: 1.4026, box_loss: 1.3903
+2022-04-26 19:00:41 - train: epoch 0029, iter [00300, 01832], lr: 0.000010, total_loss: 2.8707, heatmap_loss: 1.4948, box_loss: 1.3759
+2022-04-26 19:01:57 - train: epoch 0029, iter [00400, 01832], lr: 0.000010, total_loss: 2.7303, heatmap_loss: 1.3450, box_loss: 1.3853
+2022-04-26 19:03:14 - train: epoch 0029, iter [00500, 01832], lr: 0.000010, total_loss: 2.6585, heatmap_loss: 1.3623, box_loss: 1.2962
+2022-04-26 19:04:30 - train: epoch 0029, iter [00600, 01832], lr: 0.000010, total_loss: 2.8304, heatmap_loss: 1.3889, box_loss: 1.4416
+2022-04-26 19:05:47 - train: epoch 0029, iter [00700, 01832], lr: 0.000010, total_loss: 2.6844, heatmap_loss: 1.3470, box_loss: 1.3374
+2022-04-26 19:07:01 - train: epoch 0029, iter [00800, 01832], lr: 0.000010, total_loss: 2.8347, heatmap_loss: 1.4118, box_loss: 1.4228
+2022-04-26 19:08:15 - train: epoch 0029, iter [00900, 01832], lr: 0.000010, total_loss: 2.7062, heatmap_loss: 1.3820, box_loss: 1.3242
+2022-04-26 19:09:32 - train: epoch 0029, iter [01000, 01832], lr: 0.000010, total_loss: 2.6850, heatmap_loss: 1.1920, box_loss: 1.4929
+2022-04-26 19:10:48 - train: epoch 0029, iter [01100, 01832], lr: 0.000010, total_loss: 2.8645, heatmap_loss: 1.4344, box_loss: 1.4301
+2022-04-26 19:12:05 - train: epoch 0029, iter [01200, 01832], lr: 0.000010, total_loss: 2.9125, heatmap_loss: 1.4884, box_loss: 1.4241
+2022-04-26 19:13:19 - train: epoch 0029, iter [01300, 01832], lr: 0.000010, total_loss: 3.0586, heatmap_loss: 1.5336, box_loss: 1.5251
+2022-04-26 19:14:36 - train: epoch 0029, iter [01400, 01832], lr: 0.000010, total_loss: 3.0273, heatmap_loss: 1.5861, box_loss: 1.4412
+2022-04-26 19:15:52 - train: epoch 0029, iter [01500, 01832], lr: 0.000010, total_loss: 2.9319, heatmap_loss: 1.4983, box_loss: 1.4336
+2022-04-26 19:17:07 - train: epoch 0029, iter [01600, 01832], lr: 0.000010, total_loss: 2.8051, heatmap_loss: 1.4421, box_loss: 1.3631
+2022-04-26 19:18:24 - train: epoch 0029, iter [01700, 01832], lr: 0.000010, total_loss: 2.8653, heatmap_loss: 1.4128, box_loss: 1.4525
+2022-04-26 19:19:40 - train: epoch 0029, iter [01800, 01832], lr: 0.000010, total_loss: 2.9163, heatmap_loss: 1.3976, box_loss: 1.5188
+2022-04-26 19:20:04 - train: epoch 029, train_loss: 2.8201
+2022-04-26 19:20:05 - until epoch: 029, best_metric: 27.070%
+2022-04-26 19:20:05 - epoch 030 lr: 1e-05
+2022-04-26 19:21:19 - train: epoch 0030, iter [00100, 01832], lr: 0.000010, total_loss: 2.8796, heatmap_loss: 1.4646, box_loss: 1.4150
+2022-04-26 19:22:33 - train: epoch 0030, iter [00200, 01832], lr: 0.000010, total_loss: 2.6740, heatmap_loss: 1.3690, box_loss: 1.3050
+2022-04-26 19:23:48 - train: epoch 0030, iter [00300, 01832], lr: 0.000010, total_loss: 2.8162, heatmap_loss: 1.3967, box_loss: 1.4195
+2022-04-26 19:25:01 - train: epoch 0030, iter [00400, 01832], lr: 0.000010, total_loss: 2.9531, heatmap_loss: 1.4410, box_loss: 1.5121
+2022-04-26 19:26:16 - train: epoch 0030, iter [00500, 01832], lr: 0.000010, total_loss: 2.6742, heatmap_loss: 1.2946, box_loss: 1.3796
+2022-04-26 19:27:32 - train: epoch 0030, iter [00600, 01832], lr: 0.000010, total_loss: 2.9409, heatmap_loss: 1.4744, box_loss: 1.4665
+2022-04-26 19:28:48 - train: epoch 0030, iter [00700, 01832], lr: 0.000010, total_loss: 2.8828, heatmap_loss: 1.3518, box_loss: 1.5310
+2022-04-26 19:30:04 - train: epoch 0030, iter [00800, 01832], lr: 0.000010, total_loss: 2.9812, heatmap_loss: 1.3722, box_loss: 1.6090
+2022-04-26 19:31:20 - train: epoch 0030, iter [00900, 01832], lr: 0.000010, total_loss: 2.9960, heatmap_loss: 1.4517, box_loss: 1.5443
+2022-04-26 19:32:38 - train: epoch 0030, iter [01000, 01832], lr: 0.000010, total_loss: 2.8721, heatmap_loss: 1.3870, box_loss: 1.4851
+2022-04-26 19:33:52 - train: epoch 0030, iter [01100, 01832], lr: 0.000010, total_loss: 2.8197, heatmap_loss: 1.4164, box_loss: 1.4032
+2022-04-26 19:35:08 - train: epoch 0030, iter [01200, 01832], lr: 0.000010, total_loss: 2.7112, heatmap_loss: 1.3145, box_loss: 1.3967
+2022-04-26 19:36:24 - train: epoch 0030, iter [01300, 01832], lr: 0.000010, total_loss: 2.8440, heatmap_loss: 1.4212, box_loss: 1.4228
+2022-04-26 19:37:41 - train: epoch 0030, iter [01400, 01832], lr: 0.000010, total_loss: 3.1823, heatmap_loss: 1.5470, box_loss: 1.6353
+2022-04-26 19:38:55 - train: epoch 0030, iter [01500, 01832], lr: 0.000010, total_loss: 2.9233, heatmap_loss: 1.4668, box_loss: 1.4565
+2022-04-26 19:40:12 - train: epoch 0030, iter [01600, 01832], lr: 0.000010, total_loss: 2.8789, heatmap_loss: 1.4352, box_loss: 1.4437
+2022-04-26 19:41:26 - train: epoch 0030, iter [01700, 01832], lr: 0.000010, total_loss: 2.8256, heatmap_loss: 1.4053, box_loss: 1.4203
+2022-04-26 19:42:42 - train: epoch 0030, iter [01800, 01832], lr: 0.000010, total_loss: 2.9549, heatmap_loss: 1.4916, box_loss: 1.4633
+2022-04-26 19:43:07 - train: epoch 030, train_loss: 2.8124
+2022-04-26 19:44:31 - eval: epoch: 030
+per_image_load_time: 3.500ms
+per_image_inference_time: 2.735ms
+IoU=0.50:0.95,area=all,maxDets=100,mAP: 27.43859940936219
+IoU=0.50,area=all,maxDets=100,mAP: 43.274603422105166
+IoU=0.75,area=all,maxDets=100,mAP: 28.861312894692894
+IoU=0.50:0.95,area=small,maxDets=100,mAP: 9.464612561898798
+IoU=0.50:0.95,area=medium,maxDets=100,mAP: 28.92259723082554
+IoU=0.50:0.95,area=large,maxDets=100,mAP: 43.46210416037181
+IoU=0.50:0.95,area=all,maxDets=1,mAR: 25.564932202387496
+IoU=0.50:0.95,area=all,maxDets=10,mAR: 40.62807954101348
+IoU=0.50:0.95,area=all,maxDets=100,mAR: 42.44038673689633
+IoU=0.50:0.95,area=small,maxDets=100,mAR: 19.39939202736516
+IoU=0.50:0.95,area=medium,maxDets=100,mAR: 46.25222053233285
+IoU=0.50:0.95,area=large,maxDets=100,mAR: 63.72139786452994
+
+2022-04-26 19:44:31 - until epoch: 030, best_metric: 27.439%
+2022-04-26 19:44:31 - epoch 031 lr: 1e-05
+2022-04-26 19:45:43 - train: epoch 0031, iter [00100, 01832], lr: 0.000010, total_loss: 2.3678, heatmap_loss: 1.1375, box_loss: 1.2303
+2022-04-26 19:46:59 - train: epoch 0031, iter [00200, 01832], lr: 0.000010, total_loss: 2.9475, heatmap_loss: 1.4270, box_loss: 1.5205
+2022-04-26 19:48:14 - train: epoch 0031, iter [00300, 01832], lr: 0.000010, total_loss: 2.7044, heatmap_loss: 1.3668, box_loss: 1.3376
+2022-04-26 19:49:30 - train: epoch 0031, iter [00400, 01832], lr: 0.000010, total_loss: 2.8913, heatmap_loss: 1.4149, box_loss: 1.4764
+2022-04-26 19:50:45 - train: epoch 0031, iter [00500, 01832], lr: 0.000010, total_loss: 2.6252, heatmap_loss: 1.2762, box_loss: 1.3490
+2022-04-26 19:52:01 - train: epoch 0031, iter [00600, 01832], lr: 0.000010, total_loss: 2.7861, heatmap_loss: 1.3614, box_loss: 1.4248
+2022-04-26 19:53:18 - train: epoch 0031, iter [00700, 01832], lr: 0.000010, total_loss: 2.7912, heatmap_loss: 1.3586, box_loss: 1.4326
+2022-04-26 19:54:32 - train: epoch 0031, iter [00800, 01832], lr: 0.000010, total_loss: 2.7805, heatmap_loss: 1.2936, box_loss: 1.4869
+2022-04-26 19:55:48 - train: epoch 0031, iter [00900, 01832], lr: 0.000010, total_loss: 2.8577, heatmap_loss: 1.4295, box_loss: 1.4282
+2022-04-26 19:57:03 - train: epoch 0031, iter [01000, 01832], lr: 0.000010, total_loss: 2.7433, heatmap_loss: 1.4072, box_loss: 1.3360
+2022-04-26 19:58:18 - train: epoch 0031, iter [01100, 01832], lr: 0.000010, total_loss: 2.8815, heatmap_loss: 1.4324, box_loss: 1.4491
+2022-04-26 19:59:33 - train: epoch 0031, iter [01200, 01832], lr: 0.000010, total_loss: 2.7607, heatmap_loss: 1.3443, box_loss: 1.4164
+2022-04-26 20:00:50 - train: epoch 0031, iter [01300, 01832], lr: 0.000010, total_loss: 2.7847, heatmap_loss: 1.3563, box_loss: 1.4284
+2022-04-26 20:02:05 - train: epoch 0031, iter [01400, 01832], lr: 0.000010, total_loss: 2.6996, heatmap_loss: 1.3189, box_loss: 1.3808
+2022-04-26 20:03:22 - train: epoch 0031, iter [01500, 01832], lr: 0.000010, total_loss: 2.5551, heatmap_loss: 1.3023, box_loss: 1.2528
+2022-04-26 20:04:38 - train: epoch 0031, iter [01600, 01832], lr: 0.000010, total_loss: 2.8280, heatmap_loss: 1.4005, box_loss: 1.4276
+2022-04-26 20:05:55 - train: epoch 0031, iter [01700, 01832], lr: 0.000010, total_loss: 2.8435, heatmap_loss: 1.4233, box_loss: 1.4202
+2022-04-26 20:07:10 - train: epoch 0031, iter [01800, 01832], lr: 0.000010, total_loss: 2.8568, heatmap_loss: 1.4653, box_loss: 1.3915
+2022-04-26 20:07:35 - train: epoch 031, train_loss: 2.8071
+2022-04-26 20:07:36 - until epoch: 031, best_metric: 27.439%
+2022-04-26 20:07:36 - epoch 032 lr: 1e-05
+2022-04-26 20:08:54 - train: epoch 0032, iter [00100, 01832], lr: 0.000010, total_loss: 2.8709, heatmap_loss: 1.4477, box_loss: 1.4231
+2022-04-26 20:10:07 - train: epoch 0032, iter [00200, 01832], lr: 0.000010, total_loss: 2.9719, heatmap_loss: 1.4114, box_loss: 1.5605
+2022-04-26 20:11:22 - train: epoch 0032, iter [00300, 01832], lr: 0.000010, total_loss: 2.7324, heatmap_loss: 1.3117, box_loss: 1.4207
+2022-04-26 20:12:39 - train: epoch 0032, iter [00400, 01832], lr: 0.000010, total_loss: 2.8043, heatmap_loss: 1.3239, box_loss: 1.4804
+2022-04-26 20:13:54 - train: epoch 0032, iter [00500, 01832], lr: 0.000010, total_loss: 2.8146, heatmap_loss: 1.3786, box_loss: 1.4360
+2022-04-26 20:15:08 - train: epoch 0032, iter [00600, 01832], lr: 0.000010, total_loss: 2.6379, heatmap_loss: 1.2963, box_loss: 1.3416
+2022-04-26 20:16:24 - train: epoch 0032, iter [00700, 01832], lr: 0.000010, total_loss: 2.8938, heatmap_loss: 1.4476, box_loss: 1.4462
+2022-04-26 20:17:40 - train: epoch 0032, iter [00800, 01832], lr: 0.000010, total_loss: 2.7265, heatmap_loss: 1.3287, box_loss: 1.3977
+2022-04-26 20:18:53 - train: epoch 0032, iter [00900, 01832], lr: 0.000010, total_loss: 2.8470, heatmap_loss: 1.4147, box_loss: 1.4323
+2022-04-26 20:20:08 - train: epoch 0032, iter [01000, 01832], lr: 0.000010, total_loss: 2.7305, heatmap_loss: 1.2631, box_loss: 1.4673
+2022-04-26 20:21:26 - train: epoch 0032, iter [01100, 01832], lr: 0.000010, total_loss: 2.8258, heatmap_loss: 1.4649, box_loss: 1.3610
+2022-04-26 20:22:40 - train: epoch 0032, iter [01200, 01832], lr: 0.000010, total_loss: 2.9491, heatmap_loss: 1.5212, box_loss: 1.4280
+2022-04-26 20:23:56 - train: epoch 0032, iter [01300, 01832], lr: 0.000010, total_loss: 2.6778, heatmap_loss: 1.3130, box_loss: 1.3648
+2022-04-26 20:25:14 - train: epoch 0032, iter [01400, 01832], lr: 0.000010, total_loss: 2.7614, heatmap_loss: 1.3684, box_loss: 1.3931
+2022-04-26 20:26:30 - train: epoch 0032, iter [01500, 01832], lr: 0.000010, total_loss: 2.8044, heatmap_loss: 1.3233, box_loss: 1.4811
+2022-04-26 20:27:45 - train: epoch 0032, iter [01600, 01832], lr: 0.000010, total_loss: 2.8228, heatmap_loss: 1.4232, box_loss: 1.3995
+2022-04-26 20:29:02 - train: epoch 0032, iter [01700, 01832], lr: 0.000010, total_loss: 2.7001, heatmap_loss: 1.4031, box_loss: 1.2971
+2022-04-26 20:30:18 - train: epoch 0032, iter [01800, 01832], lr: 0.000010, total_loss: 2.7411, heatmap_loss: 1.3583, box_loss: 1.3828
+2022-04-26 20:30:43 - train: epoch 032, train_loss: 2.8016
+2022-04-26 20:30:44 - until epoch: 032, best_metric: 27.439%
+2022-04-26 20:30:44 - epoch 033 lr: 1e-05
+2022-04-26 20:31:59 - train: epoch 0033, iter [00100, 01832], lr: 0.000010, total_loss: 2.8105, heatmap_loss: 1.3138, box_loss: 1.4968
+2022-04-26 20:33:14 - train: epoch 0033, iter [00200, 01832], lr: 0.000010, total_loss: 2.7013, heatmap_loss: 1.3153, box_loss: 1.3860
+2022-04-26 20:34:27 - train: epoch 0033, iter [00300, 01832], lr: 0.000010, total_loss: 2.9301, heatmap_loss: 1.4107, box_loss: 1.5194
+2022-04-26 20:35:42 - train: epoch 0033, iter [00400, 01832], lr: 0.000010, total_loss: 2.6448, heatmap_loss: 1.3689, box_loss: 1.2758
+2022-04-26 20:36:58 - train: epoch 0033, iter [00500, 01832], lr: 0.000010, total_loss: 2.8122, heatmap_loss: 1.4040, box_loss: 1.4083
+2022-04-26 20:38:14 - train: epoch 0033, iter [00600, 01832], lr: 0.000010, total_loss: 2.8283, heatmap_loss: 1.4002, box_loss: 1.4281
+2022-04-26 20:39:31 - train: epoch 0033, iter [00700, 01832], lr: 0.000010, total_loss: 2.8185, heatmap_loss: 1.4274, box_loss: 1.3910
+2022-04-26 20:40:45 - train: epoch 0033, iter [00800, 01832], lr: 0.000010, total_loss: 2.9636, heatmap_loss: 1.4324, box_loss: 1.5312
+2022-04-26 20:41:59 - train: epoch 0033, iter [00900, 01832], lr: 0.000010, total_loss: 3.0268, heatmap_loss: 1.5348, box_loss: 1.4920
+2022-04-26 20:43:14 - train: epoch 0033, iter [01000, 01832], lr: 0.000010, total_loss: 2.6529, heatmap_loss: 1.2617, box_loss: 1.3912
+2022-04-26 20:44:31 - train: epoch 0033, iter [01100, 01832], lr: 0.000010, total_loss: 2.8407, heatmap_loss: 1.4429, box_loss: 1.3978
+2022-04-26 20:45:47 - train: epoch 0033, iter [01200, 01832], lr: 0.000010, total_loss: 2.7841, heatmap_loss: 1.4826, box_loss: 1.3016
+2022-04-26 20:47:02 - train: epoch 0033, iter [01300, 01832], lr: 0.000010, total_loss: 2.7657, heatmap_loss: 1.3109, box_loss: 1.4548
+2022-04-26 20:48:19 - train: epoch 0033, iter [01400, 01832], lr: 0.000010, total_loss: 2.6607, heatmap_loss: 1.3004, box_loss: 1.3603
+2022-04-26 20:49:33 - train: epoch 0033, iter [01500, 01832], lr: 0.000010, total_loss: 2.7351, heatmap_loss: 1.3830, box_loss: 1.3521
+2022-04-26 20:50:49 - train: epoch 0033, iter [01600, 01832], lr: 0.000010, total_loss: 2.6734, heatmap_loss: 1.2871, box_loss: 1.3863
+2022-04-26 20:52:06 - train: epoch 0033, iter [01700, 01832], lr: 0.000010, total_loss: 2.7806, heatmap_loss: 1.3773, box_loss: 1.4033
+2022-04-26 20:53:23 - train: epoch 0033, iter [01800, 01832], lr: 0.000010, total_loss: 2.7494, heatmap_loss: 1.2880, box_loss: 1.4614
+2022-04-26 20:53:48 - train: epoch 033, train_loss: 2.7939
+2022-04-26 20:53:48 - until epoch: 033, best_metric: 27.439%
+2022-04-26 20:53:48 - epoch 034 lr: 1e-05
+2022-04-26 20:55:03 - train: epoch 0034, iter [00100, 01832], lr: 0.000010, total_loss: 2.9419, heatmap_loss: 1.5219, box_loss: 1.4201
+2022-04-26 20:56:19 - train: epoch 0034, iter [00200, 01832], lr: 0.000010, total_loss: 2.5952, heatmap_loss: 1.2751, box_loss: 1.3202
+2022-04-26 20:57:33 - train: epoch 0034, iter [00300, 01832], lr: 0.000010, total_loss: 2.6846, heatmap_loss: 1.3883, box_loss: 1.2963
+2022-04-26 20:58:48 - train: epoch 0034, iter [00400, 01832], lr: 0.000010, total_loss: 2.8491, heatmap_loss: 1.4086, box_loss: 1.4405
+2022-04-26 21:00:04 - train: epoch 0034, iter [00500, 01832], lr: 0.000010, total_loss: 2.7814, heatmap_loss: 1.3878, box_loss: 1.3936
+2022-04-26 21:01:20 - train: epoch 0034, iter [00600, 01832], lr: 0.000010, total_loss: 2.9206, heatmap_loss: 1.5444, box_loss: 1.3762
+2022-04-26 21:02:36 - train: epoch 0034, iter [00700, 01832], lr: 0.000010, total_loss: 2.7271, heatmap_loss: 1.4142, box_loss: 1.3129
+2022-04-26 21:03:50 - train: epoch 0034, iter [00800, 01832], lr: 0.000010, total_loss: 2.8448, heatmap_loss: 1.4285, box_loss: 1.4163
+2022-04-26 21:05:04 - train: epoch 0034, iter [00900, 01832], lr: 0.000010, total_loss: 2.7284, heatmap_loss: 1.3840, box_loss: 1.3444
+2022-04-26 21:06:21 - train: epoch 0034, iter [01000, 01832], lr: 0.000010, total_loss: 2.8358, heatmap_loss: 1.3822, box_loss: 1.4537
+2022-04-26 21:07:37 - train: epoch 0034, iter [01100, 01832], lr: 0.000010, total_loss: 2.9850, heatmap_loss: 1.3990, box_loss: 1.5860
+2022-04-26 21:08:52 - train: epoch 0034, iter [01200, 01832], lr: 0.000010, total_loss: 2.7256, heatmap_loss: 1.3844, box_loss: 1.3412
+2022-04-26 21:10:08 - train: epoch 0034, iter [01300, 01832], lr: 0.000010, total_loss: 2.9134, heatmap_loss: 1.4209, box_loss: 1.4924
+2022-04-26 21:11:24 - train: epoch 0034, iter [01400, 01832], lr: 0.000010, total_loss: 2.9206, heatmap_loss: 1.4353, box_loss: 1.4854
+2022-04-26 21:12:38 - train: epoch 0034, iter [01500, 01832], lr: 0.000010, total_loss: 2.8312, heatmap_loss: 1.4195, box_loss: 1.4118
+2022-04-26 21:13:54 - train: epoch 0034, iter [01600, 01832], lr: 0.000010, total_loss: 2.8088, heatmap_loss: 1.3308, box_loss: 1.4781
+2022-04-26 21:15:10 - train: epoch 0034, iter [01700, 01832], lr: 0.000010, total_loss: 3.1292, heatmap_loss: 1.5718, box_loss: 1.5573
+2022-04-26 21:16:28 - train: epoch 0034, iter [01800, 01832], lr: 0.000010, total_loss: 2.8654, heatmap_loss: 1.3701, box_loss: 1.4953
+2022-04-26 21:16:53 - train: epoch 034, train_loss: 2.7870
+2022-04-26 21:16:53 - until epoch: 034, best_metric: 27.439%
+2022-04-26 21:16:53 - epoch 035 lr: 1e-05
+2022-04-26 21:18:10 - train: epoch 0035, iter [00100, 01832], lr: 0.000010, total_loss: 2.6734, heatmap_loss: 1.2990, box_loss: 1.3744
+2022-04-26 21:19:25 - train: epoch 0035, iter [00200, 01832], lr: 0.000010, total_loss: 2.7138, heatmap_loss: 1.3738, box_loss: 1.3400
+2022-04-26 21:20:35 - train: epoch 0035, iter [00300, 01832], lr: 0.000010, total_loss: 2.8989, heatmap_loss: 1.4493, box_loss: 1.4496
+2022-04-26 21:21:50 - train: epoch 0035, iter [00400, 01832], lr: 0.000010, total_loss: 2.6768, heatmap_loss: 1.3597, box_loss: 1.3171
+2022-04-26 21:23:06 - train: epoch 0035, iter [00500, 01832], lr: 0.000010, total_loss: 2.8571, heatmap_loss: 1.4071, box_loss: 1.4499
+2022-04-26 21:24:21 - train: epoch 0035, iter [00600, 01832], lr: 0.000010, total_loss: 2.7256, heatmap_loss: 1.3227, box_loss: 1.4029
+2022-04-26 21:25:35 - train: epoch 0035, iter [00700, 01832], lr: 0.000010, total_loss: 2.7379, heatmap_loss: 1.4223, box_loss: 1.3156
+2022-04-26 21:26:50 - train: epoch 0035, iter [00800, 01832], lr: 0.000010, total_loss: 2.7871, heatmap_loss: 1.3813, box_loss: 1.4058
+2022-04-26 21:28:03 - train: epoch 0035, iter [00900, 01832], lr: 0.000010, total_loss: 2.5866, heatmap_loss: 1.2642, box_loss: 1.3224
+2022-04-26 21:29:19 - train: epoch 0035, iter [01000, 01832], lr: 0.000010, total_loss: 2.9121, heatmap_loss: 1.4667, box_loss: 1.4454
+2022-04-26 21:30:36 - train: epoch 0035, iter [01100, 01832], lr: 0.000010, total_loss: 2.8327, heatmap_loss: 1.4188, box_loss: 1.4139
+2022-04-26 21:31:54 - train: epoch 0035, iter [01200, 01832], lr: 0.000010, total_loss: 2.7370, heatmap_loss: 1.3754, box_loss: 1.3616
+2022-04-26 21:33:11 - train: epoch 0035, iter [01300, 01832], lr: 0.000010, total_loss: 2.8022, heatmap_loss: 1.3510, box_loss: 1.4512
+2022-04-26 21:34:29 - train: epoch 0035, iter [01400, 01832], lr: 0.000010, total_loss: 2.7039, heatmap_loss: 1.3874, box_loss: 1.3165
+2022-04-26 21:35:45 - train: epoch 0035, iter [01500, 01832], lr: 0.000010, total_loss: 2.6340, heatmap_loss: 1.3876, box_loss: 1.2464
+2022-04-26 21:37:01 - train: epoch 0035, iter [01600, 01832], lr: 0.000010, total_loss: 2.9547, heatmap_loss: 1.4488, box_loss: 1.5059
+2022-04-26 21:38:15 - train: epoch 0035, iter [01700, 01832], lr: 0.000010, total_loss: 2.7107, heatmap_loss: 1.3123, box_loss: 1.3984
+2022-04-26 21:39:33 - train: epoch 0035, iter [01800, 01832], lr: 0.000010, total_loss: 2.8077, heatmap_loss: 1.3945, box_loss: 1.4132
+2022-04-26 21:39:58 - train: epoch 035, train_loss: 2.7833
+2022-04-26 21:39:59 - until epoch: 035, best_metric: 27.439%
+2022-04-26 21:39:59 - epoch 036 lr: 1e-05
+2022-04-26 21:41:18 - train: epoch 0036, iter [00100, 01832], lr: 0.000010, total_loss: 2.9518, heatmap_loss: 1.4567, box_loss: 1.4951
+2022-04-26 21:42:34 - train: epoch 0036, iter [00200, 01832], lr: 0.000010, total_loss: 2.8830, heatmap_loss: 1.3955, box_loss: 1.4875
+2022-04-26 21:43:50 - train: epoch 0036, iter [00300, 01832], lr: 0.000010, total_loss: 2.9882, heatmap_loss: 1.5162, box_loss: 1.4720
+2022-04-26 21:45:05 - train: epoch 0036, iter [00400, 01832], lr: 0.000010, total_loss: 2.5369, heatmap_loss: 1.2862, box_loss: 1.2507
+2022-04-26 21:46:22 - train: epoch 0036, iter [00500, 01832], lr: 0.000010, total_loss: 2.7974, heatmap_loss: 1.4031, box_loss: 1.3944
+2022-04-26 21:47:39 - train: epoch 0036, iter [00600, 01832], lr: 0.000010, total_loss: 2.7427, heatmap_loss: 1.3799, box_loss: 1.3629
+2022-04-26 21:48:56 - train: epoch 0036, iter [00700, 01832], lr: 0.000010, total_loss: 2.8583, heatmap_loss: 1.4367, box_loss: 1.4216
+2022-04-26 21:50:13 - train: epoch 0036, iter [00800, 01832], lr: 0.000010, total_loss: 2.7716, heatmap_loss: 1.4255, box_loss: 1.3461
+2022-04-26 21:51:30 - train: epoch 0036, iter [00900, 01832], lr: 0.000010, total_loss: 2.6234, heatmap_loss: 1.2730, box_loss: 1.3504
+2022-04-26 21:52:47 - train: epoch 0036, iter [01000, 01832], lr: 0.000010, total_loss: 2.3618, heatmap_loss: 1.2584, box_loss: 1.1035
+2022-04-26 21:54:02 - train: epoch 0036, iter [01100, 01832], lr: 0.000010, total_loss: 2.8185, heatmap_loss: 1.3518, box_loss: 1.4667
+2022-04-26 21:55:19 - train: epoch 0036, iter [01200, 01832], lr: 0.000010, total_loss: 2.9533, heatmap_loss: 1.4494, box_loss: 1.5039
+2022-04-26 21:56:36 - train: epoch 0036, iter [01300, 01832], lr: 0.000010, total_loss: 2.5891, heatmap_loss: 1.2428, box_loss: 1.3463
+2022-04-26 21:57:51 - train: epoch 0036, iter [01400, 01832], lr: 0.000010, total_loss: 2.7908, heatmap_loss: 1.4334, box_loss: 1.3574
+2022-04-26 21:59:07 - train: epoch 0036, iter [01500, 01832], lr: 0.000010, total_loss: 2.6364, heatmap_loss: 1.3038, box_loss: 1.3326
+2022-04-26 22:00:24 - train: epoch 0036, iter [01600, 01832], lr: 0.000010, total_loss: 2.7110, heatmap_loss: 1.3000, box_loss: 1.4109
+2022-04-26 22:01:42 - train: epoch 0036, iter [01700, 01832], lr: 0.000010, total_loss: 2.8756, heatmap_loss: 1.3806, box_loss: 1.4950
+2022-04-26 22:02:54 - train: epoch 0036, iter [01800, 01832], lr: 0.000010, total_loss: 2.9463, heatmap_loss: 1.4759, box_loss: 1.4704
+2022-04-26 22:03:17 - train: epoch 036, train_loss: 2.7780
+2022-04-26 22:03:17 - until epoch: 036, best_metric: 27.439%
+2022-04-26 22:03:17 - epoch 037 lr: 1.0000000000000002e-06
+2022-04-26 22:04:36 - train: epoch 0037, iter [00100, 01832], lr: 0.000001, total_loss: 2.7073, heatmap_loss: 1.3345, box_loss: 1.3728
+2022-04-26 22:05:51 - train: epoch 0037, iter [00200, 01832], lr: 0.000001, total_loss: 3.0017, heatmap_loss: 1.4713, box_loss: 1.5305
+2022-04-26 22:07:06 - train: epoch 0037, iter [00300, 01832], lr: 0.000001, total_loss: 2.7906, heatmap_loss: 1.3412, box_loss: 1.4495
+2022-04-26 22:08:18 - train: epoch 0037, iter [00400, 01832], lr: 0.000001, total_loss: 2.7143, heatmap_loss: 1.4030, box_loss: 1.3113
+2022-04-26 22:09:35 - train: epoch 0037, iter [00500, 01832], lr: 0.000001, total_loss: 2.7627, heatmap_loss: 1.4028, box_loss: 1.3599
+2022-04-26 22:10:47 - train: epoch 0037, iter [00600, 01832], lr: 0.000001, total_loss: 2.8437, heatmap_loss: 1.4208, box_loss: 1.4229
+2022-04-26 22:11:59 - train: epoch 0037, iter [00700, 01832], lr: 0.000001, total_loss: 2.7568, heatmap_loss: 1.3227, box_loss: 1.4341
+2022-04-26 22:13:15 - train: epoch 0037, iter [00800, 01832], lr: 0.000001, total_loss: 2.6466, heatmap_loss: 1.3566, box_loss: 1.2901
+2022-04-26 22:14:31 - train: epoch 0037, iter [00900, 01832], lr: 0.000001, total_loss: 2.7286, heatmap_loss: 1.3774, box_loss: 1.3511
+2022-04-26 22:15:43 - train: epoch 0037, iter [01000, 01832], lr: 0.000001, total_loss: 2.8569, heatmap_loss: 1.4527, box_loss: 1.4043
+2022-04-26 22:16:58 - train: epoch 0037, iter [01100, 01832], lr: 0.000001, total_loss: 2.8723, heatmap_loss: 1.4083, box_loss: 1.4640
+2022-04-26 22:18:10 - train: epoch 0037, iter [01200, 01832], lr: 0.000001, total_loss: 2.7171, heatmap_loss: 1.3589, box_loss: 1.3582
+2022-04-26 22:19:23 - train: epoch 0037, iter [01300, 01832], lr: 0.000001, total_loss: 2.9062, heatmap_loss: 1.3997, box_loss: 1.5065
+2022-04-26 22:20:39 - train: epoch 0037, iter [01400, 01832], lr: 0.000001, total_loss: 2.6915, heatmap_loss: 1.3592, box_loss: 1.3323
+2022-04-26 22:21:54 - train: epoch 0037, iter [01500, 01832], lr: 0.000001, total_loss: 2.8608, heatmap_loss: 1.4332, box_loss: 1.4276
+2022-04-26 22:23:06 - train: epoch 0037, iter [01600, 01832], lr: 0.000001, total_loss: 2.8387, heatmap_loss: 1.3618, box_loss: 1.4769
+2022-04-26 22:24:22 - train: epoch 0037, iter [01700, 01832], lr: 0.000001, total_loss: 2.5826, heatmap_loss: 1.2512, box_loss: 1.3313
+2022-04-26 22:25:30 - train: epoch 0037, iter [01800, 01832], lr: 0.000001, total_loss: 2.7027, heatmap_loss: 1.3759, box_loss: 1.3268
+2022-04-26 22:25:53 - train: epoch 037, train_loss: 2.7638
+2022-04-26 22:25:53 - until epoch: 037, best_metric: 27.439%
+2022-04-26 22:25:53 - epoch 038 lr: 1.0000000000000002e-06
+2022-04-26 22:27:10 - train: epoch 0038, iter [00100, 01832], lr: 0.000001, total_loss: 2.6314, heatmap_loss: 1.3052, box_loss: 1.3262
+2022-04-26 22:28:26 - train: epoch 0038, iter [00200, 01832], lr: 0.000001, total_loss: 3.0032, heatmap_loss: 1.4659, box_loss: 1.5373
+2022-04-26 22:29:43 - train: epoch 0038, iter [00300, 01832], lr: 0.000001, total_loss: 2.7954, heatmap_loss: 1.3620, box_loss: 1.4334
+2022-04-26 22:30:58 - train: epoch 0038, iter [00400, 01832], lr: 0.000001, total_loss: 2.6908, heatmap_loss: 1.3338, box_loss: 1.3571
+2022-04-26 22:32:15 - train: epoch 0038, iter [00500, 01832], lr: 0.000001, total_loss: 2.9867, heatmap_loss: 1.4966, box_loss: 1.4901
+2022-04-26 22:33:29 - train: epoch 0038, iter [00600, 01832], lr: 0.000001, total_loss: 2.6913, heatmap_loss: 1.3447, box_loss: 1.3466
+2022-04-26 22:34:43 - train: epoch 0038, iter [00700, 01832], lr: 0.000001, total_loss: 2.6814, heatmap_loss: 1.3901, box_loss: 1.2913
+2022-04-26 22:35:59 - train: epoch 0038, iter [00800, 01832], lr: 0.000001, total_loss: 2.8208, heatmap_loss: 1.3602, box_loss: 1.4606
+2022-04-26 22:37:16 - train: epoch 0038, iter [00900, 01832], lr: 0.000001, total_loss: 2.9777, heatmap_loss: 1.4162, box_loss: 1.5615
+2022-04-26 22:38:34 - train: epoch 0038, iter [01000, 01832], lr: 0.000001, total_loss: 2.6000, heatmap_loss: 1.2690, box_loss: 1.3310
+2022-04-26 22:39:51 - train: epoch 0038, iter [01100, 01832], lr: 0.000001, total_loss: 2.5193, heatmap_loss: 1.2434, box_loss: 1.2759
+2022-04-26 22:41:06 - train: epoch 0038, iter [01200, 01832], lr: 0.000001, total_loss: 2.8556, heatmap_loss: 1.3841, box_loss: 1.4715
+2022-04-26 22:42:21 - train: epoch 0038, iter [01300, 01832], lr: 0.000001, total_loss: 2.7941, heatmap_loss: 1.3541, box_loss: 1.4400
+2022-04-26 22:43:39 - train: epoch 0038, iter [01400, 01832], lr: 0.000001, total_loss: 2.4666, heatmap_loss: 1.2133, box_loss: 1.2532
+2022-04-26 22:44:57 - train: epoch 0038, iter [01500, 01832], lr: 0.000001, total_loss: 2.8170, heatmap_loss: 1.3722, box_loss: 1.4448
+2022-04-26 22:46:13 - train: epoch 0038, iter [01600, 01832], lr: 0.000001, total_loss: 2.7401, heatmap_loss: 1.3403, box_loss: 1.3998
+2022-04-26 22:47:27 - train: epoch 0038, iter [01700, 01832], lr: 0.000001, total_loss: 2.6456, heatmap_loss: 1.3449, box_loss: 1.3007
+2022-04-26 22:48:42 - train: epoch 0038, iter [01800, 01832], lr: 0.000001, total_loss: 2.6724, heatmap_loss: 1.3850, box_loss: 1.2874
+2022-04-26 22:49:07 - train: epoch 038, train_loss: 2.7583
+2022-04-26 22:49:07 - until epoch: 038, best_metric: 27.439%
+2022-04-26 22:49:07 - epoch 039 lr: 1.0000000000000002e-06
+2022-04-26 22:50:20 - train: epoch 0039, iter [00100, 01832], lr: 0.000001, total_loss: 2.8529, heatmap_loss: 1.4343, box_loss: 1.4187
+2022-04-26 22:51:36 - train: epoch 0039, iter [00200, 01832], lr: 0.000001, total_loss: 2.8283, heatmap_loss: 1.4172, box_loss: 1.4111
+2022-04-26 22:52:51 - train: epoch 0039, iter [00300, 01832], lr: 0.000001, total_loss: 2.7171, heatmap_loss: 1.3456, box_loss: 1.3715
+2022-04-26 22:54:08 - train: epoch 0039, iter [00400, 01832], lr: 0.000001, total_loss: 2.7993, heatmap_loss: 1.4696, box_loss: 1.3297
+2022-04-26 22:55:25 - train: epoch 0039, iter [00500, 01832], lr: 0.000001, total_loss: 2.7867, heatmap_loss: 1.3946, box_loss: 1.3921
+2022-04-26 22:56:42 - train: epoch 0039, iter [00600, 01832], lr: 0.000001, total_loss: 2.8099, heatmap_loss: 1.4069, box_loss: 1.4029
+2022-04-26 22:57:54 - train: epoch 0039, iter [00700, 01832], lr: 0.000001, total_loss: 2.6431, heatmap_loss: 1.3006, box_loss: 1.3425
+2022-04-26 22:59:10 - train: epoch 0039, iter [00800, 01832], lr: 0.000001, total_loss: 2.8617, heatmap_loss: 1.4127, box_loss: 1.4491
+2022-04-26 23:00:27 - train: epoch 0039, iter [00900, 01832], lr: 0.000001, total_loss: 2.7165, heatmap_loss: 1.2990, box_loss: 1.4176
+2022-04-26 23:01:41 - train: epoch 0039, iter [01000, 01832], lr: 0.000001, total_loss: 2.7990, heatmap_loss: 1.4021, box_loss: 1.3969
+2022-04-26 23:02:58 - train: epoch 0039, iter [01100, 01832], lr: 0.000001, total_loss: 2.6755, heatmap_loss: 1.2544, box_loss: 1.4212
+2022-04-26 23:04:13 - train: epoch 0039, iter [01200, 01832], lr: 0.000001, total_loss: 2.5958, heatmap_loss: 1.3134, box_loss: 1.2824
+2022-04-26 23:05:26 - train: epoch 0039, iter [01300, 01832], lr: 0.000001, total_loss: 2.6488, heatmap_loss: 1.2957, box_loss: 1.3531
+2022-04-26 23:06:38 - train: epoch 0039, iter [01400, 01832], lr: 0.000001, total_loss: 2.8869, heatmap_loss: 1.3746, box_loss: 1.5123
+2022-04-26 23:07:53 - train: epoch 0039, iter [01500, 01832], lr: 0.000001, total_loss: 2.9345, heatmap_loss: 1.4086, box_loss: 1.5259
+2022-04-26 23:09:09 - train: epoch 0039, iter [01600, 01832], lr: 0.000001, total_loss: 2.4672, heatmap_loss: 1.2247, box_loss: 1.2425
+2022-04-26 23:10:22 - train: epoch 0039, iter [01700, 01832], lr: 0.000001, total_loss: 2.7662, heatmap_loss: 1.4252, box_loss: 1.3410
+2022-04-26 23:11:37 - train: epoch 0039, iter [01800, 01832], lr: 0.000001, total_loss: 2.6862, heatmap_loss: 1.3331, box_loss: 1.3531
+2022-04-26 23:12:01 - train: epoch 039, train_loss: 2.7568
+2022-04-26 23:13:21 - eval: epoch: 039
+per_image_load_time: 3.506ms
+per_image_inference_time: 2.768ms
+IoU=0.50:0.95,area=all,maxDets=100,mAP: 27.995742980130572
+IoU=0.50,area=all,maxDets=100,mAP: 43.866406915739645
+IoU=0.75,area=all,maxDets=100,mAP: 29.523941557875517
+IoU=0.50:0.95,area=small,maxDets=100,mAP: 9.658084836854783
+IoU=0.50:0.95,area=medium,maxDets=100,mAP: 29.65022841562576
+IoU=0.50:0.95,area=large,maxDets=100,mAP: 44.31056247160933
+IoU=0.50:0.95,area=all,maxDets=1,mAR: 25.836277858358507
+IoU=0.50:0.95,area=all,maxDets=10,mAR: 40.90205618291759
+IoU=0.50:0.95,area=all,maxDets=100,mAR: 42.68111423250484
+IoU=0.50:0.95,area=small,maxDets=100,mAR: 19.496594744345185
+IoU=0.50:0.95,area=medium,maxDets=100,mAR: 46.482004822254076
+IoU=0.50:0.95,area=large,maxDets=100,mAR: 64.13713404203051
+
+2022-04-26 23:13:22 - until epoch: 039, best_metric: 27.996%
+2022-04-26 23:13:22 - train done. model: resnet18_ttfnet, train time: 14.999 hours, best_metric: 27.996%

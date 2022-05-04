@@ -2,18 +2,7 @@
 Designing Network Design Spaces
 https://arxiv.org/pdf/2003.13678.pdf
 '''
-import os
-import sys
-
-BASE_DIR = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.dirname(
-        os.path.abspath(__file__)))))
-sys.path.append(BASE_DIR)
-
 import numpy as np
-
-from simpleAICV.classification.common import load_state_dict
-from tools.path import pretrained_models_path
 
 import torch
 import torch.nn as nn
@@ -32,41 +21,6 @@ __all__ = [
     'RegNetY_16GF',
     'RegNetY_32GF',
 ]
-
-model_urls = {
-    'RegNetY_200MF':
-    '{}/regnet/RegNetY_200MF-epoch100-acc70.096.pth'.format(
-        pretrained_models_path),
-    'RegNetY_400MF':
-    '{}/regnet/RegNetY_400MF-epoch100-acc73.79.pth'.format(
-        pretrained_models_path),
-    'RegNetY_600MF':
-    '{}/regnet/RegNetY_600MF-epoch100-acc74.724.pth'.format(
-        pretrained_models_path),
-    'RegNetY_800MF':
-    '{}/regnet/RegNetY_800MF-epoch100-acc75.994.pth'.format(
-        pretrained_models_path),
-    'RegNetY_1_6GF':
-    '{}/regnet/RegNetY_1_6GF-epoch100-acc77.308.pth'.format(
-        pretrained_models_path),
-    'RegNetY_3_2GF':
-    '{}/regnet/RegNetY_3_2GF-epoch100-acc78.908.pth'.format(
-        pretrained_models_path),
-    'RegNetY_4_0GF':
-    '{}/regnet/RegNetY_4_0GF-epoch100-acc78.136.pth'.format(
-        pretrained_models_path),
-    'RegNetY_6_4GF':
-    '{}/regnet/RegNetY_6_4GF-epoch100-acc78.77.pth'.format(
-        pretrained_models_path),
-    'RegNetY_8_0GF':
-    'empty',
-    'RegNetY_12GF':
-    'empty',
-    'RegNetY_16GF':
-    'empty',
-    'RegNetY_32GF':
-    'empty',
-}
 
 types_config = {
     'RegNetY_200MF': {
@@ -214,6 +168,7 @@ def get_regnet_config(regnet_type, q=8):
 
 
 class ConvBnActBlock(nn.Module):
+
     def __init__(self,
                  inplanes,
                  planes,
@@ -224,6 +179,8 @@ class ConvBnActBlock(nn.Module):
                  has_bn=True,
                  has_act=True):
         super(ConvBnActBlock, self).__init__()
+        bias = False if has_bn else True
+
         self.layer = nn.Sequential(
             nn.Conv2d(inplanes,
                       planes,
@@ -231,7 +188,7 @@ class ConvBnActBlock(nn.Module):
                       stride=stride,
                       padding=padding,
                       groups=groups,
-                      bias=False),
+                      bias=bias),
             nn.BatchNorm2d(planes) if has_bn else nn.Sequential(),
             nn.ReLU(inplace=True) if has_act else nn.Sequential(),
         )
@@ -243,6 +200,7 @@ class ConvBnActBlock(nn.Module):
 
 
 class SeBlock(nn.Module):
+
     def __init__(self, inplanes, se_ratio=0.25):
         super(SeBlock, self).__init__()
         squeezed_planes = max(1, int(inplanes * se_ratio))
@@ -253,21 +211,24 @@ class SeBlock(nn.Module):
                       kernel_size=1,
                       stride=1,
                       padding=0,
-                      bias=False), nn.ReLU(inplace=True),
+                      groups=1,
+                      bias=True), nn.ReLU(inplace=True),
             nn.Conv2d(squeezed_planes,
                       inplanes,
                       kernel_size=1,
                       stride=1,
                       padding=0,
-                      bias=False), nn.Sigmoid())
+                      groups=1,
+                      bias=True), nn.Sigmoid())
 
     def forward(self, x):
-        out = self.layers(x) * x
+        x = self.layers(x) * x
 
-        return out
+        return x
 
 
 class XBlock(nn.Module):
+
     def __init__(self,
                  inplanes,
                  planes,
@@ -330,10 +291,12 @@ class XBlock(nn.Module):
 
         x += inputs
         x = self.relu(x)
+
         return x
 
 
 class RegNet(nn.Module):
+
     def __init__(self, regnet_type, num_classes=1000):
         super(RegNet, self).__init__()
         stem_width, has_se, per_stage_width, per_stage_depth, per_stage_groups = get_regnet_config(
@@ -344,6 +307,7 @@ class RegNet(nn.Module):
         self.per_stage_width = per_stage_width
         self.per_stage_depth = per_stage_depth
         self.per_stage_groups = per_stage_groups
+        self.num_classes = num_classes
 
         assert len(self.per_stage_width) == len(self.per_stage_depth)
         assert len(self.per_stage_depth) == len(self.per_stage_groups)
@@ -382,7 +346,7 @@ class RegNet(nn.Module):
                                       group_num=self.per_stage_groups[3],
                                       has_se=self.has_se)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.fc = nn.Linear(self.per_stage_width[3], num_classes)
+        self.fc = nn.Linear(self.per_stage_width[3], self.num_classes)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -420,79 +384,210 @@ class RegNet(nn.Module):
         x = self.layer4(x)
 
         x = self.avgpool(x)
-        x = torch.flatten(x, 1)
+        x = x.view(x.size(0), -1)
         x = self.fc(x)
 
         return x
 
 
-def _regnet(arch, pretrained, **kwargs):
+def _regnet(arch, **kwargs):
     model = RegNet(arch, **kwargs)
-    # only load state_dict()
-    if pretrained:
-        load_state_dict(
-            torch.load(model_urls[arch], map_location=torch.device('cpu')),
-            model)
 
     return model
 
 
-def RegNetY_200MF(pretrained=False, **kwargs):
-    return _regnet('RegNetY_200MF', pretrained, **kwargs)
+def RegNetY_200MF(**kwargs):
+    return _regnet('RegNetY_200MF', **kwargs)
 
 
-def RegNetY_400MF(pretrained=False, **kwargs):
-    return _regnet('RegNetY_400MF', pretrained, **kwargs)
+def RegNetY_400MF(**kwargs):
+    return _regnet('RegNetY_400MF', **kwargs)
 
 
-def RegNetY_600MF(pretrained=False, **kwargs):
-    return _regnet('RegNetY_600MF', pretrained, **kwargs)
+def RegNetY_600MF(**kwargs):
+    return _regnet('RegNetY_600MF', **kwargs)
 
 
-def RegNetY_800MF(pretrained=False, **kwargs):
-    return _regnet('RegNetY_800MF', pretrained, **kwargs)
+def RegNetY_800MF(**kwargs):
+    return _regnet('RegNetY_800MF', **kwargs)
 
 
-def RegNetY_1_6GF(pretrained=False, **kwargs):
-    return _regnet('RegNetY_1_6GF', pretrained, **kwargs)
+def RegNetY_1_6GF(**kwargs):
+    return _regnet('RegNetY_1_6GF', **kwargs)
 
 
-def RegNetY_3_2GF(pretrained=False, **kwargs):
-    return _regnet('RegNetY_3_2GF', pretrained, **kwargs)
+def RegNetY_3_2GF(**kwargs):
+    return _regnet('RegNetY_3_2GF', **kwargs)
 
 
-def RegNetY_4_0GF(pretrained=False, **kwargs):
-    return _regnet('RegNetY_4_0GF', pretrained, **kwargs)
+def RegNetY_4_0GF(**kwargs):
+    return _regnet('RegNetY_4_0GF', **kwargs)
 
 
-def RegNetY_6_4GF(pretrained=False, **kwargs):
-    return _regnet('RegNetY_6_4GF', pretrained, **kwargs)
+def RegNetY_6_4GF(**kwargs):
+    return _regnet('RegNetY_6_4GF', **kwargs)
 
 
-def RegNetY_8_0GF(pretrained=False, **kwargs):
-    return _regnet('RegNetY_8_0GF', pretrained, **kwargs)
+def RegNetY_8_0GF(**kwargs):
+    return _regnet('RegNetY_8_0GF', **kwargs)
 
 
-def RegNetY_12GF(pretrained=False, **kwargs):
-    return _regnet('RegNetY_12GF', pretrained, **kwargs)
+def RegNetY_12GF(**kwargs):
+    return _regnet('RegNetY_12GF', **kwargs)
 
 
-def RegNetY_16GF(pretrained=False, **kwargs):
-    return _regnet('RegNetY_16GF', pretrained, **kwargs)
+def RegNetY_16GF(**kwargs):
+    return _regnet('RegNetY_16GF', **kwargs)
 
 
-def RegNetY_32GF(pretrained=False, **kwargs):
-    return _regnet('RegNetY_32GF', pretrained, **kwargs)
+def RegNetY_32GF(**kwargs):
+    return _regnet('RegNetY_32GF', **kwargs)
 
 
 if __name__ == '__main__':
-    net = RegNet('RegNetY_200MF', num_classes=1000)
+    import os
+    import random
+    import numpy as np
+    import torch
+    seed = 0
+    # for hash
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    # for python and numpy
+    random.seed(seed)
+    np.random.seed(seed)
+    # for cpu gpu
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+
+    net = RegNetY_200MF(num_classes=1000)
     image_h, image_w = 224, 224
     from thop import profile
     from thop import clever_format
-    flops, params = profile(net,
-                            inputs=(torch.randn(1, 3, image_h, image_w), ),
-                            verbose=False)
-    flops, params = clever_format([flops, params], '%.3f')
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
     out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
-    print(f'1111, flops: {flops}, params: {params},out_shape: {out.shape}')
+    print(f'1111, macs: {macs}, params: {params},out_shape: {out.shape}')
+
+    net = RegNetY_400MF(num_classes=1000)
+    image_h, image_w = 224, 224
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    print(f'2222, macs: {macs}, params: {params},out_shape: {out.shape}')
+
+    net = RegNetY_600MF(num_classes=1000)
+    image_h, image_w = 224, 224
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    print(f'3333, macs: {macs}, params: {params},out_shape: {out.shape}')
+
+    net = RegNetY_800MF(num_classes=1000)
+    image_h, image_w = 224, 224
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    print(f'4444, macs: {macs}, params: {params},out_shape: {out.shape}')
+
+    net = RegNetY_1_6GF(num_classes=1000)
+    image_h, image_w = 224, 224
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    print(f'5555, macs: {macs}, params: {params},out_shape: {out.shape}')
+
+    net = RegNetY_3_2GF(num_classes=1000)
+    image_h, image_w = 224, 224
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    print(f'6666, macs: {macs}, params: {params},out_shape: {out.shape}')
+
+    net = RegNetY_4_0GF(num_classes=1000)
+    image_h, image_w = 224, 224
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    print(f'7777, macs: {macs}, params: {params},out_shape: {out.shape}')
+
+    net = RegNetY_6_4GF(num_classes=1000)
+    image_h, image_w = 224, 224
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    print(f'8888, macs: {macs}, params: {params},out_shape: {out.shape}')
+
+    net = RegNetY_8_0GF(num_classes=1000)
+    image_h, image_w = 224, 224
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    print(f'9999, macs: {macs}, params: {params},out_shape: {out.shape}')
+
+    net = RegNetY_12GF(num_classes=1000)
+    image_h, image_w = 224, 224
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    print(f'9191, macs: {macs}, params: {params},out_shape: {out.shape}')
+
+    net = RegNetY_16GF(num_classes=1000)
+    image_h, image_w = 224, 224
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    print(f'9292, macs: {macs}, params: {params},out_shape: {out.shape}')
+
+    net = RegNetY_32GF(num_classes=1000)
+    image_h, image_w = 224, 224
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    print(f'9393, macs: {macs}, params: {params},out_shape: {out.shape}')

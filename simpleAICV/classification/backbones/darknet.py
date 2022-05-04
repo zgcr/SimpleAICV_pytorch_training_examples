@@ -2,17 +2,6 @@
 YOLOv3: An Incremental Improvement
 https://arxiv.org/pdf/1804.02767.pdf
 '''
-import os
-import sys
-
-BASE_DIR = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.dirname(
-        os.path.abspath(__file__)))))
-sys.path.append(BASE_DIR)
-
-from simpleAICV.classification.common import load_state_dict
-from tools.path import pretrained_models_path
-
 import torch
 import torch.nn as nn
 
@@ -22,37 +11,52 @@ __all__ = [
     'darknet53',
 ]
 
-model_urls = {
-    'darknettiny':
-    'empty',
-    'darknet19':
-    '{}/darknet/darknet19-input256-epoch100-acc73.868.pth'.format(
-        pretrained_models_path),
-    'darknet53':
-    '{}/darknet/darknet53-input256-epoch100-acc77.008.pth'.format(
-        pretrained_models_path),
-}
+
+class ActivationBlock(nn.Module):
+
+    def __init__(self, act_type='leakyrelu', inplace=True):
+        super(ActivationBlock, self).__init__()
+        assert act_type in ['silu', 'relu',
+                            'leakyrelu'], 'Unsupport activation function!'
+        if act_type == 'silu':
+            self.act = nn.SiLU(inplace=inplace)
+        elif act_type == 'relu':
+            self.act = nn.ReLU(inplace=inplace)
+        elif act_type == 'leakyrelu':
+            self.act = nn.LeakyReLU(0.1, inplace=inplace)
+
+    def forward(self, x):
+        x = self.act(x)
+
+        return x
 
 
 class ConvBnActBlock(nn.Module):
+
     def __init__(self,
                  inplanes,
                  planes,
                  kernel_size,
                  stride,
-                 padding=1,
+                 padding,
+                 groups=1,
                  has_bn=True,
-                 has_act=True):
+                 has_act=True,
+                 act_type='leakyrelu'):
         super(ConvBnActBlock, self).__init__()
+        bias = False if has_bn else True
+
         self.layer = nn.Sequential(
             nn.Conv2d(inplanes,
                       planes,
                       kernel_size,
                       stride=stride,
                       padding=padding,
-                      bias=False),
+                      groups=groups,
+                      bias=bias),
             nn.BatchNorm2d(planes) if has_bn else nn.Sequential(),
-            nn.LeakyReLU(0.1, inplace=True) if has_act else nn.Sequential(),
+            ActivationBlock(act_type=act_type, inplace=True)
+            if has_act else nn.Sequential(),
         )
 
     def forward(self, x):
@@ -62,30 +66,43 @@ class ConvBnActBlock(nn.Module):
 
 
 class Darknet19Block(nn.Module):
-    def __init__(self, inplanes, planes, layer_num, use_maxpool=False):
+
+    def __init__(self,
+                 inplanes,
+                 planes,
+                 layer_num,
+                 use_maxpool=False,
+                 act_type='leakyrelu'):
         super(Darknet19Block, self).__init__()
         self.use_maxpool = use_maxpool
         layers = []
         for i in range(0, layer_num):
-            layers.append(
-                ConvBnActBlock(inplanes,
-                               planes,
-                               kernel_size=3,
-                               stride=1,
-                               padding=1,
-                               has_bn=True,
-                               has_act=True) if i %
-                2 == 0 else ConvBnActBlock(planes,
-                                           inplanes,
-                                           kernel_size=1,
-                                           stride=1,
-                                           padding=0,
-                                           has_bn=True,
-                                           has_act=True))
+            if i % 2 == 0:
+                layers.append(
+                    ConvBnActBlock(inplanes,
+                                   planes,
+                                   kernel_size=3,
+                                   stride=1,
+                                   padding=1,
+                                   groups=1,
+                                   has_bn=True,
+                                   has_act=True,
+                                   act_type=act_type))
+            else:
+                layers.append(
+                    ConvBnActBlock(planes,
+                                   inplanes,
+                                   kernel_size=1,
+                                   stride=1,
+                                   padding=0,
+                                   groups=1,
+                                   has_bn=True,
+                                   has_act=True,
+                                   act_type=act_type))
 
         self.Darknet19Block = nn.Sequential(*layers)
         if self.use_maxpool:
-            self.MaxPool = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
+            self.MaxPool = nn.MaxPool2d(kernel_size=2, stride=2)
 
     def forward(self, x):
         x = self.Darknet19Block(x)
@@ -97,91 +114,111 @@ class Darknet19Block(nn.Module):
 
 
 class Darknet53Block(nn.Module):
-    def __init__(self, inplanes):
+
+    def __init__(self, inplanes, act_type='leakyrelu'):
         super(Darknet53Block, self).__init__()
-        squeezed_planes = int(inplanes * 0.5)
+        squeezed_planes = int(inplanes // 2)
         self.conv = nn.Sequential(
             ConvBnActBlock(inplanes,
                            squeezed_planes,
                            kernel_size=1,
                            stride=1,
                            padding=0,
+                           groups=1,
                            has_bn=True,
-                           has_act=True),
+                           has_act=True,
+                           act_type=act_type),
             ConvBnActBlock(squeezed_planes,
                            inplanes,
                            kernel_size=3,
                            stride=1,
                            padding=1,
+                           groups=1,
                            has_bn=True,
-                           has_act=True))
+                           has_act=True,
+                           act_type=act_type))
 
     def forward(self, x):
-        out = self.conv(x) + x
+        x = self.conv(x) + x
 
-        return out
+        return x
 
 
 class DarknetTiny(nn.Module):
-    def __init__(self, num_classes=1000):
+
+    def __init__(self, act_type='leakyrelu', num_classes=1000):
         super(DarknetTiny, self).__init__()
+        self.num_classes = num_classes
+
         self.conv1 = ConvBnActBlock(3,
                                     16,
                                     kernel_size=3,
                                     stride=1,
                                     padding=1,
+                                    groups=1,
                                     has_bn=True,
-                                    has_act=True)
-        self.maxpool1 = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
+                                    has_act=True,
+                                    act_type=act_type)
+        self.maxpool1 = nn.MaxPool2d(kernel_size=2, stride=2)
         self.conv2 = ConvBnActBlock(16,
                                     32,
                                     kernel_size=3,
                                     stride=1,
                                     padding=1,
+                                    groups=1,
                                     has_bn=True,
-                                    has_act=True)
-        self.maxpool2 = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
+                                    has_act=True,
+                                    act_type=act_type)
+        self.maxpool2 = nn.MaxPool2d(kernel_size=2, stride=2)
         self.conv3 = ConvBnActBlock(32,
                                     64,
                                     kernel_size=3,
                                     stride=1,
                                     padding=1,
+                                    groups=1,
                                     has_bn=True,
-                                    has_act=True)
-        self.maxpool3 = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
+                                    has_act=True,
+                                    act_type=act_type)
+        self.maxpool3 = nn.MaxPool2d(kernel_size=2, stride=2)
         self.conv4 = ConvBnActBlock(64,
                                     128,
                                     kernel_size=3,
                                     stride=1,
                                     padding=1,
+                                    groups=1,
                                     has_bn=True,
-                                    has_act=True)
-        self.maxpool4 = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
+                                    has_act=True,
+                                    act_type=act_type)
+        self.maxpool4 = nn.MaxPool2d(kernel_size=2, stride=2)
         self.conv5 = ConvBnActBlock(128,
                                     256,
                                     kernel_size=3,
                                     stride=1,
                                     padding=1,
+                                    groups=1,
                                     has_bn=True,
-                                    has_act=True)
-        self.maxpool5 = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
+                                    has_act=True,
+                                    act_type=act_type)
+        self.maxpool5 = nn.MaxPool2d(kernel_size=2, stride=2)
         self.conv6 = ConvBnActBlock(256,
                                     512,
                                     kernel_size=3,
                                     stride=1,
                                     padding=1,
+                                    groups=1,
                                     has_bn=True,
-                                    has_act=True)
+                                    has_act=True,
+                                    act_type=act_type)
         self.zeropad = nn.ZeroPad2d((0, 1, 0, 1))
-        self.maxpool6 = nn.MaxPool2d(kernel_size=2, stride=1, padding=0)
+        self.maxpool6 = nn.MaxPool2d(kernel_size=2, stride=1)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.fc = nn.Linear(512, num_classes)
+        self.fc = nn.Linear(512, self.num_classes)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight,
                                         mode='fan_out',
-                                        nonlinearity='leaky_relu')
+                                        nonlinearity='relu')
             elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
@@ -201,42 +238,69 @@ class DarknetTiny(nn.Module):
         x = self.zeropad(x)
         x = self.maxpool6(x)
         x = self.avgpool(x)
-        x = x.view(-1, 512)
+        x = x.view(x.size(0), -1)
         x = self.fc(x)
 
         return x
 
 
 class Darknet19(nn.Module):
-    def __init__(self, num_classes=1000):
+
+    def __init__(self, act_type='leakyrelu', num_classes=1000):
         super(Darknet19, self).__init__()
+        self.num_classes = num_classes
+
         self.layer1 = ConvBnActBlock(3,
                                      32,
                                      kernel_size=3,
                                      stride=1,
                                      padding=1,
+                                     groups=1,
                                      has_bn=True,
-                                     has_act=True)
-        self.maxpool1 = nn.MaxPool2d(kernel_size=2, stride=2, padding=0)
-        self.layer2 = Darknet19Block(32, 64, 1, use_maxpool=True)
-        self.layer3 = Darknet19Block(64, 128, 3, use_maxpool=True)
-        self.layer4 = Darknet19Block(128, 256, 3, use_maxpool=True)
-        self.layer5 = Darknet19Block(256, 512, 5, use_maxpool=True)
-        self.layer6 = Darknet19Block(512, 1024, 5, use_maxpool=False)
+                                     has_act=True,
+                                     act_type=act_type)
+        self.maxpool1 = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.layer2 = Darknet19Block(32,
+                                     64,
+                                     layer_num=1,
+                                     use_maxpool=True,
+                                     act_type=act_type)
+        self.layer3 = Darknet19Block(64,
+                                     128,
+                                     layer_num=3,
+                                     use_maxpool=True,
+                                     act_type=act_type)
+        self.layer4 = Darknet19Block(128,
+                                     256,
+                                     layer_num=3,
+                                     use_maxpool=True,
+                                     act_type=act_type)
+        self.layer5 = Darknet19Block(256,
+                                     512,
+                                     layer_num=5,
+                                     use_maxpool=True,
+                                     act_type=act_type)
+        self.layer6 = Darknet19Block(512,
+                                     1024,
+                                     layer_num=5,
+                                     use_maxpool=False,
+                                     act_type=act_type)
         self.layer7 = ConvBnActBlock(1024,
-                                     1000,
+                                     self.num_classes,
                                      kernel_size=1,
                                      stride=1,
                                      padding=0,
+                                     groups=1,
                                      has_bn=False,
-                                     has_act=False)
+                                     has_act=False,
+                                     act_type=act_type)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight,
                                         mode='fan_out',
-                                        nonlinearity='leaky_relu')
+                                        nonlinearity='relu')
             elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
@@ -257,63 +321,88 @@ class Darknet19(nn.Module):
 
 
 class Darknet53(nn.Module):
-    def __init__(self, num_classes=1000):
+
+    def __init__(self, act_type='leakyrelu', num_classes=1000):
         super(Darknet53, self).__init__()
+        self.num_classes = num_classes
+
         self.conv1 = ConvBnActBlock(3,
                                     32,
                                     kernel_size=3,
                                     stride=1,
                                     padding=1,
+                                    groups=1,
                                     has_bn=True,
-                                    has_act=True)
+                                    has_act=True,
+                                    act_type=act_type)
         self.conv2 = ConvBnActBlock(32,
                                     64,
                                     kernel_size=3,
                                     stride=2,
                                     padding=1,
+                                    groups=1,
                                     has_bn=True,
-                                    has_act=True)
-        self.block1 = self.make_layer(inplanes=64, num_blocks=1)
+                                    has_act=True,
+                                    act_type=act_type)
+        self.block1 = self.make_layer(inplanes=64,
+                                      num_blocks=1,
+                                      act_type=act_type)
         self.conv3 = ConvBnActBlock(64,
                                     128,
                                     kernel_size=3,
                                     stride=2,
                                     padding=1,
+                                    groups=1,
                                     has_bn=True,
-                                    has_act=True)
-        self.block2 = self.make_layer(inplanes=128, num_blocks=2)
+                                    has_act=True,
+                                    act_type=act_type)
+        self.block2 = self.make_layer(inplanes=128,
+                                      num_blocks=2,
+                                      act_type=act_type)
         self.conv4 = ConvBnActBlock(128,
                                     256,
                                     kernel_size=3,
                                     stride=2,
                                     padding=1,
+                                    groups=1,
                                     has_bn=True,
-                                    has_act=True)
-        self.block3 = self.make_layer(inplanes=256, num_blocks=8)
+                                    has_act=True,
+                                    act_type=act_type)
+        self.block3 = self.make_layer(inplanes=256,
+                                      num_blocks=8,
+                                      act_type=act_type)
         self.conv5 = ConvBnActBlock(256,
                                     512,
                                     kernel_size=3,
                                     stride=2,
                                     padding=1,
+                                    groups=1,
                                     has_bn=True,
-                                    has_act=True)
-        self.block4 = self.make_layer(inplanes=512, num_blocks=8)
+                                    has_act=True,
+                                    act_type=act_type)
+        self.block4 = self.make_layer(inplanes=512,
+                                      num_blocks=8,
+                                      act_type=act_type)
         self.conv6 = ConvBnActBlock(512,
                                     1024,
                                     kernel_size=3,
                                     stride=2,
                                     padding=1,
+                                    groups=1,
                                     has_bn=True,
-                                    has_act=True)
-        self.block5 = self.make_layer(inplanes=1024, num_blocks=4)
+                                    has_act=True,
+                                    act_type=act_type)
+        self.block5 = self.make_layer(inplanes=1024,
+                                      num_blocks=4,
+                                      act_type=act_type)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.fc = nn.Linear(1024, num_classes)
+        self.fc = nn.Linear(1024, self.num_classes)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight,
                                         mode='fan_out',
-                                        nonlinearity='leaky_relu')
+                                        nonlinearity='relu')
             elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
@@ -331,75 +420,79 @@ class Darknet53(nn.Module):
         x = self.conv6(x)
         x = self.block5(x)
         x = self.avgpool(x)
-        x = x.view(-1, 1024)
+        x = x.view(x.size(0), -1)
         x = self.fc(x)
 
         return x
 
-    def make_layer(self, inplanes, num_blocks):
+    def make_layer(self, inplanes, num_blocks, act_type):
         layers = []
         for _ in range(0, num_blocks):
-            layers.append(Darknet53Block(inplanes))
+            layers.append(Darknet53Block(inplanes, act_type=act_type))
         return nn.Sequential(*layers)
 
 
-def darknettiny(pretrained=False, **kwargs):
+def darknettiny(**kwargs):
     model = DarknetTiny(**kwargs)
-    # only load state_dict()
-    if pretrained:
-        load_state_dict(
-            torch.load(model_urls['darknettiny'],
-                       map_location=torch.device('cpu')), model)
 
     return model
 
 
-def darknet19(pretrained=False, **kwargs):
+def darknet19(**kwargs):
     model = Darknet19(**kwargs)
-    # only load state_dict()
-    if pretrained:
-        load_state_dict(
-            torch.load(model_urls['darknet19'],
-                       map_location=torch.device('cpu')), model)
+
     return model
 
 
-def darknet53(pretrained=False, **kwargs):
+def darknet53(**kwargs):
     model = Darknet53(**kwargs)
-    # only load state_dict()
-    if pretrained:
-        load_state_dict(
-            torch.load(model_urls['darknet53'],
-                       map_location=torch.device('cpu')), model)
+
     return model
 
 
 if __name__ == '__main__':
-    net = DarknetTiny(num_classes=1000)
-    image_h, image_w = 224, 224
+    import os
+    import random
+    import numpy as np
+    import torch
+    seed = 0
+    # for hash
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    # for python and numpy
+    random.seed(seed)
+    np.random.seed(seed)
+    # for cpu gpu
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+
+    net = darknettiny(num_classes=1000)
+    image_h, image_w = 256, 256
     from thop import profile
     from thop import clever_format
-    flops, params = profile(net,
-                            inputs=(torch.randn(1, 3, image_h, image_w), ),
-                            verbose=False)
-    flops, params = clever_format([flops, params], '%.3f')
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
     out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
-    print(f'1111, flops: {flops}, params: {params},out_shape: {out.shape}')
-    net = Darknet19(num_classes=1000)
-    image_h, image_w = 224, 224
+    print(f'1111, macs: {macs}, params: {params},out_shape: {out.shape}')
+
+    net = darknet19(num_classes=1000)
+    image_h, image_w = 256, 256
     from thop import profile
     from thop import clever_format
-    flops, params = profile(net,
-                            inputs=(torch.randn(1, 3, image_h, image_w), ),
-                            verbose=False)
-    flops, params = clever_format([flops, params], '%.3f')
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
     out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
-    print(f'2222, flops: {flops}, params: {params},out_shape: {out.shape}')
-    net = Darknet53(num_classes=1000)
-    image_h, image_w = 224, 224
-    flops, params = profile(net,
-                            inputs=(torch.randn(1, 3, image_h, image_w), ),
-                            verbose=False)
-    flops, params = clever_format([flops, params], '%.3f')
+    print(f'2222, macs: {macs}, params: {params},out_shape: {out.shape}')
+
+    net = darknet53(num_classes=1000)
+    image_h, image_w = 256, 256
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
     out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
-    print(f'3333, flops: {flops}, params: {params},out_shape: {out.shape}')
+    print(f'3333, macs: {macs}, params: {params},out_shape: {out.shape}')

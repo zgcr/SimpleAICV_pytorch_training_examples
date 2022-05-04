@@ -1,0 +1,18 @@
+2022-03-23 08:18:17 - network: resnet18cifar
+2022-03-23 08:18:17 - num_classes: 100
+2022-03-23 08:18:17 - input_image_size: 32
+2022-03-23 08:18:17 - trained_model_path: /root/code/simpleAICV-pytorch-ImageNet-COCO-training/classification_training/cifar100/resnet18cifar/checkpoints/resnet18cifar-acc78.190.pth
+2022-03-23 08:18:17 - criterion: CELoss(
+  (loss): CrossEntropyLoss()
+)
+2022-03-23 08:18:17 - val_dataset: <simpleAICV.classification.datasets.cifar100dataset.CIFAR100Dataset object at 0x7f8f878bd580>
+2022-03-23 08:18:17 - collater: <simpleAICV.classification.common.ClassificationCollater object at 0x7f8f878bd610>
+2022-03-23 08:18:17 - seed: 0
+2022-03-23 08:18:17 - batch_size: 256
+2022-03-23 08:18:17 - num_workers: 16
+2022-03-23 08:18:17 - distributed: True
+2022-03-23 08:18:17 - gpus_type: NVIDIA RTX A5000
+2022-03-23 08:18:17 - gpus_num: 1
+2022-03-23 08:18:17 - group: <torch._C._distributed_c10d.ProcessGroupNCCL object at 0x7f8f84a4bbf0>
+2022-03-23 08:18:17 - model: resnet18cifar, macs: 556.706M, params: 11.220M
+2022-03-23 08:18:21 - acc1: 78.180%, acc5: 94.300%, test_loss: 0.8750, per_image_load_time: 0.306ms, per_image_inference_time: 0.058ms

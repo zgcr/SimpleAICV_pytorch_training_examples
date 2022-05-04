@@ -1,0 +1,11 @@
+2022-02-24 22:40:48 - train: epoch 0100, iter [04400, 05004], lr: 0.000100, loss: 1.2353
+2022-02-24 22:41:21 - train: epoch 0100, iter [04500, 05004], lr: 0.000100, loss: 1.2027
+2022-02-24 22:41:58 - train: epoch 0100, iter [04600, 05004], lr: 0.000100, loss: 1.4560
+2022-02-24 22:42:34 - train: epoch 0100, iter [04700, 05004], lr: 0.000100, loss: 1.4893
+2022-02-24 22:43:09 - train: epoch 0100, iter [04800, 05004], lr: 0.000100, loss: 0.9812
+2022-02-24 22:43:43 - train: epoch 0100, iter [04900, 05004], lr: 0.000100, loss: 1.1421
+2022-02-24 22:44:17 - train: epoch 0100, iter [05000, 05004], lr: 0.000100, loss: 1.4166
+2022-02-24 22:44:18 - train: epoch 100, train_loss: 1.2612
+2022-02-24 22:45:39 - eval: epoch: 100, acc1: 70.466%, acc5: 89.700%, test_loss: 1.1932, per_image_load_time: 3.008ms, per_image_inference_time: 0.164ms
+2022-02-24 22:45:39 - until epoch: 100, best_acc1: 70.478%
+2022-02-24 22:45:39 - train done. model: resnet18, train time: 54.851 hours, best_acc1: 70.478%

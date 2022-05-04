@@ -1,0 +1,19 @@
+2022-03-21 21:45:34 - network: resnet34
+2022-03-21 21:45:34 - num_classes: 1000
+2022-03-21 21:45:34 - input_image_size: 224
+2022-03-21 21:45:34 - scale: 1.1428571428571428
+2022-03-21 21:45:34 - trained_model_path: /root/code/simpleAICV-pytorch-ImageNet-COCO-training/distillation_training/imagenet/resnet_34_dml_18/checkpoints/teacher-epoch100-acc74.318.pth
+2022-03-21 21:45:34 - criterion: CELoss(
+  (loss): CrossEntropyLoss()
+)
+2022-03-21 21:45:34 - val_dataset: <simpleAICV.classification.datasets.ilsvrc2012dataset.ILSVRC2012Dataset object at 0x7f18ac131b80>
+2022-03-21 21:45:34 - collater: <simpleAICV.classification.common.ClassificationCollater object at 0x7f18ac131bb0>
+2022-03-21 21:45:34 - seed: 0
+2022-03-21 21:45:34 - batch_size: 256
+2022-03-21 21:45:34 - num_workers: 16
+2022-03-21 21:45:34 - distributed: True
+2022-03-21 21:45:34 - gpus_type: NVIDIA GeForce RTX 3090
+2022-03-21 21:45:34 - gpus_num: 2
+2022-03-21 21:45:34 - group: <torch._C._distributed_c10d.ProcessGroupNCCL object at 0x7f18a42fad70>
+2022-03-21 21:45:34 - model: resnet34, macs: 3.671G, params: 21.798M
+2022-03-21 21:46:55 - acc1: 74.296%, acc5: 91.912%, test_loss: 1.0120, per_image_load_time: 0.792ms, per_image_inference_time: 0.562ms

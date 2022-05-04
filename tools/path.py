@@ -1,7 +1,4 @@
-pretrained_models_path = '/home/zgcr/下载/pretrained_models'
-
-ILSVRC2012_path = '/home/zgcr/下载/datasets/ILSVRC2012'
-CIFAR100_path = '/home/zgcr/下载/datasets/CIFAR100'
-
-COCO2017_path = '/home/zgcr/下载/datasets/COCO2017'
-VOCdataset_path = '/home/zgcr/下载/datasets/VOCdataset'
+CIFAR100_path = '/root/autodl-tmp/CIFAR100'
+ILSVRC2012_path = '/root/autodl-tmp/ILSVRC2012'
+COCO2017_path = '/root/autodl-tmp/COCO2017'
+VOCdataset_path = '/root/autodl-tmp/VOCdataset'

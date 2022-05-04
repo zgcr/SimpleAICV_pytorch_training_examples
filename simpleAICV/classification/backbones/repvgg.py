@@ -2,19 +2,8 @@
 RepVGG: Making VGG-style ConvNets Great Again
 https://arxiv.org/pdf/2101.03697.pdf
 '''
-import os
-import sys
-
-BASE_DIR = os.path.dirname(
-    os.path.dirname(os.path.dirname(os.path.dirname(
-        os.path.abspath(__file__)))))
-sys.path.append(BASE_DIR)
-
 import numpy as np
 from collections import OrderedDict
-
-from simpleAICV.classification.common import load_state_dict
-from tools.path import pretrained_models_path
 
 import torch
 import torch.nn as nn
@@ -35,22 +24,6 @@ __all__ = [
     'RepVGG_B3g2',
     'RepVGG_B3g4',
 ]
-
-model_urls = {
-    'RepVGG_A0': 'empty',
-    'RepVGG_A1': 'empty',
-    'RepVGG_A2': 'empty',
-    'RepVGG_B0': 'empty',
-    'RepVGG_B1': 'empty',
-    'RepVGG_B1g2': 'empty',
-    'RepVGG_B1g4': 'empty',
-    'RepVGG_B2': 'empty',
-    'RepVGG_B2g2': 'empty',
-    'RepVGG_B2g4': 'empty',
-    'RepVGG_B3': 'empty',
-    'RepVGG_B3g2': 'empty',
-    'RepVGG_B3g4': 'empty',
-}
 
 groupwise_layers = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26]
 g2_map = {l: 2 for l in groupwise_layers}
@@ -165,8 +138,7 @@ class RepVGGBlock(nn.Module):
                                                   stride=stride,
                                                   padding=padding,
                                                   groups=groups,
-                                                  bias=True,
-                                                  padding_mode='zeros')
+                                                  bias=True)
         else:
             self.identity = nn.BatchNorm2d(
                 inplanes) if inplanes == planes and stride == 1 else None
@@ -254,6 +226,7 @@ class RepVGG(nn.Module):
             'override_groups_map'] if self.superparams[
                 'override_groups_map'] else dict()
         self.deploy = deploy
+        self.num_classes = num_classes
 
         self.inplanes = min(64, int(64 * self.width_multiplier[0]))
         self.cur_layer_idx = 1
@@ -278,7 +251,8 @@ class RepVGG(nn.Module):
                                        self.num_blocks[3],
                                        stride=2)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-        self.fc = nn.Linear(int(512 * self.width_multiplier[3]), num_classes)
+        self.fc = nn.Linear(int(512 * self.width_multiplier[3]),
+                            self.num_classes)
 
     def _make_stage(self, planes, num_blocks, stride):
         strides = [stride] + [1] * (num_blocks - 1)
@@ -311,70 +285,65 @@ class RepVGG(nn.Module):
         return x
 
 
-def _repvgg(arch, pretrained, deploy, **kwargs):
+def _repvgg(arch, deploy, **kwargs):
     model = RepVGG(arch, deploy, **kwargs)
-    # only load state_dict()
-    if pretrained:
-        load_state_dict(
-            torch.load(model_urls[arch], map_location=torch.device('cpu')),
-            model)
 
     return model
 
 
-def RepVGG_A0(pretrained=False, deploy=False, **kwargs):
-    return _repvgg('RepVGG_A0', pretrained, deploy, **kwargs)
+def RepVGG_A0(deploy=False, **kwargs):
+    return _repvgg('RepVGG_A0', deploy, **kwargs)
 
 
-def RepVGG_A1(pretrained=False, deploy=False, **kwargs):
-    return _repvgg('RepVGG_A1', pretrained, deploy, **kwargs)
+def RepVGG_A1(deploy=False, **kwargs):
+    return _repvgg('RepVGG_A1', deploy, **kwargs)
 
 
-def RepVGG_A2(pretrained=False, deploy=False, **kwargs):
-    return _repvgg('RepVGG_A2', pretrained, deploy, **kwargs)
+def RepVGG_A2(deploy=False, **kwargs):
+    return _repvgg('RepVGG_A2', deploy, **kwargs)
 
 
-def RepVGG_B0(pretrained=False, deploy=False, **kwargs):
-    return _repvgg('RepVGG_B0', pretrained, deploy, **kwargs)
+def RepVGG_B0(deploy=False, **kwargs):
+    return _repvgg('RepVGG_B0', deploy, **kwargs)
 
 
-def RepVGG_B1(pretrained=False, deploy=False, **kwargs):
-    return _repvgg('RepVGG_B1', pretrained, deploy, **kwargs)
+def RepVGG_B1(deploy=False, **kwargs):
+    return _repvgg('RepVGG_B1', deploy, **kwargs)
 
 
-def RepVGG_B1g2(pretrained=False, deploy=False, **kwargs):
-    return _repvgg('RepVGG_B1g2', pretrained, deploy, **kwargs)
+def RepVGG_B1g2(deploy=False, **kwargs):
+    return _repvgg('RepVGG_B1g2', deploy, **kwargs)
 
 
-def RepVGG_B1g4(pretrained=False, deploy=False, **kwargs):
-    return _repvgg('RepVGG_B1g4', pretrained, deploy, **kwargs)
+def RepVGG_B1g4(deploy=False, **kwargs):
+    return _repvgg('RepVGG_B1g4', deploy, **kwargs)
 
 
-def RepVGG_B2(pretrained=False, deploy=False, **kwargs):
-    return _repvgg('RepVGG_B2', pretrained, deploy, **kwargs)
+def RepVGG_B2(deploy=False, **kwargs):
+    return _repvgg('RepVGG_B2', deploy, **kwargs)
 
 
-def RepVGG_B2g2(pretrained=False, deploy=False, **kwargs):
-    return _repvgg('RepVGG_B2g2', pretrained, deploy, **kwargs)
+def RepVGG_B2g2(deploy=False, **kwargs):
+    return _repvgg('RepVGG_B2g2', deploy, **kwargs)
 
 
-def RepVGG_B2g4(pretrained=False, deploy=False, **kwargs):
-    return _repvgg('RepVGG_B2g4', pretrained, deploy, **kwargs)
+def RepVGG_B2g4(deploy=False, **kwargs):
+    return _repvgg('RepVGG_B2g4', deploy, **kwargs)
 
 
-def RepVGG_B3(pretrained=False, deploy=False, **kwargs):
-    return _repvgg('RepVGG_B3', pretrained, deploy, **kwargs)
+def RepVGG_B3(deploy=False, **kwargs):
+    return _repvgg('RepVGG_B3', deploy, **kwargs)
 
 
-def RepVGG_B3g2(pretrained=False, deploy=False, **kwargs):
-    return _repvgg('RepVGG_B3g2', pretrained, deploy, **kwargs)
+def RepVGG_B3g2(deploy=False, **kwargs):
+    return _repvgg('RepVGG_B3g2', deploy, **kwargs)
 
 
-def RepVGG_B3g4(pretrained=False, deploy=False, **kwargs):
-    return _repvgg('RepVGG_B3g4', pretrained, deploy, **kwargs)
+def RepVGG_B3g4(deploy=False, **kwargs):
+    return _repvgg('RepVGG_B3g4', deploy, **kwargs)
 
 
-def deploy_model(trained_model, deployed_model, save_path):
+def deploy_model(trained_model, deployed_model):
     deploy_model_weights = {}
     for name, module in trained_model.named_modules():
         if hasattr(module, 'get_equivalent_conv_kernel_bias'):
@@ -401,36 +370,54 @@ def deploy_model(trained_model, deployed_model, save_path):
 
     # load all equivalent weights,and the other weights will be abandoned(self.conv3x3,self.conv1x1,self.identity in RepVGGBlock).
     deployed_model.load_state_dict(deploy_model_weights, strict=False)
-    if save_path:
-        torch.save(deployed_model.state_dict(), save_path)
 
     return deployed_model
 
 
 if __name__ == '__main__':
-    net = RepVGG('RepVGG_A0', num_classes=1000, deploy=False)
+    import os
+    import random
+    import numpy as np
+    import torch
+    seed = 0
+    # for hash
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    # for python and numpy
+    random.seed(seed)
+    np.random.seed(seed)
+    # for cpu gpu
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+
+    net = RepVGG_A0(deploy=False, num_classes=1000)
     image_h, image_w = 224, 224
     from thop import profile
     from thop import clever_format
-    flops, params = profile(net,
-                            inputs=(torch.randn(1, 3, image_h, image_w), ),
-                            verbose=False)
-    flops, params = clever_format([flops, params], '%.3f')
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
     out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
-    print(f'1111, flops: {flops}, params: {params},out_shape: {out.shape}')
+    print(f'1111, macs: {macs}, params: {params},out_shape: {out.shape}')
 
     # an example to deploy repvgg trained model
-    trained_model = RepVGG_A0(pretrained=False, deploy=False)
-    # Assuming that the model has been trained, save the model
-    torch.save(trained_model.state_dict(), 'RepVGG_A0_trained.pth')
-    # load trained parameters
-    trained_model.load_state_dict(
-        torch.load('RepVGG_A0_trained.pth', map_location=torch.device('cpu')))
+    trained_model = RepVGG_A0(deploy=False)
+
+    # # Assuming that the model has been trained, save the model
+    # torch.save(trained_model.state_dict(), 'RepVGG_A0_trained.pth')
+
+    # # load trained parameters
+    # trained_model.load_state_dict(
+    #     torch.load('RepVGG_A0_trained.pth', map_location=torch.device('cpu')))
+
     trained_model.eval()
     # define deployed model
-    deployed_model = RepVGG_A0(pretrained=False, deploy=True)
-    save_path = 'RepVGG_A0_deployed.pth'
-    deployed_model = deploy_model(trained_model, deployed_model, save_path)
+    deployed_model = RepVGG_A0(deploy=True)
+    deployed_model = deploy_model(trained_model, deployed_model)
+
+    # torch.save(deployed_model.state_dict(), 'RepVGG_A0_deployed.pth')
+
     deployed_model.eval()
     inputs = torch.randn(3, 3, 224, 224)
     out1 = trained_model(inputs)

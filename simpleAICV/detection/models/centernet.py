@@ -1,22 +1,16 @@
 import os
 import sys
-import math
-import numpy as np
 
 BASE_DIR = os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.dirname(
         os.path.abspath(__file__)))))
 sys.path.append(BASE_DIR)
 
-from tools.path import pretrained_models_path
-
-from simpleAICV.detection.common import load_state_dict
-from simpleAICV.detection.models.backbone import ResNetBackbone
-from simpleAICV.detection.models.head import CenterNetHetRegWhHead
-
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+
+from simpleAICV.detection.models import backbones
+from simpleAICV.detection.models.head import CenterNetHetRegWhHead
 
 __all__ = [
     'resnet18_centernet',
@@ -26,35 +20,26 @@ __all__ = [
     'resnet152_centernet',
 ]
 
-model_urls = {
-    'resnet18_centernet': 'empty',
-    'resnet34_centernet': 'empty',
-    'resnet50_centernet': 'empty',
-    'resnet101_centernet': 'empty',
-    'resnet152_centernet': 'empty',
-}
 
-
-# assert input annotations are[x_min,y_min,x_max,y_max]
 class CenterNet(nn.Module):
-    def __init__(self, resnet_type, num_classes=80):
-        super(CenterNet, self).__init__()
-        self.backbone = ResNetBackbone(resnet_type=resnet_type,
-                                       pretrained=True)
-        expand_ratio = {
-            "resnet18": 1,
-            "resnet34": 1,
-            "resnet50": 4,
-            "resnet101": 4,
-            "resnet152": 4
-        }
-        C5_inplanes = int(512 * expand_ratio[resnet_type])
 
+    def __init__(self,
+                 backbone_type,
+                 backbone_pretrained_path='',
+                 planes=[256, 128, 64],
+                 num_classes=80):
+        super(CenterNet, self).__init__()
+        assert len(planes) == 3
+
+        self.backbone = backbones.__dict__[backbone_type](
+            **{
+                'pretrained_path': backbone_pretrained_path,
+            })
         self.centernet_head = CenterNetHetRegWhHead(
-            C5_inplanes,
+            self.backbone.out_channels[-1],
             num_classes,
-            num_layers=3,
-            out_channels=[256, 128, 64])
+            planes=planes,
+            num_layers=3)
 
     def forward(self, inputs):
         [C3, C4, C5] = self.backbone(inputs)
@@ -69,51 +54,85 @@ class CenterNet(nn.Module):
         # heatmap_output shape:[3, 80, 160, 160]
         # offset_output shape:[3, 2, 160, 160]
         # wh_output shape:[3, 2, 160, 160]
+        return [heatmap_output, offset_output, wh_output]
 
-        return heatmap_output, offset_output, wh_output
 
-
-def _centernet(arch, pretrained, **kwargs):
-    model = CenterNet(arch, **kwargs)
-
-    if pretrained:
-        load_state_dict(
-            torch.load(model_urls[arch + '_centernet'],
-                       map_location=torch.device('cpu')), model)
+def _centernet(backbone_type, backbone_pretrained_path, **kwargs):
+    model = CenterNet(backbone_type,
+                      backbone_pretrained_path=backbone_pretrained_path,
+                      **kwargs)
 
     return model
 
 
-def resnet18_centernet(pretrained=False, **kwargs):
-    return _centernet('resnet18', pretrained, **kwargs)
+def resnet18_centernet(backbone_pretrained_path='', **kwargs):
+    return _centernet('resnet18backbone',
+                      backbone_pretrained_path=backbone_pretrained_path,
+                      **kwargs)
 
 
-def resnet34_centernet(pretrained=False, **kwargs):
-    return _centernet('resnet34', pretrained, **kwargs)
+def resnet34_centernet(backbone_pretrained_path='', **kwargs):
+    return _centernet('resnet34backbone',
+                      backbone_pretrained_path=backbone_pretrained_path,
+                      **kwargs)
 
 
-def resnet50_centernet(pretrained=False, **kwargs):
-    return _centernet('resnet50', pretrained, **kwargs)
+def resnet50_centernet(backbone_pretrained_path='', **kwargs):
+    return _centernet('resnet50backbone',
+                      backbone_pretrained_path=backbone_pretrained_path,
+                      **kwargs)
 
 
-def resnet101_centernet(pretrained=False, **kwargs):
-    return _centernet('resnet101', pretrained, **kwargs)
+def resnet101_centernet(backbone_pretrained_path='', **kwargs):
+    return _centernet('resnet101backbone',
+                      backbone_pretrained_path=backbone_pretrained_path,
+                      **kwargs)
 
 
-def resnet152_centernet(pretrained=False, **kwargs):
-    return _centernet('resnet152', pretrained, **kwargs)
+def resnet152_centernet(backbone_pretrained_path='', **kwargs):
+    return _centernet('resnet152backbone',
+                      backbone_pretrained_path=backbone_pretrained_path,
+                      **kwargs)
 
 
 if __name__ == '__main__':
-    net = CenterNet(resnet_type="resnet18")
-    image_h, image_w = 512, 512
-    heatmap_output, offset_output, wh_output = net(
-        torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
-    annotations = torch.FloatTensor([[[113, 120, 183, 255, 5],
-                                      [13, 45, 175, 210, 2]],
-                                     [[11, 18, 223, 225, 1],
-                                      [-1, -1, -1, -1, -1]],
-                                     [[-1, -1, -1, -1, -1],
-                                      [-1, -1, -1, -1, -1]]])
+    import os
+    import random
+    import numpy as np
+    import torch
+    seed = 0
+    # for hash
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    # for python and numpy
+    random.seed(seed)
+    np.random.seed(seed)
+    # for cpu gpu
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
 
-    print("1111", heatmap_output.shape, offset_output.shape, wh_output.shape)
+    net = resnet18_centernet()
+    image_h, image_w = 512, 512
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    outs = net(torch.autograd.Variable(torch.randn(8, 3, image_h, image_w)))
+    for out in outs:
+        print('2222', out.shape)
+
+    net = resnet50_centernet()
+    image_h, image_w = 512, 512
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    outs = net(torch.autograd.Variable(torch.randn(8, 3, image_h, image_w)))
+    for out in outs:
+        print('2222', out.shape)

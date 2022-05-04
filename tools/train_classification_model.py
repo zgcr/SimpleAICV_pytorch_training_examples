@@ -15,22 +15,17 @@ from torch.utils.data import DataLoader
 
 from tools.scripts import train_classification, validate_classification
 from tools.utils import (get_logger, set_seed, worker_seed_init_fn,
-                         compute_flops_and_params, build_optimizer,
+                         compute_macs_and_params, build_optimizer,
                          build_scheduler, build_training_mode)
 
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description='PyTorch Classification Model Training')
+        description='PyTorch Classification Training')
     parser.add_argument(
         '--work-dir',
         type=str,
         help='path for get training config and saving log/models')
-    parser.add_argument(
-        '--local_rank',
-        type=int,
-        default=0,
-        help='LOCAL_PROCESS_RANK in DistributedDataParallel model')
 
     return parser.parse_args()
 
@@ -45,144 +40,161 @@ def main():
     log_dir = os.path.join(args.work_dir, 'log')
     checkpoint_dir = os.path.join(args.work_dir, 'checkpoints')
     resume_model = os.path.join(checkpoint_dir, 'latest.pth')
+    config.gpus_type = torch.cuda.get_device_name()
+    config.gpus_num = torch.cuda.device_count()
 
-    if not os.path.exists(checkpoint_dir):
-        os.makedirs(checkpoint_dir)
+    set_seed(config.seed)
+
+    local_rank = int(os.environ['LOCAL_RANK'])
+    # start init process
+    torch.distributed.init_process_group(backend='nccl', init_method='env://')
+    torch.cuda.set_device(local_rank)
+    config.group = torch.distributed.new_group(list(range(config.gpus_num)))
+
+    if local_rank == 0:
+        os.makedirs(
+            checkpoint_dir) if not os.path.exists(checkpoint_dir) else None
+        os.makedirs(log_dir) if not os.path.exists(log_dir) else None
+
+    torch.distributed.barrier()
 
     global logger
     logger = get_logger('train', log_dir)
 
-    set_seed(config.seed)
-
-    local_rank = args.local_rank
-    # start init process
-    if config.distributed:
-        torch.distributed.init_process_group(backend='nccl',
-                                             init_method='env://')
-        torch.cuda.set_device(local_rank)
+    batch_size, num_workers = config.batch_size, config.num_workers
+    assert config.batch_size % config.gpus_num == 0, 'config.batch_size is not divisible by config.gpus_num!'
+    assert config.num_workers % config.gpus_num == 0, 'config.num_workers is not divisible by config.gpus_num!'
+    batch_size = int(config.batch_size // config.gpus_num)
+    num_workers = int(config.num_workers // config.gpus_num)
 
     init_fn = functools.partial(worker_seed_init_fn,
-                                num_workers=config.num_workers,
+                                num_workers=num_workers,
                                 local_rank=local_rank,
                                 seed=config.seed)
     train_sampler = torch.utils.data.distributed.DistributedSampler(
-        config.train_dataset, shuffle=True) if config.distributed else None
+        config.train_dataset, shuffle=True)
     train_loader = DataLoader(config.train_dataset,
-                              batch_size=config.batch_size,
-                              shuffle=(train_sampler is None),
-                              pin_memory=True,
-                              num_workers=config.num_workers,
+                              batch_size=batch_size,
+                              shuffle=False,
+                              pin_memory=False,
+                              num_workers=num_workers,
+                              collate_fn=config.collater,
                               sampler=train_sampler,
                               worker_init_fn=init_fn)
+
     val_sampler = torch.utils.data.distributed.DistributedSampler(
-        config.val_dataset, shuffle=False) if config.distributed else None
+        config.val_dataset, shuffle=False)
     val_loader = DataLoader(config.val_dataset,
-                            batch_size=config.batch_size,
+                            batch_size=batch_size,
                             shuffle=False,
-                            pin_memory=True,
-                            num_workers=config.num_workers,
+                            pin_memory=False,
+                            num_workers=num_workers,
+                            collate_fn=config.collater,
                             sampler=val_sampler)
 
     for key, value in config.__dict__.items():
         if not key.startswith('__'):
-            if key not in ['model', 'criterion']:
+            if key not in ['model']:
                 log_info = f'{key}: {value}'
-                logger.info(log_info) if (
-                    config.distributed
-                    and local_rank == 0) or not config.distributed else None
-
-    gpus_type, gpus_num = torch.cuda.get_device_name(
-    ), torch.cuda.device_count()
-    log_info = f'gpus_type: {gpus_type}, gpus_num: {gpus_num}'
-    logger.info(log_info) if (config.distributed and local_rank
-                              == 0) or not config.distributed else None
+                logger.info(log_info) if local_rank == 0 else None
 
     model = config.model.cuda()
     criterion = config.criterion.cuda()
 
     # parameters needs to be updated by the optimizer
     # buffers doesn't needs to be updated by the optimizer
+    log_info = f'--------------------parameters--------------------'
+    logger.info(log_info) if local_rank == 0 else None
     for name, param in model.named_parameters():
         log_info = f'name: {name}, grad: {param.requires_grad}'
-        logger.info(log_info) if (config.distributed and local_rank
-                                  == 0) or not config.distributed else None
+        logger.info(log_info) if local_rank == 0 else None
 
+    log_info = f'--------------------buffers--------------------'
+    logger.info(log_info) if local_rank == 0 else None
     for name, buffer in model.named_buffers():
         log_info = f'name: {name}, grad: {buffer.requires_grad}'
-        logger.info(log_info) if (config.distributed and local_rank
-                                  == 0) or not config.distributed else None
+        logger.info(log_info) if local_rank == 0 else None
 
     optimizer = build_optimizer(config, model)
     scheduler = build_scheduler(config, optimizer)
     model = build_training_mode(config, model, optimizer)
 
-    start_epoch = 1
-    # automatically resume model for training if checkpoint model exist
+    start_epoch, train_time = 1, 0
+    best_acc1, acc1, test_loss = 0, 0, 0
     if os.path.exists(resume_model):
         checkpoint = torch.load(resume_model, map_location=torch.device('cpu'))
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+
         saved_epoch = checkpoint['epoch']
         start_epoch += saved_epoch
-        best_top1, loss, lr = checkpoint['best_top1'], checkpoint[
-            'loss'], checkpoint['lr']
+        used_time = checkpoint['time']
+        train_time += used_time
 
-        log_info = f'resuming model from {resume_model}. resume_epoch: {saved_epoch}, best_top1: {best_top1:.3f}%, loss: {loss:.4f}, lr: {lr:.6f}'
-        logger.info(log_info) if (config.distributed and local_rank
-                                  == 0) or not config.distributed else None
+        best_acc1, test_loss, lr = checkpoint['best_acc1'], checkpoint[
+            'test_loss'], checkpoint['lr']
 
-    # calculate training time
-    start_time = time.time()
-    best_top1 = 0.0
+        log_info = f'resuming model from {resume_model}. resume_epoch: {saved_epoch:0>3d}, used_time: {used_time:.3f} hours, best_acc1: {best_acc1:.3f}%, test_loss: {test_loss:.4f}, lr: {lr:.6f}'
+        logger.info(log_info) if local_rank == 0 else None
 
     for epoch in range(start_epoch, config.epochs + 1):
+        per_epoch_start_time = time.time()
+
+        log_info = f'epoch {epoch:0>3d} lr: {scheduler.get_lr()[0]}'
+        logger.info(log_info) if local_rank == 0 else None
+
         torch.cuda.empty_cache()
-        train_sampler.set_epoch(epoch) if config.distributed else None
-        top1, top5, loss = train_classification(train_loader, model, criterion,
-                                                optimizer, scheduler, epoch,
-                                                logger, config)
-        log_info = f'train: epoch {epoch:0>3d}, top1: {top1:.3f}%, top5: {top5:.3f}%, loss: {loss:.4f}'
-        logger.info(log_info) if (config.distributed and local_rank
-                                  == 0) or not config.distributed else None
 
-        top1, top5, loss, per_image_load_time, per_image_inference_time = validate_classification(
+        train_sampler.set_epoch(epoch)
+        train_loss = train_classification(train_loader, model, criterion,
+                                          optimizer, scheduler, epoch, logger,
+                                          config)
+        log_info = f'train: epoch {epoch:0>3d}, train_loss: {train_loss:.4f}'
+        logger.info(log_info) if local_rank == 0 else None
+
+        torch.cuda.empty_cache()
+
+        acc1, acc5, test_loss, per_image_load_time, per_image_inference_time = validate_classification(
             val_loader, model, criterion, config)
-        log_info = f'eval: epoch: {epoch:0>3d}, top1: {top1:.3f}%, top5: {top5:.3f}%, loss: {loss:.4f}, per_image_load_time: {per_image_load_time:.3f}ms, per_image_inference_time: {per_image_inference_time:.3f}ms'
-        logger.info(log_info) if (config.distributed and local_rank
-                                  == 0) or not config.distributed else None
+        log_info = f'eval: epoch: {epoch:0>3d}, acc1: {acc1:.3f}%, acc5: {acc5:.3f}%, test_loss: {test_loss:.4f}, per_image_load_time: {per_image_load_time:.3f}ms, per_image_inference_time: {per_image_inference_time:.3f}ms'
+        logger.info(log_info) if local_rank == 0 else None
 
-        if (config.distributed and local_rank == 0) or not config.distributed:
-            # save best top1 model and each epoch checkpoint
-            if top1 > best_top1:
+        torch.cuda.empty_cache()
+
+        train_time += (time.time() - per_epoch_start_time) / 3600
+
+        if local_rank == 0:
+            # save best acc1 model and each epoch checkpoint
+            if acc1 > best_acc1 and acc1 <= 100:
                 torch.save(model.module.state_dict(),
                            os.path.join(checkpoint_dir, 'best.pth'))
-                best_top1 = top1
+                best_acc1 = acc1
 
             torch.save(
                 {
                     'epoch': epoch,
-                    'best_top1': best_top1,
-                    'loss': loss,
+                    'time': train_time,
+                    'best_acc1': best_acc1,
+                    'test_loss': test_loss,
                     'lr': scheduler.get_lr()[0],
                     'model_state_dict': model.state_dict(),
                     'optimizer_state_dict': optimizer.state_dict(),
                     'scheduler_state_dict': scheduler.state_dict(),
                 }, os.path.join(checkpoint_dir, 'latest.pth'))
 
-    if (config.distributed and local_rank == 0) or not config.distributed:
+        log_info = f'until epoch: {epoch:0>3d}, best_acc1: {best_acc1:.3f}%'
+        logger.info(log_info) if local_rank == 0 else None
+
+    if local_rank == 0:
         if os.path.exists(os.path.join(checkpoint_dir, 'best.pth')):
             os.rename(
                 os.path.join(checkpoint_dir, 'best.pth'),
-                os.path.join(
-                    checkpoint_dir,
-                    f'{config.network}-epoch{epoch}-acc{best_top1:.3f}.pth'))
+                os.path.join(checkpoint_dir,
+                             f'{config.network}-acc{best_acc1:.3f}.pth'))
 
-    training_time = (time.time() - start_time) / 3600
-    flops, params = compute_flops_and_params(config, model)
-    log_info = f'train done. model: {config.network}, flops: {flops}, params: {params}, training time: {training_time:.3f} hours, best_top1: {best_top1:.3f}%'
-    logger.info(log_info) if (config.distributed and local_rank
-                              == 0) or not config.distributed else None
+    log_info = f'train done. model: {config.network}, train time: {train_time:.3f} hours, best_acc1: {best_acc1:.3f}%'
+    logger.info(log_info) if local_rank == 0 else None
 
     return
 

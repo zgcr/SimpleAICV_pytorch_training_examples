@@ -1,0 +1,33 @@
+2022-04-30 22:31:02 - network: resnet50_fcos
+2022-04-30 22:31:02 - num_classes: 80
+2022-04-30 22:31:02 - input_image_size: [400, 667]
+2022-04-30 22:31:02 - trained_model_path: /root/code/simpleAICV-pytorch-ImageNet-COCO-training/detection_training/coco/res50_fcos_retinaresize400/checkpoints/resnet50_fcos-metric34.060.pth
+2022-04-30 22:31:02 - criterion: FCOSLoss()
+2022-04-30 22:31:02 - decoder: <simpleAICV.detection.decode.FCOSDecoder object at 0x7f9278052e20>
+2022-04-30 22:31:02 - val_dataset: <simpleAICV.detection.datasets.cocodataset.CocoDetection object at 0x7f9278052be0>
+2022-04-30 22:31:02 - collater: <simpleAICV.detection.common.DetectionCollater object at 0x7f9278052bb0>
+2022-04-30 22:31:02 - eval_type: COCO
+2022-04-30 22:31:02 - eval_voc_iou_threshold_list: [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
+2022-04-30 22:31:02 - seed: 0
+2022-04-30 22:31:02 - batch_size: 32
+2022-04-30 22:31:02 - num_workers: 4
+2022-04-30 22:31:02 - gpus_type: NVIDIA RTX A5000
+2022-04-30 22:31:02 - gpus_num: 2
+2022-04-30 22:31:02 - group: <torch._C._distributed_c10d.ProcessGroupNCCL object at 0x7f925ec614f0>
+2022-04-30 22:31:04 - model: resnet50_fcos, macs: 54.066G, params: 32.291M
+2022-04-30 22:34:20 - eval type: COCO
+per_image_load_time: 1.721ms
+per_image_inference_time: 25.682ms
+IoU=0.50:0.95,area=all,maxDets=100,mAP: 34.04564011957289
+IoU=0.50,area=all,maxDets=100,mAP: 52.105470218238935
+IoU=0.75,area=all,maxDets=100,mAP: 36.33393248256276
+IoU=0.50:0.95,area=small,maxDets=100,mAP: 15.034889333894618
+IoU=0.50:0.95,area=medium,maxDets=100,mAP: 38.11033743441274
+IoU=0.50:0.95,area=large,maxDets=100,mAP: 50.25613692190775
+IoU=0.50:0.95,area=all,maxDets=1,mAR: 27.999071719634323
+IoU=0.50:0.95,area=all,maxDets=10,mAR: 43.79988736923976
+IoU=0.50:0.95,area=all,maxDets=100,mAR: 46.85278099406419
+IoU=0.50:0.95,area=small,maxDets=100,mAR: 22.32113842384785
+IoU=0.50:0.95,area=medium,maxDets=100,mAR: 53.408981512365585
+IoU=0.50:0.95,area=large,maxDets=100,mAR: 65.67235726182145
+

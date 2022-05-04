@@ -1,0 +1,19 @@
+2022-03-21 21:58:49 - network: yoloxxbackbone
+2022-03-21 21:58:49 - num_classes: 1000
+2022-03-21 21:58:49 - input_image_size: 256
+2022-03-21 21:58:49 - scale: 1.1428571428571428
+2022-03-21 21:58:49 - trained_model_path: /root/code/simpleAICV-pytorch-ImageNet-COCO-training/classification_training/imagenet/yoloxxbackbone/checkpoints/yoloxxbackbone-acc74.496.pth
+2022-03-21 21:58:49 - criterion: CELoss(
+  (loss): CrossEntropyLoss()
+)
+2022-03-21 21:58:49 - val_dataset: <simpleAICV.classification.datasets.ilsvrc2012dataset.ILSVRC2012Dataset object at 0x7f3390028d30>
+2022-03-21 21:58:49 - collater: <simpleAICV.classification.common.ClassificationCollater object at 0x7f3390028d00>
+2022-03-21 21:58:49 - seed: 0
+2022-03-21 21:58:49 - batch_size: 256
+2022-03-21 21:58:49 - num_workers: 16
+2022-03-21 21:58:49 - distributed: True
+2022-03-21 21:58:49 - gpus_type: NVIDIA RTX A5000
+2022-03-21 21:58:49 - gpus_num: 2
+2022-03-21 21:58:49 - group: <torch._C._distributed_c10d.ProcessGroupNCCL object at 0x7f33736e4430>
+2022-03-21 21:58:49 - model: yoloxxbackbone, macs: 11.548G, params: 51.583M
+2022-03-21 22:00:05 - acc1: 74.484%, acc5: 92.006%, test_loss: 1.0058, per_image_load_time: 1.414ms, per_image_inference_time: 1.433ms

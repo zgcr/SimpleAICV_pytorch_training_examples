@@ -1,0 +1,33 @@
+2022-04-30 22:49:46 - network: resnet50_retinanet
+2022-04-30 22:49:46 - num_classes: 80
+2022-04-30 22:49:46 - input_image_size: [640, 640]
+2022-04-30 22:49:46 - trained_model_path: /root/code/simpleAICV-pytorch-ImageNet-COCO-training/detection_training/coco/res50_retinanet_yoloresize640/checkpoints/resnet50_retinanet-metric32.972.pth
+2022-04-30 22:49:46 - criterion: RetinaLoss()
+2022-04-30 22:49:46 - decoder: <simpleAICV.detection.decode.RetinaDecoder object at 0x7fea291d9bb0>
+2022-04-30 22:49:46 - val_dataset: <simpleAICV.detection.datasets.cocodataset.CocoDetection object at 0x7fea2805f160>
+2022-04-30 22:49:46 - collater: <simpleAICV.detection.common.DetectionCollater object at 0x7fea28051e20>
+2022-04-30 22:49:46 - eval_type: COCO
+2022-04-30 22:49:46 - eval_voc_iou_threshold_list: [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
+2022-04-30 22:49:46 - seed: 0
+2022-04-30 22:49:46 - batch_size: 32
+2022-04-30 22:49:46 - num_workers: 4
+2022-04-30 22:49:46 - gpus_type: NVIDIA RTX A5000
+2022-04-30 22:49:46 - gpus_num: 2
+2022-04-30 22:49:46 - group: <torch._C._distributed_c10d.ProcessGroupNCCL object at 0x7fea0cd4d0f0>
+2022-04-30 22:49:49 - model: resnet50_retinanet, macs: 95.558G, params: 37.969M
+2022-04-30 22:54:41 - eval type: COCO
+per_image_load_time: 1.723ms
+per_image_inference_time: 50.182ms
+IoU=0.50:0.95,area=all,maxDets=100,mAP: 32.971074034211775
+IoU=0.50,area=all,maxDets=100,mAP: 49.5233005359748
+IoU=0.75,area=all,maxDets=100,mAP: 35.2794751873401
+IoU=0.50:0.95,area=small,maxDets=100,mAP: 14.492461021167177
+IoU=0.50:0.95,area=medium,maxDets=100,mAP: 38.20815636296454
+IoU=0.50:0.95,area=large,maxDets=100,mAP: 47.9547501363797
+IoU=0.50:0.95,area=all,maxDets=1,mAR: 27.62565841938997
+IoU=0.50:0.95,area=all,maxDets=10,mAR: 41.415413551244754
+IoU=0.50:0.95,area=all,maxDets=100,mAR: 43.1101303963154
+IoU=0.50:0.95,area=small,maxDets=100,mAR: 18.901754744136838
+IoU=0.50:0.95,area=medium,maxDets=100,mAR: 50.04555033323719
+IoU=0.50:0.95,area=large,maxDets=100,mAR: 61.28031136697217
+

@@ -1,70 +1,60 @@
-   * [My ZhiHu column](#my-zhihu-column)
-   * [Update log](#Update-log)
-   * [Requirements](#requirements)
-   * [How to prepare dataset](#how-to-prepare-dataset)
-   * [How to download my pretrained models](#how-to-download-my-pretrained-models)
-   * [How to reproduce my model](#how-to-reproduce-my-model)
-   * [How to inference single image](#how-to-inference-single-image)
-   * [COCO2017 detection training results](#coco2017-detection-training-results)
-      * [RetinaNet](#retinanet)
-      * [FCOS](#fcos)
-      * [CenterNet(Objects as Points)](#centernetobjects-as-points)
-      * [YOLO series](#YOLO-series)
-   * [VOC2007 2012 detection training results](#voc20072012-detection-training-results)
-   * [CIFAR100 classification training results](#cifar100-classification-training-results)
-   * [ILSVRC2012(ImageNet) classification training results](#ilsvrc2012imagenet-classification-training-results)
-      * [Training in nn.parallel mode results](#training-in-nnparallel-mode-results)
-      * [Training in nn.DistributedDataParallel mode results](#training-in-nndistributeddataparallel-mode-results)
-   * [Citation](#citation)
+- [My ZhiHu column](#my-zhihu-column)
+- [Environments](#environments)
+- [Prepare datasets](#prepare-datasets)
+- [Download my pretrained models](#download-my-pretrained-models)
+- [Train and test model](#train-and-test-model)
+- [Classification training results](#classification-training-results)
+  - [ILSVRC2012(ImageNet) training results](#ilsvrc2012imagenet-training-results)
+  - [CIFAR100 training results](#cifar100-training-results)
+- [Detection training results](#detection-training-results)
+  - [COCO2017 training results](#coco2017-training-results)
+  - [VOC2007 and VOC2012 training results](#voc2007-and-voc2012-training-results)
+- [Distillation training results](#distillation-training-results)
+  - [ImageNet training results](#imagenet-training-results)
+- [Citation](#citation)
+
 
 # My ZhiHu column
 
 https://www.zhihu.com/column/c_1249719688055193600
 
-# Update log
+# Environments
 
-**2020.12.1:**
-1. Modify RetinaNet/FCOS loss calculation method.Training time is reduced by 40% and model performance is improved.
+**This repository only support one server one gpu card/one server multi gpu cards.**
 
-**2021.5.18:**
-1. All classification/detection/segmentation model have a public train.py and test.py file in tools/.
-2. For training and testing, train.info.log and test.info.log files are generated in the work directory respectively.
-3. Build repvgg net in simpleAICV/classification/backbones/repvgg.py.
+**environments:**
+Ubuntu 20.04.3 LTS,30 core AMD EPYC 7543 32-Core Processor, 2*RTX A5000, Python Version:3.8, CUDA Version:11.3
 
-# Requirements
-
-Platform:Ubuntu 18.04
-
+Please make sure your Python version>=3.7.
+**Use pip or conda to install those Packages:**
 ```
-python==3.7.7
-torch==1.8.0
-torchvision==0.9.0
-torchaudio==0.8.0
-pycocotools==2.0.2
+torch==1.10.0
+torchvision==0.11.1
+torchaudio==0.10.0
+onnx==1.11.0
+onnx-simplifier==0.3.6
 numpy
 Cython
-matplotlib
+pycocotools
 opencv-python
 tqdm
 thop
-```
-
-use python -m pip or conda command to install those packages:
-
-```
-python -m pip install -r requirement.txt
-conda install --yes --file requirements.txt
+yapf
+apex
 ```
 
 **How to install apex?**
 
-apex needs to be installed separately.Please use the following orders to install apex:
+apex needs to be installed separately.For torch1.10,modify apex/apex/amp/utils.py:
 ```
-git clone https://github.com/NVIDIA/apex
-cd apex
-pip install -v --no-cache-dir --global-option="--cpp_ext" --global-option="--cuda_ext" ./
+if cached_x.grad_fn.next_functions[1][0].variable is not x:
 ```
-If the above command fails to install apex，you can use the following orders to install apex:
+to
+```
+if cached_x.grad_fn.next_functions[0][0].variable is not x:
+```
+
+Then use the following orders to install apex:
 ```
 git clone https://github.com/NVIDIA/apex
 cd apex
@@ -72,33 +62,34 @@ pip install -v --no-cache-dir ./
 ```
 Using apex to train can reduce video memory usage by 25%-30%, but the training speed will be slower, the trained model has the same performance as not using apex.
 
-**How to use DCNv2 with apex mixed precision training opt_level='O1' (for CenterNet:Objects as Points training)?**
-
-I write DCNv2 by using torchvision.ops.deform_conv2d function in simpleAICV/detection/models/dcnv2.py. It doesn't need to install DCNv2 in https://github.com/CharlesShang/DCNv2.git, just make sure your torchvision version>=0.9.0.
-
-torchvision.ops.deform_conv2d function can't use apex mixed precision training,so I register this function as a float function in tools/utils.py in build_training_mode function. If you use apex mixed precision training for centernet training,the torchvision.ops.deform_conv2d function actually do single precision float point computation(other layers do half precision float point computation or single precision float point computation due to apex ops rule).
-
-# How to prepare dataset
+# Prepare datasets
 
 If you want to reproduce my imagenet pretrained models,you need download ILSVRC2012 dataset,and make sure the folder architecture as follows:
 ```
 ILSVRC2012
 |
 |-----train----1000 sub classes folders
-|
 |-----val------1000 sub classes folders
 Please make sure the same class has same class folder name in train and val folders.
+```
+
+If you want to reproduce my cifar100 pretrained models,you need download cifar100 dataset,and make sure the folder architecture as follows:
+```
+CIFAR100
+|
+|-----train unzip from cifar-100-python.tar.gz
+|-----test  unzip from cifar-100-python.tar.gz
+|-----meta  unzip from cifar-100-python.tar.gz
 ```
 
 If you want to reproduce my COCO pretrained models,you need download COCO2017 dataset,and make sure the folder architecture as follows:
 ```
 COCO2017
 |
-|-----annotations----all label jsons
+|-----annotations----all .json file (label file)
 |                 
 |                |----train2017
 |----images------|----val2017
-                 |----test2017
 ```
 
 If you want to reproduce my VOC pretrained models,you need download VOC2007+VOC2012 dataset,and make sure the folder architecture as follows:
@@ -117,182 +108,180 @@ VOCdataset
 |                 |----SegmentationObject
 ```
 
-# How to download my pretrained models
+# Download my pretrained models
 
-You can download all my pretrained models from here:
+You can download all my pretrained models from google drive or BAIDUWANGPAN:
 ```
-https://drive.google.com/drive/folders/1t8vmuxy_rTNczJo_Ej5zFd84fFMYap-I?usp=sharing
-```
+https://drive.google.com/drive/folders/1oif1oma3BvJ54bEB_487U8mmbToNI4Jh?usp=sharing
 
-If you are in China,you can download from here:
-```
-链接: https://pan.baidu.com/s/1leeoHAUZtnxc9ing38E3Nw
-提取码: 4epf
+链接：https://pan.baidu.com/s/1IN81YQWkfVGq2bg6IhFztw 
+提取码：ruzk
 ```
 
-# How to reproduce my model
+# Train and test model
 
-If you want to reproduce my model,you need enter a training folder directory,then run train.sh and test.sh.
+If you want to train or test model,you need enter a training folder directory,then run train.sh and test.sh.
 
-For example,you can enter classification_training/imagenet/resnet_vovnet_darknet_example.
-If you want to train this model,run train.sh:
+For example,you can enter classification_training/imagenet/resnet50.
+If you want to train this model from scratch,please delete checkpoints and log folders first,then run train.sh:
 ```
-# DataParallel mode config.distributed=False
-CUDA_VISIBLE_DEVICES=0,1 python ../../../tools/train_classification_model.py --work-dir ./
-# DistributedDataParallel mode config.distributed=True
-CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.launch --nproc_per_node=2 --master_addr 127.0.0.1 --master_port 20001 ../../../tools/train_classification_model.py --work-dir ./
+CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.run --nproc_per_node=2 --master_addr 127.0.1.0 --master_port 10000 ../../../tools/train_classification_model.py --work-dir ./
 ```
 
-CUDA_VISIBLE_DEVICES is used to specify the gpu ids for this training.Please make sure the nproc_per_node number is correct and master_addr/master_port are different from other experiments.You can modify training super parameters in train_config.py.
+CUDA_VISIBLE_DEVICES is used to specify the gpu ids for this training.Please make sure the number of nproc_per_node equal to the number of gpu cards.
+Make sure master_addr/master_port are unique for each training.
 
-if you want to test this model,run test.sh:
+if you want to test this model,you need have a pretrained model first,modify trained_model_path in test_config.py,then run test.sh:
 ```
-# DataParallel mode config.distributed=False
-CUDA_VISIBLE_DEVICES=0,1 python ../../../tools/test_classification_model.py --work-dir ./
-# DistributedDataParallel mode config.distributed=True
-CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.launch --nproc_per_node=2 --master_addr 127.0.0.1 --master_port 20001 ../../../tools/test_classification_model.py --work-dir ./
+CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.run --nproc_per_node=2 --master_addr 127.0.1.0 --master_port 10000 ../../../tools/test_classification_model.py --work-dir ./
 ```
+Also, You can modify super parameters in train_config.py/test_config.py.
 
-# How to inference single image
+# Classification training results
 
-I provide classification and detection scripts for testing single image in ./inference_demo/.
+## ILSVRC2012(ImageNet) training results
 
-classification testing example:
-```
-./run_classify_single_image.sh
-```
+| Network              | macs     | params      | input size | gpu num      | batch     | warm up | lr decay  | apex | syncbn | epochs | Top-1  |
+| -------------        | -------- | ----------- | ---------- | ------------ | --------- | ------- | --------  | ---- | ------ | ------ | ------ |
+| ResNet18             | 1.819G   | 11.690M     | 224x224    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 70.490 |
+| ResNet34half         | 949.323M | 5.585M      | 224x224    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 67.690 |
+| ResNet34             | 3.671G   | 21.798M     | 224x224    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 73.950 |
+| ResNet50half         | 1.063G   | 6.918M      | 224x224    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 72.048 |
+| ResNet50             | 4.112G   | 25.557M     | 224x224    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 76.334 |
+| ResNet101            | 7.834G   | 44.549M     | 224x224    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 77.716 |
+| ResNet152            | 11.559G  | 60.193M     | 224x224    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 78.318 |
+| ResNet50-200epoch    | 4.112G   | 25.557M     | 224x224    | 2 RTX A5000  | 256       | 5       | cosinelr  | True | False  | 200    | 77.326 |
+| ResNet50-autoaugment | 4.112G   | 25.557M     | 224x224    | 2 RTX A5000  | 256       | 5       | cosinelr  | True | False  | 200    | 77.692 |
+| ResNet50-randaugment | 4.112G   | 25.557M     | 224x224    | 2 RTX A5000  | 256       | 5       | cosinelr  | True | False  | 200    | 77.578 |
+| DarkNetTiny          | 412.537M | 2.087M      | 256x256    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 54.720 |
+| DarkNet19            | 3.663G   | 20.842M     | 256x256    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 73.830 |
+| DarkNet53            | 9.322G   | 41.610M     | 256x256    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 76.796 |
+| Yolov4CspDarkNetTiny | 977.589M | 4.143M      | 256x256    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 64.340 |
+| Yolov4CspDarkNet53   | 6.584G   | 27.642M     | 256x256    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 77.418 |
+| Yolov5nBackbone      | 205.613M | 937.480K    | 256x256    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 55.474 |
+| Yolov5sBackbone      | 759.354M | 3.225M      | 256x256    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 66.486 |
+| Yolov5mBackbone      | 2.230G   | 7.556M      | 256x256    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 72.090 |
+| Yolov5lBackbone      | 4.932G   | 14.315M     | 256x256    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 73.186 |
+| Yolov5xBackbone      | 9.243G   | 23.961M     | 256x256    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 73.618 |
+| YoloxnBackbone       | 104.508M | 716.968K    | 256x256    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 57.350 |
+| YoloxtBackbone       | 504.979M | 2.757M      | 256x256    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 66.246 |
+| YoloxsBackbone       | 876.729M | 4.726M      | 256x256    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 69.092 |
+| YoloxmBackbone       | 2.683G   | 13.122M     | 256x256    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 72.378 |
+| YoloxlBackbone       | 6.072G   | 28.101M     | 256x256    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 73.976 |
+| YoloxxBackbone       | 11.548G  | 51.583M     | 256x256    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 74.484 |
 
-detection testing example:
-```
-./run_detect_single_image.sh
-```
+You can find more model training details in classification_training/imagenet/.
 
-# COCO2017 detection training results
+## CIFAR100 training results
+
+| Network              | macs     | params      | input size | gpu num      | batch     | warm up | lr decay  | apex | syncbn | epochs | Top-1  |
+| -------------        | -------- | ----------- | ---------- | ------------ | --------- | ------- | --------  | ---- | ------ | ------ | ------ |
+| ResNet18Cifar        | 556.706M | 11.220M     | 32x32      | 1 RTX A5000  | 128       | 0       | multistep | True | False  | 200    | 78.180 |
+| ResNet34halfCifar    | 291.346M | 5.350M      | 32x32      | 1 RTX A5000  | 128       | 0       | multistep | True | False  | 200    | 76.690 |
+| ResNet34Cifar        | 1.162G   | 21.328M     | 32x32      | 1 RTX A5000  | 128       | 0       | multistep | True | False  | 200    | 79.310 |
+| ResNet50halfCifar    | 328.447M | 5.991M      | 32x32      | 1 RTX A5000  | 128       | 0       | multistep | True | False  | 200    | 77.170 |
+| ResNet50Cifar        | 1.305G   | 23.705M     | 32x32      | 1 RTX A5000  | 128       | 0       | multistep | True | False  | 200    | 76.950 |
+| ResNet101Cifar       | 2.520G   | 42.697M     | 32x32      | 1 RTX A5000  | 128       | 0       | multistep | True | False  | 200    | 78.270 |
+| ResNet152Cifar       | 3.737G   | 58.341M     | 32x32      | 1 RTX A5000  | 128       | 0       | multistep | True | False  | 200    | 78.700 |
+
+You can find more model training details in classification_training/cifar100/.
+
+# Detection training results
+
+## COCO2017 training results
 
 Trained on COCO2017_train dataset, tested on COCO2017_val dataset.
 
 mAP is IoU=0.5:0.95,area=all,maxDets=100,mAP(COCOeval,stats[0]).
-mAP50 is IoU=0.5,area=all,maxDets=100,mAP(COCOeval,stats[1]).
-mAP75 is IoU=0.75,area=all,maxDets=100,mAP(COCOeval,stats[2]).
 
-You can find more model training details in detection_training/.
-
-## RetinaNet
-
+**RetinaNet**
 Paper:https://arxiv.org/abs/1708.02002
 
-| Network | resize | batch | gpu-num | apex | syncbn | epoch | mAP-mAP50-mAP75 |
-| --- | --- |  --- |  --- |  --- |  --- |  --- |  --- |
-| ResNet50-RetinaNet | RetinaStyleResize-400 | 32 | 2 RTX3090 | yes | no | 12 | 0.321,0.482,0.340 |
-| ResNet50-RetinaNet | RetinaStyleResize-800 | 8 | 2 RTX3090 | yes | no | 12 | 0.355,0.526,0.380 |
+**FCOS**
+Paper:https://arxiv.org/abs/1904.01355
 
-## FCOS
-
-Paper:https://arxiv.org/abs/1904.01355 
-
-| Network | resize | batch | gpu-num | apex | syncbn | epoch | mAP-mAP50-mAP75 |
-| --- | --- |  --- |  --- |  --- |  --- |  --- |  --- |
-| ResNet50-FCOS | RetinaStyleResize-400 | 32 | 2 RTX3090 | yes | no | 12 | 0.346,0.527,0.366 |
-| ResNet50-FCOS | RetinaStyleResize-800 | 8 | 2 RTX3090 | yes | no | 12 | 0.379,0.562,0.410 |
-
-## CenterNet(Objects as Points)
-
+**CenterNet**
 Paper:https://arxiv.org/abs/1904.07850
 
-| Network | resize | batch | gpu-num | apex | syncbn | epoch | mAP-mAP50-mAP75 |
-| --- | --- |  --- |  --- |  --- |  --- |  --- |  --- |
-| ResNet18DCNv2-CenterNet | YoloStyleResize-512 | 128 | 2 RTX3090 | yes | no | 140 | |
+**TTFNet**
+Paper:https://arxiv.org/abs/1909.00700
 
-## YOLO series
-
+**YOLOv3**
 Paper:https://arxiv.org/abs/1804.02767
+
+**YOLOv4**
+Paper:https://arxiv.org/abs/2004.10934
+
+**YOLOv5**
+Code:https://github.com/ultralytics/yolov5
+
+**YOLOX**
+Paper:https://arxiv.org/abs/2107.08430
 
 **How to use yolov3 anchor clustering method to generate a set of custom anchors for your own dataset?**
 
 I provide a script in simpleAICV/detection/yolov3_anchor_cluster.py,and I give two examples for generate anchors on COCO2017 and VOC2007+2012 datasets.If you want to generate anchors for your dataset,just modify the part of input code,get width and height of all annotaion boxes,then use the script to compute anchors.The anchors size will change with different datasets or different input resizes.
 
-| Network | resize | batch | gpu-num | apex | syncbn | epoch | mAP-mAP50-mAP75 |
-| --- | --- |  --- |  --- |  --- |  --- |  --- |  --- |
-| YOLOv3backbone-YOLOv4loss | YoloStyleResize-416 | 128 | 2 RTX3090 | yes | no | 500 | |
+| Network               | resize-style    | input size | macs     | params   | gpu num      | batch     | warm up | lr decay  | apex | syncbn | epochs | mAP    |
+| -------------         | ------------    | ---------- | -------- | -------- | ------------ | --------- | ------- | --------  | ---- | ------ | ------ | ------ |
+| ResNet50-RetinaNet    | RetinaStyle-400 | 400x667    | 63.093G  | 37.969M  | 2 RTX A5000  | 32        | 0       | multistep | True | False  | 13     | 32.067 |
+| ResNet50-RetinaNet    | RetinaStyle-800 | 800x1333   | 250.069G | 37.969M  | 2 RTX A5000  | 8         | 0       | multistep | True | False  | 13     | 35.647 |
+| ResNet50-RetinaNet    | YoloStyle-640   | 640x640    | 95.558G  | 37.969M  | 2 RTX A5000  | 32        | 0       | multistep | True | False  | 13     | 32.971 |
+| ResNet50-FCOS         | RetinaStyle-400 | 400x667    | 54.066G  | 32.291M  | 2 RTX A5000  | 32        | 0       | multistep | True | False  | 13     | 34.046 |
+| ResNet50-FCOS         | RetinaStyle-800 | 800x1333   | 214.406G | 32.291M  | 2 RTX A5000  | 8         | 0       | multistep | True | False  | 13     | 37.857 |
+| ResNet50-FCOS         | YoloStyle-640   | 640x640    | 81.943G  | 32.291M  | 2 RTX A5000  | 32        | 0       | multistep | True | False  | 13     | 35.055 |
+| ResNet18DCN-CenterNet | YoloStyle-512   | 512x512    | 14.854G  | 12.889M  | 2 RTX A5000  | 64        | 0       | multistep | True | False  | 140    | 27.813 |
+| ResNet18DCN-TTFNet-3x | YoloStyle-512   | 512x512    | 16.063G  | 13.737M  | 2 RTX A5000  | 64        | 0       | multistep | True | False  | 39     | 28.155 |
+| ResNet18DCN-TTFNet-70 | YoloStyle-512   | 512x512    | 16.063G  | 13.737M  | 2 RTX A5000  | 64        | 0       | multistep | True | False  | 70     | 29.675 |
 
+You can find more model training details in detection_training/coco/.
 
-# VOC2007+2012 detection training results
+## VOC2007 and VOC2012 training results
 
-Trained on VOC2007 trainval + VOC2012 trainval, tested on VOC2007,using 11-point interpolated AP.
+Trained on VOC2007 trainval dataset + VOC2012 trainval dataset, tested on VOC2007 test dataset.
 
-| Network | resize | batch | gpu-num | apex | syncbn | epoch | mAP |
-| --- | --- |  --- |  --- |  --- |  --- |  --- |  --- |
-| ResNet50-RetinaNet | RetinaStyleResize-400 | 32 | 2 RTX3090 | yes | no | 12 | 0.769 |
+mAP is IoU=0.50,area=all,maxDets=100,mAP.
 
-# CIFAR100 classification training results
+| Network               | resize-style    | input size | macs     | params   | gpu num      | batch     | warm up | lr decay  | apex | syncbn | epochs | mAP    |
+| -------------         | ------------    | ---------- | -------- | -------- | ------------ | --------- | ------- | --------  | ---- | ------ | ------ | ------ |
+| ResNet50-RetinaNet    | RetinaStyle-400 | 400x667    | 56.093G  | 36.724M  | 2 RTX A5000  | 32        | 0       | multistep | True | False  | 13     | 79.804 |
+| ResNet50-RetinaNet    | YoloStyle-640   | 640x640    | 84.947G  | 36.724M  | 2 RTX A5000  | 32        | 0       | multistep | True | False  | 13     | 80.565 |
+| ResNet50-FCOS         | RetinaStyle-400 | 400x667    | 53.288G  | 32.153M  | 2 RTX A5000  | 32        | 0       | multistep | True | False  | 13     | 79.894 |
+| ResNet50-FCOS         | YoloStyle-640   | 640x640    | 80.764G  | 32.153M  | 2 RTX A5000  | 32        | 0       | multistep | True | False  | 13     | 80.510 |
 
-Training in nn.parallel mode result:
+You can find more model training details in detection_training/voc/.
 
-| Network       | gpu-num | warm up | lr decay | total epochs | Top-1 error |
-| --- | --- |  --- |  --- |  --- |  --- | 
-| ResNet-18     | 1 RTX2080Ti | no | multistep | 200 | 21.59 | 
-| ResNet-34     | 1 RTX2080Ti | no | multistep | 200 | 21.16 | 
-| ResNet-50     | 1 RTX2080Ti | no | multistep | 200 | 22.12 | 
-| ResNet-101    | 1 RTX2080Ti | no | multistep | 200 | 19.84 | 
-| ResNet-152    | 1 RTX2080Ti | no | multistep | 200 | 19.01 | 
+# Distillation training results
 
-You can find more model training details in cifar100_experiments/resnet50cifar/.
+## ImageNet training results
 
-# ILSVRC2012(ImageNet) classification training results
+**KD loss**
+Paper:https://arxiv.org/abs/1503.02531
 
-##  Training in nn.parallel mode results
+**DKD loss**
+Paper:https://arxiv.org/abs/2203.08679
 
-| Network       | gpu-num | warm up | lr decay | total epochs | Top-1 error |
-| --- | --- |  --- |  --- |  --- |  --- | 
-| ResNet-18     | 4 RTX2080Ti | no | multistep | 100 | 29.684 | 
-| ResNet-34-half     | 4 RTX2080Ti | no | multistep | 100 | 32.528 | 
-| ResNet-34     | 4 RTX2080Ti | no | multistep | 100 | 26.264 | 
-| ResNet-50-half     | 4 RTX2080Ti | no | multistep | 100 | 27.934 | 
-| ResNet-50     | 4 RTX2080Ti | no | multistep | 100 | 23.488 | 
-| ResNet-101    | 4 RTX2080Ti | no | multistep | 100 | 22.276 | 
-| ResNet-152    | 8 RTX2080Ti | no | multistep | 100 | 21.436 |
-| EfficientNet-b0    | 4 RTX2080Ti | yes,5 epochs | consine | 100 | 24.492 |
-| EfficientNet-b1    | 4 RTX2080Ti | yes,5 epochs | consine | 100 | 23.092 |
-| EfficientNet-b2    | 8 RTX2080Ti | yes,5 epochs | consine | 100 | 22.224 |
-| EfficientNet-b3    | 8 RTX2080Ti | yes,5 epochs | consine | 100 | 21.884 |
-| DarkNet-19  | 4 RTX2080Ti | no | multistep | 100 | 26.132 | 
-| DarkNet-53  | 4 RTX2080Ti | no | multistep | 100 | 22.992 | 
-| VovNet-19-slim-depthwise-se  | 4 RTX2080Ti | no | multistep | 100 | 33.276 | 
-| VovNet-19-slim-se  | 4 RTX2080Ti | no | multistep | 100 | 30.646 | 
-| VovNet-19-se  | 4 RTX2080Ti | no | multistep | 100 | 25.364 | 
-| VovNet-39-se  | 4 RTX2080Ti | no | multistep | 100 | 22.662 | 
-| VovNet-57-se  | 4 RTX2080Ti | no | multistep | 100 | 22.014 | 
-| VovNet-99-se  | 8 RTX2080Ti | no | multistep | 100 | 21.608 | 
-| RegNetY-200MF    | 4 RTX2080Ti | yes,5 epochs | consine | 100 | 29.904 |
-| RegNetY-400MF    | 4 RTX2080Ti | yes,5 epochs | consine | 100 | 26.210 |
-| RegNetY-600MF    | 4 RTX2080Ti | yes,5 epochs | consine | 100 | 25.276 |
-| RegNetY-800MF    | 4 RTX2080Ti | yes,5 epochs | consine | 100 | 24.006 |
-| RegNetY-1.6GF    | 4 RTX2080Ti | yes,5 epochs | consine | 100 | 22.692 |
-| RegNetY-3.2GF    | 4 RTX2080Ti | yes,5 epochs | consine | 100 | 21.092 |
-| RegNetY-4.0GF    | 4 RTX2080Ti | yes,5 epochs | consine | 100 | 21.684 |
-| RegNetY-6.4GF    | 4 RTX2080Ti | yes,5 epochs | consine | 100 | 21.230 |
+**DML loss**
+Paper:https://arxiv.org/abs/1706.00384
 
+| Teacher Network  | Student Network  | method  | Freeze Teacher | input size | gpu num      | batch     | warm up | lr decay  | apex | syncbn | epochs | Teacher Top-1  | Student Top-1  |
+| ---------------- | ---------------- | ------- | -------------- | ---------- | ------------ | --------- | ------- | --------  | ---- | ------ | ------ | -------------- | -------------- |
+| ResNet34         | ResNet18         | CE+KD   | True           | 224x224    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | /              | 71.848         |
+| ResNet34         | ResNet18         | CE+DKD  | True           | 224x224    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | /              | 71.856         |
+| ResNet34         | ResNet18         | CE+DML  | False          | 224x224    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 74.318         | 71.678         |
+| ResNet152        | ResNet50         | CE+KD   | True           | 224x224    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | /              | 76.830         |
+| ResNet152        | ResNet50         | CE+DKD  | True           | 224x224    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | /              | 77.692         |
+| ResNet152        | ResNet50         | CE+DML  | False          | 224x224    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 79.462         | 77.618         |
 
-All nets are trained by input_size=224x224 except DarkNet(input size 256x256) and EfficientNet.
-
-For training resnet50 with batch_size=256,you need at least 4 2080ti gpus,and need about three or four days.
-
-## Training in nn.DistributedDataParallel mode results
-
-| Network       | gpu-num | sync-BN |warm up | lr decay | total epochs | Top-1 error |
-| --- | --- |  --- |  --- |  --- |  --- |  --- | 
-| ResNet-50     | 4 RTX2080Ti | no | no | multistep | 100 | 23.72 |
-| ResNet-50     | 4 RTX2080Ti | yes | no | multistep | 100 | 25.44 |  
-
-You can find more model training details in imagenet_experiments/experiment_folder/.
+You can find more model training details in distillation_training/imagenet/.
 
 # Citation
 
 If you find my work useful in your research, please consider citing:
 ```
 @inproceedings{zgcr,
- title={pytorch-ImageNet-CIFAR-COCO-VOC-training},
+ title={SimpleAICV-ImageNet-CIFAR-COCO-VOC-training},
  author={zgcr},
- year={2020}
+ year={2022}
 }
 ```

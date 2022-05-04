@@ -1,6 +1,11 @@
 .vscode
 __pycache__
 checkpoints
-log
-*.avi
-*.mp4
+*.pth
+inference_examples
+pretrained_models
+resources
+segmentation_training
+simpleAICV/segmentation
+simpleAICV/instance_segmentation
+simpleAICV/SelfSupervisedLearning

@@ -1,0 +1,19 @@
+2022-02-27 08:59:58 - network: resnet101
+2022-02-27 08:59:58 - num_classes: 1000
+2022-02-27 08:59:58 - input_image_size: 224
+2022-02-27 08:59:58 - scale: 1.1428571428571428
+2022-02-27 08:59:58 - trained_model_path: /root/code/simpleAICV-pytorch-ImageNet-COCO-training/classification_training/imagenet/resnet101/checkpoints/resnet101-acc77.752.pth
+2022-02-27 08:59:58 - criterion: CELoss(
+  (loss): CrossEntropyLoss()
+)
+2022-02-27 08:59:58 - val_dataset: <simpleAICV.classification.datasets.ilsvrc2012dataset.ILSVRC2012Dataset object at 0x7f6a219acca0>
+2022-02-27 08:59:58 - collater: <simpleAICV.classification.common.ClassificationCollater object at 0x7f6a219acc70>
+2022-02-27 08:59:58 - seed: 0
+2022-02-27 08:59:58 - batch_size: 256
+2022-02-27 08:59:58 - num_workers: 16
+2022-02-27 08:59:58 - distributed: True
+2022-02-27 08:59:58 - gpus_type: NVIDIA RTX A5000
+2022-02-27 08:59:58 - gpus_num: 2
+2022-02-27 08:59:58 - group: <torch._C._distributed_c10d.ProcessGroupNCCL object at 0x7f6a0ee0c870>
+2022-02-27 08:59:58 - model: resnet101, macs: 7.834G, params: 44.549M
+2022-02-27 09:01:17 - acc1: 77.716%, acc5: 93.936%, test_loss: 0.8834, per_image_load_time: 1.519ms, per_image_inference_time: 1.364ms

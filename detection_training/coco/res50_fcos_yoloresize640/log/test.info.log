@@ -1,0 +1,33 @@
+2022-04-30 22:42:15 - network: resnet50_fcos
+2022-04-30 22:42:15 - num_classes: 80
+2022-04-30 22:42:15 - input_image_size: [640, 640]
+2022-04-30 22:42:15 - trained_model_path: /root/code/simpleAICV-pytorch-ImageNet-COCO-training/detection_training/coco/res50_fcos_yoloresize640/checkpoints/resnet50_fcos-metric35.052.pth
+2022-04-30 22:42:15 - criterion: FCOSLoss()
+2022-04-30 22:42:15 - decoder: <simpleAICV.detection.decode.FCOSDecoder object at 0x7fe92181ae20>
+2022-04-30 22:42:15 - val_dataset: <simpleAICV.detection.datasets.cocodataset.CocoDetection object at 0x7fe92181abb0>
+2022-04-30 22:42:15 - collater: <simpleAICV.detection.common.DetectionCollater object at 0x7fe92181ab80>
+2022-04-30 22:42:15 - eval_type: COCO
+2022-04-30 22:42:15 - eval_voc_iou_threshold_list: [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
+2022-04-30 22:42:15 - seed: 0
+2022-04-30 22:42:15 - batch_size: 32
+2022-04-30 22:42:15 - num_workers: 4
+2022-04-30 22:42:15 - gpus_type: NVIDIA RTX A5000
+2022-04-30 22:42:15 - gpus_num: 2
+2022-04-30 22:42:15 - group: <torch._C._distributed_c10d.ProcessGroupNCCL object at 0x7fe90ec61870>
+2022-04-30 22:42:18 - model: resnet50_fcos, macs: 81.943G, params: 32.291M
+2022-04-30 22:45:26 - eval type: COCO
+per_image_load_time: 1.504ms
+per_image_inference_time: 24.928ms
+IoU=0.50:0.95,area=all,maxDets=100,mAP: 35.05456918284428
+IoU=0.50,area=all,maxDets=100,mAP: 53.36331758826025
+IoU=0.75,area=all,maxDets=100,mAP: 37.56565385031486
+IoU=0.50:0.95,area=small,maxDets=100,mAP: 17.260905806723617
+IoU=0.50:0.95,area=medium,maxDets=100,mAP: 39.72214767059879
+IoU=0.50:0.95,area=large,maxDets=100,mAP: 48.64837060575345
+IoU=0.50:0.95,area=all,maxDets=1,mAR: 28.9448714291275
+IoU=0.50:0.95,area=all,maxDets=10,mAR: 45.536051039168036
+IoU=0.50:0.95,area=all,maxDets=100,mAR: 48.57530944269998
+IoU=0.50:0.95,area=small,maxDets=100,mAR: 24.87048844909163
+IoU=0.50:0.95,area=medium,maxDets=100,mAR: 54.8162378977515
+IoU=0.50:0.95,area=large,maxDets=100,mAR: 64.90620583270903
+
