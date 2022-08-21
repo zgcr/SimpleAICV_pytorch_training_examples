@@ -29,14 +29,11 @@ class config:
     })
 
     # load total pretrained model or not
-    # trained_model_path = ''
-    trained_model_path = os.path.join(
-        BASE_DIR,
-        'detection_training/coco/res18_centernet_yoloresize512/checkpoints/resnet18_centernet-metric27.750.pth'
-    )
+    trained_model_path = '/root/code/SimpleAICV-ImageNet-CIFAR-COCO-VOC-training/detection_training/coco/res18_centernet_yoloresize512/checkpoints/resnet18_centernet-metric27.848.pth'
+    # trained_model_path = os.path.join(BASE_DIR, '')
     load_state_dict(trained_model_path, model)
 
-    criterion = losses.__dict__['CenterNetLoss'](**{
+    test_criterion = losses.__dict__['CenterNetLoss'](**{
         'alpha': 2.,
         'beta': 4.,
         'heatmap_loss_weight': 1.0,
@@ -53,18 +50,18 @@ class config:
         'max_object_num': 100,
     }).cuda()
 
-    val_dataset = CocoDetection(COCO2017_path,
-                                set_name='val2017',
-                                transform=transforms.Compose([
-                                    YoloStyleResize(
-                                        resize=input_image_size[0],
-                                        divisor=32,
-                                        stride=32,
-                                        multi_scale=False,
-                                        multi_scale_range=[0.6, 1.4]),
-                                    Normalize(),
-                                ]))
-    collater = DetectionCollater()
+    test_dataset = CocoDetection(COCO2017_path,
+                                 set_name='val2017',
+                                 transform=transforms.Compose([
+                                     YoloStyleResize(
+                                         resize=input_image_size[0],
+                                         divisor=32,
+                                         stride=32,
+                                         multi_scale=False,
+                                         multi_scale_range=[0.6, 1.4]),
+                                     Normalize(),
+                                 ]))
+    test_collater = DetectionCollater()
 
     # 'COCO' or 'VOC'
     eval_type = 'COCO'
@@ -76,4 +73,4 @@ class config:
     # batch_size is total size
     batch_size = 64
     # num_workers is total workers
-    num_workers = 4
+    num_workers = 16

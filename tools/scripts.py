@@ -10,7 +10,8 @@ from pycocotools.cocoeval import COCOeval
 
 from simpleAICV.classification.common import ClassificationDataPrefetcher, AverageMeter, AccMeter
 from simpleAICV.detection.common import DetectionDataPrefetcher
-from simpleAICV.instance_segmentation.common import SegmentationDataPrefetcher
+# from simpleAICV.semantic_segmentation.common import SemanticSegmentationDataPrefetcher
+# from simpleAICV.self_supervised_learning.common import SelfSupervisedPretrainDataPrefetcher
 
 
 def all_reduce_operation_in_group_for_variables(variables, operator, group):
@@ -23,11 +24,21 @@ def all_reduce_operation_in_group_for_variables(variables, operator, group):
     return variables
 
 
-def validate_classification(val_loader, model, criterion, config):
+def all_reduce_operation_in_group_for_tensors(tensors, operator, group):
+    for i in range(len(tensors)):
+        torch.distributed.all_reduce(tensors[i], op=operator, group=group)
+
+    return tensors
+
+
+def test_classification(test_loader, model, criterion, config):
     batch_time = AverageMeter()
     data_time = AverageMeter()
     losses = AverageMeter()
     accs = AccMeter()
+
+    if hasattr(config, 'use_ema_model') and config.use_ema_model:
+        model = config.ema_model.ema_model
 
     # switch to evaluate mode
     model.eval()
@@ -35,7 +46,7 @@ def validate_classification(val_loader, model, criterion, config):
     with torch.no_grad():
         end = time.time()
         model_on_cuda = next(model.parameters()).is_cuda
-        for _, data in tqdm(enumerate(val_loader)):
+        for _, data in tqdm(enumerate(test_loader)):
             images, labels = data['image'], data['label']
             if model_on_cuda:
                 images, labels = images.cuda(), labels.cuda()
@@ -136,14 +147,27 @@ def train_classification(train_loader, model, criterion, optimizer, scheduler,
             optimizer.zero_grad()
             continue
 
+        if hasattr(config,
+                   'accumulation_steps') and config.accumulation_steps > 1:
+            loss = loss / config.accumulation_steps
+
         if config.apex:
             with amp.scale_loss(loss, optimizer) as scaled_loss:
                 scaled_loss.backward()
         else:
             loss.backward()
 
-        optimizer.step()
-        optimizer.zero_grad()
+        if hasattr(config,
+                   'accumulation_steps') and config.accumulation_steps > 1:
+            if iter_index % config.accumulation_steps == 0:
+                optimizer.step()
+                optimizer.zero_grad()
+        else:
+            optimizer.step()
+            optimizer.zero_grad()
+
+        if hasattr(config, 'use_ema_model') and config.use_ema_model:
+            config.ema_model.update(model)
 
         torch.distributed.barrier()
         [loss] = all_reduce_operation_in_group_for_variables(
@@ -156,26 +180,41 @@ def train_classification(train_loader, model, criterion, optimizer, scheduler,
 
         images, labels = prefetcher.next()
 
-        if iter_index % config.print_interval == 0:
-            log_info = f'train: epoch {epoch:0>4d}, iter [{iter_index:0>5d}, {iters:0>5d}], lr: {scheduler.get_lr()[0]:.6f}, loss: {loss:.4f}'
-            logger.info(log_info) if local_rank == 0 else None
+        scheduler.step(optimizer, iter_index / iters + (epoch - 1))
+
+        if hasattr(config,
+                   'accumulation_steps') and config.accumulation_steps > 1:
+            accumulation_iter_index, accumulation_iters = int(
+                iter_index // config.accumulation_steps), int(
+                    iters // config.accumulation_steps)
+            if iter_index % int(
+                    config.print_interval * config.accumulation_steps) == 0:
+                log_info = f'train: epoch {epoch:0>4d}, iter [{accumulation_iter_index:0>5d}, {accumulation_iters:0>5d}], lr: {scheduler.current_lr:.6f}, loss: {loss*config.accumulation_steps:.4f}'
+                logger.info(log_info) if local_rank == 0 else None
+        else:
+            if iter_index % config.print_interval == 0:
+                log_info = f'train: epoch {epoch:0>4d}, iter [{iter_index:0>5d}, {iters:0>5d}], lr: {scheduler.current_lr:.6f}, loss: {loss:.4f}'
+                logger.info(log_info) if local_rank == 0 else None
 
         iter_index += 1
 
-    scheduler.step()
+    avg_loss = losses.avg
 
-    return losses.avg
+    if hasattr(config, 'accumulation_steps') and config.accumulation_steps > 1:
+        avg_loss = avg_loss * config.accumulation_steps
+
+    return avg_loss
 
 
-def validate_distill_classification(val_loader, model, criterion, config):
+def test_distill_classification(test_loader, model, criterion, config):
     teacher_model = model.module.teacher
     student_model = model.module.student
 
-    tea_acc1, tea_acc5, tea_test_loss, _, _ = validate_classification(
-        val_loader, teacher_model, criterion, config)
+    tea_acc1, tea_acc5, tea_test_loss, _, _ = test_classification(
+        test_loader, teacher_model, criterion, config)
 
-    stu_acc1, stu_acc5, stu_test_loss, _, _ = validate_classification(
-        val_loader, student_model, criterion, config)
+    stu_acc1, stu_acc5, stu_test_loss, _, _ = test_classification(
+        test_loader, student_model, criterion, config)
 
     return tea_acc1, tea_acc5, tea_test_loss, stu_acc1, stu_acc5, stu_test_loss
 
@@ -231,10 +270,21 @@ def train_distill_classification(train_loader, model, criterion, optimizer,
                 loss_value[loss_name] = temp_loss
                 loss += temp_loss
 
-        if loss == 0. or torch.any(torch.isinf(loss)) or torch.any(
-                torch.isnan(loss)):
+        inf_nan_flag = False
+        for key, value in loss_value.items():
+            if torch.any(torch.isinf(value)) or torch.any(torch.isnan(value)):
+                inf_nan_flag = True
+
+        if torch.any(torch.isinf(loss)) or torch.any(torch.isnan(loss)):
+            inf_nan_flag = True
+
+        if loss == 0. or inf_nan_flag:
             optimizer.zero_grad()
             continue
+
+        if hasattr(config,
+                   'accumulation_steps') and config.accumulation_steps > 1:
+            loss = loss / config.accumulation_steps
 
         if config.apex:
             with amp.scale_loss(loss, optimizer) as scaled_loss:
@@ -242,8 +292,14 @@ def train_distill_classification(train_loader, model, criterion, optimizer,
         else:
             loss.backward()
 
-        optimizer.step()
-        optimizer.zero_grad()
+        if hasattr(config,
+                   'accumulation_steps') and config.accumulation_steps > 1:
+            if iter_index % config.accumulation_steps == 0:
+                optimizer.step()
+                optimizer.zero_grad()
+        else:
+            optimizer.step()
+            optimizer.zero_grad()
 
         torch.distributed.barrier()
 
@@ -264,18 +320,34 @@ def train_distill_classification(train_loader, model, criterion, optimizer,
 
         images, labels = prefetcher.next()
 
-        log_info = ''
-        if iter_index % config.print_interval == 0:
-            log_info = f'train: epoch {epoch:0>4d}, iter [{iter_index:0>5d}, {iters:0>5d}], lr: {scheduler.get_lr()[0]:.6f}, loss: {loss:.4f}, '
-            for key, value in loss_value.items():
-                log_info += f'{key}: {value:.4f} '
-            logger.info(log_info) if local_rank == 0 else None
+        scheduler.step(optimizer, iter_index / iters + (epoch - 1))
+
+        if hasattr(config,
+                   'accumulation_steps') and config.accumulation_steps > 1:
+            accumulation_iter_index, accumulation_iters = int(
+                iter_index // config.accumulation_steps), int(
+                    iters // config.accumulation_steps)
+            if iter_index % int(
+                    config.print_interval * config.accumulation_steps) == 0:
+                log_info = f'train: epoch {epoch:0>4d}, iter [{accumulation_iter_index:0>5d}, {accumulation_iters:0>5d}], lr: {scheduler.current_lr:.6f}, loss: {loss*config.accumulation_steps:.4f}, '
+                for key, value in loss_value.items():
+                    log_info += f'{key}: {value*config.accumulation_steps:.4f}, '
+                logger.info(log_info) if local_rank == 0 else None
+        else:
+            if iter_index % config.print_interval == 0:
+                log_info = f'train: epoch {epoch:0>4d}, iter [{iter_index:0>5d}, {iters:0>5d}], lr: {scheduler.current_lr:.6f}, loss: {loss:.4f}, '
+                for key, value in loss_value.items():
+                    log_info += f'{key}: {value:.4f}, '
+                logger.info(log_info) if local_rank == 0 else None
 
         iter_index += 1
 
-    scheduler.step()
+    avg_loss = losses.avg
 
-    return losses.avg
+    if hasattr(config, 'accumulation_steps') and config.accumulation_steps > 1:
+        avg_loss = avg_loss * config.accumulation_steps
+
+    return avg_loss
 
 
 def compute_voc_ap(recall, precision, use_07_metric=False):
@@ -334,12 +406,13 @@ def compute_ious(a, b):
     return iou
 
 
-def evaluate_voc_detection(val_loader, model, criterion, decoder, config):
+def evaluate_voc_detection(test_loader, model, criterion, decoder, config):
     # switch to evaluate mode
     model.eval()
 
     batch_time = AverageMeter()
     data_time = AverageMeter()
+    losses = AverageMeter()
 
     batch_size = int(config.batch_size // config.gpus_num)
 
@@ -347,7 +420,7 @@ def evaluate_voc_detection(val_loader, model, criterion, decoder, config):
         preds, gts = [], []
         model_on_cuda = next(model.parameters()).is_cuda
         end = time.time()
-        for _, data in tqdm(enumerate(val_loader)):
+        for _, data in tqdm(enumerate(test_loader)):
             images, annots, scales, sizes = data['image'], data[
                 'annots'], data['scale'], data['size']
             if model_on_cuda:
@@ -358,6 +431,10 @@ def evaluate_voc_detection(val_loader, model, criterion, decoder, config):
             end = time.time()
 
             outs_tuple = model(images)
+
+            loss_dict = criterion(outs_tuple, annots)
+            loss = sum(loss_dict.values())
+            losses.update(loss, images.size(0))
 
             pred_scores, pred_classes, pred_boxes = decoder(outs_tuple)
 
@@ -406,12 +483,15 @@ def evaluate_voc_detection(val_loader, model, criterion, decoder, config):
 
             end = time.time()
 
+        test_loss = losses.avg
+
         result_dict = collections.OrderedDict()
 
         # per image data load time(ms) and inference time(ms)
         per_image_load_time = data_time.avg / batch_size * 1000
         per_image_inference_time = batch_time.avg / batch_size * 1000
 
+        result_dict['test_loss'] = test_loss
         result_dict['per_image_load_time'] = f'{per_image_load_time:.3f}ms'
         result_dict[
             'per_image_inference_time'] = f'{per_image_inference_time:.3f}ms'
@@ -496,22 +576,23 @@ def evaluate_voc_detection(val_loader, model, criterion, decoder, config):
         return result_dict
 
 
-def evaluate_coco_detection(val_loader, model, criterion, decoder, config):
+def evaluate_coco_detection(test_loader, model, criterion, decoder, config):
     # switch to evaluate mode
     model.eval()
 
     batch_time = AverageMeter()
     data_time = AverageMeter()
+    losses = AverageMeter()
 
-    val_dataset = config.val_dataset
-    ids = [idx for idx in range(len(val_dataset))]
+    test_dataset = config.test_dataset
+    ids = [idx for idx in range(len(test_dataset))]
     batch_size = int(config.batch_size // config.gpus_num)
 
     with torch.no_grad():
         results, image_ids = [], []
         model_on_cuda = next(model.parameters()).is_cuda
         end = time.time()
-        for i, data in tqdm(enumerate(val_loader)):
+        for i, data in tqdm(enumerate(test_loader)):
             images, annots, scales, sizes = data['image'], data[
                 'annots'], data['scale'], data['size']
             if model_on_cuda:
@@ -524,6 +605,10 @@ def evaluate_coco_detection(val_loader, model, criterion, decoder, config):
             end = time.time()
 
             outs_tuple = model(images)
+
+            loss_dict = criterion(outs_tuple, annots)
+            loss = sum(loss_dict.values())
+            losses.update(loss, images.size(0))
 
             scores, classes, boxes = decoder(outs_tuple)
 
@@ -555,9 +640,9 @@ def evaluate_coco_detection(val_loader, model, criterion, decoder, config):
 
                     image_result = {
                         'image_id':
-                        val_dataset.image_ids[index],
+                        test_dataset.image_ids[index],
                         'category_id':
-                        val_dataset.coco_label_to_cat_id[object_class],
+                        test_dataset.coco_label_to_cat_id[object_class],
                         'score':
                         object_score,
                         'bbox':
@@ -565,11 +650,13 @@ def evaluate_coco_detection(val_loader, model, criterion, decoder, config):
                     }
                     results.append(image_result)
 
-                image_ids.append(val_dataset.image_ids[index])
+                image_ids.append(test_dataset.image_ids[index])
 
-                print('{}/{}'.format(index, len(val_dataset)), end='\r')
+                print('{}/{}'.format(index, len(test_dataset)), end='\r')
 
             end = time.time()
+
+        test_loss = losses.avg
 
         variable_definitions = {
             0: 'IoU=0.50:0.95,area=all,maxDets=100,mAP',
@@ -592,6 +679,7 @@ def evaluate_coco_detection(val_loader, model, criterion, decoder, config):
         per_image_load_time = data_time.avg / batch_size * 1000
         per_image_inference_time = batch_time.avg / batch_size * 1000
 
+        result_dict['test_loss'] = test_loss
         result_dict['per_image_load_time'] = f'{per_image_load_time:.3f}ms'
         result_dict[
             'per_image_inference_time'] = f'{per_image_inference_time:.3f}ms'
@@ -602,7 +690,7 @@ def evaluate_coco_detection(val_loader, model, criterion, decoder, config):
             return result_dict
 
         # load results in COCO evaluation tool
-        coco_true = val_dataset.coco
+        coco_true = test_dataset.coco
         coco_pred = coco_true.loadRes(results)
 
         coco_eval = COCOeval(coco_true, coco_pred, 'bbox')
@@ -618,14 +706,17 @@ def evaluate_coco_detection(val_loader, model, criterion, decoder, config):
         return result_dict
 
 
-def validate_detection(val_loader, model, criterion, decoder, config):
+def test_detection(test_loader, model, criterion, decoder, config):
     assert config.eval_type in ['COCO', 'VOC']
+
+    if hasattr(config, 'use_ema_model') and config.use_ema_model:
+        model = config.ema_model.ema_model
 
     func_dict = {
         'COCO': evaluate_coco_detection,
         'VOC': evaluate_voc_detection,
     }
-    result_dict = func_dict[config.eval_type](val_loader, model, criterion,
+    result_dict = func_dict[config.eval_type](test_loader, model, criterion,
                                               decoder, config)
 
     return result_dict
@@ -665,10 +756,21 @@ def train_detection(train_loader, model, criterion, optimizer, scheduler,
 
         loss = sum(loss_dict.values())
 
-        if loss == 0. or torch.any(torch.isinf(loss)) or torch.any(
-                torch.isnan(loss)):
+        inf_nan_flag = False
+        for key, value in loss_dict.items():
+            if torch.any(torch.isinf(value)) or torch.any(torch.isnan(value)):
+                inf_nan_flag = True
+
+        if torch.any(torch.isinf(loss)) or torch.any(torch.isnan(loss)):
+            inf_nan_flag = True
+
+        if loss == 0. or inf_nan_flag:
             optimizer.zero_grad()
             continue
+
+        if hasattr(config,
+                   'accumulation_steps') and config.accumulation_steps > 1:
+            loss = loss / config.accumulation_steps
 
         if config.apex:
             with amp.scale_loss(loss, optimizer) as scaled_loss:
@@ -676,8 +778,17 @@ def train_detection(train_loader, model, criterion, optimizer, scheduler,
         else:
             loss.backward()
 
-        optimizer.step()
-        optimizer.zero_grad()
+        if hasattr(config,
+                   'accumulation_steps') and config.accumulation_steps > 1:
+            if iter_index % config.accumulation_steps == 0:
+                optimizer.step()
+                optimizer.zero_grad()
+        else:
+            optimizer.step()
+            optimizer.zero_grad()
+
+        if hasattr(config, 'use_ema_model') and config.use_ema_model:
+            config.ema_model.update(model)
 
         torch.distributed.barrier()
         for key, value in loss_dict.items():
@@ -697,281 +808,399 @@ def train_detection(train_loader, model, criterion, optimizer, scheduler,
 
         images, targets = prefetcher.next()
 
-        if iter_index % config.print_interval == 0:
-            log_info = f'train: epoch {epoch:0>4d}, iter [{iter_index:0>5d}, {iters:0>5d}], lr: {scheduler.get_lr()[0]:.6f}, total_loss: {loss:.4f}'
-            for key, value in loss_dict.items():
-                log_info += f', {key}: {value:.4f}'
-            logger.info(log_info) if local_rank == 0 else None
+        scheduler.step(optimizer, iter_index / iters + (epoch - 1))
+
+        if hasattr(config,
+                   'accumulation_steps') and config.accumulation_steps > 1:
+            accumulation_iter_index, accumulation_iters = int(
+                iter_index // config.accumulation_steps), int(
+                    iters // config.accumulation_steps)
+            if iter_index % int(
+                    config.print_interval * config.accumulation_steps) == 0:
+                log_info = f'train: epoch {epoch:0>4d}, iter [{accumulation_iter_index:0>5d}, {accumulation_iters:0>5d}], lr: {scheduler.current_lr:.6f}, total_loss: {loss*config.accumulation_steps:.4f}, '
+                for key, value in loss_dict.items():
+                    log_info += f'{key}: {value:.4f}, '
+                logger.info(log_info) if local_rank == 0 else None
+        else:
+            if iter_index % config.print_interval == 0:
+                log_info = f'train: epoch {epoch:0>4d}, iter [{iter_index:0>5d}, {iters:0>5d}], lr: {scheduler.current_lr:.6f}, total_loss: {loss:.4f}, '
+                for key, value in loss_dict.items():
+                    log_info += f'{key}: {value:.4f}, '
+                logger.info(log_info) if local_rank == 0 else None
 
         iter_index += 1
 
-    scheduler.step()
+    avg_loss = losses.avg
 
-    return losses.avg
+    if hasattr(config, 'accumulation_steps') and config.accumulation_steps > 1:
+        avg_loss = avg_loss * config.accumulation_steps
 
-
-def evaluate_coco_segmentation(val_dataset,
-                               val_loader,
-                               model,
-                               decoder,
-                               config,
-                               mask_threshold=0.5):
-    batch_time = AverageMeter()
-    data_time = AverageMeter()
-
-    ids = [idx for idx in range(len(val_dataset))]
-
-    results, image_ids = [], []
-    model_on_cuda = next(model.parameters()).is_cuda
-    end = time.time()
-    for i, data in tqdm(enumerate(val_loader)):
-        if model_on_cuda:
-            images, scales, origin_hws = data['image'].cuda(
-            ), data['scale'], data['origin_hw']
-        else:
-            images, scales, origin_hws = data['image'], data['scale'], data[
-                'origin_hw']
-
-        per_batch_ids = ids[i * config.batch_size:(i + 1) * config.batch_size]
-
-        torch.cuda.synchronize()
-        data_time.update(time.time() - end, images.size(0))
-        end = time.time()
-
-        outs_tuple = model(images)
-        scores, classes, masks, boxes = decoder(*outs_tuple)
-
-        scores, classes, masks, boxes = scores.cpu(), classes.cpu(), masks.cpu(
-        ), boxes.cpu()
-        scales = scales.unsqueeze(-1).unsqueeze(-1)
-        boxes /= scales
-
-        torch.cuda.synchronize()
-        batch_time.update(time.time() - end, images.size(0))
-
-        for per_image_scores, per_image_classes, per_image_boxes, index, per_image_masks, per_image_scale, per_image_origin_hw in zip(
-                scores, classes, boxes, per_batch_ids, masks, scales,
-                origin_hws):
-            # clip boxes
-            per_image_boxes[:, 0] = torch.clamp(per_image_boxes[:, 0], min=0)
-            per_image_boxes[:, 1] = torch.clamp(per_image_boxes[:, 1], min=0)
-            per_image_boxes[:, 2] = torch.clamp(per_image_boxes[:, 2],
-                                                max=per_image_origin_hw[1])
-            per_image_boxes[:, 3] = torch.clamp(per_image_boxes[:, 3],
-                                                max=per_image_origin_hw[0])
-
-            # for coco_eval,we need [x_min,y_min,w,h] format pred boxes
-            per_image_boxes[:, 2:] -= per_image_boxes[:, :2]
-
-            input_h, input_w = int(
-                per_image_masks.shape[-2] / per_image_scale), int(
-                    per_image_masks.shape[-1] / per_image_scale)
-            per_image_masks = F.interpolate(
-                per_image_masks.float().unsqueeze(0),
-                size=(input_h, input_w),
-                mode='nearest').squeeze(0)
-            per_image_origin_hw = per_image_origin_hw.int()
-            per_image_masks = per_image_masks[:, 0:per_image_origin_hw[0],
-                                              0:per_image_origin_hw[1]]
-            per_image_masks = (per_image_masks > mask_threshold).int()
-
-            for object_score, object_class, object_mask, object_box in zip(
-                    per_image_scores, per_image_classes, per_image_masks,
-                    per_image_boxes):
-                object_score = float(object_score)
-                object_class = int(object_class)
-                object_box = object_box.tolist()
-                object_mask = np.asfortranarray(object_mask).astype(np.uint8)
-
-                if object_class == -1:
-                    break
-
-                image_result = {
-                    'image_id':
-                    val_dataset.image_ids[index],
-                    'category_id':
-                    val_dataset.coco_label_to_cat_id[object_class],
-                    'score':
-                    object_score,
-                    'bbox':
-                    object_box,
-                    'segmentation':
-                    val_dataset.transform_mask_to_rle_mask(object_mask),
-                }
-                results.append(image_result)
-
-            image_ids.append(val_dataset.image_ids[index])
-
-            print('{}/{}'.format(index, len(val_dataset)), end='\r')
-
-        end = time.time()
-
-    if len(results) == 0:
-        return None
-
-    # load results in COCO evaluation tool
-    coco_true = val_dataset.coco
-    coco_pred = coco_true.loadRes(results)
-
-    variable_definitions = {
-        0: 'IoU=0.5:0.95,area=all,maxDets=100,mAP',
-        1: 'IoU=0.5,area=all,maxDets=100,mAP',
-        2: 'IoU=0.75,area=all,maxDets=100,mAP',
-        3: 'IoU=0.5:0.95,area=small,maxDets=100,mAP',
-        4: 'IoU=0.5:0.95,area=medium,maxDets=100,mAP',
-        5: 'IoU=0.5:0.95,area=large,maxDets=100,mAP',
-        6: 'IoU=0.5:0.95,area=all,maxDets=1,mAR',
-        7: 'IoU=0.5:0.95,area=all,maxDets=10,mAR',
-        8: 'IoU=0.5:0.95,area=all,maxDets=100,mAR',
-        9: 'IoU=0.5:0.95,area=small,maxDets=100,mAR',
-        10: 'IoU=0.5:0.95,area=medium,maxDets=100,mAR',
-        11: 'IoU=0.5:0.95,area=large,maxDets=100,mAR',
-    }
-    result_dict = collections.OrderedDict()
-
-    coco_eval_segm = COCOeval(coco_true, coco_pred, 'segm')
-    coco_eval_segm.params.imgIds = image_ids
-    coco_eval_segm.evaluate()
-    coco_eval_segm.accumulate()
-    coco_eval_segm.summarize()
-    segm_eval_result = coco_eval_segm.stats
-
-    result_dict['sgem_eval_result'] = {}
-    for i, var in enumerate(segm_eval_result):
-        result_dict['sgem_eval_result'][variable_definitions[i]] = var
-
-    coco_eval_box = COCOeval(coco_true, coco_pred, 'bbox')
-    coco_eval_box.params.imgIds = image_ids
-    coco_eval_box.evaluate()
-    coco_eval_box.accumulate()
-    coco_eval_box.summarize()
-    box_eval_result = coco_eval_box.stats
-
-    result_dict['box_eval_result'] = {}
-    for i, var in enumerate(box_eval_result):
-        result_dict['box_eval_result'][variable_definitions[i]] = var * 100
-
-    # per image data load time(ms) and inference time(ms)
-    per_image_load_time = data_time.avg / config.batch_size * 1000
-    per_image_inference_time = batch_time.avg / config.batch_size * 1000
-
-    result_dict['per_image_load_time'] = f'{per_image_load_time:.3f}ms'
-    result_dict[
-        'per_image_inference_time'] = f'{per_image_inference_time:.3f}ms'
-
-    return result_dict
+    return avg_loss
 
 
-def validate_segmentation(val_dataset, val_loader, model, decoder, config):
-    # switch to evaluate mode
-    model.eval()
+# def train_self_supervised_learning(train_loader, model, criterion, optimizer,
+#                                    scheduler, epoch, logger, config):
+#     '''
+#     train classification model for one epoch
+#     '''
+#     losses = AverageMeter()
 
-    assert config.dataset_name in ['COCO']
+#     # switch to train mode
+#     model.train()
 
-    func_dict = {
-        'COCO': evaluate_coco_segmentation,
-    }
-    with torch.no_grad():
-        result_dict = func_dict[config.dataset_name](val_dataset, val_loader,
-                                                     model, decoder, config)
+#     local_rank = torch.distributed.get_rank()
+#     iters = len(train_loader.dataset) // config.batch_size
 
-    return result_dict
+#     prefetcher = SelfSupervisedPretrainDataPrefetcher(train_loader)
+#     images, labels = prefetcher.next()
+#     iter_index = 1
 
+#     while images is not None:
+#         images, labels = images.cuda(), labels.cuda()
 
-def compute_segmentation_test_loss(val_loader, model, criterion):
-    losses = AverageMeter()
+#         if torch.any(torch.isinf(images)) or torch.any(torch.isinf(labels)):
+#             continue
 
-    # switch to evaluate mode
-    model.eval()
+#         if torch.any(torch.isnan(images)) or torch.any(torch.isnan(labels)):
+#             continue
 
-    with torch.no_grad():
-        model_on_cuda = next(model.parameters()).is_cuda
-        for data in tqdm(val_loader):
-            images, gt_annots = data['image'], data['annots']
-            boxes, masks, classes = gt_annots['box'], gt_annots[
-                'mask'], gt_annots['class']
-            if model_on_cuda:
-                images, boxes, masks, classes = images.cuda(), boxes.cuda(
-                ), masks.cuda(), classes.cuda()
-            targets = {
-                'box': boxes,
-                'mask': masks,
-                'class': classes,
-            }
+#         outputs, masks = model(images)
+#         loss = criterion(outputs, labels, masks)
 
-            outs_tuple = model(images)
-            loss_dict = criterion(targets, *outs_tuple)
+#         if loss == 0. or torch.any(torch.isinf(loss)) or torch.any(
+#                 torch.isnan(loss)):
+#             optimizer.zero_grad()
+#             continue
 
-            loss = sum(loss_dict.values())
+#         if config.apex:
+#             with amp.scale_loss(loss, optimizer) as scaled_loss:
+#                 scaled_loss.backward()
+#         else:
+#             loss.backward()
 
-            losses.update(loss.item(), images.size(0))
+#         optimizer.step()
+#         optimizer.zero_grad()
 
-        return losses.avg
+#         if config.use_ema_model:
+#             config.ema_model.update(model)
 
+#         torch.distributed.barrier()
+#         [loss] = all_reduce_operation_in_group_for_variables(
+#             variables=[loss],
+#             operator=torch.distributed.ReduceOp.SUM,
+#             group=config.group)
+#         loss = loss / float(config.gpus_num)
 
-def train_segmentation(train_loader, model, criterion, optimizer, scheduler,
-                       epoch, logger, config):
-    '''
-    train classification model for one epoch
-    '''
-    losses = AverageMeter()
+#         losses.update(loss, images.size(0))
 
-    # switch to train mode
-    model.train()
+#         images, labels = prefetcher.next()
 
-    local_rank = torch.distributed.get_rank() if config.distributed else None
-    if config.distributed:
-        gpus_num = torch.cuda.device_count()
-        iters = len(train_loader.dataset) // (
-            config.batch_size * gpus_num) if config.distributed else len(
-                train_loader.dataset) // config.batch_size
-    else:
-        iters = len(train_loader.dataset) // config.batch_size
+#         scheduler.step(optimizer, iter_index / iters + (epoch - 1))
 
-    prefetcher = SegmentationDataPrefetcher(train_loader)
-    images, boxes, masks, classes = prefetcher.next()
-    iter_index = 1
+#         if iter_index % config.print_interval == 0:
+#             log_info = f'train: epoch {epoch:0>4d}, iter [{iter_index:0>5d}, {iters:0>5d}], lr: {scheduler.current_lr:.6f}, loss: {loss:.4f}'
+#             logger.info(log_info) if local_rank == 0 else None
 
-    while images is not None:
-        images, boxes, masks, classes = images.cuda(), boxes.cuda(
-        ), masks.cuda(), classes.cuda()
-        targets = {
-            'box': boxes,
-            'mask': masks,
-            'class': classes,
-        }
+#         iter_index += 1
 
-        outs_tuple = model(images)
-        loss_dict = criterion(targets, *outs_tuple)
+#     return losses.avg
 
-        loss = sum(loss_dict.values())
+# def validate_semantic_segmentation(test_loader, model, criterion, config):
+#     batch_time = AverageMeter()
+#     data_time = AverageMeter()
+#     losses = AverageMeter()
 
-        if loss == 0.:
-            optimizer.zero_grad()
-            continue
+#     # switch to evaluate mode
+#     model.eval()
 
-        if config.apex:
-            with amp.scale_loss(loss, optimizer) as scaled_loss:
-                scaled_loss.backward()
-        else:
-            loss.backward()
+#     total_area_intersect = torch.zeros((config.num_classes, ),
+#                                        dtype=torch.float64).cuda()
+#     total_area_pred = torch.zeros((config.num_classes, ),
+#                                   dtype=torch.float64).cuda()
+#     total_area_gt = torch.zeros((config.num_classes, ),
+#                                 dtype=torch.float64).cuda()
+#     total_area_union = torch.zeros((config.num_classes, ),
+#                                    dtype=torch.float64).cuda()
 
-        optimizer.step()
-        optimizer.zero_grad()
+#     with torch.no_grad():
+#         end = time.time()
+#         model_on_cuda = next(model.parameters()).is_cuda
+#         for _, data in tqdm(enumerate(test_loader)):
+#             images, mask_targets, scales, sizes = data['image'], data[
+#                 'annots'], data['scale'], data['size']
+#             if model_on_cuda:
+#                 images, mask_targets = images.cuda(), mask_targets.cuda()
 
-        losses.update(loss.item(), images.size(0))
+#             torch.cuda.synchronize()
+#             data_time.update(time.time() - end)
+#             end = time.time()
 
-        images, boxes, masks, classes = prefetcher.next()
+#             outputs = model(images)
+#             torch.cuda.synchronize()
+#             batch_time.update(time.time() - end)
 
-        if iter_index % config.print_interval == 0:
-            log_info = f'train: epoch {epoch:0>4d}, iter [{iter_index:0>5d}, {iters:0>5d}], lr: {scheduler.get_lr()[0]:.6f}, total_loss: {loss.item():.4f}'
-            for key, value in loss_dict.items():
-                log_info += f', {key}: {value.item():.4f}'
-            logger.info(log_info) if (config.distributed and local_rank
-                                      == 0) or not config.distributed else None
+#             loss_dict = {}
+#             for loss_name in criterion.keys():
+#                 temp_loss = criterion[loss_name](outputs, mask_targets)
+#                 loss_dict[loss_name] = temp_loss
 
-        iter_index += 1
+#             loss = sum(loss_dict.values())
 
-    scheduler.step()
+#             torch.distributed.barrier()
+#             [loss] = all_reduce_operation_in_group_for_variables(
+#                 variables=[loss],
+#                 operator=torch.distributed.ReduceOp.SUM,
+#                 group=config.group)
+#             loss = loss / float(config.gpus_num)
 
-    return losses.avg
+#             losses.update(loss, images.size(0))
+
+#             # pred shape:[b,c,h,w] -> [b,h,w,c]
+#             outputs = outputs.permute(0, 2, 3, 1)
+#             pixel_class_preds = torch.argmax(outputs, axis=3)
+
+#             for per_image_pixel_class_preds, per_image_mask_targets in zip(
+#                     pixel_class_preds, mask_targets):
+#                 per_image_pixel_class_preds, per_image_mask_targets = per_image_pixel_class_preds.view(
+#                     -1), per_image_mask_targets.view(-1)
+
+#                 per_image_filter_mask = (per_image_mask_targets !=
+#                                          config.ignore_index)
+#                 per_image_pixel_class_preds = per_image_pixel_class_preds[
+#                     per_image_filter_mask]
+#                 per_image_mask_targets = per_image_mask_targets[
+#                     per_image_filter_mask]
+
+#                 per_image_intersect = per_image_pixel_class_preds[
+#                     per_image_pixel_class_preds == per_image_mask_targets]
+
+#                 per_image_intersect_area = torch.histc(
+#                     per_image_intersect.float(),
+#                     bins=(config.num_classes),
+#                     min=0,
+#                     max=config.num_classes - 1)
+#                 per_image_pixel_class_preds_area = torch.histc(
+#                     per_image_pixel_class_preds.float(),
+#                     bins=(config.num_classes),
+#                     min=0,
+#                     max=config.num_classes - 1)
+#                 per_image_mask_targets_area = torch.histc(
+#                     per_image_mask_targets.float(),
+#                     bins=(config.num_classes),
+#                     min=0,
+#                     max=config.num_classes - 1)
+
+#                 per_image_union_area = per_image_pixel_class_preds_area + per_image_mask_targets_area - per_image_intersect_area
+
+#                 total_area_intersect = total_area_intersect + per_image_intersect_area.double(
+#                 )
+#                 total_area_pred = total_area_pred + per_image_pixel_class_preds_area.double(
+#                 )
+#                 total_area_gt = total_area_gt + per_image_mask_targets_area.double(
+#                 )
+#                 total_area_union = total_area_union + per_image_union_area.double(
+#                 )
+
+#             end = time.time()
+
+#         # avg_loss
+#         avg_loss = losses.avg
+
+#         # per image data load time(ms) and inference time(ms)
+#         per_image_load_time = data_time.avg / (config.batch_size //
+#                                                config.gpus_num) * 1000
+#         per_image_inference_time = batch_time.avg / (config.batch_size //
+#                                                      config.gpus_num) * 1000
+
+#         result_dict = collections.OrderedDict()
+
+#         result_dict['test_loss'] = f'{avg_loss :.4f}'
+#         result_dict['per_image_load_time'] = f'{per_image_load_time:.3f}ms'
+#         result_dict[
+#             'per_image_inference_time'] = f'{per_image_inference_time:.3f}ms'
+
+#         # please keep same variable on different gpus has same data type for all reduce operation
+#         torch.distributed.barrier()
+#         [
+#             total_area_intersect,
+#             total_area_pred,
+#             total_area_gt,
+#             total_area_union,
+#         ] = all_reduce_operation_in_group_for_tensors(
+#             tensors=[
+#                 total_area_intersect,
+#                 total_area_pred,
+#                 total_area_gt,
+#                 total_area_union,
+#             ],
+#             operator=torch.distributed.ReduceOp.SUM,
+#             group=config.group)
+
+#         per_class_precisions = -1. * torch.ones(
+#             (config.num_classes, ), dtype=torch.float64).cuda()
+#         per_class_recalls = -1. * torch.ones(
+#             (config.num_classes, ), dtype=torch.float64).cuda()
+#         per_class_ious = -1. * torch.ones(
+#             (config.num_classes, ), dtype=torch.float64).cuda()
+#         per_class_dices = -1. * torch.ones(
+#             (config.num_classes, ), dtype=torch.float64).cuda()
+#         exist_num_class = 0
+#         mean_precision, mean_recall, mean_iou, mean_dice = 0., 0., 0., 0.
+#         for i, (per_area_intersect, per_area_pred, per_area_gt,
+#                 per_area_union) in enumerate(
+#                     zip(total_area_intersect, total_area_pred, total_area_gt,
+#                         total_area_union)):
+#             if per_area_gt == 0:
+#                 continue
+
+#             exist_num_class += 1
+
+#             if per_area_pred != 0:
+#                 per_class_precisions[
+#                     i] = 100. * per_area_intersect / per_area_pred
+#                 mean_precision += per_class_precisions[i]
+#             if per_area_gt != 0:
+#                 per_class_recalls[i] = 100. * per_area_intersect / per_area_gt
+#                 mean_recall += per_class_recalls[i]
+#             if per_area_union != 0:
+#                 per_class_ious[i] = 100. * per_area_intersect / per_area_union
+#                 mean_iou += per_class_ious[i]
+#             if (per_area_pred + per_area_gt) != 0:
+#                 per_class_dices[i] = 100. * 2. * per_area_intersect / (
+#                     per_area_pred + per_area_gt)
+#                 mean_dice += per_class_dices[i]
+
+#         mean_precision = mean_precision / exist_num_class
+#         mean_recall = mean_recall / exist_num_class
+#         mean_iou = mean_iou / exist_num_class
+#         mean_dice = mean_dice / exist_num_class
+
+#         result_dict['existNumClass'] = exist_num_class
+#         result_dict['meanPrecision'] = mean_precision
+#         result_dict['meanRecall'] = mean_recall
+#         result_dict['meanIoU'] = mean_iou
+#         result_dict['meanDice'] = mean_dice
+
+#     precision_dict = collections.OrderedDict()
+#     for i, per_precision in enumerate(per_class_precisions):
+#         precision_dict[f'class_{i}_precision'] = per_precision
+
+#     recall_dict = collections.OrderedDict()
+#     for i, per_recall in enumerate(per_class_recalls):
+#         recall_dict[f'class_{i}_recall'] = per_recall
+
+#     iou_dict = collections.OrderedDict()
+#     for i, per_iou in enumerate(per_class_ious):
+#         iou_dict[f'class_{i}_iou'] = per_iou
+
+#     dice_dict = collections.OrderedDict()
+#     for i, per_dice in enumerate(per_class_dices):
+#         dice_dict[f'class_{i}_dice'] = per_dice
+
+#     # for key, value in precision_dict.items():
+#     #     result_dict[key] = value
+
+#     # for key, value in recall_dict.items():
+#     #     result_dict[key] = value
+
+#     # for key, value in iou_dict.items():
+#     #     result_dict[key] = value
+
+#     # for key, value in dice_dict.items():
+#     #     result_dict[key] = value
+
+#     return result_dict
+
+# def train_semantic_segmentation(train_loader, model, criterion, optimizer,
+#                                 scheduler, epoch, logger, config):
+#     '''
+#     train semantic segmentation model for one epoch
+#     '''
+#     losses = AverageMeter()
+
+#     # switch to train mode
+#     model.train()
+
+#     local_rank = torch.distributed.get_rank()
+#     iters = len(train_loader.dataset) // config.batch_size
+
+#     prefetcher = SemanticSegmentationDataPrefetcher(train_loader)
+#     images, mask_targets = prefetcher.next()
+#     iter_index = 1
+
+#     while images is not None:
+#         images, mask_targets = images.cuda(), mask_targets.cuda()
+
+#         if torch.any(torch.isinf(images)) or torch.any(
+#                 torch.isinf(mask_targets)):
+#             continue
+
+#         if torch.any(torch.isnan(images)) or torch.any(
+#                 torch.isnan(mask_targets)):
+#             continue
+
+#         if torch.sum(images) == 0:
+#             continue
+
+#         if torch.unique(mask_targets)[0] == config.ignore_index:
+#             continue
+
+#         outputs = model(images)
+
+#         loss_dict = {}
+#         for loss_name in criterion.keys():
+#             temp_loss = criterion[loss_name](outputs, mask_targets)
+#             loss_dict[loss_name] = temp_loss
+
+#         loss = sum(loss_dict.values())
+
+#         inf_nan_flag = False
+#         for key, value in loss_dict.items():
+#             if torch.any(torch.isinf(value)) or torch.any(torch.isnan(value)):
+#                 inf_nan_flag = True
+
+#         if torch.any(torch.isinf(loss)) or torch.any(torch.isnan(loss)):
+#             inf_nan_flag = True
+
+#         if loss == 0. or inf_nan_flag:
+#             optimizer.zero_grad()
+#             continue
+
+#         if config.apex:
+#             with amp.scale_loss(loss, optimizer) as scaled_loss:
+#                 scaled_loss.backward()
+#         else:
+#             loss.backward()
+
+#         optimizer.step()
+#         optimizer.zero_grad()
+
+#         torch.distributed.barrier()
+#         for key, value in loss_dict.items():
+#             [value] = all_reduce_operation_in_group_for_variables(
+#                 variables=[value],
+#                 operator=torch.distributed.ReduceOp.SUM,
+#                 group=config.group)
+#             loss_dict[key] = value / float(config.gpus_num)
+
+#         [loss] = all_reduce_operation_in_group_for_variables(
+#             variables=[loss],
+#             operator=torch.distributed.ReduceOp.SUM,
+#             group=config.group)
+#         loss = loss / float(config.gpus_num)
+
+#         losses.update(loss, images.size(0))
+
+#         images, mask_targets = prefetcher.next()
+
+#         if iter_index % config.print_interval == 0:
+#             log_info = f'train: epoch {epoch:0>4d}, iter [{iter_index:0>5d}, {iters:0>5d}], lr: {scheduler.get_lr()[0]:.6f}, total_loss: {loss:.4f}'
+#             for key, value in loss_dict.items():
+#                 log_info += f', {key}: {value:.4f}'
+#             logger.info(log_info) if local_rank == 0 else None
+
+#         iter_index += 1
+
+#     scheduler.step()
+
+#     return losses.avg

@@ -1,0 +1,1424 @@
+2022-07-24 07:09:31 - network: RegNetX_800MF
+2022-07-24 07:09:31 - num_classes: 1000
+2022-07-24 07:09:31 - input_image_size: 224
+2022-07-24 07:09:31 - scale: 1.1428571428571428
+2022-07-24 07:09:31 - trained_model_path: 
+2022-07-24 07:09:31 - train_criterion: CELoss(
+  (loss): CrossEntropyLoss()
+)
+2022-07-24 07:09:31 - test_criterion: CELoss(
+  (loss): CrossEntropyLoss()
+)
+2022-07-24 07:09:31 - train_dataset: <simpleAICV.classification.datasets.ilsvrc2012dataset.ILSVRC2012Dataset object at 0x7fd83b4beeb0>
+2022-07-24 07:09:31 - test_dataset: <simpleAICV.classification.datasets.ilsvrc2012dataset.ILSVRC2012Dataset object at 0x7fd81e2180a0>
+2022-07-24 07:09:31 - train_collater: <simpleAICV.classification.common.ClassificationCollater object at 0x7fd81e2180d0>
+2022-07-24 07:09:31 - test_collater: <simpleAICV.classification.common.ClassificationCollater object at 0x7fd81e218130>
+2022-07-24 07:09:31 - seed: 0
+2022-07-24 07:09:31 - batch_size: 256
+2022-07-24 07:09:31 - num_workers: 16
+2022-07-24 07:09:31 - optimizer: ('SGD', {'lr': 0.2, 'momentum': 0.9, 'global_weight_decay': False, 'nesterov': True, 'weight_decay': 5e-05, 'no_weight_decay_layer_name_list': []})
+2022-07-24 07:09:31 - scheduler: ('CosineLR', {'warm_up_epochs': 5})
+2022-07-24 07:09:31 - epochs: 100
+2022-07-24 07:09:31 - print_interval: 100
+2022-07-24 07:09:31 - accumulation_steps: 1
+2022-07-24 07:09:31 - sync_bn: False
+2022-07-24 07:09:31 - apex: True
+2022-07-24 07:09:31 - use_ema_model: False
+2022-07-24 07:09:31 - ema_model_decay: 0.9999
+2022-07-24 07:09:31 - gpus_type: NVIDIA RTX A5000
+2022-07-24 07:09:31 - gpus_num: 2
+2022-07-24 07:09:31 - group: <torch._C._distributed_c10d.ProcessGroupNCCL object at 0x7fd81d19ecb0>
+2022-07-24 07:09:31 - --------------------parameters--------------------
+2022-07-24 07:09:31 - name: conv1.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: conv1.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: conv1.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer1.0.downsample_layer.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer1.0.downsample_layer.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer1.0.downsample_layer.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer1.0.conv1.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer1.0.conv1.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer1.0.conv1.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer1.0.conv2.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer1.0.conv2.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer1.0.conv2.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer1.0.conv3.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer1.0.conv3.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer1.0.conv3.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer2.0.downsample_layer.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer2.0.downsample_layer.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer2.0.downsample_layer.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer2.0.conv1.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer2.0.conv1.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer2.0.conv1.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer2.0.conv2.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer2.0.conv2.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer2.0.conv2.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer2.0.conv3.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer2.0.conv3.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer2.0.conv3.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer2.1.conv1.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer2.1.conv1.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer2.1.conv1.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer2.1.conv2.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer2.1.conv2.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer2.1.conv2.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer2.1.conv3.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer2.1.conv3.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer2.1.conv3.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer2.2.conv1.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer2.2.conv1.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer2.2.conv1.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer2.2.conv2.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer2.2.conv2.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer2.2.conv2.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer2.2.conv3.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer2.2.conv3.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer2.2.conv3.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer3.0.downsample_layer.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.0.downsample_layer.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.0.downsample_layer.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer3.0.conv1.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.0.conv1.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.0.conv1.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer3.0.conv2.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.0.conv2.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.0.conv2.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer3.0.conv3.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.0.conv3.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.0.conv3.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer3.1.conv1.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.1.conv1.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.1.conv1.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer3.1.conv2.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.1.conv2.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.1.conv2.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer3.1.conv3.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.1.conv3.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.1.conv3.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer3.2.conv1.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.2.conv1.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.2.conv1.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer3.2.conv2.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.2.conv2.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.2.conv2.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer3.2.conv3.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.2.conv3.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.2.conv3.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer3.3.conv1.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.3.conv1.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.3.conv1.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer3.3.conv2.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.3.conv2.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.3.conv2.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer3.3.conv3.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.3.conv3.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.3.conv3.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer3.4.conv1.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.4.conv1.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.4.conv1.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer3.4.conv2.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.4.conv2.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.4.conv2.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer3.4.conv3.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.4.conv3.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.4.conv3.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer3.5.conv1.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.5.conv1.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.5.conv1.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer3.5.conv2.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.5.conv2.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.5.conv2.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer3.5.conv3.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.5.conv3.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.5.conv3.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer3.6.conv1.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.6.conv1.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.6.conv1.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer3.6.conv2.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.6.conv2.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.6.conv2.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer3.6.conv3.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.6.conv3.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer3.6.conv3.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer4.0.downsample_layer.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer4.0.downsample_layer.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer4.0.downsample_layer.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer4.0.conv1.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer4.0.conv1.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer4.0.conv1.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer4.0.conv2.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer4.0.conv2.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer4.0.conv2.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer4.0.conv3.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer4.0.conv3.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer4.0.conv3.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer4.1.conv1.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer4.1.conv1.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer4.1.conv1.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer4.1.conv2.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer4.1.conv2.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer4.1.conv2.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer4.1.conv3.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer4.1.conv3.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer4.1.conv3.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer4.2.conv1.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer4.2.conv1.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer4.2.conv1.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer4.2.conv2.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer4.2.conv2.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer4.2.conv2.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer4.2.conv3.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer4.2.conv3.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer4.2.conv3.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer4.3.conv1.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer4.3.conv1.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer4.3.conv1.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer4.3.conv2.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer4.3.conv2.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer4.3.conv2.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer4.3.conv3.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer4.3.conv3.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer4.3.conv3.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer4.4.conv1.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer4.4.conv1.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer4.4.conv1.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer4.4.conv2.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer4.4.conv2.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer4.4.conv2.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: layer4.4.conv3.layer.0.weight, grad: True
+2022-07-24 07:09:31 - name: layer4.4.conv3.layer.1.weight, grad: True
+2022-07-24 07:09:31 - name: layer4.4.conv3.layer.1.bias, grad: True
+2022-07-24 07:09:31 - name: fc.weight, grad: True
+2022-07-24 07:09:31 - name: fc.bias, grad: True
+2022-07-24 07:09:31 - --------------------buffers--------------------
+2022-07-24 07:09:31 - name: conv1.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: conv1.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: conv1.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer1.0.downsample_layer.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer1.0.downsample_layer.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer1.0.downsample_layer.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer1.0.conv1.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer1.0.conv1.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer1.0.conv1.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer1.0.conv2.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer1.0.conv2.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer1.0.conv2.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer1.0.conv3.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer1.0.conv3.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer1.0.conv3.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer2.0.downsample_layer.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer2.0.downsample_layer.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer2.0.downsample_layer.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer2.0.conv1.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer2.0.conv1.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer2.0.conv1.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer2.0.conv2.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer2.0.conv2.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer2.0.conv2.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer2.0.conv3.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer2.0.conv3.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer2.0.conv3.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer2.1.conv1.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer2.1.conv1.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer2.1.conv1.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer2.1.conv2.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer2.1.conv2.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer2.1.conv2.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer2.1.conv3.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer2.1.conv3.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer2.1.conv3.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer2.2.conv1.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer2.2.conv1.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer2.2.conv1.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer2.2.conv2.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer2.2.conv2.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer2.2.conv2.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer2.2.conv3.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer2.2.conv3.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer2.2.conv3.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer3.0.downsample_layer.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer3.0.downsample_layer.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer3.0.downsample_layer.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer3.0.conv1.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer3.0.conv1.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer3.0.conv1.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer3.0.conv2.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer3.0.conv2.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer3.0.conv2.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer3.0.conv3.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer3.0.conv3.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer3.0.conv3.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer3.1.conv1.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer3.1.conv1.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer3.1.conv1.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer3.1.conv2.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer3.1.conv2.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer3.1.conv2.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer3.1.conv3.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer3.1.conv3.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer3.1.conv3.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer3.2.conv1.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer3.2.conv1.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer3.2.conv1.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer3.2.conv2.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer3.2.conv2.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer3.2.conv2.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer3.2.conv3.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer3.2.conv3.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer3.2.conv3.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer3.3.conv1.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer3.3.conv1.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer3.3.conv1.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer3.3.conv2.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer3.3.conv2.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer3.3.conv2.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer3.3.conv3.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer3.3.conv3.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer3.3.conv3.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer3.4.conv1.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer3.4.conv1.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer3.4.conv1.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer3.4.conv2.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer3.4.conv2.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer3.4.conv2.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer3.4.conv3.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer3.4.conv3.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer3.4.conv3.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer3.5.conv1.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer3.5.conv1.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer3.5.conv1.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer3.5.conv2.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer3.5.conv2.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer3.5.conv2.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer3.5.conv3.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer3.5.conv3.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer3.5.conv3.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer3.6.conv1.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer3.6.conv1.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer3.6.conv1.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer3.6.conv2.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer3.6.conv2.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer3.6.conv2.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer3.6.conv3.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer3.6.conv3.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer3.6.conv3.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer4.0.downsample_layer.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer4.0.downsample_layer.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer4.0.downsample_layer.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer4.0.conv1.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer4.0.conv1.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer4.0.conv1.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer4.0.conv2.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer4.0.conv2.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer4.0.conv2.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer4.0.conv3.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer4.0.conv3.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer4.0.conv3.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer4.1.conv1.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer4.1.conv1.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer4.1.conv1.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer4.1.conv2.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer4.1.conv2.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer4.1.conv2.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer4.1.conv3.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer4.1.conv3.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer4.1.conv3.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer4.2.conv1.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer4.2.conv1.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer4.2.conv1.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer4.2.conv2.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer4.2.conv2.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer4.2.conv2.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer4.2.conv3.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer4.2.conv3.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer4.2.conv3.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer4.3.conv1.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer4.3.conv1.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer4.3.conv1.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer4.3.conv2.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer4.3.conv2.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer4.3.conv2.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer4.3.conv3.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer4.3.conv3.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer4.3.conv3.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer4.4.conv1.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer4.4.conv1.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer4.4.conv1.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer4.4.conv2.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer4.4.conv2.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer4.4.conv2.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - name: layer4.4.conv3.layer.1.running_mean, grad: False
+2022-07-24 07:09:31 - name: layer4.4.conv3.layer.1.running_var, grad: False
+2022-07-24 07:09:31 - name: layer4.4.conv3.layer.1.num_batches_tracked, grad: False
+2022-07-24 07:09:31 - -----------no weight decay layers--------------
+2022-07-24 07:09:31 - name: conv1.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: conv1.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer1.0.downsample_layer.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer1.0.downsample_layer.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer1.0.conv1.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer1.0.conv1.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer1.0.conv2.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer1.0.conv2.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer1.0.conv3.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer1.0.conv3.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer2.0.downsample_layer.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer2.0.downsample_layer.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer2.0.conv1.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer2.0.conv1.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer2.0.conv2.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer2.0.conv2.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer2.0.conv3.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer2.0.conv3.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer2.1.conv1.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer2.1.conv1.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer2.1.conv2.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer2.1.conv2.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer2.1.conv3.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer2.1.conv3.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer2.2.conv1.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer2.2.conv1.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer2.2.conv2.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer2.2.conv2.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer2.2.conv3.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer2.2.conv3.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.0.downsample_layer.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.0.downsample_layer.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.0.conv1.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.0.conv1.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.0.conv2.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.0.conv2.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.0.conv3.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.0.conv3.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.1.conv1.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.1.conv1.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.1.conv2.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.1.conv2.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.1.conv3.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.1.conv3.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.2.conv1.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.2.conv1.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.2.conv2.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.2.conv2.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.2.conv3.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.2.conv3.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.3.conv1.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.3.conv1.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.3.conv2.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.3.conv2.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.3.conv3.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.3.conv3.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.4.conv1.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.4.conv1.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.4.conv2.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.4.conv2.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.4.conv3.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.4.conv3.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.5.conv1.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.5.conv1.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.5.conv2.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.5.conv2.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.5.conv3.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.5.conv3.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.6.conv1.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.6.conv1.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.6.conv2.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.6.conv2.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.6.conv3.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.6.conv3.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.0.downsample_layer.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.0.downsample_layer.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.0.conv1.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.0.conv1.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.0.conv2.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.0.conv2.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.0.conv3.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.0.conv3.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.1.conv1.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.1.conv1.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.1.conv2.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.1.conv2.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.1.conv3.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.1.conv3.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.2.conv1.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.2.conv1.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.2.conv2.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.2.conv2.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.2.conv3.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.2.conv3.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.3.conv1.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.3.conv1.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.3.conv2.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.3.conv2.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.3.conv3.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.3.conv3.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.4.conv1.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.4.conv1.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.4.conv2.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.4.conv2.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.4.conv3.layer.1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.4.conv3.layer.1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - name: fc.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-07-24 07:09:31 - -------------weight decay layers---------------
+2022-07-24 07:09:31 - name: conv1.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer1.0.downsample_layer.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer1.0.conv1.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer1.0.conv2.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer1.0.conv3.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer2.0.downsample_layer.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer2.0.conv1.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer2.0.conv2.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer2.0.conv3.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer2.1.conv1.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer2.1.conv2.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer2.1.conv3.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer2.2.conv1.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer2.2.conv2.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer2.2.conv3.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.0.downsample_layer.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.0.conv1.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.0.conv2.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.0.conv3.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.1.conv1.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.1.conv2.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.1.conv3.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.2.conv1.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.2.conv2.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.2.conv3.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.3.conv1.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.3.conv2.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.3.conv3.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.4.conv1.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.4.conv2.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.4.conv3.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.5.conv1.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.5.conv2.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.5.conv3.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.6.conv1.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.6.conv2.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer3.6.conv3.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.0.downsample_layer.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.0.conv1.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.0.conv2.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.0.conv3.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.1.conv1.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.1.conv2.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.1.conv3.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.2.conv1.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.2.conv2.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.2.conv3.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.3.conv1.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.3.conv2.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.3.conv3.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.4.conv1.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.4.conv2.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: layer4.4.conv3.layer.0.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - name: fc.weight, weight_decay: 5e-05, lr_scale: not setting!
+2022-07-24 07:09:31 - epoch 001 lr: 0.200000
+2022-07-24 07:10:40 - train: epoch 0001, iter [00100, 05004], lr: 0.040799, loss: 6.9239
+2022-07-24 07:11:38 - train: epoch 0001, iter [00200, 05004], lr: 0.041599, loss: 6.7495
+2022-07-24 07:12:39 - train: epoch 0001, iter [00300, 05004], lr: 0.042398, loss: 6.5014
+2022-07-24 07:13:37 - train: epoch 0001, iter [00400, 05004], lr: 0.043197, loss: 6.4526
+2022-07-24 07:14:36 - train: epoch 0001, iter [00500, 05004], lr: 0.043997, loss: 6.3689
+2022-07-24 07:15:35 - train: epoch 0001, iter [00600, 05004], lr: 0.044796, loss: 6.1239
+2022-07-24 07:16:33 - train: epoch 0001, iter [00700, 05004], lr: 0.045596, loss: 6.2111
+2022-07-24 07:17:32 - train: epoch 0001, iter [00800, 05004], lr: 0.046395, loss: 6.0515
+2022-07-24 07:18:30 - train: epoch 0001, iter [00900, 05004], lr: 0.047194, loss: 6.0232
+2022-07-24 07:19:30 - train: epoch 0001, iter [01000, 05004], lr: 0.047994, loss: 5.9412
+2022-07-24 07:20:27 - train: epoch 0001, iter [01100, 05004], lr: 0.048793, loss: 5.9727
+2022-07-24 07:21:26 - train: epoch 0001, iter [01200, 05004], lr: 0.049592, loss: 5.6599
+2022-07-24 07:22:26 - train: epoch 0001, iter [01300, 05004], lr: 0.050392, loss: 5.7151
+2022-07-24 07:23:24 - train: epoch 0001, iter [01400, 05004], lr: 0.051191, loss: 5.5452
+2022-07-24 07:24:24 - train: epoch 0001, iter [01500, 05004], lr: 0.051990, loss: 5.5280
+2022-07-24 07:25:21 - train: epoch 0001, iter [01600, 05004], lr: 0.052790, loss: 5.5662
+2022-07-24 07:26:20 - train: epoch 0001, iter [01700, 05004], lr: 0.053589, loss: 5.3532
+2022-07-24 07:27:18 - train: epoch 0001, iter [01800, 05004], lr: 0.054388, loss: 5.3684
+2022-07-24 07:28:17 - train: epoch 0001, iter [01900, 05004], lr: 0.055188, loss: 5.3905
+2022-07-24 07:29:15 - train: epoch 0001, iter [02000, 05004], lr: 0.055987, loss: 5.2659
+2022-07-24 07:30:15 - train: epoch 0001, iter [02100, 05004], lr: 0.056787, loss: 5.1207
+2022-07-24 07:31:14 - train: epoch 0001, iter [02200, 05004], lr: 0.057586, loss: 5.1469
+2022-07-24 07:32:12 - train: epoch 0001, iter [02300, 05004], lr: 0.058385, loss: 5.0441
+2022-07-24 07:33:11 - train: epoch 0001, iter [02400, 05004], lr: 0.059185, loss: 5.1954
+2022-07-24 07:34:10 - train: epoch 0001, iter [02500, 05004], lr: 0.059984, loss: 5.0792
+2022-07-24 07:35:09 - train: epoch 0001, iter [02600, 05004], lr: 0.060783, loss: 5.2542
+2022-07-24 07:36:07 - train: epoch 0001, iter [02700, 05004], lr: 0.061583, loss: 4.9975
+2022-07-24 07:37:08 - train: epoch 0001, iter [02800, 05004], lr: 0.062382, loss: 4.9134
+2022-07-24 07:38:05 - train: epoch 0001, iter [02900, 05004], lr: 0.063181, loss: 4.8200
+2022-07-24 07:39:04 - train: epoch 0001, iter [03000, 05004], lr: 0.063981, loss: 4.9348
+2022-07-24 07:40:05 - train: epoch 0001, iter [03100, 05004], lr: 0.064780, loss: 5.0202
+2022-07-24 07:41:02 - train: epoch 0001, iter [03200, 05004], lr: 0.065580, loss: 4.8442
+2022-07-24 07:42:02 - train: epoch 0001, iter [03300, 05004], lr: 0.066379, loss: 4.6141
+2022-07-24 07:42:58 - train: epoch 0001, iter [03400, 05004], lr: 0.067178, loss: 4.8086
+2022-07-24 07:43:57 - train: epoch 0001, iter [03500, 05004], lr: 0.067978, loss: 4.8384
+2022-07-24 07:44:57 - train: epoch 0001, iter [03600, 05004], lr: 0.068777, loss: 4.6120
+2022-07-24 07:45:55 - train: epoch 0001, iter [03700, 05004], lr: 0.069576, loss: 4.6424
+2022-07-24 07:46:53 - train: epoch 0001, iter [03800, 05004], lr: 0.070376, loss: 4.4493
+2022-07-24 07:47:50 - train: epoch 0001, iter [03900, 05004], lr: 0.071175, loss: 4.3805
+2022-07-24 07:48:51 - train: epoch 0001, iter [04000, 05004], lr: 0.071974, loss: 4.5057
+2022-07-24 07:49:49 - train: epoch 0001, iter [04100, 05004], lr: 0.072774, loss: 4.3843
+2022-07-24 07:50:46 - train: epoch 0001, iter [04200, 05004], lr: 0.073573, loss: 4.3722
+2022-07-24 07:51:45 - train: epoch 0001, iter [04300, 05004], lr: 0.074373, loss: 4.3093
+2022-07-24 07:52:44 - train: epoch 0001, iter [04400, 05004], lr: 0.075172, loss: 4.1291
+2022-07-24 07:53:42 - train: epoch 0001, iter [04500, 05004], lr: 0.075971, loss: 4.3102
+2022-07-24 07:54:41 - train: epoch 0001, iter [04600, 05004], lr: 0.076771, loss: 4.6053
+2022-07-24 07:55:41 - train: epoch 0001, iter [04700, 05004], lr: 0.077570, loss: 4.2269
+2022-07-24 07:56:39 - train: epoch 0001, iter [04800, 05004], lr: 0.078369, loss: 4.3922
+2022-07-24 07:57:38 - train: epoch 0001, iter [04900, 05004], lr: 0.079169, loss: 4.2381
+2022-07-24 07:58:35 - train: epoch 0001, iter [05000, 05004], lr: 0.079968, loss: 4.1011
+2022-07-24 07:58:36 - train: epoch 001, train_loss: 5.1517
+2022-07-24 08:00:50 - eval: epoch: 001, acc1: 20.406%, acc5: 43.388%, test_loss: 3.9505, per_image_load_time: 2.969ms, per_image_inference_time: 0.655ms
+2022-07-24 08:00:50 - until epoch: 001, best_acc1: 20.406%
+2022-07-24 08:00:50 - epoch 002 lr: 0.080008
+2022-07-24 08:01:59 - train: epoch 0002, iter [00100, 05004], lr: 0.080799, loss: 4.0030
+2022-07-24 08:02:59 - train: epoch 0002, iter [00200, 05004], lr: 0.081599, loss: 3.8788
+2022-07-24 08:03:58 - train: epoch 0002, iter [00300, 05004], lr: 0.082398, loss: 4.1098
+2022-07-24 08:04:57 - train: epoch 0002, iter [00400, 05004], lr: 0.083197, loss: 4.1733
+2022-07-24 08:05:56 - train: epoch 0002, iter [00500, 05004], lr: 0.083997, loss: 4.0765
+2022-07-24 08:06:53 - train: epoch 0002, iter [00600, 05004], lr: 0.084796, loss: 3.8450
+2022-07-24 08:07:51 - train: epoch 0002, iter [00700, 05004], lr: 0.085596, loss: 4.0733
+2022-07-24 08:08:47 - train: epoch 0002, iter [00800, 05004], lr: 0.086395, loss: 3.8994
+2022-07-24 08:09:48 - train: epoch 0002, iter [00900, 05004], lr: 0.087194, loss: 3.6358
+2022-07-24 08:10:45 - train: epoch 0002, iter [01000, 05004], lr: 0.087994, loss: 3.8861
+2022-07-24 08:11:45 - train: epoch 0002, iter [01100, 05004], lr: 0.088793, loss: 3.8965
+2022-07-24 08:12:42 - train: epoch 0002, iter [01200, 05004], lr: 0.089592, loss: 3.8204
+2022-07-24 08:13:41 - train: epoch 0002, iter [01300, 05004], lr: 0.090392, loss: 4.0568
+2022-07-24 08:14:38 - train: epoch 0002, iter [01400, 05004], lr: 0.091191, loss: 4.0114
+2022-07-24 08:15:39 - train: epoch 0002, iter [01500, 05004], lr: 0.091990, loss: 3.9139
+2022-07-24 08:16:38 - train: epoch 0002, iter [01600, 05004], lr: 0.092790, loss: 3.9088
+2022-07-24 08:17:35 - train: epoch 0002, iter [01700, 05004], lr: 0.093589, loss: 3.8865
+2022-07-24 08:18:34 - train: epoch 0002, iter [01800, 05004], lr: 0.094388, loss: 3.8088
+2022-07-24 08:19:31 - train: epoch 0002, iter [01900, 05004], lr: 0.095188, loss: 3.6814
+2022-07-24 08:20:29 - train: epoch 0002, iter [02000, 05004], lr: 0.095987, loss: 3.3217
+2022-07-24 08:21:28 - train: epoch 0002, iter [02100, 05004], lr: 0.096787, loss: 3.7838
+2022-07-24 08:22:25 - train: epoch 0002, iter [02200, 05004], lr: 0.097586, loss: 3.5240
+2022-07-24 08:23:25 - train: epoch 0002, iter [02300, 05004], lr: 0.098385, loss: 3.6530
+2022-07-24 08:24:24 - train: epoch 0002, iter [02400, 05004], lr: 0.099185, loss: 3.7130
+2022-07-24 08:25:23 - train: epoch 0002, iter [02500, 05004], lr: 0.099984, loss: 3.6083
+2022-07-24 08:26:21 - train: epoch 0002, iter [02600, 05004], lr: 0.100783, loss: 3.4825
+2022-07-24 08:27:18 - train: epoch 0002, iter [02700, 05004], lr: 0.101583, loss: 3.6326
+2022-07-24 08:28:17 - train: epoch 0002, iter [02800, 05004], lr: 0.102382, loss: 3.5823
+2022-07-24 08:29:15 - train: epoch 0002, iter [02900, 05004], lr: 0.103181, loss: 3.6396
+2022-07-24 08:30:13 - train: epoch 0002, iter [03000, 05004], lr: 0.103981, loss: 3.5718
+2022-07-24 08:31:13 - train: epoch 0002, iter [03100, 05004], lr: 0.104780, loss: 3.4879
+2022-07-24 08:32:11 - train: epoch 0002, iter [03200, 05004], lr: 0.105580, loss: 3.4083
+2022-07-24 08:33:10 - train: epoch 0002, iter [03300, 05004], lr: 0.106379, loss: 3.4836
+2022-07-24 08:34:08 - train: epoch 0002, iter [03400, 05004], lr: 0.107178, loss: 3.4723
+2022-07-24 08:35:04 - train: epoch 0002, iter [03500, 05004], lr: 0.107978, loss: 3.4831
+2022-07-24 08:36:04 - train: epoch 0002, iter [03600, 05004], lr: 0.108777, loss: 3.4962
+2022-07-24 08:37:03 - train: epoch 0002, iter [03700, 05004], lr: 0.109576, loss: 3.3907
+2022-07-24 08:38:01 - train: epoch 0002, iter [03800, 05004], lr: 0.110376, loss: 3.3409
+2022-07-24 08:39:00 - train: epoch 0002, iter [03900, 05004], lr: 0.111175, loss: 3.4919
+2022-07-24 08:39:59 - train: epoch 0002, iter [04000, 05004], lr: 0.111974, loss: 3.3051
+2022-07-24 08:40:56 - train: epoch 0002, iter [04100, 05004], lr: 0.112774, loss: 3.6004
+2022-07-24 08:41:54 - train: epoch 0002, iter [04200, 05004], lr: 0.113573, loss: 3.4424
+2022-07-24 08:42:53 - train: epoch 0002, iter [04300, 05004], lr: 0.114373, loss: 3.3696
+2022-07-24 08:43:52 - train: epoch 0002, iter [04400, 05004], lr: 0.115172, loss: 3.3172
+2022-07-24 08:44:49 - train: epoch 0002, iter [04500, 05004], lr: 0.115971, loss: 3.2389
+2022-07-24 08:45:48 - train: epoch 0002, iter [04600, 05004], lr: 0.116771, loss: 3.1511
+2022-07-24 08:46:47 - train: epoch 0002, iter [04700, 05004], lr: 0.117570, loss: 3.3150
+2022-07-24 08:47:46 - train: epoch 0002, iter [04800, 05004], lr: 0.118369, loss: 3.4106
+2022-07-24 08:48:43 - train: epoch 0002, iter [04900, 05004], lr: 0.119169, loss: 3.2733
+2022-07-24 08:49:38 - train: epoch 0002, iter [05000, 05004], lr: 0.119968, loss: 3.4087
+2022-07-24 08:49:40 - train: epoch 002, train_loss: 3.6406
+2022-07-24 08:51:53 - eval: epoch: 002, acc1: 33.796%, acc5: 60.342%, test_loss: 3.0588, per_image_load_time: 2.136ms, per_image_inference_time: 0.658ms
+2022-07-24 08:51:53 - until epoch: 002, best_acc1: 33.796%
+2022-07-24 08:51:53 - epoch 003 lr: 0.120008
+2022-07-24 08:53:03 - train: epoch 0003, iter [00100, 05004], lr: 0.120799, loss: 3.3494
+2022-07-24 08:54:02 - train: epoch 0003, iter [00200, 05004], lr: 0.121599, loss: 3.2356
+2022-07-24 08:55:00 - train: epoch 0003, iter [00300, 05004], lr: 0.122398, loss: 3.3150
+2022-07-24 08:55:59 - train: epoch 0003, iter [00400, 05004], lr: 0.123197, loss: 3.3414
+2022-07-24 08:56:58 - train: epoch 0003, iter [00500, 05004], lr: 0.123997, loss: 3.3771
+2022-07-24 08:57:58 - train: epoch 0003, iter [00600, 05004], lr: 0.124796, loss: 3.0841
+2022-07-24 08:58:54 - train: epoch 0003, iter [00700, 05004], lr: 0.125596, loss: 3.2290
+2022-07-24 08:59:54 - train: epoch 0003, iter [00800, 05004], lr: 0.126395, loss: 3.2600
+2022-07-24 09:00:52 - train: epoch 0003, iter [00900, 05004], lr: 0.127194, loss: 3.2483
+2022-07-24 09:01:51 - train: epoch 0003, iter [01000, 05004], lr: 0.127994, loss: 3.1664
+2022-07-24 09:02:48 - train: epoch 0003, iter [01100, 05004], lr: 0.128793, loss: 2.8961
+2022-07-24 09:03:47 - train: epoch 0003, iter [01200, 05004], lr: 0.129592, loss: 3.1315
+2022-07-24 09:04:46 - train: epoch 0003, iter [01300, 05004], lr: 0.130392, loss: 2.9726
+2022-07-24 09:05:45 - train: epoch 0003, iter [01400, 05004], lr: 0.131191, loss: 3.0971
+2022-07-24 09:06:44 - train: epoch 0003, iter [01500, 05004], lr: 0.131990, loss: 3.2904
+2022-07-24 09:07:43 - train: epoch 0003, iter [01600, 05004], lr: 0.132790, loss: 3.1104
+2022-07-24 09:08:42 - train: epoch 0003, iter [01700, 05004], lr: 0.133589, loss: 3.1438
+2022-07-24 09:09:41 - train: epoch 0003, iter [01800, 05004], lr: 0.134388, loss: 2.9356
+2022-07-24 09:10:42 - train: epoch 0003, iter [01900, 05004], lr: 0.135188, loss: 3.1220
+2022-07-24 09:11:38 - train: epoch 0003, iter [02000, 05004], lr: 0.135987, loss: 3.1533
+2022-07-24 09:12:37 - train: epoch 0003, iter [02100, 05004], lr: 0.136787, loss: 3.1739
+2022-07-24 09:13:36 - train: epoch 0003, iter [02200, 05004], lr: 0.137586, loss: 3.4307
+2022-07-24 09:14:34 - train: epoch 0003, iter [02300, 05004], lr: 0.138385, loss: 3.1434
+2022-07-24 09:15:33 - train: epoch 0003, iter [02400, 05004], lr: 0.139185, loss: 2.9878
+2022-07-24 09:16:31 - train: epoch 0003, iter [02500, 05004], lr: 0.139984, loss: 3.0644
+2022-07-24 09:17:31 - train: epoch 0003, iter [02600, 05004], lr: 0.140783, loss: 3.1229
+2022-07-24 09:18:29 - train: epoch 0003, iter [02700, 05004], lr: 0.141583, loss: 3.4072
+2022-07-24 09:19:30 - train: epoch 0003, iter [02800, 05004], lr: 0.142382, loss: 3.1224
+2022-07-24 09:20:26 - train: epoch 0003, iter [02900, 05004], lr: 0.143181, loss: 3.1458
+2022-07-24 09:21:26 - train: epoch 0003, iter [03000, 05004], lr: 0.143981, loss: 3.1419
+2022-07-24 09:22:26 - train: epoch 0003, iter [03100, 05004], lr: 0.144780, loss: 3.2763
+2022-07-24 09:23:24 - train: epoch 0003, iter [03200, 05004], lr: 0.145580, loss: 3.0881
+2022-07-24 09:24:21 - train: epoch 0003, iter [03300, 05004], lr: 0.146379, loss: 3.0973
+2022-07-24 09:25:20 - train: epoch 0003, iter [03400, 05004], lr: 0.147178, loss: 3.0541
+2022-07-24 09:26:19 - train: epoch 0003, iter [03500, 05004], lr: 0.147978, loss: 2.9644
+2022-07-24 09:27:17 - train: epoch 0003, iter [03600, 05004], lr: 0.148777, loss: 2.8260
+2022-07-24 09:28:17 - train: epoch 0003, iter [03700, 05004], lr: 0.149576, loss: 3.0811
+2022-07-24 09:29:14 - train: epoch 0003, iter [03800, 05004], lr: 0.150376, loss: 3.2368
+2022-07-24 09:30:13 - train: epoch 0003, iter [03900, 05004], lr: 0.151175, loss: 3.4842
+2022-07-24 09:31:10 - train: epoch 0003, iter [04000, 05004], lr: 0.151974, loss: 2.6753
+2022-07-24 09:32:11 - train: epoch 0003, iter [04100, 05004], lr: 0.152774, loss: 2.8630
+2022-07-24 09:33:08 - train: epoch 0003, iter [04200, 05004], lr: 0.153573, loss: 3.1663
+2022-07-24 09:34:07 - train: epoch 0003, iter [04300, 05004], lr: 0.154373, loss: 3.0824
+2022-07-24 09:35:06 - train: epoch 0003, iter [04400, 05004], lr: 0.155172, loss: 2.8970
+2022-07-24 09:36:03 - train: epoch 0003, iter [04500, 05004], lr: 0.155971, loss: 3.1233
+2022-07-24 09:37:02 - train: epoch 0003, iter [04600, 05004], lr: 0.156771, loss: 2.9302
+2022-07-24 09:38:02 - train: epoch 0003, iter [04700, 05004], lr: 0.157570, loss: 3.0975
+2022-07-24 09:39:01 - train: epoch 0003, iter [04800, 05004], lr: 0.158369, loss: 3.0232
+2022-07-24 09:39:57 - train: epoch 0003, iter [04900, 05004], lr: 0.159169, loss: 3.0616
+2022-07-24 09:40:54 - train: epoch 0003, iter [05000, 05004], lr: 0.159968, loss: 2.7825
+2022-07-24 09:40:55 - train: epoch 003, train_loss: 3.0834
+2022-07-24 09:43:08 - eval: epoch: 003, acc1: 40.196%, acc5: 66.802%, test_loss: 2.6985, per_image_load_time: 4.427ms, per_image_inference_time: 0.650ms
+2022-07-24 09:43:08 - until epoch: 003, best_acc1: 40.196%
+2022-07-24 09:43:08 - epoch 004 lr: 0.160008
+2022-07-24 09:44:17 - train: epoch 0004, iter [00100, 05004], lr: 0.160799, loss: 2.9301
+2022-07-24 09:45:17 - train: epoch 0004, iter [00200, 05004], lr: 0.161599, loss: 2.8911
+2022-07-24 09:46:17 - train: epoch 0004, iter [00300, 05004], lr: 0.162398, loss: 2.7906
+2022-07-24 09:47:17 - train: epoch 0004, iter [00400, 05004], lr: 0.163197, loss: 2.7530
+2022-07-24 09:48:14 - train: epoch 0004, iter [00500, 05004], lr: 0.163997, loss: 2.6452
+2022-07-24 09:49:12 - train: epoch 0004, iter [00600, 05004], lr: 0.164796, loss: 3.1916
+2022-07-24 09:50:10 - train: epoch 0004, iter [00700, 05004], lr: 0.165596, loss: 2.8707
+2022-07-24 09:51:09 - train: epoch 0004, iter [00800, 05004], lr: 0.166395, loss: 2.8332
+2022-07-24 09:52:08 - train: epoch 0004, iter [00900, 05004], lr: 0.167194, loss: 2.6629
+2022-07-24 09:53:05 - train: epoch 0004, iter [01000, 05004], lr: 0.167994, loss: 2.8450
+2022-07-24 09:54:05 - train: epoch 0004, iter [01100, 05004], lr: 0.168793, loss: 2.9066
+2022-07-24 09:55:05 - train: epoch 0004, iter [01200, 05004], lr: 0.169592, loss: 2.5098
+2022-07-24 09:56:03 - train: epoch 0004, iter [01300, 05004], lr: 0.170392, loss: 2.7834
+2022-07-24 09:57:02 - train: epoch 0004, iter [01400, 05004], lr: 0.171191, loss: 2.8720
+2022-07-24 09:58:00 - train: epoch 0004, iter [01500, 05004], lr: 0.171990, loss: 2.7810
+2022-07-24 09:59:00 - train: epoch 0004, iter [01600, 05004], lr: 0.172790, loss: 2.8352
+2022-07-24 09:59:57 - train: epoch 0004, iter [01700, 05004], lr: 0.173589, loss: 2.7816
+2022-07-24 10:00:58 - train: epoch 0004, iter [01800, 05004], lr: 0.174388, loss: 2.9772
+2022-07-24 10:01:55 - train: epoch 0004, iter [01900, 05004], lr: 0.175188, loss: 2.8604
+2022-07-24 10:02:57 - train: epoch 0004, iter [02000, 05004], lr: 0.175987, loss: 2.7294
+2022-07-24 10:03:53 - train: epoch 0004, iter [02100, 05004], lr: 0.176787, loss: 2.9895
+2022-07-24 10:04:51 - train: epoch 0004, iter [02200, 05004], lr: 0.177586, loss: 2.7423
+2022-07-24 10:05:50 - train: epoch 0004, iter [02300, 05004], lr: 0.178385, loss: 2.5905
+2022-07-24 10:06:49 - train: epoch 0004, iter [02400, 05004], lr: 0.179185, loss: 2.7419
+2022-07-24 10:07:48 - train: epoch 0004, iter [02500, 05004], lr: 0.179984, loss: 2.6312
+2022-07-24 10:08:47 - train: epoch 0004, iter [02600, 05004], lr: 0.180783, loss: 2.7598
+2022-07-24 10:09:45 - train: epoch 0004, iter [02700, 05004], lr: 0.181583, loss: 2.6975
+2022-07-24 10:10:44 - train: epoch 0004, iter [02800, 05004], lr: 0.182382, loss: 2.7893
+2022-07-24 10:11:40 - train: epoch 0004, iter [02900, 05004], lr: 0.183181, loss: 2.9114
+2022-07-24 10:12:39 - train: epoch 0004, iter [03000, 05004], lr: 0.183981, loss: 2.9682
+2022-07-24 10:13:37 - train: epoch 0004, iter [03100, 05004], lr: 0.184780, loss: 2.9193
+2022-07-24 10:14:32 - train: epoch 0004, iter [03200, 05004], lr: 0.185580, loss: 2.8142
+2022-07-24 10:15:30 - train: epoch 0004, iter [03300, 05004], lr: 0.186379, loss: 2.7484
+2022-07-24 10:16:29 - train: epoch 0004, iter [03400, 05004], lr: 0.187178, loss: 2.8242
+2022-07-24 10:17:27 - train: epoch 0004, iter [03500, 05004], lr: 0.187978, loss: 2.7883
+2022-07-24 10:18:24 - train: epoch 0004, iter [03600, 05004], lr: 0.188777, loss: 2.8808
+2022-07-24 10:19:21 - train: epoch 0004, iter [03700, 05004], lr: 0.189576, loss: 2.9149
+2022-07-24 10:20:18 - train: epoch 0004, iter [03800, 05004], lr: 0.190376, loss: 2.7039
+2022-07-24 10:21:14 - train: epoch 0004, iter [03900, 05004], lr: 0.191175, loss: 2.8829
+2022-07-24 10:22:10 - train: epoch 0004, iter [04000, 05004], lr: 0.191974, loss: 2.4826
+2022-07-24 10:23:06 - train: epoch 0004, iter [04100, 05004], lr: 0.192774, loss: 2.5917
+2022-07-24 10:24:05 - train: epoch 0004, iter [04200, 05004], lr: 0.193573, loss: 2.7325
+2022-07-24 10:25:03 - train: epoch 0004, iter [04300, 05004], lr: 0.194373, loss: 2.5286
+2022-07-24 10:25:59 - train: epoch 0004, iter [04400, 05004], lr: 0.195172, loss: 2.7368
+2022-07-24 10:26:57 - train: epoch 0004, iter [04500, 05004], lr: 0.195971, loss: 2.4992
+2022-07-24 10:27:55 - train: epoch 0004, iter [04600, 05004], lr: 0.196771, loss: 2.7937
+2022-07-24 10:28:52 - train: epoch 0004, iter [04700, 05004], lr: 0.197570, loss: 2.8622
+2022-07-24 10:29:48 - train: epoch 0004, iter [04800, 05004], lr: 0.198369, loss: 2.5348
+2022-07-24 10:30:46 - train: epoch 0004, iter [04900, 05004], lr: 0.199169, loss: 2.8925
+2022-07-24 10:31:42 - train: epoch 0004, iter [05000, 05004], lr: 0.199968, loss: 2.8267
+2022-07-24 10:31:43 - train: epoch 004, train_loss: 2.8250
+2022-07-24 10:33:54 - eval: epoch: 004, acc1: 43.866%, acc5: 70.290%, test_loss: 2.5158, per_image_load_time: 4.459ms, per_image_inference_time: 0.577ms
+2022-07-24 10:33:54 - until epoch: 004, best_acc1: 43.866%
+2022-07-24 10:33:54 - epoch 005 lr: 0.200008
+2022-07-24 10:35:04 - train: epoch 0005, iter [00100, 05004], lr: 0.200799, loss: 2.6874
+2022-07-24 10:36:04 - train: epoch 0005, iter [00200, 05004], lr: 0.201599, loss: 2.8399
+2022-07-24 10:37:02 - train: epoch 0005, iter [00300, 05004], lr: 0.202398, loss: 2.9748
+2022-07-24 10:37:58 - train: epoch 0005, iter [00400, 05004], lr: 0.203197, loss: 2.8964
+2022-07-24 10:38:55 - train: epoch 0005, iter [00500, 05004], lr: 0.203997, loss: 2.6228
+2022-07-24 10:39:53 - train: epoch 0005, iter [00600, 05004], lr: 0.204796, loss: 2.8430
+2022-07-24 10:40:49 - train: epoch 0005, iter [00700, 05004], lr: 0.205596, loss: 2.7969
+2022-07-24 10:41:47 - train: epoch 0005, iter [00800, 05004], lr: 0.206395, loss: 2.8570
+2022-07-24 10:42:43 - train: epoch 0005, iter [00900, 05004], lr: 0.207194, loss: 2.7824
+2022-07-24 10:43:41 - train: epoch 0005, iter [01000, 05004], lr: 0.207994, loss: 2.7577
+2022-07-24 10:44:36 - train: epoch 0005, iter [01100, 05004], lr: 0.208793, loss: 2.8167
+2022-07-24 10:45:34 - train: epoch 0005, iter [01200, 05004], lr: 0.209592, loss: 2.5596
+2022-07-24 10:46:34 - train: epoch 0005, iter [01300, 05004], lr: 0.210392, loss: 2.6410
+2022-07-24 10:47:34 - train: epoch 0005, iter [01400, 05004], lr: 0.211191, loss: 2.7201
+2022-07-24 10:48:30 - train: epoch 0005, iter [01500, 05004], lr: 0.211990, loss: 2.7422
+2022-07-24 10:49:27 - train: epoch 0005, iter [01600, 05004], lr: 0.212790, loss: 2.4299
+2022-07-24 10:50:26 - train: epoch 0005, iter [01700, 05004], lr: 0.213589, loss: 2.6675
+2022-07-24 10:51:22 - train: epoch 0005, iter [01800, 05004], lr: 0.214388, loss: 2.7531
+2022-07-24 10:52:21 - train: epoch 0005, iter [01900, 05004], lr: 0.215188, loss: 2.7012
+2022-07-24 10:53:18 - train: epoch 0005, iter [02000, 05004], lr: 0.215987, loss: 2.6549
+2022-07-24 10:54:16 - train: epoch 0005, iter [02100, 05004], lr: 0.216787, loss: 2.5051
+2022-07-24 10:55:13 - train: epoch 0005, iter [02200, 05004], lr: 0.217586, loss: 2.6309
+2022-07-24 10:56:11 - train: epoch 0005, iter [02300, 05004], lr: 0.218385, loss: 2.4364
+2022-07-24 10:57:11 - train: epoch 0005, iter [02400, 05004], lr: 0.219185, loss: 2.6058
+2022-07-24 10:58:09 - train: epoch 0005, iter [02500, 05004], lr: 0.219984, loss: 2.7399
+2022-07-24 10:59:06 - train: epoch 0005, iter [02600, 05004], lr: 0.220783, loss: 2.6905
+2022-07-24 11:00:02 - train: epoch 0005, iter [02700, 05004], lr: 0.221583, loss: 2.6672
+2022-07-24 11:00:58 - train: epoch 0005, iter [02800, 05004], lr: 0.222382, loss: 2.7513
+2022-07-24 11:01:52 - train: epoch 0005, iter [02900, 05004], lr: 0.223181, loss: 2.6536
+2022-07-24 11:02:51 - train: epoch 0005, iter [03000, 05004], lr: 0.223981, loss: 2.6260
+2022-07-24 11:03:49 - train: epoch 0005, iter [03100, 05004], lr: 0.224780, loss: 2.7136
+2022-07-24 11:04:46 - train: epoch 0005, iter [03200, 05004], lr: 0.225580, loss: 2.5269
+2022-07-24 11:05:42 - train: epoch 0005, iter [03300, 05004], lr: 0.226379, loss: 2.6292
+2022-07-24 11:06:40 - train: epoch 0005, iter [03400, 05004], lr: 0.227178, loss: 2.7226
+2022-07-24 11:07:36 - train: epoch 0005, iter [03500, 05004], lr: 0.227978, loss: 2.6219
+2022-07-24 11:08:33 - train: epoch 0005, iter [03600, 05004], lr: 0.228777, loss: 2.7053
+2022-07-24 11:09:28 - train: epoch 0005, iter [03700, 05004], lr: 0.229576, loss: 2.6056
+2022-07-24 11:10:26 - train: epoch 0005, iter [03800, 05004], lr: 0.230376, loss: 2.6703
+2022-07-24 11:11:24 - train: epoch 0005, iter [03900, 05004], lr: 0.231175, loss: 2.9660
+2022-07-24 11:12:23 - train: epoch 0005, iter [04000, 05004], lr: 0.231974, loss: 2.6084
+2022-07-24 11:13:19 - train: epoch 0005, iter [04100, 05004], lr: 0.232774, loss: 2.5639
+2022-07-24 11:14:20 - train: epoch 0005, iter [04200, 05004], lr: 0.233573, loss: 2.8122
+2022-07-24 11:15:17 - train: epoch 0005, iter [04300, 05004], lr: 0.234373, loss: 2.7577
+2022-07-24 11:16:14 - train: epoch 0005, iter [04400, 05004], lr: 0.235172, loss: 2.6310
+2022-07-24 11:17:13 - train: epoch 0005, iter [04500, 05004], lr: 0.235971, loss: 2.9072
+2022-07-24 11:18:10 - train: epoch 0005, iter [04600, 05004], lr: 0.236771, loss: 2.7423
+2022-07-24 11:19:06 - train: epoch 0005, iter [04700, 05004], lr: 0.237570, loss: 2.6460
+2022-07-24 11:19:59 - train: epoch 0005, iter [04800, 05004], lr: 0.238369, loss: 2.4397
+2022-07-24 11:20:56 - train: epoch 0005, iter [04900, 05004], lr: 0.239169, loss: 2.9525
+2022-07-24 11:21:49 - train: epoch 0005, iter [05000, 05004], lr: 0.239968, loss: 2.6007
+2022-07-24 11:21:51 - train: epoch 005, train_loss: 2.6944
+2022-07-24 11:23:55 - eval: epoch: 005, acc1: 45.268%, acc5: 71.836%, test_loss: 2.4154, per_image_load_time: 2.539ms, per_image_inference_time: 0.542ms
+2022-07-24 11:23:56 - until epoch: 005, best_acc1: 45.268%
+2022-07-24 11:23:56 - epoch 006 lr: 0.200000
+2022-07-24 11:25:02 - train: epoch 0006, iter [00100, 05004], lr: 0.200000, loss: 2.4297
+2022-07-24 11:25:59 - train: epoch 0006, iter [00200, 05004], lr: 0.200000, loss: 2.7739
+2022-07-24 11:26:55 - train: epoch 0006, iter [00300, 05004], lr: 0.200000, loss: 2.5197
+2022-07-24 11:27:50 - train: epoch 0006, iter [00400, 05004], lr: 0.200000, loss: 2.4321
+2022-07-24 11:28:44 - train: epoch 0006, iter [00500, 05004], lr: 0.199999, loss: 2.2659
+2022-07-24 11:29:37 - train: epoch 0006, iter [00600, 05004], lr: 0.199999, loss: 2.6261
+2022-07-24 11:30:33 - train: epoch 0006, iter [00700, 05004], lr: 0.199999, loss: 2.6701
+2022-07-24 11:31:25 - train: epoch 0006, iter [00800, 05004], lr: 0.199999, loss: 2.4636
+2022-07-24 11:32:19 - train: epoch 0006, iter [00900, 05004], lr: 0.199998, loss: 2.2342
+2022-07-24 11:33:15 - train: epoch 0006, iter [01000, 05004], lr: 0.199998, loss: 2.4017
+2022-07-24 11:34:06 - train: epoch 0006, iter [01100, 05004], lr: 0.199997, loss: 2.4918
+2022-07-24 11:35:00 - train: epoch 0006, iter [01200, 05004], lr: 0.199997, loss: 2.5071
+2022-07-24 11:35:53 - train: epoch 0006, iter [01300, 05004], lr: 0.199996, loss: 2.3926
+2022-07-24 11:36:46 - train: epoch 0006, iter [01400, 05004], lr: 0.199996, loss: 2.5929
+2022-07-24 11:37:40 - train: epoch 0006, iter [01500, 05004], lr: 0.199995, loss: 2.6455
+2022-07-24 11:38:33 - train: epoch 0006, iter [01600, 05004], lr: 0.199994, loss: 2.2674
+2022-07-24 11:39:27 - train: epoch 0006, iter [01700, 05004], lr: 0.199994, loss: 2.6014
+2022-07-24 11:40:21 - train: epoch 0006, iter [01800, 05004], lr: 0.199993, loss: 2.6722
+2022-07-24 11:41:15 - train: epoch 0006, iter [01900, 05004], lr: 0.199992, loss: 2.5072
+2022-07-24 11:42:10 - train: epoch 0006, iter [02000, 05004], lr: 0.199991, loss: 2.7948
+2022-07-24 11:43:04 - train: epoch 0006, iter [02100, 05004], lr: 0.199990, loss: 2.3433
+2022-07-24 11:43:57 - train: epoch 0006, iter [02200, 05004], lr: 0.199989, loss: 2.4169
+2022-07-24 11:44:51 - train: epoch 0006, iter [02300, 05004], lr: 0.199988, loss: 2.5875
+2022-07-24 11:45:47 - train: epoch 0006, iter [02400, 05004], lr: 0.199987, loss: 2.4539
+2022-07-24 11:46:39 - train: epoch 0006, iter [02500, 05004], lr: 0.199986, loss: 2.4311
+2022-07-24 11:47:33 - train: epoch 0006, iter [02600, 05004], lr: 0.199985, loss: 2.3394
+2022-07-24 11:48:24 - train: epoch 0006, iter [02700, 05004], lr: 0.199984, loss: 2.7706
+2022-07-24 11:49:16 - train: epoch 0006, iter [02800, 05004], lr: 0.199983, loss: 2.0943
+2022-07-24 11:50:08 - train: epoch 0006, iter [02900, 05004], lr: 0.199982, loss: 2.5977
+2022-07-24 11:51:00 - train: epoch 0006, iter [03000, 05004], lr: 0.199980, loss: 2.5671
+2022-07-24 11:51:53 - train: epoch 0006, iter [03100, 05004], lr: 0.199979, loss: 2.3773
+2022-07-24 11:52:46 - train: epoch 0006, iter [03200, 05004], lr: 0.199978, loss: 2.4303
+2022-07-24 11:53:37 - train: epoch 0006, iter [03300, 05004], lr: 0.199976, loss: 2.3920
+2022-07-24 11:54:30 - train: epoch 0006, iter [03400, 05004], lr: 0.199975, loss: 2.5709
+2022-07-24 11:55:22 - train: epoch 0006, iter [03500, 05004], lr: 0.199973, loss: 2.4767
+2022-07-24 11:56:15 - train: epoch 0006, iter [03600, 05004], lr: 0.199972, loss: 2.6504
+2022-07-24 11:57:08 - train: epoch 0006, iter [03700, 05004], lr: 0.199970, loss: 2.4080
+2022-07-24 11:58:03 - train: epoch 0006, iter [03800, 05004], lr: 0.199968, loss: 2.4264
+2022-07-24 11:58:59 - train: epoch 0006, iter [03900, 05004], lr: 0.199967, loss: 2.4290
+2022-07-24 11:59:54 - train: epoch 0006, iter [04000, 05004], lr: 0.199965, loss: 2.6105
+2022-07-24 12:00:52 - train: epoch 0006, iter [04100, 05004], lr: 0.199963, loss: 2.5216
+2022-07-24 12:01:48 - train: epoch 0006, iter [04200, 05004], lr: 0.199961, loss: 2.3140
+2022-07-24 12:03:07 - train: epoch 0006, iter [04300, 05004], lr: 0.199960, loss: 2.5383
+2022-07-24 12:04:58 - train: epoch 0006, iter [04400, 05004], lr: 0.199958, loss: 2.3060
+2022-07-24 12:06:45 - train: epoch 0006, iter [04500, 05004], lr: 0.199956, loss: 2.5992
+2022-07-24 12:08:32 - train: epoch 0006, iter [04600, 05004], lr: 0.199954, loss: 2.5590
+2022-07-24 12:10:22 - train: epoch 0006, iter [04700, 05004], lr: 0.199952, loss: 2.4040
+2022-07-24 12:12:08 - train: epoch 0006, iter [04800, 05004], lr: 0.199950, loss: 2.6618
+2022-07-24 12:13:54 - train: epoch 0006, iter [04900, 05004], lr: 0.199948, loss: 2.5197
+2022-07-24 12:15:40 - train: epoch 0006, iter [05000, 05004], lr: 0.199945, loss: 2.5220
+2022-07-24 12:15:43 - train: epoch 006, train_loss: 2.5116
+2022-07-24 12:19:29 - eval: epoch: 006, acc1: 48.960%, acc5: 74.966%, test_loss: 2.2113, per_image_load_time: 7.916ms, per_image_inference_time: 0.724ms
+2022-07-24 12:19:29 - until epoch: 006, best_acc1: 48.960%
+2022-07-24 12:19:29 - epoch 007 lr: 0.199945
+2022-07-24 12:21:31 - train: epoch 0007, iter [00100, 05004], lr: 0.199943, loss: 2.3874
+2022-07-24 12:23:21 - train: epoch 0007, iter [00200, 05004], lr: 0.199941, loss: 2.5492
+2022-07-24 12:25:14 - train: epoch 0007, iter [00300, 05004], lr: 0.199939, loss: 2.6470
+2022-07-24 12:27:04 - train: epoch 0007, iter [00400, 05004], lr: 0.199936, loss: 2.4730
+2022-07-24 12:28:53 - train: epoch 0007, iter [00500, 05004], lr: 0.199934, loss: 2.3561
+2022-07-24 12:30:39 - train: epoch 0007, iter [00600, 05004], lr: 0.199931, loss: 2.4566
+2022-07-24 12:32:31 - train: epoch 0007, iter [00700, 05004], lr: 0.199929, loss: 2.4218
+2022-07-24 12:34:19 - train: epoch 0007, iter [00800, 05004], lr: 0.199926, loss: 2.4334
+2022-07-24 12:36:14 - train: epoch 0007, iter [00900, 05004], lr: 0.199924, loss: 2.3517
+2022-07-24 12:37:59 - train: epoch 0007, iter [01000, 05004], lr: 0.199921, loss: 2.3906
+2022-07-24 12:39:48 - train: epoch 0007, iter [01100, 05004], lr: 0.199919, loss: 2.5400
+2022-07-24 12:41:35 - train: epoch 0007, iter [01200, 05004], lr: 0.199916, loss: 2.4532
+2022-07-24 12:43:25 - train: epoch 0007, iter [01300, 05004], lr: 0.199913, loss: 2.1516
+2022-07-24 12:45:14 - train: epoch 0007, iter [01400, 05004], lr: 0.199910, loss: 2.3879
+2022-07-24 12:47:01 - train: epoch 0007, iter [01500, 05004], lr: 0.199908, loss: 2.5275
+2022-07-24 12:48:51 - train: epoch 0007, iter [01600, 05004], lr: 0.199905, loss: 2.5218
+2022-07-24 12:50:36 - train: epoch 0007, iter [01700, 05004], lr: 0.199902, loss: 2.3714
+2022-07-24 12:52:21 - train: epoch 0007, iter [01800, 05004], lr: 0.199899, loss: 2.4406
+2022-07-24 12:54:12 - train: epoch 0007, iter [01900, 05004], lr: 0.199896, loss: 2.5291
+2022-07-24 12:56:00 - train: epoch 0007, iter [02000, 05004], lr: 0.199893, loss: 2.2074
+2022-07-24 12:57:51 - train: epoch 0007, iter [02100, 05004], lr: 0.199890, loss: 2.5596
+2022-07-24 12:59:34 - train: epoch 0007, iter [02200, 05004], lr: 0.199887, loss: 2.3705
+2022-07-24 13:01:24 - train: epoch 0007, iter [02300, 05004], lr: 0.199884, loss: 2.4915
+2022-07-24 13:03:11 - train: epoch 0007, iter [02400, 05004], lr: 0.199880, loss: 2.8559
+2022-07-24 13:05:04 - train: epoch 0007, iter [02500, 05004], lr: 0.199877, loss: 2.3406
+2022-07-24 13:06:46 - train: epoch 0007, iter [02600, 05004], lr: 0.199874, loss: 2.3344
+2022-07-24 13:08:36 - train: epoch 0007, iter [02700, 05004], lr: 0.199870, loss: 2.1874
+2022-07-24 13:10:23 - train: epoch 0007, iter [02800, 05004], lr: 0.199867, loss: 2.3905
+2022-07-24 13:12:16 - train: epoch 0007, iter [02900, 05004], lr: 0.199864, loss: 2.3149
+2022-07-24 13:14:14 - train: epoch 0007, iter [03000, 05004], lr: 0.199860, loss: 2.4870
+2022-07-24 13:16:16 - train: epoch 0007, iter [03100, 05004], lr: 0.199857, loss: 2.3613
+2022-07-24 13:18:16 - train: epoch 0007, iter [03200, 05004], lr: 0.199853, loss: 2.4075
+2022-07-24 13:20:14 - train: epoch 0007, iter [03300, 05004], lr: 0.199849, loss: 2.4544
+2022-07-24 13:22:16 - train: epoch 0007, iter [03400, 05004], lr: 0.199846, loss: 2.4499
+2022-07-24 13:24:15 - train: epoch 0007, iter [03500, 05004], lr: 0.199842, loss: 2.4894
+2022-07-24 13:26:16 - train: epoch 0007, iter [03600, 05004], lr: 0.199838, loss: 2.4150
+2022-07-24 13:28:10 - train: epoch 0007, iter [03700, 05004], lr: 0.199835, loss: 2.4414
+2022-07-24 13:30:08 - train: epoch 0007, iter [03800, 05004], lr: 0.199831, loss: 2.4988
+2022-07-24 13:32:07 - train: epoch 0007, iter [03900, 05004], lr: 0.199827, loss: 2.4381
+2022-07-24 13:34:06 - train: epoch 0007, iter [04000, 05004], lr: 0.199823, loss: 2.5257
+2022-07-24 13:36:03 - train: epoch 0007, iter [04100, 05004], lr: 0.199819, loss: 2.3393
+2022-07-24 13:38:15 - train: epoch 0007, iter [04200, 05004], lr: 0.199815, loss: 2.4356
+2022-07-24 13:40:07 - train: epoch 0007, iter [04300, 05004], lr: 0.199811, loss: 2.5684
+2022-07-24 13:42:04 - train: epoch 0007, iter [04400, 05004], lr: 0.199807, loss: 2.2011
+2022-07-24 13:44:06 - train: epoch 0007, iter [04500, 05004], lr: 0.199803, loss: 2.4890
+2022-07-24 13:46:02 - train: epoch 0007, iter [04600, 05004], lr: 0.199799, loss: 2.3651
+2022-07-24 13:47:59 - train: epoch 0007, iter [04700, 05004], lr: 0.199794, loss: 2.4256
+2022-07-24 13:49:52 - train: epoch 0007, iter [04800, 05004], lr: 0.199790, loss: 2.5323
+2022-07-24 13:51:51 - train: epoch 0007, iter [04900, 05004], lr: 0.199786, loss: 2.3392
+2022-07-24 13:53:45 - train: epoch 0007, iter [05000, 05004], lr: 0.199782, loss: 2.4970
+2022-07-24 13:53:49 - train: epoch 007, train_loss: 2.4337
+2022-07-24 13:57:56 - eval: epoch: 007, acc1: 51.654%, acc5: 76.992%, test_loss: 2.0956, per_image_load_time: 8.159ms, per_image_inference_time: 0.847ms
+2022-07-24 13:57:56 - until epoch: 007, best_acc1: 51.654%
+2022-07-24 13:57:56 - epoch 008 lr: 0.199781
+2022-07-24 14:00:14 - train: epoch 0008, iter [00100, 05004], lr: 0.199777, loss: 2.3330
+2022-07-24 14:02:20 - train: epoch 0008, iter [00200, 05004], lr: 0.199773, loss: 2.2963
+2022-07-24 14:04:08 - train: epoch 0008, iter [00300, 05004], lr: 0.199768, loss: 2.3905
+2022-07-24 14:06:01 - train: epoch 0008, iter [00400, 05004], lr: 0.199764, loss: 2.4264
+2022-07-24 14:07:52 - train: epoch 0008, iter [00500, 05004], lr: 0.199759, loss: 2.1907
+2022-07-24 14:09:47 - train: epoch 0008, iter [00600, 05004], lr: 0.199754, loss: 2.1385
+2022-07-24 14:11:44 - train: epoch 0008, iter [00700, 05004], lr: 0.199750, loss: 2.5114
+2022-07-24 14:13:40 - train: epoch 0008, iter [00800, 05004], lr: 0.199745, loss: 2.2232
+2022-07-24 14:15:32 - train: epoch 0008, iter [00900, 05004], lr: 0.199740, loss: 2.3767
+2022-07-24 14:17:27 - train: epoch 0008, iter [01000, 05004], lr: 0.199736, loss: 2.4209
+2022-07-24 14:19:25 - train: epoch 0008, iter [01100, 05004], lr: 0.199731, loss: 2.3275
+2022-07-24 14:21:21 - train: epoch 0008, iter [01200, 05004], lr: 0.199726, loss: 2.2245
+2022-07-24 14:23:17 - train: epoch 0008, iter [01300, 05004], lr: 0.199721, loss: 2.3609
+2022-07-24 14:25:13 - train: epoch 0008, iter [01400, 05004], lr: 0.199716, loss: 2.3172
+2022-07-24 14:27:14 - train: epoch 0008, iter [01500, 05004], lr: 0.199711, loss: 2.5543
+2022-07-24 14:29:06 - train: epoch 0008, iter [01600, 05004], lr: 0.199706, loss: 2.3348
+2022-07-24 14:31:11 - train: epoch 0008, iter [01700, 05004], lr: 0.199701, loss: 2.5072
+2022-07-24 14:33:03 - train: epoch 0008, iter [01800, 05004], lr: 0.199696, loss: 2.5303
+2022-07-24 14:34:55 - train: epoch 0008, iter [01900, 05004], lr: 0.199691, loss: 2.2257
+2022-07-24 14:36:52 - train: epoch 0008, iter [02000, 05004], lr: 0.199685, loss: 2.2363
+2022-07-24 14:38:44 - train: epoch 0008, iter [02100, 05004], lr: 0.199680, loss: 2.3312
+2022-07-24 14:40:48 - train: epoch 0008, iter [02200, 05004], lr: 0.199675, loss: 2.4442
+2022-07-24 14:42:37 - train: epoch 0008, iter [02300, 05004], lr: 0.199669, loss: 2.4190
+2022-07-24 14:44:36 - train: epoch 0008, iter [02400, 05004], lr: 0.199664, loss: 2.5063
+2022-07-24 14:46:34 - train: epoch 0008, iter [02500, 05004], lr: 0.199659, loss: 2.1732
+2022-07-24 14:48:30 - train: epoch 0008, iter [02600, 05004], lr: 0.199653, loss: 2.2352
+2022-07-24 14:50:30 - train: epoch 0008, iter [02700, 05004], lr: 0.199648, loss: 2.6834
+2022-07-24 14:52:26 - train: epoch 0008, iter [02800, 05004], lr: 0.199642, loss: 2.4033
+2022-07-24 14:54:21 - train: epoch 0008, iter [02900, 05004], lr: 0.199636, loss: 2.3728
+2022-07-24 14:56:14 - train: epoch 0008, iter [03000, 05004], lr: 0.199631, loss: 2.4147
+2022-07-24 14:58:18 - train: epoch 0008, iter [03100, 05004], lr: 0.199625, loss: 2.2200
+2022-07-24 15:00:13 - train: epoch 0008, iter [03200, 05004], lr: 0.199619, loss: 2.6464
+2022-07-24 15:02:10 - train: epoch 0008, iter [03300, 05004], lr: 0.199614, loss: 2.5283
+2022-07-24 15:04:07 - train: epoch 0008, iter [03400, 05004], lr: 0.199608, loss: 2.4744
+2022-07-24 15:06:09 - train: epoch 0008, iter [03500, 05004], lr: 0.199602, loss: 2.6344
+2022-07-24 15:08:04 - train: epoch 0008, iter [03600, 05004], lr: 0.199596, loss: 2.4898
+2022-07-24 15:10:04 - train: epoch 0008, iter [03700, 05004], lr: 0.199590, loss: 2.3827
+2022-07-24 15:12:02 - train: epoch 0008, iter [03800, 05004], lr: 0.199584, loss: 2.7244
+2022-07-24 15:13:54 - train: epoch 0008, iter [03900, 05004], lr: 0.199578, loss: 2.4247
+2022-07-24 15:15:49 - train: epoch 0008, iter [04000, 05004], lr: 0.199572, loss: 2.6866
+2022-07-24 15:17:23 - train: epoch 0008, iter [04100, 05004], lr: 0.199566, loss: 2.2856
+2022-07-24 15:19:38 - train: epoch 0008, iter [04200, 05004], lr: 0.199560, loss: 2.4307
+2022-07-24 15:21:30 - train: epoch 0008, iter [04300, 05004], lr: 0.199553, loss: 2.1742
+2022-07-24 15:23:27 - train: epoch 0008, iter [04400, 05004], lr: 0.199547, loss: 2.2697
+2022-07-24 15:25:23 - train: epoch 0008, iter [04500, 05004], lr: 0.199541, loss: 2.3068
+2022-07-24 15:27:17 - train: epoch 0008, iter [04600, 05004], lr: 0.199534, loss: 2.3539
+2022-07-24 15:29:12 - train: epoch 0008, iter [04700, 05004], lr: 0.199528, loss: 2.2925
+2022-07-24 15:31:11 - train: epoch 0008, iter [04800, 05004], lr: 0.199522, loss: 2.3282
+2022-07-24 15:33:13 - train: epoch 0008, iter [04900, 05004], lr: 0.199515, loss: 2.5548
+2022-07-24 15:35:06 - train: epoch 0008, iter [05000, 05004], lr: 0.199509, loss: 2.2594
+2022-07-24 15:35:10 - train: epoch 008, train_loss: 2.3758
+2022-07-24 15:39:13 - eval: epoch: 008, acc1: 51.570%, acc5: 77.030%, test_loss: 2.0932, per_image_load_time: 5.370ms, per_image_inference_time: 0.832ms
+2022-07-24 15:39:14 - until epoch: 008, best_acc1: 51.654%
+2022-07-24 15:39:14 - epoch 009 lr: 0.199508
+2022-07-24 15:41:35 - train: epoch 0009, iter [00100, 05004], lr: 0.199502, loss: 2.0045
+2022-07-24 15:43:39 - train: epoch 0009, iter [00200, 05004], lr: 0.199495, loss: 2.1858
+2022-07-24 15:45:38 - train: epoch 0009, iter [00300, 05004], lr: 0.199488, loss: 2.1033
+2022-07-24 15:47:40 - train: epoch 0009, iter [00400, 05004], lr: 0.199482, loss: 2.4676
+2022-07-24 15:49:42 - train: epoch 0009, iter [00500, 05004], lr: 0.199475, loss: 2.1362
+2022-07-24 15:51:47 - train: epoch 0009, iter [00600, 05004], lr: 0.199468, loss: 2.3741
+2022-07-24 15:53:47 - train: epoch 0009, iter [00700, 05004], lr: 0.199461, loss: 2.1057
+2022-07-24 15:55:50 - train: epoch 0009, iter [00800, 05004], lr: 0.199455, loss: 2.2035
+2022-07-24 15:57:52 - train: epoch 0009, iter [00900, 05004], lr: 0.199448, loss: 2.2435
+2022-07-24 15:59:53 - train: epoch 0009, iter [01000, 05004], lr: 0.199441, loss: 2.2451
+2022-07-24 16:01:56 - train: epoch 0009, iter [01100, 05004], lr: 0.199434, loss: 2.5259
+2022-07-24 16:03:56 - train: epoch 0009, iter [01200, 05004], lr: 0.199427, loss: 2.4503
+2022-07-24 16:05:57 - train: epoch 0009, iter [01300, 05004], lr: 0.199420, loss: 2.4408
+2022-07-24 16:08:02 - train: epoch 0009, iter [01400, 05004], lr: 0.199412, loss: 2.0636
+2022-07-24 16:10:03 - train: epoch 0009, iter [01500, 05004], lr: 0.199405, loss: 2.2811
+2022-07-24 16:11:59 - train: epoch 0009, iter [01600, 05004], lr: 0.199398, loss: 2.3511
+2022-07-24 16:14:01 - train: epoch 0009, iter [01700, 05004], lr: 0.199391, loss: 2.2743
+2022-07-24 16:16:06 - train: epoch 0009, iter [01800, 05004], lr: 0.199383, loss: 2.2261
+2022-07-24 16:18:09 - train: epoch 0009, iter [01900, 05004], lr: 0.199376, loss: 2.1869
+2022-07-24 16:20:05 - train: epoch 0009, iter [02000, 05004], lr: 0.199369, loss: 2.1350
+2022-07-24 16:22:08 - train: epoch 0009, iter [02100, 05004], lr: 0.199361, loss: 2.2085
+2022-07-24 16:24:07 - train: epoch 0009, iter [02200, 05004], lr: 0.199354, loss: 2.2396
+2022-07-24 16:26:11 - train: epoch 0009, iter [02300, 05004], lr: 0.199346, loss: 2.2820
+2022-07-24 16:28:09 - train: epoch 0009, iter [02400, 05004], lr: 0.199339, loss: 2.6636
+2022-07-24 16:30:13 - train: epoch 0009, iter [02500, 05004], lr: 0.199331, loss: 2.2778
+2022-07-24 16:32:14 - train: epoch 0009, iter [02600, 05004], lr: 0.199323, loss: 2.4353
+2022-07-24 16:34:19 - train: epoch 0009, iter [02700, 05004], lr: 0.199316, loss: 2.1975
+2022-07-24 16:36:17 - train: epoch 0009, iter [02800, 05004], lr: 0.199308, loss: 2.4241
+2022-07-24 16:38:20 - train: epoch 0009, iter [02900, 05004], lr: 0.199300, loss: 2.1176
+2022-07-24 16:40:27 - train: epoch 0009, iter [03000, 05004], lr: 0.199292, loss: 2.2600
+2022-07-24 16:42:25 - train: epoch 0009, iter [03100, 05004], lr: 0.199285, loss: 2.3895
+2022-07-24 16:44:29 - train: epoch 0009, iter [03200, 05004], lr: 0.199277, loss: 2.3043
+2022-07-24 16:46:36 - train: epoch 0009, iter [03300, 05004], lr: 0.199269, loss: 2.3531
+2022-07-24 16:48:35 - train: epoch 0009, iter [03400, 05004], lr: 0.199261, loss: 2.3318
+2022-07-24 16:50:42 - train: epoch 0009, iter [03500, 05004], lr: 0.199253, loss: 2.3211
+2022-07-24 16:52:39 - train: epoch 0009, iter [03600, 05004], lr: 0.199245, loss: 2.0048
+2022-07-24 16:54:41 - train: epoch 0009, iter [03700, 05004], lr: 0.199236, loss: 2.4087
+2022-07-24 16:56:38 - train: epoch 0009, iter [03800, 05004], lr: 0.199228, loss: 2.4423
+2022-07-24 16:58:42 - train: epoch 0009, iter [03900, 05004], lr: 0.199220, loss: 2.1802
+2022-07-24 17:00:39 - train: epoch 0009, iter [04000, 05004], lr: 0.199212, loss: 2.5901
+2022-07-24 17:02:26 - train: epoch 0009, iter [04100, 05004], lr: 0.199203, loss: 2.4817
+2022-07-24 17:04:38 - train: epoch 0009, iter [04200, 05004], lr: 0.199195, loss: 2.0598
+2022-07-24 17:06:32 - train: epoch 0009, iter [04300, 05004], lr: 0.199187, loss: 2.1810
+2022-07-24 17:08:39 - train: epoch 0009, iter [04400, 05004], lr: 0.199178, loss: 2.3076
+2022-07-24 17:10:37 - train: epoch 0009, iter [04500, 05004], lr: 0.199170, loss: 2.5273
+2022-07-24 17:12:42 - train: epoch 0009, iter [04600, 05004], lr: 0.199161, loss: 2.5107
+2022-07-24 17:14:44 - train: epoch 0009, iter [04700, 05004], lr: 0.199153, loss: 2.4509
+2022-07-24 17:16:49 - train: epoch 0009, iter [04800, 05004], lr: 0.199144, loss: 2.4438
+2022-07-24 17:18:49 - train: epoch 0009, iter [04900, 05004], lr: 0.199135, loss: 2.5215
+2022-07-24 17:20:47 - train: epoch 0009, iter [05000, 05004], lr: 0.199127, loss: 2.2110
+2022-07-24 17:20:52 - train: epoch 009, train_loss: 2.3307
+2022-07-24 17:25:00 - eval: epoch: 009, acc1: 51.976%, acc5: 77.508%, test_loss: 2.0744, per_image_load_time: 4.387ms, per_image_inference_time: 0.790ms
+2022-07-24 17:25:01 - until epoch: 009, best_acc1: 51.976%
+2022-07-24 17:25:01 - epoch 010 lr: 0.199126
+2022-07-24 17:27:21 - train: epoch 0010, iter [00100, 05004], lr: 0.199118, loss: 2.0520
+2022-07-24 17:29:29 - train: epoch 0010, iter [00200, 05004], lr: 0.199109, loss: 2.2653
+2022-07-24 17:31:36 - train: epoch 0010, iter [00300, 05004], lr: 0.199100, loss: 2.2954
+2022-07-24 17:33:40 - train: epoch 0010, iter [00400, 05004], lr: 0.199091, loss: 2.4616
+2022-07-24 17:35:37 - train: epoch 0010, iter [00500, 05004], lr: 0.199082, loss: 2.1829
+2022-07-24 17:37:43 - train: epoch 0010, iter [00600, 05004], lr: 0.199073, loss: 2.3025
+2022-07-24 17:39:44 - train: epoch 0010, iter [00700, 05004], lr: 0.199064, loss: 2.4861
+2022-07-24 17:41:46 - train: epoch 0010, iter [00800, 05004], lr: 0.199055, loss: 2.2993
+2022-07-24 17:43:49 - train: epoch 0010, iter [00900, 05004], lr: 0.199046, loss: 2.2414
+2022-07-24 17:45:50 - train: epoch 0010, iter [01000, 05004], lr: 0.199037, loss: 2.1087
+2022-07-24 17:47:51 - train: epoch 0010, iter [01100, 05004], lr: 0.199028, loss: 2.2352
+2022-07-24 17:49:51 - train: epoch 0010, iter [01200, 05004], lr: 0.199019, loss: 2.2365
+2022-07-24 17:51:54 - train: epoch 0010, iter [01300, 05004], lr: 0.199009, loss: 1.9771
+2022-07-24 17:53:52 - train: epoch 0010, iter [01400, 05004], lr: 0.199000, loss: 2.4948
+2022-07-24 17:56:00 - train: epoch 0010, iter [01500, 05004], lr: 0.198991, loss: 2.0695
+2022-07-24 17:57:57 - train: epoch 0010, iter [01600, 05004], lr: 0.198981, loss: 2.1997
+2022-07-24 17:59:56 - train: epoch 0010, iter [01700, 05004], lr: 0.198972, loss: 2.5059
+2022-07-24 18:01:57 - train: epoch 0010, iter [01800, 05004], lr: 0.198963, loss: 2.1122
+2022-07-24 18:04:04 - train: epoch 0010, iter [01900, 05004], lr: 0.198953, loss: 2.2027
+2022-07-24 18:06:02 - train: epoch 0010, iter [02000, 05004], lr: 0.198943, loss: 2.4266
+2022-07-24 18:08:09 - train: epoch 0010, iter [02100, 05004], lr: 0.198934, loss: 2.1375
+2022-07-24 18:10:17 - train: epoch 0010, iter [02200, 05004], lr: 0.198924, loss: 2.2997
+2022-07-24 18:12:21 - train: epoch 0010, iter [02300, 05004], lr: 0.198914, loss: 2.3049
+2022-07-24 18:14:27 - train: epoch 0010, iter [02400, 05004], lr: 0.198905, loss: 2.4806
+2022-07-24 18:16:30 - train: epoch 0010, iter [02500, 05004], lr: 0.198895, loss: 2.4529
+2022-07-24 18:18:37 - train: epoch 0010, iter [02600, 05004], lr: 0.198885, loss: 2.4798
+2022-07-24 18:20:36 - train: epoch 0010, iter [02700, 05004], lr: 0.198875, loss: 2.1997
+2022-07-24 18:22:45 - train: epoch 0010, iter [02800, 05004], lr: 0.198865, loss: 2.3915
+2022-07-24 18:24:52 - train: epoch 0010, iter [02900, 05004], lr: 0.198855, loss: 2.3137
+2022-07-24 18:26:56 - train: epoch 0010, iter [03000, 05004], lr: 0.198845, loss: 2.4026
+2022-07-24 18:28:54 - train: epoch 0010, iter [03100, 05004], lr: 0.198835, loss: 2.4542
+2022-07-24 18:30:57 - train: epoch 0010, iter [03200, 05004], lr: 0.198825, loss: 2.3455
+2022-07-24 18:32:58 - train: epoch 0010, iter [03300, 05004], lr: 0.198815, loss: 2.4073
+2022-07-24 18:35:00 - train: epoch 0010, iter [03400, 05004], lr: 0.198805, loss: 2.5011
+2022-07-24 18:37:06 - train: epoch 0010, iter [03500, 05004], lr: 0.198795, loss: 2.4619
+2022-07-24 18:39:06 - train: epoch 0010, iter [03600, 05004], lr: 0.198785, loss: 2.6527
+2022-07-24 18:41:13 - train: epoch 0010, iter [03700, 05004], lr: 0.198774, loss: 2.2032
+2022-07-24 18:43:15 - train: epoch 0010, iter [03800, 05004], lr: 0.198764, loss: 2.4559
+2022-07-24 18:45:19 - train: epoch 0010, iter [03900, 05004], lr: 0.198754, loss: 2.0668
+2022-07-24 18:47:24 - train: epoch 0010, iter [04000, 05004], lr: 0.198743, loss: 2.2459
+2022-07-24 18:49:25 - train: epoch 0010, iter [04100, 05004], lr: 0.198733, loss: 2.3859
+2022-07-24 18:51:25 - train: epoch 0010, iter [04200, 05004], lr: 0.198722, loss: 2.1355
+2022-07-24 18:53:40 - train: epoch 0010, iter [04300, 05004], lr: 0.198712, loss: 2.3099
+2022-07-24 18:55:31 - train: epoch 0010, iter [04400, 05004], lr: 0.198701, loss: 2.1552
+2022-07-24 18:57:40 - train: epoch 0010, iter [04500, 05004], lr: 0.198690, loss: 2.2397
+2022-07-24 18:59:46 - train: epoch 0010, iter [04600, 05004], lr: 0.198680, loss: 2.2955
+2022-07-24 19:01:52 - train: epoch 0010, iter [04700, 05004], lr: 0.198669, loss: 2.4727
+2022-07-24 19:03:56 - train: epoch 0010, iter [04800, 05004], lr: 0.198658, loss: 2.1473
+2022-07-24 19:06:03 - train: epoch 0010, iter [04900, 05004], lr: 0.198647, loss: 2.2147
+2022-07-24 19:08:04 - train: epoch 0010, iter [05000, 05004], lr: 0.198637, loss: 2.1385
+2022-07-24 19:08:08 - train: epoch 010, train_loss: 2.2945
+2022-07-24 19:12:29 - eval: epoch: 010, acc1: 53.014%, acc5: 78.112%, test_loss: 2.0216, per_image_load_time: 8.795ms, per_image_inference_time: 0.870ms
+2022-07-24 19:12:30 - until epoch: 010, best_acc1: 53.014%
+2022-07-24 19:12:30 - epoch 011 lr: 0.198636
+2022-07-24 19:15:00 - train: epoch 0011, iter [00100, 05004], lr: 0.198625, loss: 2.2578
+2022-07-24 19:17:02 - train: epoch 0011, iter [00200, 05004], lr: 0.198614, loss: 2.2667
+2022-07-24 19:19:09 - train: epoch 0011, iter [00300, 05004], lr: 0.198603, loss: 2.1980
+2022-07-24 19:21:15 - train: epoch 0011, iter [00400, 05004], lr: 0.198592, loss: 2.4163
+2022-07-24 19:23:22 - train: epoch 0011, iter [00500, 05004], lr: 0.198581, loss: 2.1737
+2022-07-24 19:25:31 - train: epoch 0011, iter [00600, 05004], lr: 0.198570, loss: 2.3462
+2022-07-24 19:27:33 - train: epoch 0011, iter [00700, 05004], lr: 0.198559, loss: 2.2407
+2022-07-24 19:29:37 - train: epoch 0011, iter [00800, 05004], lr: 0.198548, loss: 2.3206
+2022-07-24 19:31:37 - train: epoch 0011, iter [00900, 05004], lr: 0.198536, loss: 2.4693
+2022-07-24 19:33:43 - train: epoch 0011, iter [01000, 05004], lr: 0.198525, loss: 2.2122
+2022-07-24 19:35:53 - train: epoch 0011, iter [01100, 05004], lr: 0.198514, loss: 2.4519
+2022-07-24 19:37:55 - train: epoch 0011, iter [01200, 05004], lr: 0.198503, loss: 2.3478
+2022-07-24 19:40:02 - train: epoch 0011, iter [01300, 05004], lr: 0.198491, loss: 2.5289
+2022-07-24 19:42:04 - train: epoch 0011, iter [01400, 05004], lr: 0.198480, loss: 2.1590
+2022-07-24 19:44:09 - train: epoch 0011, iter [01500, 05004], lr: 0.198468, loss: 2.0879
+2022-07-24 19:46:16 - train: epoch 0011, iter [01600, 05004], lr: 0.198457, loss: 2.4024
+2022-07-24 19:48:28 - train: epoch 0011, iter [01700, 05004], lr: 0.198445, loss: 2.3661
+2022-07-24 19:50:31 - train: epoch 0011, iter [01800, 05004], lr: 0.198433, loss: 2.2372
+2022-07-24 19:52:28 - train: epoch 0011, iter [01900, 05004], lr: 0.198422, loss: 1.9934
+2022-07-24 19:54:31 - train: epoch 0011, iter [02000, 05004], lr: 0.198410, loss: 2.2950
+2022-07-24 19:56:34 - train: epoch 0011, iter [02100, 05004], lr: 0.198398, loss: 2.2028
+2022-07-24 19:58:41 - train: epoch 0011, iter [02200, 05004], lr: 0.198386, loss: 2.1148
+2022-07-24 20:00:41 - train: epoch 0011, iter [02300, 05004], lr: 0.198375, loss: 2.2613
+2022-07-24 20:02:48 - train: epoch 0011, iter [02400, 05004], lr: 0.198363, loss: 2.2127
+2022-07-24 20:04:50 - train: epoch 0011, iter [02500, 05004], lr: 0.198351, loss: 2.3679
+2022-07-24 20:06:55 - train: epoch 0011, iter [02600, 05004], lr: 0.198339, loss: 2.4319
+2022-07-24 20:08:59 - train: epoch 0011, iter [02700, 05004], lr: 0.198327, loss: 2.4268
+2022-07-24 20:11:02 - train: epoch 0011, iter [02800, 05004], lr: 0.198315, loss: 2.1017
+2022-07-24 20:13:06 - train: epoch 0011, iter [02900, 05004], lr: 0.198303, loss: 2.2986
+2022-07-24 20:15:06 - train: epoch 0011, iter [03000, 05004], lr: 0.198290, loss: 2.5648
+2022-07-24 20:17:13 - train: epoch 0011, iter [03100, 05004], lr: 0.198278, loss: 2.4656
+2022-07-24 20:19:18 - train: epoch 0011, iter [03200, 05004], lr: 0.198266, loss: 2.1139
+2022-07-24 20:21:25 - train: epoch 0011, iter [03300, 05004], lr: 0.198254, loss: 2.5876
+2022-07-24 20:23:29 - train: epoch 0011, iter [03400, 05004], lr: 0.198241, loss: 2.4073
+2022-07-24 20:25:34 - train: epoch 0011, iter [03500, 05004], lr: 0.198229, loss: 2.2463
+2022-07-24 20:27:41 - train: epoch 0011, iter [03600, 05004], lr: 0.198217, loss: 2.0792
+2022-07-24 20:29:37 - train: epoch 0011, iter [03700, 05004], lr: 0.198204, loss: 2.5823
+2022-07-24 20:31:37 - train: epoch 0011, iter [03800, 05004], lr: 0.198192, loss: 2.1875
+2022-07-24 20:33:33 - train: epoch 0011, iter [03900, 05004], lr: 0.198179, loss: 2.2062
+2022-07-24 20:35:40 - train: epoch 0011, iter [04000, 05004], lr: 0.198167, loss: 2.2279
+2022-07-24 20:37:40 - train: epoch 0011, iter [04100, 05004], lr: 0.198154, loss: 2.2585
+2022-07-24 20:39:27 - train: epoch 0011, iter [04200, 05004], lr: 0.198141, loss: 2.2452
+2022-07-24 20:41:47 - train: epoch 0011, iter [04300, 05004], lr: 0.198129, loss: 2.2969
+2022-07-24 20:43:44 - train: epoch 0011, iter [04400, 05004], lr: 0.198116, loss: 2.3010
+2022-07-24 20:45:46 - train: epoch 0011, iter [04500, 05004], lr: 0.198103, loss: 2.2473
+2022-07-24 20:47:46 - train: epoch 0011, iter [04600, 05004], lr: 0.198090, loss: 2.2877
+2022-07-24 20:49:52 - train: epoch 0011, iter [04700, 05004], lr: 0.198077, loss: 2.0298
+2022-07-24 20:51:54 - train: epoch 0011, iter [04800, 05004], lr: 0.198064, loss: 2.1965
+2022-07-24 20:54:00 - train: epoch 0011, iter [04900, 05004], lr: 0.198052, loss: 2.2803
+2022-07-24 20:56:03 - train: epoch 0011, iter [05000, 05004], lr: 0.198039, loss: 2.2703
+2022-07-24 20:56:07 - train: epoch 011, train_loss: 2.2669
+2022-07-24 21:00:35 - eval: epoch: 011, acc1: 53.110%, acc5: 78.124%, test_loss: 2.0097, per_image_load_time: 9.304ms, per_image_inference_time: 0.831ms
+2022-07-24 21:00:35 - until epoch: 011, best_acc1: 53.110%
+2022-07-24 21:00:35 - epoch 012 lr: 0.198038
+2022-07-24 21:03:10 - train: epoch 0012, iter [00100, 05004], lr: 0.198025, loss: 2.1547
+2022-07-24 21:05:14 - train: epoch 0012, iter [00200, 05004], lr: 0.198012, loss: 2.0983
+2022-07-24 21:07:13 - train: epoch 0012, iter [00300, 05004], lr: 0.197999, loss: 2.4058
+2022-07-24 21:09:17 - train: epoch 0012, iter [00400, 05004], lr: 0.197986, loss: 2.2202
+2022-07-24 21:11:19 - train: epoch 0012, iter [00500, 05004], lr: 0.197972, loss: 2.3969
+2022-07-24 21:13:24 - train: epoch 0012, iter [00600, 05004], lr: 0.197959, loss: 1.8828
+2022-07-24 21:15:28 - train: epoch 0012, iter [00700, 05004], lr: 0.197946, loss: 2.0178
+2022-07-24 21:17:34 - train: epoch 0012, iter [00800, 05004], lr: 0.197932, loss: 2.1629
+2022-07-24 21:19:44 - train: epoch 0012, iter [00900, 05004], lr: 0.197919, loss: 2.1206
+2022-07-24 21:21:38 - train: epoch 0012, iter [01000, 05004], lr: 0.197906, loss: 2.0295
+2022-07-24 21:23:41 - train: epoch 0012, iter [01100, 05004], lr: 0.197892, loss: 2.5673
+2022-07-24 21:25:40 - train: epoch 0012, iter [01200, 05004], lr: 0.197879, loss: 2.0932
+2022-07-24 21:27:41 - train: epoch 0012, iter [01300, 05004], lr: 0.197865, loss: 2.1521
+2022-07-24 21:29:42 - train: epoch 0012, iter [01400, 05004], lr: 0.197851, loss: 2.4996
+2022-07-24 21:31:45 - train: epoch 0012, iter [01500, 05004], lr: 0.197838, loss: 2.0862
+2022-07-24 21:33:51 - train: epoch 0012, iter [01600, 05004], lr: 0.197824, loss: 2.3957
+2022-07-24 21:35:47 - train: epoch 0012, iter [01700, 05004], lr: 0.197810, loss: 2.0847
+2022-07-24 21:37:49 - train: epoch 0012, iter [01800, 05004], lr: 0.197797, loss: 2.4092
+2022-07-24 21:39:49 - train: epoch 0012, iter [01900, 05004], lr: 0.197783, loss: 2.2199
+2022-07-24 21:41:52 - train: epoch 0012, iter [02000, 05004], lr: 0.197769, loss: 2.2766
+2022-07-24 21:43:50 - train: epoch 0012, iter [02100, 05004], lr: 0.197755, loss: 2.3271
+2022-07-24 21:45:51 - train: epoch 0012, iter [02200, 05004], lr: 0.197741, loss: 2.5280
+2022-07-24 21:47:50 - train: epoch 0012, iter [02300, 05004], lr: 0.197727, loss: 2.2074
+2022-07-24 21:49:46 - train: epoch 0012, iter [02400, 05004], lr: 0.197713, loss: 2.3930
+2022-07-24 21:51:47 - train: epoch 0012, iter [02500, 05004], lr: 0.197699, loss: 2.0669
+2022-07-24 21:53:51 - train: epoch 0012, iter [02600, 05004], lr: 0.197685, loss: 1.9969
+2022-07-24 21:55:56 - train: epoch 0012, iter [02700, 05004], lr: 0.197671, loss: 2.2744
+2022-07-24 21:57:58 - train: epoch 0012, iter [02800, 05004], lr: 0.197656, loss: 2.1778
+2022-07-24 22:00:05 - train: epoch 0012, iter [02900, 05004], lr: 0.197642, loss: 2.3140
+2022-07-24 22:02:02 - train: epoch 0012, iter [03000, 05004], lr: 0.197628, loss: 2.0489
+2022-07-24 22:04:01 - train: epoch 0012, iter [03100, 05004], lr: 0.197614, loss: 2.0596
+2022-07-24 22:06:03 - train: epoch 0012, iter [03200, 05004], lr: 0.197599, loss: 2.2466
+2022-07-24 22:08:13 - train: epoch 0012, iter [03300, 05004], lr: 0.197585, loss: 2.3214
+2022-07-24 22:10:18 - train: epoch 0012, iter [03400, 05004], lr: 0.197570, loss: 2.1486
+2022-07-24 22:12:19 - train: epoch 0012, iter [03500, 05004], lr: 0.197556, loss: 2.2170
+2022-07-24 22:14:21 - train: epoch 0012, iter [03600, 05004], lr: 0.197541, loss: 2.2199
+2022-07-24 22:16:23 - train: epoch 0012, iter [03700, 05004], lr: 0.197527, loss: 2.2809
+2022-07-24 22:18:24 - train: epoch 0012, iter [03800, 05004], lr: 0.197512, loss: 2.2130
+2022-07-24 22:20:27 - train: epoch 0012, iter [03900, 05004], lr: 0.197497, loss: 2.0891
+2022-07-24 22:22:23 - train: epoch 0012, iter [04000, 05004], lr: 0.197483, loss: 2.4175
+2022-07-24 22:24:24 - train: epoch 0012, iter [04100, 05004], lr: 0.197468, loss: 2.0992
+2022-07-24 22:26:15 - train: epoch 0012, iter [04200, 05004], lr: 0.197453, loss: 2.0810
+2022-07-24 22:28:27 - train: epoch 0012, iter [04300, 05004], lr: 0.197438, loss: 2.2584
+2022-07-24 22:30:26 - train: epoch 0012, iter [04400, 05004], lr: 0.197423, loss: 2.2949
+2022-07-24 22:32:28 - train: epoch 0012, iter [04500, 05004], lr: 0.197409, loss: 2.2879
+2022-07-24 22:34:30 - train: epoch 0012, iter [04600, 05004], lr: 0.197394, loss: 2.3365
+2022-07-24 22:36:31 - train: epoch 0012, iter [04700, 05004], lr: 0.197379, loss: 2.1918
+2022-07-24 22:38:33 - train: epoch 0012, iter [04800, 05004], lr: 0.197364, loss: 2.3986
+2022-07-24 22:40:35 - train: epoch 0012, iter [04900, 05004], lr: 0.197348, loss: 2.2066
+2022-07-24 22:42:32 - train: epoch 0012, iter [05000, 05004], lr: 0.197333, loss: 2.1024
+2022-07-24 22:42:36 - train: epoch 012, train_loss: 2.2401
+2022-07-24 22:46:45 - eval: epoch: 012, acc1: 53.568%, acc5: 78.376%, test_loss: 2.0067, per_image_load_time: 6.530ms, per_image_inference_time: 0.857ms
+2022-07-24 22:46:45 - until epoch: 012, best_acc1: 53.568%
+2022-07-24 22:46:45 - epoch 013 lr: 0.197333
+2022-07-24 22:49:09 - train: epoch 0013, iter [00100, 05004], lr: 0.197317, loss: 2.0610
+2022-07-24 22:51:09 - train: epoch 0013, iter [00200, 05004], lr: 0.197302, loss: 2.2360
+2022-07-24 22:53:06 - train: epoch 0013, iter [00300, 05004], lr: 0.197287, loss: 2.0651
+2022-07-24 22:55:06 - train: epoch 0013, iter [00400, 05004], lr: 0.197272, loss: 2.0743
+2022-07-24 22:57:07 - train: epoch 0013, iter [00500, 05004], lr: 0.197256, loss: 2.2567
+2022-07-24 22:59:05 - train: epoch 0013, iter [00600, 05004], lr: 0.197241, loss: 2.1274
+2022-07-24 23:01:07 - train: epoch 0013, iter [00700, 05004], lr: 0.197225, loss: 2.0472
+2022-07-24 23:03:00 - train: epoch 0013, iter [00800, 05004], lr: 0.197210, loss: 2.3457
+2022-07-24 23:05:03 - train: epoch 0013, iter [00900, 05004], lr: 0.197194, loss: 2.1421
+2022-07-24 23:07:01 - train: epoch 0013, iter [01000, 05004], lr: 0.197179, loss: 2.0950
+2022-07-24 23:09:01 - train: epoch 0013, iter [01100, 05004], lr: 0.197163, loss: 2.1458
+2022-07-24 23:11:02 - train: epoch 0013, iter [01200, 05004], lr: 0.197148, loss: 2.2489
+2022-07-24 23:13:02 - train: epoch 0013, iter [01300, 05004], lr: 0.197132, loss: 2.0077
+2022-07-24 23:14:59 - train: epoch 0013, iter [01400, 05004], lr: 0.197116, loss: 2.3045
+2022-07-24 23:17:00 - train: epoch 0013, iter [01500, 05004], lr: 0.197100, loss: 2.3764
+2022-07-24 23:18:58 - train: epoch 0013, iter [01600, 05004], lr: 0.197085, loss: 2.2018
+2022-07-24 23:20:57 - train: epoch 0013, iter [01700, 05004], lr: 0.197069, loss: 2.3172
+2022-07-24 23:22:57 - train: epoch 0013, iter [01800, 05004], lr: 0.197053, loss: 2.1527
+2022-07-24 23:24:55 - train: epoch 0013, iter [01900, 05004], lr: 0.197037, loss: 2.4124
+2022-07-24 23:26:54 - train: epoch 0013, iter [02000, 05004], lr: 0.197021, loss: 2.4459
+2022-07-24 23:28:52 - train: epoch 0013, iter [02100, 05004], lr: 0.197005, loss: 2.3340
+2022-07-24 23:30:53 - train: epoch 0013, iter [02200, 05004], lr: 0.196989, loss: 2.1134
+2022-07-24 23:32:49 - train: epoch 0013, iter [02300, 05004], lr: 0.196973, loss: 2.1119
+2022-07-24 23:34:51 - train: epoch 0013, iter [02400, 05004], lr: 0.196957, loss: 2.2609
+2022-07-24 23:36:50 - train: epoch 0013, iter [02500, 05004], lr: 0.196940, loss: 2.1351
+2022-07-24 23:38:47 - train: epoch 0013, iter [02600, 05004], lr: 0.196924, loss: 2.0338
+2022-07-24 23:40:50 - train: epoch 0013, iter [02700, 05004], lr: 0.196908, loss: 2.1430
+2022-07-24 23:42:46 - train: epoch 0013, iter [02800, 05004], lr: 0.196891, loss: 2.2865
+2022-07-24 23:44:44 - train: epoch 0013, iter [02900, 05004], lr: 0.196875, loss: 2.2582
+2022-07-24 23:46:45 - train: epoch 0013, iter [03000, 05004], lr: 0.196859, loss: 1.9759
+2022-07-24 23:48:42 - train: epoch 0013, iter [03100, 05004], lr: 0.196842, loss: 1.9310
+2022-07-24 23:50:42 - train: epoch 0013, iter [03200, 05004], lr: 0.196826, loss: 2.2915
+2022-07-24 23:52:40 - train: epoch 0013, iter [03300, 05004], lr: 0.196809, loss: 2.2226
+2022-07-24 23:54:45 - train: epoch 0013, iter [03400, 05004], lr: 0.196793, loss: 2.2171
+2022-07-24 23:56:37 - train: epoch 0013, iter [03500, 05004], lr: 0.196776, loss: 2.1922
+2022-07-24 23:58:36 - train: epoch 0013, iter [03600, 05004], lr: 0.196759, loss: 2.3640
+2022-07-25 00:00:36 - train: epoch 0013, iter [03700, 05004], lr: 0.196743, loss: 1.9039
+2022-07-25 00:02:34 - train: epoch 0013, iter [03800, 05004], lr: 0.196726, loss: 2.1576
+2022-07-25 00:04:34 - train: epoch 0013, iter [03900, 05004], lr: 0.196709, loss: 2.3930
+2022-07-25 00:06:32 - train: epoch 0013, iter [04000, 05004], lr: 0.196692, loss: 2.2291
+2022-07-25 00:08:29 - train: epoch 0013, iter [04100, 05004], lr: 0.196675, loss: 2.2300
+2022-07-25 00:10:26 - train: epoch 0013, iter [04200, 05004], lr: 0.196658, loss: 2.3324
+2022-07-25 00:12:16 - train: epoch 0013, iter [04300, 05004], lr: 0.196641, loss: 2.2972
+2022-07-25 00:14:26 - train: epoch 0013, iter [04400, 05004], lr: 0.196624, loss: 2.1658
+2022-07-25 00:16:26 - train: epoch 0013, iter [04500, 05004], lr: 0.196607, loss: 2.3080
+2022-07-25 00:18:32 - train: epoch 0013, iter [04600, 05004], lr: 0.196590, loss: 2.2217
+2022-07-25 00:20:29 - train: epoch 0013, iter [04700, 05004], lr: 0.196573, loss: 2.0953
+2022-07-25 00:22:30 - train: epoch 0013, iter [04800, 05004], lr: 0.196556, loss: 2.2408
+2022-07-25 00:24:33 - train: epoch 0013, iter [04900, 05004], lr: 0.196539, loss: 2.4758
+2022-07-25 00:26:30 - train: epoch 0013, iter [05000, 05004], lr: 0.196522, loss: 2.4269
+2022-07-25 00:26:33 - train: epoch 013, train_loss: 2.2167
+2022-07-25 00:30:41 - eval: epoch: 013, acc1: 54.990%, acc5: 80.122%, test_loss: 1.9049, per_image_load_time: 8.077ms, per_image_inference_time: 0.889ms
+2022-07-25 00:30:41 - until epoch: 013, best_acc1: 54.990%
+2022-07-25 00:30:41 - epoch 014 lr: 0.196521
+2022-07-25 00:33:00 - train: epoch 0014, iter [00100, 05004], lr: 0.196504, loss: 2.3565
+2022-07-25 00:34:59 - train: epoch 0014, iter [00200, 05004], lr: 0.196486, loss: 2.5817
+2022-07-25 00:37:03 - train: epoch 0014, iter [00300, 05004], lr: 0.196469, loss: 2.1421
+2022-07-25 00:39:05 - train: epoch 0014, iter [00400, 05004], lr: 0.196451, loss: 1.9855
+2022-07-25 00:41:05 - train: epoch 0014, iter [00500, 05004], lr: 0.196434, loss: 2.1195
+2022-07-25 00:43:07 - train: epoch 0014, iter [00600, 05004], lr: 0.196416, loss: 2.3117
+2022-07-25 00:45:04 - train: epoch 0014, iter [00700, 05004], lr: 0.196399, loss: 2.0434
+2022-07-25 00:47:05 - train: epoch 0014, iter [00800, 05004], lr: 0.196381, loss: 2.2620
+2022-07-25 00:49:07 - train: epoch 0014, iter [00900, 05004], lr: 0.196364, loss: 2.0333
+2022-07-25 00:51:04 - train: epoch 0014, iter [01000, 05004], lr: 0.196346, loss: 2.2953
+2022-07-25 00:53:03 - train: epoch 0014, iter [01100, 05004], lr: 0.196328, loss: 2.1624
+2022-07-25 00:55:05 - train: epoch 0014, iter [01200, 05004], lr: 0.196310, loss: 2.1180
+2022-07-25 00:57:01 - train: epoch 0014, iter [01300, 05004], lr: 0.196293, loss: 2.5503
+2022-07-25 00:59:01 - train: epoch 0014, iter [01400, 05004], lr: 0.196275, loss: 2.2747
+2022-07-25 01:01:06 - train: epoch 0014, iter [01500, 05004], lr: 0.196257, loss: 2.2634
+2022-07-25 01:03:01 - train: epoch 0014, iter [01600, 05004], lr: 0.196239, loss: 2.0516
+2022-07-25 01:05:04 - train: epoch 0014, iter [01700, 05004], lr: 0.196221, loss: 2.4129
+2022-07-25 01:07:03 - train: epoch 0014, iter [01800, 05004], lr: 0.196203, loss: 2.3538
+2022-07-25 01:09:01 - train: epoch 0014, iter [01900, 05004], lr: 0.196185, loss: 2.0301
+2022-07-25 01:10:58 - train: epoch 0014, iter [02000, 05004], lr: 0.196167, loss: 2.1511
+2022-07-25 01:12:56 - train: epoch 0014, iter [02100, 05004], lr: 0.196149, loss: 1.9634
+2022-07-25 01:14:56 - train: epoch 0014, iter [02200, 05004], lr: 0.196131, loss: 2.1752
+2022-07-25 01:16:54 - train: epoch 0014, iter [02300, 05004], lr: 0.196112, loss: 2.1441
+2022-07-25 01:18:50 - train: epoch 0014, iter [02400, 05004], lr: 0.196094, loss: 2.3232
+2022-07-25 01:20:47 - train: epoch 0014, iter [02500, 05004], lr: 0.196076, loss: 2.1269
+2022-07-25 01:22:45 - train: epoch 0014, iter [02600, 05004], lr: 0.196057, loss: 2.1716
+2022-07-25 01:24:46 - train: epoch 0014, iter [02700, 05004], lr: 0.196039, loss: 2.1312
+2022-07-25 01:26:41 - train: epoch 0014, iter [02800, 05004], lr: 0.196021, loss: 2.3316
+2022-07-25 01:28:43 - train: epoch 0014, iter [02900, 05004], lr: 0.196002, loss: 2.3387
+2022-07-25 01:30:37 - train: epoch 0014, iter [03000, 05004], lr: 0.195984, loss: 2.3275
+2022-07-25 01:32:34 - train: epoch 0014, iter [03100, 05004], lr: 0.195965, loss: 2.0167
+2022-07-25 01:34:35 - train: epoch 0014, iter [03200, 05004], lr: 0.195946, loss: 2.4069
+2022-07-25 01:36:37 - train: epoch 0014, iter [03300, 05004], lr: 0.195928, loss: 2.0515
+2022-07-25 01:38:37 - train: epoch 0014, iter [03400, 05004], lr: 0.195909, loss: 2.0902
+2022-07-25 01:40:34 - train: epoch 0014, iter [03500, 05004], lr: 0.195890, loss: 2.2576
+2022-07-25 01:42:33 - train: epoch 0014, iter [03600, 05004], lr: 0.195872, loss: 1.8796
+2022-07-25 01:44:31 - train: epoch 0014, iter [03700, 05004], lr: 0.195853, loss: 2.0412
+2022-07-25 01:46:30 - train: epoch 0014, iter [03800, 05004], lr: 0.195834, loss: 2.3431
+2022-07-25 01:48:26 - train: epoch 0014, iter [03900, 05004], lr: 0.195815, loss: 2.1752
+2022-07-25 01:50:28 - train: epoch 0014, iter [04000, 05004], lr: 0.195796, loss: 2.1654
+2022-07-25 01:52:24 - train: epoch 0014, iter [04100, 05004], lr: 0.195777, loss: 2.0922
+2022-07-25 01:54:29 - train: epoch 0014, iter [04200, 05004], lr: 0.195758, loss: 2.0719
+2022-07-25 01:56:25 - train: epoch 0014, iter [04300, 05004], lr: 0.195739, loss: 2.1770
+2022-07-25 01:58:11 - train: epoch 0014, iter [04400, 05004], lr: 0.195720, loss: 2.1934
+2022-07-25 02:00:21 - train: epoch 0014, iter [04500, 05004], lr: 0.195701, loss: 2.1248
+2022-07-25 02:02:20 - train: epoch 0014, iter [04600, 05004], lr: 0.195682, loss: 2.2112
+2022-07-25 02:04:25 - train: epoch 0014, iter [04700, 05004], lr: 0.195662, loss: 2.1760
+2022-07-25 02:06:23 - train: epoch 0014, iter [04800, 05004], lr: 0.195643, loss: 2.2599
+2022-07-25 02:08:21 - train: epoch 0014, iter [04900, 05004], lr: 0.195624, loss: 2.1322
+2022-07-25 02:10:12 - train: epoch 0014, iter [05000, 05004], lr: 0.195604, loss: 2.2617
+2022-07-25 02:10:15 - train: epoch 014, train_loss: 2.1979
+2022-07-25 02:14:09 - eval: epoch: 014, acc1: 54.958%, acc5: 79.554%, test_loss: 1.9357, per_image_load_time: 7.738ms, per_image_inference_time: 0.871ms
+2022-07-25 02:14:09 - until epoch: 014, best_acc1: 54.990%
+2022-07-25 02:14:09 - epoch 015 lr: 0.195603
+2022-07-25 02:16:28 - train: epoch 0015, iter [00100, 05004], lr: 0.195584, loss: 1.8981
+2022-07-25 02:18:27 - train: epoch 0015, iter [00200, 05004], lr: 0.195565, loss: 2.0583
+2022-07-25 02:20:26 - train: epoch 0015, iter [00300, 05004], lr: 0.195545, loss: 2.3879
+2022-07-25 02:22:25 - train: epoch 0015, iter [00400, 05004], lr: 0.195526, loss: 2.1385
+2022-07-25 02:24:21 - train: epoch 0015, iter [00500, 05004], lr: 0.195506, loss: 2.1079
+2022-07-25 02:26:25 - train: epoch 0015, iter [00600, 05004], lr: 0.195487, loss: 2.2414
+2022-07-25 02:28:23 - train: epoch 0015, iter [00700, 05004], lr: 0.195467, loss: 2.2651
+2022-07-25 02:30:24 - train: epoch 0015, iter [00800, 05004], lr: 0.195447, loss: 2.2612
+2022-07-25 02:32:25 - train: epoch 0015, iter [00900, 05004], lr: 0.195427, loss: 2.1970
+2022-07-25 02:34:21 - train: epoch 0015, iter [01000, 05004], lr: 0.195408, loss: 2.0586
+2022-07-25 02:36:23 - train: epoch 0015, iter [01100, 05004], lr: 0.195388, loss: 1.9837
+2022-07-25 02:38:19 - train: epoch 0015, iter [01200, 05004], lr: 0.195368, loss: 2.0967
+2022-07-25 02:40:19 - train: epoch 0015, iter [01300, 05004], lr: 0.195348, loss: 2.4144
+2022-07-25 02:42:19 - train: epoch 0015, iter [01400, 05004], lr: 0.195328, loss: 2.1610
+2022-07-25 02:44:25 - train: epoch 0015, iter [01500, 05004], lr: 0.195308, loss: 2.1534
+2022-07-25 02:46:26 - train: epoch 0015, iter [01600, 05004], lr: 0.195288, loss: 2.2908
+2022-07-25 02:48:25 - train: epoch 0015, iter [01700, 05004], lr: 0.195268, loss: 2.3415
+2022-07-25 02:50:23 - train: epoch 0015, iter [01800, 05004], lr: 0.195248, loss: 2.0764
+2022-07-25 02:52:20 - train: epoch 0015, iter [01900, 05004], lr: 0.195228, loss: 2.2032
+2022-07-25 02:54:19 - train: epoch 0015, iter [02000, 05004], lr: 0.195208, loss: 1.8341
+2022-07-25 02:56:20 - train: epoch 0015, iter [02100, 05004], lr: 0.195187, loss: 2.0600
+2022-07-25 02:58:23 - train: epoch 0015, iter [02200, 05004], lr: 0.195167, loss: 2.2760
+2022-07-25 03:00:21 - train: epoch 0015, iter [02300, 05004], lr: 0.195147, loss: 2.0094
+2022-07-25 03:02:24 - train: epoch 0015, iter [02400, 05004], lr: 0.195126, loss: 2.0932
+2022-07-25 03:04:21 - train: epoch 0015, iter [02500, 05004], lr: 0.195106, loss: 2.0750
+2022-07-25 03:06:24 - train: epoch 0015, iter [02600, 05004], lr: 0.195086, loss: 1.9821
+2022-07-25 03:08:17 - train: epoch 0015, iter [02700, 05004], lr: 0.195065, loss: 2.2380
+2022-07-25 03:10:18 - train: epoch 0015, iter [02800, 05004], lr: 0.195045, loss: 2.1817
+2022-07-25 03:12:16 - train: epoch 0015, iter [02900, 05004], lr: 0.195024, loss: 2.2357
+2022-07-25 03:14:13 - train: epoch 0015, iter [03000, 05004], lr: 0.195003, loss: 2.1086
+2022-07-25 03:16:13 - train: epoch 0015, iter [03100, 05004], lr: 0.194983, loss: 2.1738
+2022-07-25 03:18:12 - train: epoch 0015, iter [03200, 05004], lr: 0.194962, loss: 2.1880
+2022-07-25 03:20:10 - train: epoch 0015, iter [03300, 05004], lr: 0.194941, loss: 2.0968
+2022-07-25 03:22:13 - train: epoch 0015, iter [03400, 05004], lr: 0.194921, loss: 2.0755
+2022-07-25 03:24:13 - train: epoch 0015, iter [03500, 05004], lr: 0.194900, loss: 2.4328
+2022-07-25 03:26:13 - train: epoch 0015, iter [03600, 05004], lr: 0.194879, loss: 2.1908
+2022-07-25 03:28:12 - train: epoch 0015, iter [03700, 05004], lr: 0.194858, loss: 2.0138
+2022-07-25 03:30:09 - train: epoch 0015, iter [03800, 05004], lr: 0.194837, loss: 2.1142
+2022-07-25 03:32:11 - train: epoch 0015, iter [03900, 05004], lr: 0.194816, loss: 2.3938
+2022-07-25 03:34:11 - train: epoch 0015, iter [04000, 05004], lr: 0.194795, loss: 2.2235
+2022-07-25 03:36:18 - train: epoch 0015, iter [04100, 05004], lr: 0.194774, loss: 1.9818
+2022-07-25 03:38:16 - train: epoch 0015, iter [04200, 05004], lr: 0.194753, loss: 1.9105
+2022-07-25 03:40:16 - train: epoch 0015, iter [04300, 05004], lr: 0.194732, loss: 2.0417
+2022-07-25 03:42:15 - train: epoch 0015, iter [04400, 05004], lr: 0.194711, loss: 2.0248
+2022-07-25 03:44:11 - train: epoch 0015, iter [04500, 05004], lr: 0.194689, loss: 2.2877
+2022-07-25 03:46:13 - train: epoch 0015, iter [04600, 05004], lr: 0.194668, loss: 2.2085
+2022-07-25 03:48:21 - train: epoch 0015, iter [04700, 05004], lr: 0.194647, loss: 1.9828
+2022-07-25 03:50:15 - train: epoch 0015, iter [04800, 05004], lr: 0.194625, loss: 2.0802
+2022-07-25 03:52:12 - train: epoch 0015, iter [04900, 05004], lr: 0.194604, loss: 2.0178
+2022-07-25 03:54:08 - train: epoch 0015, iter [05000, 05004], lr: 0.194583, loss: 2.4081
+2022-07-25 03:54:12 - train: epoch 015, train_loss: 2.1808
+2022-07-25 03:58:01 - eval: epoch: 015, acc1: 55.674%, acc5: 80.082%, test_loss: 1.9030, per_image_load_time: 7.544ms, per_image_inference_time: 0.854ms
+2022-07-25 03:58:02 - until epoch: 015, best_acc1: 55.674%
+2022-07-25 03:58:02 - epoch 016 lr: 0.194582
+2022-07-25 04:00:22 - train: epoch 0016, iter [00100, 05004], lr: 0.194560, loss: 2.0344
+2022-07-25 04:02:18 - train: epoch 0016, iter [00200, 05004], lr: 0.194539, loss: 1.9904
+2022-07-25 04:04:21 - train: epoch 0016, iter [00300, 05004], lr: 0.194517, loss: 2.1202
+2022-07-25 04:06:19 - train: epoch 0016, iter [00400, 05004], lr: 0.194496, loss: 2.2381
+2022-07-25 04:08:22 - train: epoch 0016, iter [00500, 05004], lr: 0.194474, loss: 1.9214
+2022-07-25 04:10:22 - train: epoch 0016, iter [00600, 05004], lr: 0.194452, loss: 2.1655
+2022-07-25 04:12:24 - train: epoch 0016, iter [00700, 05004], lr: 0.194431, loss: 1.9617
+2022-07-25 04:14:19 - train: epoch 0016, iter [00800, 05004], lr: 0.194409, loss: 2.2850
+2022-07-25 04:16:21 - train: epoch 0016, iter [00900, 05004], lr: 0.194387, loss: 2.1967
+2022-07-25 04:18:26 - train: epoch 0016, iter [01000, 05004], lr: 0.194365, loss: 2.1209
+2022-07-25 04:20:21 - train: epoch 0016, iter [01100, 05004], lr: 0.194343, loss: 2.1758
+2022-07-25 04:22:23 - train: epoch 0016, iter [01200, 05004], lr: 0.194321, loss: 1.8801
+2022-07-25 04:24:25 - train: epoch 0016, iter [01300, 05004], lr: 0.194299, loss: 2.0754
+2022-07-25 04:26:24 - train: epoch 0016, iter [01400, 05004], lr: 0.194277, loss: 2.1353
+2022-07-25 04:28:24 - train: epoch 0016, iter [01500, 05004], lr: 0.194255, loss: 2.3746
+2022-07-25 04:30:26 - train: epoch 0016, iter [01600, 05004], lr: 0.194233, loss: 2.2115
+2022-07-25 04:32:24 - train: epoch 0016, iter [01700, 05004], lr: 0.194211, loss: 2.2613
+2022-07-25 04:34:23 - train: epoch 0016, iter [01800, 05004], lr: 0.194189, loss: 2.2865
+2022-07-25 04:36:25 - train: epoch 0016, iter [01900, 05004], lr: 0.194167, loss: 2.0893
+2022-07-25 04:38:26 - train: epoch 0016, iter [02000, 05004], lr: 0.194144, loss: 2.0331
+2022-07-25 04:40:28 - train: epoch 0016, iter [02100, 05004], lr: 0.194122, loss: 2.2277
+2022-07-25 04:42:27 - train: epoch 0016, iter [02200, 05004], lr: 0.194100, loss: 2.3591
+2022-07-25 04:44:29 - train: epoch 0016, iter [02300, 05004], lr: 0.194077, loss: 2.3436
+2022-07-25 04:46:25 - train: epoch 0016, iter [02400, 05004], lr: 0.194055, loss: 2.2817
+2022-07-25 04:48:26 - train: epoch 0016, iter [02500, 05004], lr: 0.194032, loss: 2.1632
+2022-07-25 04:50:22 - train: epoch 0016, iter [02600, 05004], lr: 0.194010, loss: 2.2217
+2022-07-25 04:52:25 - train: epoch 0016, iter [02700, 05004], lr: 0.193987, loss: 2.0968
+2022-07-25 04:54:21 - train: epoch 0016, iter [02800, 05004], lr: 0.193965, loss: 2.1477
+2022-07-25 04:56:19 - train: epoch 0016, iter [02900, 05004], lr: 0.193942, loss: 2.2095
+2022-07-25 04:58:19 - train: epoch 0016, iter [03000, 05004], lr: 0.193919, loss: 2.3331
+2022-07-25 05:00:20 - train: epoch 0016, iter [03100, 05004], lr: 0.193897, loss: 2.0173
+2022-07-25 05:02:18 - train: epoch 0016, iter [03200, 05004], lr: 0.193874, loss: 2.4291
+2022-07-25 05:04:17 - train: epoch 0016, iter [03300, 05004], lr: 0.193851, loss: 2.4350
+2022-07-25 05:06:19 - train: epoch 0016, iter [03400, 05004], lr: 0.193828, loss: 2.0806
+2022-07-25 05:08:19 - train: epoch 0016, iter [03500, 05004], lr: 0.193805, loss: 2.1357
+2022-07-25 05:10:21 - train: epoch 0016, iter [03600, 05004], lr: 0.193783, loss: 1.9267
+2022-07-25 05:12:20 - train: epoch 0016, iter [03700, 05004], lr: 0.193760, loss: 2.4261
+2022-07-25 05:14:22 - train: epoch 0016, iter [03800, 05004], lr: 0.193737, loss: 2.5018
+2022-07-25 05:16:20 - train: epoch 0016, iter [03900, 05004], lr: 0.193714, loss: 2.3203
+2022-07-25 05:18:22 - train: epoch 0016, iter [04000, 05004], lr: 0.193690, loss: 2.2196
+2022-07-25 05:20:12 - train: epoch 0016, iter [04100, 05004], lr: 0.193667, loss: 1.9717
+2022-07-25 05:22:07 - train: epoch 0016, iter [04200, 05004], lr: 0.193644, loss: 1.9811
+2022-07-25 05:24:05 - train: epoch 0016, iter [04300, 05004], lr: 0.193621, loss: 1.9725
+2022-07-25 05:26:02 - train: epoch 0016, iter [04400, 05004], lr: 0.193598, loss: 1.8765
+2022-07-25 05:27:54 - train: epoch 0016, iter [04500, 05004], lr: 0.193574, loss: 2.1842
+2022-07-25 05:29:49 - train: epoch 0016, iter [04600, 05004], lr: 0.193551, loss: 1.9783
+2022-07-25 05:32:01 - train: epoch 0016, iter [04700, 05004], lr: 0.193528, loss: 2.2548
+2022-07-25 05:33:53 - train: epoch 0016, iter [04800, 05004], lr: 0.193504, loss: 2.0710
+2022-07-25 05:35:50 - train: epoch 0016, iter [04900, 05004], lr: 0.193481, loss: 2.0314
+2022-07-25 05:37:41 - train: epoch 0016, iter [05000, 05004], lr: 0.193457, loss: 2.0129
+2022-07-25 05:37:44 - train: epoch 016, train_loss: 2.1652
+2022-07-25 05:41:26 - eval: epoch: 016, acc1: 55.130%, acc5: 79.810%, test_loss: 1.9036, per_image_load_time: 3.859ms, per_image_inference_time: 0.821ms
+2022-07-25 05:41:26 - until epoch: 016, best_acc1: 55.674%
+2022-07-25 05:41:26 - epoch 017 lr: 0.193456
+2022-07-25 05:43:40 - train: epoch 0017, iter [00100, 05004], lr: 0.193433, loss: 2.2741
+2022-07-25 05:45:37 - train: epoch 0017, iter [00200, 05004], lr: 0.193409, loss: 2.1295
+2022-07-25 05:47:33 - train: epoch 0017, iter [00300, 05004], lr: 0.193386, loss: 2.3057
+2022-07-25 05:49:24 - train: epoch 0017, iter [00400, 05004], lr: 0.193362, loss: 1.8508
+2022-07-25 05:51:22 - train: epoch 0017, iter [00500, 05004], lr: 0.193338, loss: 2.2281
+2022-07-25 05:53:15 - train: epoch 0017, iter [00600, 05004], lr: 0.193315, loss: 2.2494
+2022-07-25 05:55:13 - train: epoch 0017, iter [00700, 05004], lr: 0.193291, loss: 2.0769
+2022-07-25 05:57:10 - train: epoch 0017, iter [00800, 05004], lr: 0.193267, loss: 2.0573
+2022-07-25 05:59:05 - train: epoch 0017, iter [00900, 05004], lr: 0.193243, loss: 2.2525
+2022-07-25 06:01:06 - train: epoch 0017, iter [01000, 05004], lr: 0.193219, loss: 2.1829
+2022-07-25 06:03:01 - train: epoch 0017, iter [01100, 05004], lr: 0.193195, loss: 2.3986
+2022-07-25 06:04:57 - train: epoch 0017, iter [01200, 05004], lr: 0.193171, loss: 1.9964
+2022-07-25 06:06:56 - train: epoch 0017, iter [01300, 05004], lr: 0.193147, loss: 2.1202
+2022-07-25 06:08:52 - train: epoch 0017, iter [01400, 05004], lr: 0.193123, loss: 1.9812
+2022-07-25 06:10:50 - train: epoch 0017, iter [01500, 05004], lr: 0.193099, loss: 1.9787
+2022-07-25 06:12:48 - train: epoch 0017, iter [01600, 05004], lr: 0.193075, loss: 1.8939
+2022-07-25 06:14:46 - train: epoch 0017, iter [01700, 05004], lr: 0.193051, loss: 2.1463
+2022-07-25 06:16:42 - train: epoch 0017, iter [01800, 05004], lr: 0.193027, loss: 2.1029
+2022-07-25 06:18:41 - train: epoch 0017, iter [01900, 05004], lr: 0.193002, loss: 2.2337
+2022-07-25 06:20:45 - train: epoch 0017, iter [02000, 05004], lr: 0.192978, loss: 2.0296
+2022-07-25 06:22:41 - train: epoch 0017, iter [02100, 05004], lr: 0.192954, loss: 1.9368
+2022-07-25 06:24:40 - train: epoch 0017, iter [02200, 05004], lr: 0.192929, loss: 2.0381
+2022-07-25 06:26:42 - train: epoch 0017, iter [02300, 05004], lr: 0.192905, loss: 2.1915
+2022-07-25 06:28:40 - train: epoch 0017, iter [02400, 05004], lr: 0.192880, loss: 2.0407
+2022-07-25 06:30:43 - train: epoch 0017, iter [02500, 05004], lr: 0.192856, loss: 2.2157
+2022-07-25 06:32:44 - train: epoch 0017, iter [02600, 05004], lr: 0.192831, loss: 2.0497
+2022-07-25 06:34:44 - train: epoch 0017, iter [02700, 05004], lr: 0.192807, loss: 2.2644
+2022-07-25 06:36:46 - train: epoch 0017, iter [02800, 05004], lr: 0.192782, loss: 2.0664
+2022-07-25 06:38:45 - train: epoch 0017, iter [02900, 05004], lr: 0.192757, loss: 2.3020
+2022-07-25 06:40:43 - train: epoch 0017, iter [03000, 05004], lr: 0.192733, loss: 1.9891
+2022-07-25 06:42:45 - train: epoch 0017, iter [03100, 05004], lr: 0.192708, loss: 2.1983
+2022-07-25 06:44:40 - train: epoch 0017, iter [03200, 05004], lr: 0.192683, loss: 1.9611
+2022-07-25 06:46:40 - train: epoch 0017, iter [03300, 05004], lr: 0.192658, loss: 2.1580
+2022-07-25 06:48:39 - train: epoch 0017, iter [03400, 05004], lr: 0.192633, loss: 1.9811
+2022-07-25 06:50:38 - train: epoch 0017, iter [03500, 05004], lr: 0.192609, loss: 2.1844
+2022-07-25 06:52:38 - train: epoch 0017, iter [03600, 05004], lr: 0.192584, loss: 2.3277
+2022-07-25 06:54:35 - train: epoch 0017, iter [03700, 05004], lr: 0.192559, loss: 1.9470
+2022-07-25 06:56:34 - train: epoch 0017, iter [03800, 05004], lr: 0.192534, loss: 2.1769
+2022-07-25 06:58:43 - train: epoch 0017, iter [03900, 05004], lr: 0.192509, loss: 1.9925
+2022-07-25 07:00:39 - train: epoch 0017, iter [04000, 05004], lr: 0.192483, loss: 2.1481
+2022-07-25 07:02:42 - train: epoch 0017, iter [04100, 05004], lr: 0.192458, loss: 2.2274
+2022-07-25 07:04:41 - train: epoch 0017, iter [04200, 05004], lr: 0.192433, loss: 2.0393
+2022-07-25 07:06:38 - train: epoch 0017, iter [04300, 05004], lr: 0.192408, loss: 2.2129
+2022-07-25 07:08:42 - train: epoch 0017, iter [04400, 05004], lr: 0.192383, loss: 2.1068

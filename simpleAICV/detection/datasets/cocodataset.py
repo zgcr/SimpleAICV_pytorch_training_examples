@@ -263,18 +263,6 @@ class MosaicResizeCocoDetection(CocoDetection):
         self.transform = transform
 
         self.image_ids = self.coco.getImgIds()
-
-        if 'train' in set_name:
-            # filter image id without annotation,from 118287 ids to 117266 ids
-            ids = []
-            for image_id in self.image_ids:
-                annot_ids = self.coco.getAnnIds(imgIds=image_id)
-                annots = self.coco.loadAnns(annot_ids)
-                if len(annots) == 0:
-                    continue
-                ids.append(image_id)
-            self.image_ids = ids
-
         self.cat_ids = self.coco.getCatIds()
         self.cats = sorted(self.coco.loadCats(self.cat_ids),
                            key=lambda x: x['id'])

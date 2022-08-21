@@ -1,18 +1,18 @@
-2022-05-03 21:01:42 - network: resnet18
-2022-05-03 21:01:42 - num_classes: 1000
-2022-05-03 21:01:42 - input_image_size: 224
-2022-05-03 21:01:42 - scale: 1.1428571428571428
-2022-05-03 21:01:42 - trained_model_path: /root/code/simpleAICV-pytorch-ImageNet-COCO-training/distillation_training/imagenet/resnet_34_dkd_18/checkpoints/student-epoch100-acc71.976.pth
-2022-05-03 21:01:42 - criterion: CELoss(
+2022-07-27 22:55:48 - network: resnet18
+2022-07-27 22:55:48 - num_classes: 1000
+2022-07-27 22:55:48 - input_image_size: 224
+2022-07-27 22:55:48 - scale: 1.1428571428571428
+2022-07-27 22:55:48 - trained_model_path: /root/code/SimpleAICV-ImageNet-CIFAR-COCO-VOC-training/distillation_training/imagenet/resnet_34_dkd_18/checkpoints/student-epoch100-acc72.164.pth
+2022-07-27 22:55:48 - test_criterion: CELoss(
   (loss): CrossEntropyLoss()
 )
-2022-05-03 21:01:42 - val_dataset: <simpleAICV.classification.datasets.ilsvrc2012dataset.ILSVRC2012Dataset object at 0x7ff9003382b0>
-2022-05-03 21:01:42 - collater: <simpleAICV.classification.common.ClassificationCollater object at 0x7ff9003382e0>
-2022-05-03 21:01:42 - seed: 0
-2022-05-03 21:01:42 - batch_size: 256
-2022-05-03 21:01:42 - num_workers: 16
-2022-05-03 21:01:42 - gpus_type: NVIDIA RTX A5000
-2022-05-03 21:01:42 - gpus_num: 2
-2022-05-03 21:01:42 - group: <torch._C._distributed_c10d.ProcessGroupNCCL object at 0x7ff90033fdb0>
-2022-05-03 21:01:42 - model: resnet18, macs: 1.819G, params: 11.690M
-2022-05-03 21:02:57 - acc1: 71.856%, acc5: 90.470%, test_loss: 1.1290, per_image_load_time: 2.461ms, per_image_inference_time: 0.323ms
+2022-07-27 22:55:48 - test_dataset: <simpleAICV.classification.datasets.ilsvrc2012dataset.ILSVRC2012Dataset object at 0x7fa24d300dc0>
+2022-07-27 22:55:48 - test_collater: <simpleAICV.classification.common.ClassificationCollater object at 0x7fa24d300df0>
+2022-07-27 22:55:48 - seed: 0
+2022-07-27 22:55:48 - batch_size: 256
+2022-07-27 22:55:48 - num_workers: 16
+2022-07-27 22:55:48 - gpus_type: NVIDIA RTX A5000
+2022-07-27 22:55:48 - gpus_num: 2
+2022-07-27 22:55:48 - group: <torch._C._distributed_c10d.ProcessGroupNCCL object at 0x7fa24c0a2530>
+2022-07-27 22:55:48 - model: resnet18, macs: 1.819G, params: 11.690M
+2022-07-27 22:57:04 - acc1: 72.110%, acc5: 90.530%, test_loss: 1.1260, per_image_load_time: 2.528ms, per_image_inference_time: 0.336ms

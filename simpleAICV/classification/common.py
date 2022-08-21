@@ -57,8 +57,9 @@ class PIL2Opencv:
 
 class TorchRandomResizedCrop:
 
-    def __init__(self, resize=224):
-        self.RandomResizedCrop = transforms.RandomResizedCrop(int(resize))
+    def __init__(self, resize=224, scale=(0.08, 1.0)):
+        self.RandomResizedCrop = transforms.RandomResizedCrop(int(resize),
+                                                              scale=scale)
 
     def __call__(self, sample):
         '''
@@ -621,6 +622,91 @@ class Resize:
         }
 
 
+class RandomErasing:
+    """ Random Erasing Data Augmentation: Randomly selects a rectangle region in an image and erases its pixels.
+        Paper: https://arxiv.org/pdf/1708.04896.pdf
+    Args:
+         probability: Probability that the Random Erasing operation will be performed.
+         min_area: Minimum percentage of erased area wrt input image area.
+         max_area: Maximum percentage of erased area wrt input image area.
+         min_aspect: Minimum aspect ratio of erased area.
+         mode: pixel color mode, one of 'const', 'rand', or 'pixel'
+            'const' - erase block is constant color of 0 for all channels
+            'rand'  - erase block is same per-channel random (normal) color
+            'pixel' - erase block is per-pixel random (normal) color
+        max_count: maximum number of erasing blocks per image, area per box is scaled by count.
+            per-image count is randomly chosen between 1 and this value.
+    """
+
+    def __init__(self,
+                 prob=0.25,
+                 min_area=0.02,
+                 max_area=1 / 3,
+                 min_aspect=0.3,
+                 max_aspect=None,
+                 mode='pixel',
+                 min_count=1,
+                 max_count=None):
+        self.prob = prob
+        self.min_area = min_area
+        self.max_area = max_area
+        max_aspect = max_aspect if max_aspect else 1 / min_aspect
+        self.log_aspect_ratio = (math.log(min_aspect), math.log(max_aspect))
+
+        assert mode in ['const', 'rand', 'pixel']
+        self.mode = mode
+        self.min_count = min_count
+        self.max_count = max_count if max_count else min_count
+
+    def __call__(self, sample):
+        '''
+        sample must be a dict,contains 'image'、'label' keys.
+        image must be a [h,w,c] opencv image
+        '''
+        image, label = sample['image'], sample['label']
+
+        if np.random.uniform(0, 1) < self.prob:
+            image = self.erase(image)
+
+        return {
+            'image': image,
+            'label': label,
+        }
+
+    def erase(self, image):
+        image_h, image_w, image_c = image.shape
+        area = image_h * image_w
+        count = self.min_count if self.min_count == self.max_count else np.random.randint(
+            self.min_count, self.max_count)
+
+        for _ in range(count):
+            for _ in range(10):
+                target_area = np.random.uniform(self.min_area,
+                                                self.max_area) * area / count
+                aspect_ratio = math.exp(
+                    np.random.uniform(*self.log_aspect_ratio))
+                h = int(round(math.sqrt(target_area * aspect_ratio)))
+                w = int(round(math.sqrt(target_area / aspect_ratio)))
+                if w < image_w and h < image_h:
+                    top = np.random.randint(0, image_h - h)
+                    left = np.random.randint(0, image_w - w)
+                    if self.mode == 'pixel':
+                        fill_area = np.random.normal(loc=0.0,
+                                                     scale=1.0,
+                                                     size=(h, w, image_c))
+                    elif self.mode == 'rand':
+                        fill_area = np.random.normal(loc=0.0,
+                                                     scale=1.0,
+                                                     size=(1, 1, image_c))
+                    else:
+                        fill_area = np.zeros((1, 1, image_c), dtype=np.float32)
+
+                    image[top:top + h, left:left + w, :] = fill_area
+                    break
+
+        return image
+
+
 class ClassificationCollater:
 
     def __init__(self):
@@ -785,6 +871,9 @@ def load_state_dict(saved_model_path, model, excluded_layer_name=()):
     if len(filtered_state_dict) == 0:
         print('No pretrained parameters to load!')
     else:
+        print(
+            f'load/model weight nums:{len(filtered_state_dict)}/{len(model.state_dict())}'
+        )
         model.load_state_dict(filtered_state_dict, strict=False)
 
     return

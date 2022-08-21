@@ -1,0 +1,18 @@
+2022-08-05 20:48:31 - network: RegNetX_800MF
+2022-08-05 20:48:31 - num_classes: 1000
+2022-08-05 20:48:31 - input_image_size: 224
+2022-08-05 20:48:31 - scale: 1.1428571428571428
+2022-08-05 20:48:31 - trained_model_path: /root/code/SimpleAICV-ImageNet-CIFAR-COCO-VOC-training/classification_training/imagenet/regnetx_800mf/checkpoints/RegNetX_800MF-acc74.520.pth
+2022-08-05 20:48:31 - test_criterion: CELoss(
+  (loss): CrossEntropyLoss()
+)
+2022-08-05 20:48:31 - test_dataset: <simpleAICV.classification.datasets.ilsvrc2012dataset.ILSVRC2012Dataset object at 0x7fb6ff839d60>
+2022-08-05 20:48:31 - test_collater: <simpleAICV.classification.common.ClassificationCollater object at 0x7fb6ff839d00>
+2022-08-05 20:48:31 - seed: 0
+2022-08-05 20:48:31 - batch_size: 256
+2022-08-05 20:48:31 - num_workers: 16
+2022-08-05 20:48:31 - gpus_type: NVIDIA RTX A5000
+2022-08-05 20:48:31 - gpus_num: 2
+2022-08-05 20:48:31 - group: <torch._C._distributed_c10d.ProcessGroupNCCL object at 0x7fb6ff828770>
+2022-08-05 20:48:31 - model: RegNetX_800MF, macs: 820.324M, params: 7.260M
+2022-08-05 20:50:33 - acc1: 74.444%, acc5: 92.038%, test_loss: 1.0401, per_image_load_time: 3.682ms, per_image_inference_time: 0.721ms

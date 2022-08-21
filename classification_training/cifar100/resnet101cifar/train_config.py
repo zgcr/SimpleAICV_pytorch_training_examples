@@ -32,7 +32,8 @@ class config:
     trained_model_path = ''
     load_state_dict(trained_model_path, model)
 
-    criterion = losses.__dict__['CELoss']()
+    train_criterion = losses.__dict__['CELoss']()
+    test_criterion = losses.__dict__['CELoss']()
 
     train_dataset = CIFAR100Dataset(
         root_dir=CIFAR100_path,
@@ -45,7 +46,7 @@ class config:
             TorchMeanStdNormalize(mean=np.array([125.3, 123.0, 113.9]) / 255.0,
                                   std=np.array([63.0, 62.1, 66.7]) / 255.0),
         ]))
-    val_dataset = CIFAR100Dataset(
+    test_dataset = CIFAR100Dataset(
         root_dir=CIFAR100_path,
         set_name='test',
         transform=transforms.Compose([
@@ -53,7 +54,8 @@ class config:
             TorchMeanStdNormalize(mean=np.array([125.3, 123.0, 113.9]) / 255.0,
                                   std=np.array([63.0, 62.1, 66.7]) / 255.0),
         ]))
-    collater = ClassificationCollater()
+    train_collater = ClassificationCollater()
+    test_collater = ClassificationCollater()
 
     seed = 0
     # batch_size is total size
@@ -61,13 +63,16 @@ class config:
     # num_workers is total workers
     num_workers = 16
 
-    # choose 'SGD' or 'AdamW'
     optimizer = (
         'SGD',
         {
             'lr': 0.1,
             'momentum': 0.9,
+            'global_weight_decay': False,
+            # if global_weight_decay = False
+            # all bias, bn and other 1d params weight set to 0 weight decay
             'weight_decay': 5e-4,
+            'no_weight_decay_layer_name_list': [],
         },
     )
 
@@ -82,6 +87,10 @@ class config:
 
     epochs = 200
     print_interval = 50
+    accumulation_steps = 1
 
     sync_bn = False
     apex = True
+
+    use_ema_model = False
+    ema_model_decay = 0.9999

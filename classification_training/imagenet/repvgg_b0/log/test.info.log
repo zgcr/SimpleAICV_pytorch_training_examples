@@ -1,0 +1,18 @@
+2022-07-16 17:59:21 - network: RepVGG_B0
+2022-07-16 17:59:21 - num_classes: 1000
+2022-07-16 17:59:21 - input_image_size: 224
+2022-07-16 17:59:21 - scale: 1.1428571428571428
+2022-07-16 17:59:21 - trained_model_path: /root/code/SimpleAICV-ImageNet-CIFAR-COCO-VOC-training/classification_training/imagenet/repvgg_b0/checkpoints/RepVGG_B0-acc74.766_deployed.pth
+2022-07-16 17:59:21 - test_criterion: CELoss(
+  (loss): CrossEntropyLoss()
+)
+2022-07-16 17:59:21 - test_dataset: <simpleAICV.classification.datasets.ilsvrc2012dataset.ILSVRC2012Dataset object at 0x7f27535a9bb0>
+2022-07-16 17:59:21 - test_collater: <simpleAICV.classification.common.ClassificationCollater object at 0x7f27535a9a30>
+2022-07-16 17:59:21 - seed: 0
+2022-07-16 17:59:21 - batch_size: 256
+2022-07-16 17:59:21 - num_workers: 16
+2022-07-16 17:59:21 - gpus_type: NVIDIA RTX A5000
+2022-07-16 17:59:21 - gpus_num: 2
+2022-07-16 17:59:21 - group: <torch._C._distributed_c10d.ProcessGroupNCCL object at 0x7f27572f6b70>
+2022-07-16 17:59:21 - model: RepVGG_B0, macs: 3.058G, params: 14.339M
+2022-07-16 18:00:37 - acc1: 74.750%, acc5: 92.142%, test_loss: 1.0036, per_image_load_time: 2.356ms, per_image_inference_time: 0.380ms

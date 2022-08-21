@@ -34,7 +34,8 @@ class config:
     trained_model_path = ''
     load_state_dict(trained_model_path, model)
 
-    criterion = losses.__dict__['CELoss']()
+    train_criterion = losses.__dict__['CELoss']()
+    test_criterion = losses.__dict__['CELoss']()
 
     train_dataset = ILSVRC2012Dataset(
         root_dir=ILSVRC2012_path,
@@ -47,7 +48,7 @@ class config:
                                   std=[0.229, 0.224, 0.225]),
         ]))
 
-    val_dataset = ILSVRC2012Dataset(
+    test_dataset = ILSVRC2012Dataset(
         root_dir=ILSVRC2012_path,
         set_name='val',
         transform=transforms.Compose([
@@ -57,7 +58,8 @@ class config:
             TorchMeanStdNormalize(mean=[0.485, 0.456, 0.406],
                                   std=[0.229, 0.224, 0.225]),
         ]))
-    collater = ClassificationCollater()
+    train_collater = ClassificationCollater()
+    test_collater = ClassificationCollater()
 
     seed = 0
     # batch_size is total size
@@ -65,23 +67,18 @@ class config:
     # num_workers is total workers
     num_workers = 16
 
-    # choose 'SGD' or 'AdamW'
     optimizer = (
         'SGD',
         {
             'lr': 0.1,
             'momentum': 0.9,
+            'global_weight_decay': False,
+            # if global_weight_decay = False
+            # all bias, bn and other 1d params weight set to 0 weight decay
             'weight_decay': 1e-4,
+            'no_weight_decay_layer_name_list': [],
         },
     )
-
-    # optimizer = (
-    #     'AdamW',
-    #     {
-    #         'lr': 0.1,
-    #         'weight_decay': 1e-4,
-    #     },
-    # )
 
     scheduler = (
         'MultiStepLR',
@@ -92,15 +89,12 @@ class config:
         },
     )
 
-    # scheduler = (
-    #     'CosineLR',
-    #     {
-    #         'warm_up_epochs': 0,
-    #     },
-    # )
-
     epochs = 100
     print_interval = 100
+    accumulation_steps = 1
 
     sync_bn = False
     apex = True
+
+    use_ema_model = False
+    ema_model_decay = 0.9999

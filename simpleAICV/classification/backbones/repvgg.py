@@ -116,6 +116,7 @@ def conv_bn_layer(inplanes, planes, kernel_size, stride, padding=1, groups=1):
 
 
 class RepVGGBlock(nn.Module):
+
     def __init__(self,
                  inplanes,
                  planes,
@@ -217,6 +218,7 @@ class RepVGGBlock(nn.Module):
 
 
 class RepVGG(nn.Module):
+
     def __init__(self, repvgg_type, deploy=False, num_classes=1000):
         super(RepVGG, self).__init__()
         self.superparams = types_config[repvgg_type]

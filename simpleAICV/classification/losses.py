@@ -6,6 +6,7 @@ __all__ = [
     'CELoss',
     'FocalCELoss',
     'LabelSmoothCELoss',
+    'OneHotLabelCELoss',
 ]
 
 
@@ -13,6 +14,7 @@ class CELoss(nn.Module):
     '''
     Cross Entropy Loss
     '''
+
     def __init__(self):
         super(CELoss, self).__init__()
         self.loss = nn.CrossEntropyLoss(reduction='mean')
@@ -24,6 +26,7 @@ class CELoss(nn.Module):
 
 
 class FocalCELoss(nn.Module):
+
     def __init__(self, gamma=2.0):
         super(FocalCELoss, self).__init__()
         self.gamma = gamma
@@ -47,6 +50,7 @@ class LabelSmoothCELoss(nn.Module):
     '''
     Label Smooth Cross Entropy Loss
     '''
+
     def __init__(self, smoothing=0.1):
         super(LabelSmoothCELoss, self).__init__()
         self.smoothing = smoothing
@@ -58,6 +62,26 @@ class LabelSmoothCELoss(nn.Module):
             1.0 -
             self.smoothing) * one_hot_label + self.smoothing / pred.size(1)
         loss = (-torch.log(pred)) * smoothed_one_hot_label
+        loss = loss.sum(axis=1, keepdim=False)
+        loss = loss.mean()
+
+        return loss
+
+
+class OneHotLabelCELoss(nn.Module):
+    '''
+    Cross Entropy Loss,input label is one-hot format
+    '''
+
+    def __init__(self):
+        super(OneHotLabelCELoss, self).__init__()
+        self.softmax = nn.Softmax(dim=-1)
+
+    def forward(self, pred, label):
+        pred = self.softmax(pred)
+        pred = torch.clamp(pred, min=1e-4, max=1. - 1e-4)
+
+        loss = (-torch.log(pred)) * label
         loss = loss.sum(axis=1, keepdim=False)
         loss = loss.mean()
 
@@ -95,3 +119,10 @@ if __name__ == '__main__':
     loss3 = LabelSmoothCELoss(smoothing=0.1)
     out = loss3(pred, label)
     print('3333', out)
+
+    label = torch.tensor(
+        np.array([[1, 0, 0, 0, 0], [0, 1, 0, 0, 0], [0, 0, 1, 0, 0],
+                  [0, 0, 0, 1, 0], [0, 0, 0, 0, 1]]))
+    loss4 = OneHotLabelCELoss()
+    out = loss4(pred, label)
+    print('4444', out)

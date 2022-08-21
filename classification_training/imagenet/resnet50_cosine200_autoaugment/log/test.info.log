@@ -1,0 +1,18 @@
+2022-07-16 18:37:59 - network: resnet50
+2022-07-16 18:37:59 - num_classes: 1000
+2022-07-16 18:37:59 - input_image_size: 224
+2022-07-16 18:37:59 - scale: 1.1428571428571428
+2022-07-16 18:37:59 - trained_model_path: /root/code/SimpleAICV-ImageNet-CIFAR-COCO-VOC-training/classification_training/imagenet/resnet50_cosine200_autoaugment/checkpoints/resnet50-acc77.736.pth
+2022-07-16 18:37:59 - test_criterion: CELoss(
+  (loss): CrossEntropyLoss()
+)
+2022-07-16 18:37:59 - test_dataset: <simpleAICV.classification.datasets.ilsvrc2012dataset.ILSVRC2012Dataset object at 0x7f35400b5910>
+2022-07-16 18:37:59 - test_collater: <simpleAICV.classification.common.ClassificationCollater object at 0x7f35400b5940>
+2022-07-16 18:37:59 - seed: 0
+2022-07-16 18:37:59 - batch_size: 256
+2022-07-16 18:37:59 - num_workers: 16
+2022-07-16 18:37:59 - gpus_type: NVIDIA RTX A5000
+2022-07-16 18:37:59 - gpus_num: 2
+2022-07-16 18:37:59 - group: <torch._C._distributed_c10d.ProcessGroupNCCL object at 0x7f354826d7b0>
+2022-07-16 18:38:00 - model: resnet50, macs: 4.112G, params: 25.557M
+2022-07-16 18:39:14 - acc1: 77.684%, acc5: 93.822%, test_loss: 0.8952, per_image_load_time: 2.075ms, per_image_inference_time: 0.808ms

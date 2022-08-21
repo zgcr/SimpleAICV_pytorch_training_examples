@@ -4,8 +4,10 @@ checkpoints
 *.pth
 inference_examples
 pretrained_models
-resources
-segmentation_training
-simpleAICV/segmentation
-simpleAICV/instance_segmentation
-simpleAICV/SelfSupervisedLearning
+self_supervised_training
+semantic_segmentation_training
+simpleAICV/self_supervised_learning
+simpleAICV/semantic_segmentation
+tools/test_semantic_segmentation_model.py
+tools/train_self_supervised_model.py
+tools/train_semantic_segmentation_model.py

@@ -29,14 +29,11 @@ class config:
     })
 
     # load total pretrained model or not
-    # trained_model_path = ''
-    trained_model_path = os.path.join(
-        BASE_DIR,
-        'detection_training/voc/res50_fcos_yoloresize640/checkpoints/resnet50_fcos-metric80.488.pth'
-    )
+    trained_model_path = '/root/code/SimpleAICV-ImageNet-CIFAR-COCO-VOC-training/detection_training/voc/res50_fcos_yoloresize640/checkpoints/resnet50_fcos-metric79.898.pth'
+    # trained_model_path = os.path.join(BASE_DIR, '')
     load_state_dict(trained_model_path, model)
 
-    criterion = losses.__dict__['FCOSLoss'](
+    test_criterion = losses.__dict__['FCOSLoss'](
         **{
             'strides': [8, 16, 32, 64, 128],
             'mi': [[-1, 64], [64, 128], [128, 256], [256, 512],
@@ -60,20 +57,20 @@ class config:
         'nms_threshold': 0.6,
     })
 
-    val_dataset = VocDetection(root_dir=VOCdataset_path,
-                               image_sets=[('2007', 'test')],
-                               transform=transforms.Compose([
-                                   YoloStyleResize(
-                                       resize=input_image_size[0],
-                                       divisor=32,
-                                       stride=32,
-                                       multi_scale=False,
-                                       multi_scale_range=[0.5, 1.0]),
-                                   Normalize(),
-                               ]),
-                               keep_difficult=False)
+    test_dataset = VocDetection(root_dir=VOCdataset_path,
+                                image_sets=[('2007', 'test')],
+                                transform=transforms.Compose([
+                                    YoloStyleResize(
+                                        resize=input_image_size[0],
+                                        divisor=32,
+                                        stride=32,
+                                        multi_scale=False,
+                                        multi_scale_range=[0.5, 1.0]),
+                                    Normalize(),
+                                ]),
+                                keep_difficult=False)
 
-    collater = DetectionCollater()
+    test_collater = DetectionCollater()
 
     eval_type = 'VOC'
     eval_voc_iou_threshold_list = [
@@ -84,4 +81,4 @@ class config:
     # batch_size is total size
     batch_size = 32
     # num_workers is total workers
-    num_workers = 4
+    num_workers = 16

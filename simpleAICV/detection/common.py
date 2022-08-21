@@ -375,6 +375,9 @@ def load_state_dict(saved_model_path, model, excluded_layer_name=()):
     if len(filtered_state_dict) == 0:
         print('No pretrained parameters to load!')
     else:
+        print(
+            f'load/model weight nums:{len(filtered_state_dict)}/{len(model.state_dict())}'
+        )
         model.load_state_dict(filtered_state_dict, strict=False)
 
     return

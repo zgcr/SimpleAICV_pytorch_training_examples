@@ -12,7 +12,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 
-from tools.scripts import validate_detection
+from tools.scripts import test_detection
 from tools.utils import get_logger, set_seed, compute_macs_and_params
 
 
@@ -49,7 +49,6 @@ def main():
 
     torch.distributed.barrier()
 
-    global logger
     logger = get_logger('test', log_dir)
 
     batch_size, num_workers = config.batch_size, config.num_workers
@@ -58,12 +57,12 @@ def main():
     batch_size = int(config.batch_size // config.gpus_num)
     num_workers = int(config.num_workers // config.gpus_num)
 
-    val_loader = DataLoader(config.val_dataset,
-                            batch_size=batch_size,
-                            shuffle=False,
-                            pin_memory=False,
-                            num_workers=num_workers,
-                            collate_fn=config.collater)
+    test_loader = DataLoader(config.test_dataset,
+                             batch_size=batch_size,
+                             shuffle=False,
+                             pin_memory=False,
+                             num_workers=num_workers,
+                             collate_fn=config.test_collater)
 
     for key, value in config.__dict__.items():
         if not key.startswith('__'):
@@ -72,7 +71,7 @@ def main():
                 logger.info(log_info) if local_rank == 0 else None
 
     model = config.model
-    criterion = config.criterion
+    test_criterion = config.test_criterion
     decoder = config.decoder
 
     macs, params = compute_macs_and_params(config, model)
@@ -80,14 +79,14 @@ def main():
     logger.info(log_info) if local_rank == 0 else None
 
     model = model.cuda()
-    criterion = config.criterion.cuda()
+    test_criterion = test_criterion.cuda()
 
     model = nn.parallel.DistributedDataParallel(model,
                                                 device_ids=[local_rank],
                                                 output_device=local_rank)
 
-    result_dict = validate_detection(val_loader, model, criterion, decoder,
-                                     config)
+    result_dict = test_detection(test_loader, model, test_criterion, decoder,
+                                 config)
     log_info = f'eval type: {config.eval_type}\n'
     for key, value in result_dict.items():
         log_info += f'{key}: {value}\n'

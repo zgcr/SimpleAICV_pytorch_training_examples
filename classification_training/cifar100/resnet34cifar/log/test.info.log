@@ -1,18 +1,17 @@
-2022-03-23 08:18:57 - network: resnet34cifar
-2022-03-23 08:18:57 - num_classes: 100
-2022-03-23 08:18:57 - input_image_size: 32
-2022-03-23 08:18:57 - trained_model_path: /root/code/simpleAICV-pytorch-ImageNet-COCO-training/classification_training/cifar100/resnet34cifar/checkpoints/resnet34cifar-acc79.340.pth
-2022-03-23 08:18:57 - criterion: CELoss(
+2022-07-17 09:58:00 - network: resnet34cifar
+2022-07-17 09:58:00 - num_classes: 100
+2022-07-17 09:58:00 - input_image_size: 32
+2022-07-17 09:58:00 - trained_model_path: /root/code/SimpleAICV-ImageNet-CIFAR-COCO-VOC-training/classification_training/cifar100/resnet34cifar/checkpoints/resnet34cifar-acc77.840.pth
+2022-07-17 09:58:00 - test_criterion: CELoss(
   (loss): CrossEntropyLoss()
 )
-2022-03-23 08:18:57 - val_dataset: <simpleAICV.classification.datasets.cifar100dataset.CIFAR100Dataset object at 0x7fc114c8f7c0>
-2022-03-23 08:18:57 - collater: <simpleAICV.classification.common.ClassificationCollater object at 0x7fc111652ac0>
-2022-03-23 08:18:57 - seed: 0
-2022-03-23 08:18:57 - batch_size: 256
-2022-03-23 08:18:57 - num_workers: 16
-2022-03-23 08:18:57 - distributed: True
-2022-03-23 08:18:57 - gpus_type: NVIDIA RTX A5000
-2022-03-23 08:18:57 - gpus_num: 1
-2022-03-23 08:18:57 - group: <torch._C._distributed_c10d.ProcessGroupNCCL object at 0x7fc11165baf0>
-2022-03-23 08:18:58 - model: resnet34cifar, macs: 1.162G, params: 21.328M
-2022-03-23 08:19:02 - acc1: 79.310%, acc5: 94.700%, test_loss: 0.8714, per_image_load_time: 0.304ms, per_image_inference_time: 0.102ms
+2022-07-17 09:58:00 - test_dataset: <simpleAICV.classification.datasets.cifar100dataset.CIFAR100Dataset object at 0x7fb3266ced00>
+2022-07-17 09:58:00 - test_collater: <simpleAICV.classification.common.ClassificationCollater object at 0x7fb3266cee20>
+2022-07-17 09:58:00 - seed: 0
+2022-07-17 09:58:00 - batch_size: 256
+2022-07-17 09:58:00 - num_workers: 16
+2022-07-17 09:58:00 - gpus_type: NVIDIA RTX A5000
+2022-07-17 09:58:00 - gpus_num: 1
+2022-07-17 09:58:00 - group: <torch._C._distributed_c10d.ProcessGroupNCCL object at 0x7fb3266da5f0>
+2022-07-17 09:58:00 - model: resnet34cifar, macs: 1.164G, params: 21.328M
+2022-07-17 09:58:04 - acc1: 77.850%, acc5: 94.280%, test_loss: 1.0167, per_image_load_time: 0.262ms, per_image_inference_time: 0.102ms

@@ -29,16 +29,13 @@ class config:
     })
 
     # load pretrained model or not
-    # trained_model_path = ''
-    trained_model_path = os.path.join(
-        BASE_DIR,
-        'classification_training/cifar100/resnet152cifar/checkpoints/resnet152cifar-acc78.700.pth'
-    )
+    trained_model_path = '/root/code/SimpleAICV-ImageNet-CIFAR-COCO-VOC-training/classification_training/cifar100/resnet152cifar/checkpoints/resnet152cifar-acc77.160.pth'
+    # trained_model_path = os.path.join(BASE_DIR, '')
     load_state_dict(trained_model_path, model)
 
-    criterion = losses.__dict__['CELoss']()
+    test_criterion = losses.__dict__['CELoss']()
 
-    val_dataset = CIFAR100Dataset(
+    test_dataset = CIFAR100Dataset(
         root_dir=CIFAR100_path,
         set_name='test',
         transform=transforms.Compose([
@@ -46,7 +43,7 @@ class config:
             TorchMeanStdNormalize(mean=np.array([125.3, 123.0, 113.9]) / 255.0,
                                   std=np.array([63.0, 62.1, 66.7]) / 255.0),
         ]))
-    collater = ClassificationCollater()
+    test_collater = ClassificationCollater()
 
     seed = 0
     # batch_size is total size

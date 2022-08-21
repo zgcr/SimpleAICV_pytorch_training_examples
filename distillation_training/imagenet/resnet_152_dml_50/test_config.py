@@ -21,7 +21,7 @@ class config:
     '''
     for resnet,input_image_size = 224;for darknet,input_image_size = 256
     '''
-    network = 'resnet152'
+    network = 'resnet50'
     num_classes = 1000
     input_image_size = 224
     scale = 256 / 224
@@ -31,16 +31,13 @@ class config:
     })
 
     # load pretrained model or not
-    # trained_model_path = ''
-    trained_model_path = os.path.join(
-        BASE_DIR,
-        'distillation_training/imagenet/resnet_152_dml_50/checkpoints/teacher-epoch100-acc79.462.pth'
-    )
+    trained_model_path = '/root/code/SimpleAICV-ImageNet-CIFAR-COCO-VOC-training/distillation_training/imagenet/resnet_152_dml_50/checkpoints/student-epoch100-acc77.658.pth'
+    # trained_model_path = os.path.join(BASE_DIR, '')
     load_state_dict(trained_model_path, model)
 
-    criterion = losses.__dict__['CELoss']()
+    test_criterion = losses.__dict__['CELoss']()
 
-    val_dataset = ILSVRC2012Dataset(
+    test_dataset = ILSVRC2012Dataset(
         root_dir=ILSVRC2012_path,
         set_name='val',
         transform=transforms.Compose([
@@ -50,7 +47,7 @@ class config:
             TorchMeanStdNormalize(mean=[0.485, 0.456, 0.406],
                                   std=[0.229, 0.224, 0.225]),
         ]))
-    collater = ClassificationCollater()
+    test_collater = ClassificationCollater()
 
     seed = 0
     # batch_size is total size

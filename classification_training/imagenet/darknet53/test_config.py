@@ -11,7 +11,7 @@ from tools.path import ILSVRC2012_path
 from simpleAICV.classification import backbones
 from simpleAICV.classification import losses
 from simpleAICV.classification.datasets.ilsvrc2012dataset import ILSVRC2012Dataset
-from simpleAICV.classification.common import Opencv2PIL, TorchResize, TorchCenterCrop, Normalize, TorchMeanStdNormalize, ClassificationCollater, load_state_dict
+from simpleAICV.classification.common import Opencv2PIL, TorchResize, TorchCenterCrop, TorchMeanStdNormalize, ClassificationCollater, load_state_dict
 
 import torch
 import torchvision.transforms as transforms
@@ -31,16 +31,13 @@ class config:
     })
 
     # load pretrained model or not
-    # trained_model_path = ''
-    trained_model_path = os.path.join(
-        BASE_DIR,
-        'classification_training/imagenet/darknet53/checkpoints/darknet53-acc76.836.pth'
-    )
+    trained_model_path = '/root/code/SimpleAICV-ImageNet-CIFAR-COCO-VOC-training/classification_training/imagenet/darknet53/checkpoints/darknet53-acc76.602.pth'
+    # trained_model_path = os.path.join(BASE_DIR, '')
     load_state_dict(trained_model_path, model)
 
-    criterion = losses.__dict__['CELoss']()
+    test_criterion = losses.__dict__['CELoss']()
 
-    val_dataset = ILSVRC2012Dataset(
+    test_dataset = ILSVRC2012Dataset(
         root_dir=ILSVRC2012_path,
         set_name='val',
         transform=transforms.Compose([
@@ -50,7 +47,7 @@ class config:
             TorchMeanStdNormalize(mean=[0.485, 0.456, 0.406],
                                   std=[0.229, 0.224, 0.225]),
         ]))
-    collater = ClassificationCollater()
+    test_collater = ClassificationCollater()
 
     seed = 0
     # batch_size is total size

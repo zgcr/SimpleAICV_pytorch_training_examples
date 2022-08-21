@@ -13,10 +13,9 @@ import time
 import torch
 from torch.utils.data import DataLoader
 
-from tools.scripts import train_classification, validate_classification
+from tools.scripts import train_classification, test_classification
 from tools.utils import (get_logger, set_seed, worker_seed_init_fn,
-                         compute_macs_and_params, build_optimizer,
-                         build_scheduler, build_training_mode)
+                         build_optimizer, Scheduler, build_training_mode)
 
 
 def parse_args():
@@ -58,7 +57,6 @@ def main():
 
     torch.distributed.barrier()
 
-    global logger
     logger = get_logger('train', log_dir)
 
     batch_size, num_workers = config.batch_size, config.num_workers
@@ -78,19 +76,19 @@ def main():
                               shuffle=False,
                               pin_memory=False,
                               num_workers=num_workers,
-                              collate_fn=config.collater,
+                              collate_fn=config.train_collater,
                               sampler=train_sampler,
                               worker_init_fn=init_fn)
 
-    val_sampler = torch.utils.data.distributed.DistributedSampler(
-        config.val_dataset, shuffle=False)
-    val_loader = DataLoader(config.val_dataset,
-                            batch_size=batch_size,
-                            shuffle=False,
-                            pin_memory=False,
-                            num_workers=num_workers,
-                            collate_fn=config.collater,
-                            sampler=val_sampler)
+    test_sampler = torch.utils.data.distributed.DistributedSampler(
+        config.test_dataset, shuffle=False)
+    test_loader = DataLoader(config.test_dataset,
+                             batch_size=batch_size,
+                             shuffle=False,
+                             pin_memory=False,
+                             num_workers=num_workers,
+                             collate_fn=config.test_collater,
+                             sampler=test_sampler)
 
     for key, value in config.__dict__.items():
         if not key.startswith('__'):
@@ -99,7 +97,8 @@ def main():
                 logger.info(log_info) if local_rank == 0 else None
 
     model = config.model.cuda()
-    criterion = config.criterion.cuda()
+    train_criterion = config.train_criterion.cuda()
+    test_criterion = config.test_criterion.cuda()
 
     # parameters needs to be updated by the optimizer
     # buffers doesn't needs to be updated by the optimizer
@@ -115,9 +114,28 @@ def main():
         log_info = f'name: {name}, grad: {buffer.requires_grad}'
         logger.info(log_info) if local_rank == 0 else None
 
-    optimizer = build_optimizer(config, model)
-    scheduler = build_scheduler(config, optimizer)
-    model = build_training_mode(config, model, optimizer)
+    optimizer, model_layer_weight_decay_list = build_optimizer(config, model)
+
+    for i, per_layer_list in enumerate(model_layer_weight_decay_list):
+        if i == 0:
+            log_info = f'-----------no weight decay layers--------------'
+        elif i == 1:
+            log_info = f'-------------weight decay layers---------------'
+        logger.info(log_info) if local_rank == 0 else None
+
+        layer_name_list, layer_weight_decay = per_layer_list[
+            'name'], per_layer_list['weight_decay']
+
+        lr_scale = 'not setting!'
+        if 'lr_scale' in per_layer_list.keys():
+            lr_scale = per_layer_list['lr_scale']
+
+        for name in layer_name_list:
+            log_info = f'name: {name}, weight_decay: {layer_weight_decay}, lr_scale: {lr_scale}'
+            logger.info(log_info) if local_rank == 0 else None
+
+    scheduler = Scheduler(config)
+    model, config.ema_model = build_training_mode(config, model, optimizer)
 
     start_epoch, train_time = 1, 0
     best_acc1, acc1, test_loss = 0, 0, 0
@@ -138,16 +156,20 @@ def main():
         log_info = f'resuming model from {resume_model}. resume_epoch: {saved_epoch:0>3d}, used_time: {used_time:.3f} hours, best_acc1: {best_acc1:.3f}%, test_loss: {test_loss:.4f}, lr: {lr:.6f}'
         logger.info(log_info) if local_rank == 0 else None
 
+        if 'ema_model_state_dict' in checkpoint.keys():
+            config.ema_model.ema_model.load_state_dict(
+                checkpoint['ema_model_state_dict'])
+
     for epoch in range(start_epoch, config.epochs + 1):
         per_epoch_start_time = time.time()
 
-        log_info = f'epoch {epoch:0>3d} lr: {scheduler.get_lr()[0]}'
+        log_info = f'epoch {epoch:0>3d} lr: {scheduler.current_lr:.6f}'
         logger.info(log_info) if local_rank == 0 else None
 
         torch.cuda.empty_cache()
 
         train_sampler.set_epoch(epoch)
-        train_loss = train_classification(train_loader, model, criterion,
+        train_loss = train_classification(train_loader, model, train_criterion,
                                           optimizer, scheduler, epoch, logger,
                                           config)
         log_info = f'train: epoch {epoch:0>3d}, train_loss: {train_loss:.4f}'
@@ -155,8 +177,8 @@ def main():
 
         torch.cuda.empty_cache()
 
-        acc1, acc5, test_loss, per_image_load_time, per_image_inference_time = validate_classification(
-            val_loader, model, criterion, config)
+        acc1, acc5, test_loss, per_image_load_time, per_image_inference_time = test_classification(
+            test_loader, model, test_criterion, config)
         log_info = f'eval: epoch: {epoch:0>3d}, acc1: {acc1:.3f}%, acc5: {acc5:.3f}%, test_loss: {test_loss:.4f}, per_image_load_time: {per_image_load_time:.3f}ms, per_image_inference_time: {per_image_inference_time:.3f}ms'
         logger.info(log_info) if local_rank == 0 else None
 
@@ -167,21 +189,48 @@ def main():
         if local_rank == 0:
             # save best acc1 model and each epoch checkpoint
             if acc1 > best_acc1 and acc1 <= 100:
-                torch.save(model.module.state_dict(),
-                           os.path.join(checkpoint_dir, 'best.pth'))
                 best_acc1 = acc1
+                if config.use_ema_model:
+                    torch.save(config.ema_model.ema_model.module.state_dict(),
+                               os.path.join(checkpoint_dir, 'best.pth'))
+                else:
+                    torch.save(model.module.state_dict(),
+                               os.path.join(checkpoint_dir, 'best.pth'))
 
-            torch.save(
-                {
-                    'epoch': epoch,
-                    'time': train_time,
-                    'best_acc1': best_acc1,
-                    'test_loss': test_loss,
-                    'lr': scheduler.get_lr()[0],
-                    'model_state_dict': model.state_dict(),
-                    'optimizer_state_dict': optimizer.state_dict(),
-                    'scheduler_state_dict': scheduler.state_dict(),
-                }, os.path.join(checkpoint_dir, 'latest.pth'))
+            if config.use_ema_model:
+                torch.save(
+                    {
+                        'epoch':
+                        epoch,
+                        'time':
+                        train_time,
+                        'best_acc1':
+                        best_acc1,
+                        'test_loss':
+                        test_loss,
+                        'lr':
+                        scheduler.current_lr,
+                        'model_state_dict':
+                        model.state_dict(),
+                        'ema_model_state_dict':
+                        config.ema_model.ema_model.state_dict(),
+                        'optimizer_state_dict':
+                        optimizer.state_dict(),
+                        'scheduler_state_dict':
+                        scheduler.state_dict(),
+                    }, os.path.join(checkpoint_dir, 'latest.pth'))
+            else:
+                torch.save(
+                    {
+                        'epoch': epoch,
+                        'time': train_time,
+                        'best_acc1': best_acc1,
+                        'test_loss': test_loss,
+                        'lr': scheduler.current_lr,
+                        'model_state_dict': model.state_dict(),
+                        'optimizer_state_dict': optimizer.state_dict(),
+                        'scheduler_state_dict': scheduler.state_dict(),
+                    }, os.path.join(checkpoint_dir, 'latest.pth'))
 
         log_info = f'until epoch: {epoch:0>3d}, best_acc1: {best_acc1:.3f}%'
         logger.info(log_info) if local_rank == 0 else None

@@ -12,7 +12,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 
-from tools.scripts import validate_classification
+from tools.scripts import test_classification
 from tools.utils import get_logger, set_seed, compute_macs_and_params
 
 
@@ -50,7 +50,6 @@ def main():
 
     torch.distributed.barrier()
 
-    global logger
     logger = get_logger('test', log_dir)
 
     batch_size, num_workers = config.batch_size, config.num_workers
@@ -59,15 +58,15 @@ def main():
     batch_size = int(config.batch_size // config.gpus_num)
     num_workers = int(config.num_workers // config.gpus_num)
 
-    val_sampler = torch.utils.data.distributed.DistributedSampler(
-        config.val_dataset, shuffle=False)
-    val_loader = DataLoader(config.val_dataset,
-                            batch_size=batch_size,
-                            shuffle=False,
-                            pin_memory=False,
-                            num_workers=num_workers,
-                            collate_fn=config.collater,
-                            sampler=val_sampler)
+    test_sampler = torch.utils.data.distributed.DistributedSampler(
+        config.test_dataset, shuffle=False)
+    test_loader = DataLoader(config.test_dataset,
+                             batch_size=batch_size,
+                             shuffle=False,
+                             pin_memory=False,
+                             num_workers=num_workers,
+                             collate_fn=config.test_collater,
+                             sampler=test_sampler)
 
     for key, value in config.__dict__.items():
         if not key.startswith('__'):
@@ -76,21 +75,21 @@ def main():
                 logger.info(log_info) if local_rank == 0 else None
 
     model = config.model
-    criterion = config.criterion
+    test_criterion = config.test_criterion
 
     macs, params = compute_macs_and_params(config, model)
     log_info = f'model: {config.network}, macs: {macs}, params: {params}'
     logger.info(log_info) if local_rank == 0 else None
 
     model = model.cuda()
-    criterion = criterion.cuda()
+    test_criterion = test_criterion.cuda()
 
     model = nn.parallel.DistributedDataParallel(model,
                                                 device_ids=[local_rank],
                                                 output_device=local_rank)
 
-    acc1, acc5, test_loss, per_image_load_time, per_image_inference_time = validate_classification(
-        val_loader, model, criterion, config)
+    acc1, acc5, test_loss, per_image_load_time, per_image_inference_time = test_classification(
+        test_loader, model, test_criterion, config)
     log_info = f'acc1: {acc1:.3f}%, acc5: {acc5:.3f}%, test_loss: {test_loss:.4f}, per_image_load_time: {per_image_load_time:.3f}ms, per_image_inference_time: {per_image_inference_time:.3f}ms'
     logger.info(log_info) if local_rank == 0 else None
 

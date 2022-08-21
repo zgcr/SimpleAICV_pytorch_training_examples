@@ -13,13 +13,11 @@ import torch.nn.functional as F
 
 from torchvision.ops import nms
 
-from simpleAICV.detection.models.anchor import RetinaAnchors, FCOSPositions, Yolov3Anchors, YoloxAnchors, TTFNetPositions
+from simpleAICV.detection.models.anchor import RetinaAnchors, FCOSPositions, TTFNetPositions, YoloxAnchors
 
 __all__ = [
     'RetinaDecoder',
     'FCOSDecoder',
-    'Yolov4Decoder',
-    'Yolov5Decoder',
     'CenterNetDecoder',
     'TTFNetDecoder',
 ]
@@ -366,303 +364,6 @@ class FCOSDecoder:
         return pred_bboxes
 
 
-class Yolov4Decoder:
-
-    def __init__(self,
-                 anchor_sizes=[[10, 13], [16, 30], [33, 23], [30, 61],
-                               [62, 45], [59, 119], [116, 90], [156, 198],
-                               [373, 326]],
-                 strides=[8, 16, 32],
-                 per_level_num_anchors=3,
-                 max_object_num=100,
-                 min_score_threshold=0.05,
-                 topn=1000,
-                 nms_type='python_nms',
-                 nms_threshold=0.5):
-        assert nms_type in ['torch_nms', 'python_nms',
-                            'diou_python_nms'], 'wrong nms type!'
-        self.anchors = Yolov3Anchors(
-            anchor_sizes=anchor_sizes,
-            strides=strides,
-            per_level_num_anchors=per_level_num_anchors)
-        self.decode_function = DecodeMethod(
-            max_object_num=max_object_num,
-            min_score_threshold=min_score_threshold,
-            topn=topn,
-            nms_type=nms_type,
-            nms_threshold=nms_threshold)
-
-    def __call__(self, preds):
-        obj_reg_cls_preds = preds[0]
-        feature_size = [[
-            per_level_obj_reg_cls_pred.shape[2],
-            per_level_obj_reg_cls_pred.shape[1]
-        ] for per_level_obj_reg_cls_pred in obj_reg_cls_preds]
-        one_image_anchors = self.anchors(feature_size)
-
-        obj_reg_cls_preds = [
-            per_obj_reg_cls_pred.cpu().detach().numpy().reshape(
-                per_obj_reg_cls_pred.shape[0], -1,
-                per_obj_reg_cls_pred.shape[-1])
-            for per_obj_reg_cls_pred in obj_reg_cls_preds
-        ]
-
-        obj_reg_cls_preds = np.concatenate(obj_reg_cls_preds, axis=1)
-        one_image_anchors = np.concatenate([
-            per_level_anchor.reshape(-1, per_level_anchor.shape[-1])
-            for per_level_anchor in one_image_anchors
-        ],
-                                           axis=0)
-        batch_anchors = np.repeat(np.expand_dims(one_image_anchors, axis=0),
-                                  obj_reg_cls_preds.shape[0],
-                                  axis=0)
-
-        cls_classes = np.argmax(obj_reg_cls_preds[:, :, 5:], axis=2)
-        cls_scores = np.concatenate([
-            np.expand_dims(per_image_preds[np.arange(per_image_preds.shape[0]),
-                                           per_image_cls_classes],
-                           axis=0)
-            for per_image_preds, per_image_cls_classes in zip(
-                obj_reg_cls_preds[:, :, 5:], cls_classes)
-        ],
-                                    axis=0)
-        cls_scores = cls_scores * obj_reg_cls_preds[:, :, 0]
-        reg_preds = obj_reg_cls_preds[:, :, 1:5]
-        pred_bboxes = self.snap_txtytwth_to_x1y1x2y2(reg_preds, batch_anchors)
-
-        [batch_scores, batch_classes,
-         batch_bboxes] = self.decode_function(cls_scores, cls_classes,
-                                              pred_bboxes)
-
-        # batch_scores shape:[batch_size,max_object_num]
-        # batch_classes shape:[batch_size,max_object_num]
-        # batch_bboxes shape[batch_size,max_object_num,4]
-        return [batch_scores, batch_classes, batch_bboxes]
-
-    def snap_txtytwth_to_x1y1x2y2(self, reg_preds, batch_anchors):
-        '''
-        snap reg heads to pred bboxes
-        reg_preds:[batch_size,anchor_nums,4],4:[tx,ty,tw,th]
-        batch_anchors:[batch_size,anchor_nums,5],2:[grids_x_index,grids_y_index,relative_anchor_w,relative_anchor_h,stride]
-        '''
-        reg_preds[:, :, 2:4] = np.exp(reg_preds[:, :, 2:4])
-        pred_bboxes_xy_ctr = (reg_preds[:, :, 0:2] + batch_anchors[:, :, 0:2]
-                              ) * batch_anchors[:, :, 4:5]
-        pred_bboxes_wh = reg_preds[:, :, 2:
-                                   4] * batch_anchors[:, :, 2:
-                                                      4] * batch_anchors[:, :,
-                                                                         4:5]
-
-        pred_bboxes_xy_min = pred_bboxes_xy_ctr - pred_bboxes_wh / 2
-        pred_bboxes_xy_max = pred_bboxes_xy_ctr + pred_bboxes_wh / 2
-        pred_bboxes = np.concatenate([pred_bboxes_xy_min, pred_bboxes_xy_max],
-                                     axis=2)
-        pred_bboxes = pred_bboxes.astype(np.int32)
-
-        # pred bboxes shape:[batch_size,points_num,4]
-        return pred_bboxes
-
-
-class Yolov5Decoder:
-
-    def __init__(self,
-                 anchor_sizes=[[10, 13], [16, 30], [33, 23], [30, 61],
-                               [62, 45], [59, 119], [116, 90], [156, 198],
-                               [373, 326]],
-                 strides=[8, 16, 32],
-                 per_level_num_anchors=3,
-                 max_object_num=100,
-                 min_score_threshold=0.05,
-                 topn=1000,
-                 nms_type='python_nms',
-                 nms_threshold=0.5):
-        assert nms_type in ['torch_nms', 'python_nms',
-                            'diou_python_nms'], 'wrong nms type!'
-        self.anchors = Yolov3Anchors(
-            anchor_sizes=anchor_sizes,
-            strides=strides,
-            per_level_num_anchors=per_level_num_anchors)
-        self.decode_function = DecodeMethod(
-            max_object_num=max_object_num,
-            min_score_threshold=min_score_threshold,
-            topn=topn,
-            nms_type=nms_type,
-            nms_threshold=nms_threshold)
-
-    def __call__(self, preds):
-        obj_reg_cls_preds = preds[0]
-        feature_size = [[
-            per_level_obj_reg_cls_pred.shape[2],
-            per_level_obj_reg_cls_pred.shape[1]
-        ] for per_level_obj_reg_cls_pred in obj_reg_cls_preds]
-        one_image_anchors = self.anchors(feature_size)
-
-        obj_reg_cls_preds = [
-            per_obj_reg_cls_pred.cpu().detach().numpy().reshape(
-                per_obj_reg_cls_pred.shape[0], -1,
-                per_obj_reg_cls_pred.shape[-1])
-            for per_obj_reg_cls_pred in obj_reg_cls_preds
-        ]
-
-        obj_reg_cls_preds = np.concatenate(obj_reg_cls_preds, axis=1)
-        one_image_anchors = np.concatenate([
-            per_level_anchor.reshape(-1, per_level_anchor.shape[-1])
-            for per_level_anchor in one_image_anchors
-        ],
-                                           axis=0)
-        batch_anchors = np.repeat(np.expand_dims(one_image_anchors, axis=0),
-                                  obj_reg_cls_preds.shape[0],
-                                  axis=0)
-
-        cls_classes = np.argmax(obj_reg_cls_preds[:, :, 5:], axis=2)
-        cls_scores = np.concatenate([
-            np.expand_dims(per_image_preds[np.arange(per_image_preds.shape[0]),
-                                           per_image_cls_classes],
-                           axis=0)
-            for per_image_preds, per_image_cls_classes in zip(
-                obj_reg_cls_preds[:, :, 5:], cls_classes)
-        ],
-                                    axis=0)
-
-        cls_scores = cls_scores * obj_reg_cls_preds[:, :, 0]
-        reg_preds = obj_reg_cls_preds[:, :, 1:5]
-        pred_bboxes = self.snap_txtytwth_to_x1y1x2y2(reg_preds, batch_anchors)
-
-        [batch_scores, batch_classes,
-         batch_bboxes] = self.decode_function(cls_scores, cls_classes,
-                                              pred_bboxes)
-
-        # batch_scores shape:[batch_size,max_object_num]
-        # batch_classes shape:[batch_size,max_object_num]
-        # batch_bboxes shape[batch_size,max_object_num,4]
-        return [batch_scores, batch_classes, batch_bboxes]
-
-    def snap_txtytwth_to_x1y1x2y2(self, reg_preds, batch_anchors):
-        '''
-        snap reg heads to pred bboxes
-        reg_preds:[batch_size,anchor_nums,4],4:[tx,ty,tw,th]
-        batch_anchors:[batch_size,anchor_nums,5],2:[grids_x_index,grids_y_index,relative_anchor_w,relative_anchor_h,stride]
-        '''
-        pred_bboxes_xy_ctr = (reg_preds[:, :, 0:2] * 2. - 0.5 +
-                              batch_anchors[:, :, 0:2]) * batch_anchors[:, :,
-                                                                        4:5]
-        pred_bboxes_wh = (
-            (reg_preds[:, :, 2:4] * 2)**
-            2) * batch_anchors[:, :, 2:4] * batch_anchors[:, :, 4:5]
-
-        pred_bboxes_xy_min = pred_bboxes_xy_ctr - pred_bboxes_wh / 2
-        pred_bboxes_xy_max = pred_bboxes_xy_ctr + pred_bboxes_wh / 2
-        pred_bboxes = np.concatenate([pred_bboxes_xy_min, pred_bboxes_xy_max],
-                                     axis=2)
-        pred_bboxes = pred_bboxes.astype(np.int32)
-
-        # pred bboxes shape:[batch,points_num,4]
-        return pred_bboxes
-
-
-class YoloxDecoder:
-
-    def __init__(self,
-                 strides=[8, 16, 32],
-                 max_object_num=100,
-                 min_score_threshold=0.05,
-                 topn=1000,
-                 nms_type='python_nms',
-                 nms_threshold=0.5):
-        assert nms_type in ['torch_nms', 'python_nms',
-                            'diou_python_nms'], 'wrong nms type!'
-
-        self.grid_strides = YoloxAnchors(strides=strides)
-        self.decode_function = DecodeMethod(
-            max_object_num=max_object_num,
-            min_score_threshold=min_score_threshold,
-            topn=topn,
-            nms_type=nms_type,
-            nms_threshold=nms_threshold)
-
-    def __call__(self, preds):
-        obj_preds, cls_preds, reg_preds = preds
-
-        feature_size = [[
-            per_level_cls_pred.shape[2], per_level_cls_pred.shape[1]
-        ] for per_level_cls_pred in cls_preds]
-        one_image_grid_center_strides = self.grid_strides(feature_size)
-
-        obj_preds = [
-            per_obj_pred.cpu().detach().numpy().reshape(
-                per_obj_pred.shape[0], -1, per_obj_pred.shape[-1])
-            for per_obj_pred in obj_preds
-        ]
-        cls_preds = [
-            per_cls_pred.cpu().detach().numpy().reshape(
-                per_cls_pred.shape[0], -1, per_cls_pred.shape[-1])
-            for per_cls_pred in cls_preds
-        ]
-        reg_preds = [
-            per_reg_pred.cpu().detach().numpy().reshape(
-                per_reg_pred.shape[0], -1, per_reg_pred.shape[-1])
-            for per_reg_pred in reg_preds
-        ]
-
-        obj_preds = np.concatenate(obj_preds, axis=1)
-        cls_preds = np.concatenate(cls_preds, axis=1)
-        reg_preds = np.concatenate(reg_preds, axis=1)
-
-        one_image_grid_center_strides = np.concatenate([
-            per_level_grid_center_strides.reshape(
-                -1, per_level_grid_center_strides.shape[-1])
-            for per_level_grid_center_strides in one_image_grid_center_strides
-        ],
-                                                       axis=0)
-        batch_grid_center_strides = np.repeat(np.expand_dims(
-            one_image_grid_center_strides, axis=0),
-                                              cls_preds.shape[0],
-                                              axis=0)
-
-        cls_classes = np.argmax(cls_preds, axis=2)
-        cls_scores = np.concatenate([
-            np.expand_dims(per_image_preds[np.arange(per_image_preds.shape[0]),
-                                           per_image_cls_classes],
-                           axis=0)
-            for per_image_preds, per_image_cls_classes in zip(
-                cls_preds, cls_classes)
-        ],
-                                    axis=0)
-
-        cls_scores = cls_scores * obj_preds[:, :, 0]
-        pred_bboxes = self.snap_ltrb_to_x1y1x2y2(reg_preds,
-                                                 batch_grid_center_strides)
-
-        [batch_scores, batch_classes,
-         batch_bboxes] = self.decode_function(cls_scores, cls_classes,
-                                              pred_bboxes)
-
-        # batch_scores shape:[batch_size,max_object_num]
-        # batch_classes shape:[batch_size,max_object_num]
-        # batch_bboxes shape[batch_size,max_object_num,4]
-        return [batch_scores, batch_classes, batch_bboxes]
-
-    def snap_ltrb_to_x1y1x2y2(self, reg_preds, grid_center_strides):
-        '''
-        snap per image reg preds to per image pred bboxes
-        reg_preds:[batch_size,point_nums,4],4:[l,t,r,b]
-        grid_center_strides:[batch_size,point_nums,3],3:[scale_grid_x_center,scale_grid_y_center,stride]
-        '''
-        reg_preds = np.exp(reg_preds)
-        grid_centers = grid_center_strides[:, :, 0:2]
-        strides = np.expand_dims(grid_center_strides[:, :, 2], axis=-1)
-
-        pred_bboxes_xy_min = (grid_centers - reg_preds[:, :, 0:2]) * strides
-        pred_bboxes_xy_max = (grid_centers + reg_preds[:, :, 2:4]) * strides
-        pred_bboxes = np.concatenate([pred_bboxes_xy_min, pred_bboxes_xy_max],
-                                     axis=2)
-
-        pred_bboxes = pred_bboxes.astype(np.int32)
-
-        # pred bboxes shape:[batch,points_num,4]
-        return pred_bboxes
-
-
 class CenterNetDecoder(nn.Module):
 
     def __init__(self,
@@ -923,6 +624,109 @@ class TTFNetDecoder(nn.Module):
         return pred_bboxes
 
 
+class YoloxDecoder:
+
+    def __init__(self,
+                 strides=[8, 16, 32],
+                 max_object_num=100,
+                 min_score_threshold=0.05,
+                 topn=1000,
+                 nms_type='python_nms',
+                 nms_threshold=0.5):
+        assert nms_type in ['torch_nms', 'python_nms',
+                            'diou_python_nms'], 'wrong nms type!'
+
+        self.grid_strides = YoloxAnchors(strides=strides)
+        self.decode_function = DecodeMethod(
+            max_object_num=max_object_num,
+            min_score_threshold=min_score_threshold,
+            topn=topn,
+            nms_type=nms_type,
+            nms_threshold=nms_threshold)
+
+    def __call__(self, preds):
+        obj_preds, cls_preds, reg_preds = preds
+
+        feature_size = [[
+            per_level_cls_pred.shape[2], per_level_cls_pred.shape[1]
+        ] for per_level_cls_pred in cls_preds]
+        one_image_grid_center_strides = self.grid_strides(feature_size)
+
+        obj_preds = [
+            per_obj_pred.cpu().detach().numpy().reshape(
+                per_obj_pred.shape[0], -1, per_obj_pred.shape[-1])
+            for per_obj_pred in obj_preds
+        ]
+        cls_preds = [
+            per_cls_pred.cpu().detach().numpy().reshape(
+                per_cls_pred.shape[0], -1, per_cls_pred.shape[-1])
+            for per_cls_pred in cls_preds
+        ]
+        reg_preds = [
+            per_reg_pred.cpu().detach().numpy().reshape(
+                per_reg_pred.shape[0], -1, per_reg_pred.shape[-1])
+            for per_reg_pred in reg_preds
+        ]
+
+        obj_preds = np.concatenate(obj_preds, axis=1)
+        cls_preds = np.concatenate(cls_preds, axis=1)
+        reg_preds = np.concatenate(reg_preds, axis=1)
+
+        one_image_grid_center_strides = np.concatenate([
+            per_level_grid_center_strides.reshape(
+                -1, per_level_grid_center_strides.shape[-1])
+            for per_level_grid_center_strides in one_image_grid_center_strides
+        ],
+                                                       axis=0)
+        batch_grid_center_strides = np.repeat(np.expand_dims(
+            one_image_grid_center_strides, axis=0),
+                                              cls_preds.shape[0],
+                                              axis=0)
+
+        cls_classes = np.argmax(cls_preds, axis=2)
+        cls_scores = np.concatenate([
+            np.expand_dims(per_image_preds[np.arange(per_image_preds.shape[0]),
+                                           per_image_cls_classes],
+                           axis=0)
+            for per_image_preds, per_image_cls_classes in zip(
+                cls_preds, cls_classes)
+        ],
+                                    axis=0)
+
+        cls_scores = cls_scores * obj_preds[:, :, 0]
+        pred_bboxes = self.snap_ltrb_to_x1y1x2y2(reg_preds,
+                                                 batch_grid_center_strides)
+
+        [batch_scores, batch_classes,
+         batch_bboxes] = self.decode_function(cls_scores, cls_classes,
+                                              pred_bboxes)
+
+        # batch_scores shape:[batch_size,max_object_num]
+        # batch_classes shape:[batch_size,max_object_num]
+        # batch_bboxes shape[batch_size,max_object_num,4]
+        return [batch_scores, batch_classes, batch_bboxes]
+
+    def snap_ltrb_to_x1y1x2y2(self, reg_preds, grid_center_strides):
+        '''
+        snap per image reg preds to per image pred bboxes
+        reg_preds:[batch_size,point_nums,4],4:[l,t,r,b]
+        grid_center_strides:[batch_size,point_nums,3],3:[scale_grid_x_center,scale_grid_y_center,stride]
+        '''
+        reg_preds = np.exp(reg_preds)
+        grid_centers = grid_center_strides[:, :, 0:2]
+        strides = np.expand_dims(grid_center_strides[:, :, 2], axis=-1)
+
+        pred_bboxes_xy_min = (grid_centers - reg_preds[:, :, 0:2]) * strides
+        pred_bboxes_xy_max = (grid_centers + reg_preds[:, :, 2:4]) * strides
+        pred_bboxes = np.concatenate([pred_bboxes_xy_min, pred_bboxes_xy_max],
+                                     axis=2)
+
+        pred_bboxes = pred_bboxes.astype(np.int32)
+
+        # pred bboxes shape:[batch,points_num,4]
+        return pred_bboxes
+
+
 if __name__ == '__main__':
     import os
     import sys
@@ -945,87 +749,37 @@ if __name__ == '__main__':
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-    # from simpleAICV.detection.models.retinanet import resnet50_retinanet
-    # net = resnet50_retinanet()
-    # image_h, image_w = 640, 640
-    # preds = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
-    # decode = RetinaDecoder(areas=[[32, 32], [64, 64], [128, 128], [256, 256],
-    #                               [512, 512]],
-    #                        ratios=[0.5, 1, 2],
-    #                        scales=[2**0, 2**(1.0 / 3.0), 2**(2.0 / 3.0)],
-    #                        strides=[8, 16, 32, 64, 128],
-    #                        topn=1000,
-    #                        min_score_threshold=0.01,
-    #                        nms_type='python_nms',
-    #                        nms_threshold=0.5,
-    #                        max_object_num=100)
-    # batch_scores, batch_classes, batch_pred_bboxes = decode(preds)
-    # print('1111', batch_scores.shape, batch_classes.shape,
-    #       batch_pred_bboxes.shape)
+    from simpleAICV.detection.models.retinanet import resnet50_retinanet
+    net = resnet50_retinanet()
+    image_h, image_w = 640, 640
+    preds = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    decode = RetinaDecoder(areas=[[32, 32], [64, 64], [128, 128], [256, 256],
+                                  [512, 512]],
+                           ratios=[0.5, 1, 2],
+                           scales=[2**0, 2**(1.0 / 3.0), 2**(2.0 / 3.0)],
+                           strides=[8, 16, 32, 64, 128],
+                           topn=1000,
+                           min_score_threshold=0.01,
+                           nms_type='python_nms',
+                           nms_threshold=0.5,
+                           max_object_num=100)
+    batch_scores, batch_classes, batch_pred_bboxes = decode(preds)
+    print('1111', batch_scores.shape, batch_classes.shape,
+          batch_pred_bboxes.shape)
 
-    # from simpleAICV.detection.models.fcos import resnet50_fcos
-    # net = resnet50_fcos()
-    # image_h, image_w = 640, 640
-    # preds = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
-    # decode = FCOSDecoder(strides=[8, 16, 32, 64, 128],
-    #                      topn=1000,
-    #                      min_score_threshold=0.01,
-    #                      nms_type='torch_nms',
-    #                      nms_threshold=0.6,
-    #                      max_object_num=100)
-    # batch_scores, batch_classes, batch_pred_bboxes = decode(preds)
-    # print('2222', batch_scores.shape, batch_classes.shape,
-    #       batch_pred_bboxes.shape)
-
-    # from simpleAICV.detection.models.yolov4 import cspdarknet53_yolov4
-    # net = cspdarknet53_yolov4()
-    # image_h, image_w = 640, 640
-    # preds = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
-    # decode = Yolov4Decoder(anchor_sizes=[[10, 13], [16, 30], [33, 23],
-    #                                      [30, 61], [62, 45], [59, 119],
-    #                                      [116, 90], [156, 198], [373, 326]],
-    #                        strides=[8, 16, 32],
-    #                        per_level_num_anchors=3,
-    #                        topn=1000,
-    #                        min_score_threshold=0.01,
-    #                        nms_type='python_nms',
-    #                        nms_threshold=0.5,
-    #                        max_object_num=100)
-    # batch_scores, batch_classes, batch_pred_bboxes = decode(preds)
-    # print('3333', batch_scores.shape, batch_classes.shape,
-    #       batch_pred_bboxes.shape)
-
-    # from simpleAICV.detection.models.yolov5 import yolov5l
-    # net = yolov5l()
-    # image_h, image_w = 640, 640
-    # preds = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
-    # decode = Yolov5Decoder(anchor_sizes=[[10, 13], [16, 30], [33, 23],
-    #                                      [30, 61], [62, 45], [59, 119],
-    #                                      [116, 90], [156, 198], [373, 326]],
-    #                        strides=[8, 16, 32],
-    #                        per_level_num_anchors=3,
-    #                        topn=1000,
-    #                        min_score_threshold=0.01,
-    #                        nms_type='python_nms',
-    #                        nms_threshold=0.5,
-    #                        max_object_num=100)
-    # batch_scores, batch_classes, batch_pred_bboxes = decode(preds)
-    # print('4444', batch_scores.shape, batch_classes.shape,
-    #       batch_pred_bboxes.shape)
-
-    # from simpleAICV.detection.models.yolox import yoloxl
-    # net = yoloxl()
-    # image_h, image_w = 640, 640
-    # preds = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
-    # decode = YoloxDecoder(strides=[8, 16, 32],
-    #                       max_object_num=100,
-    #                       min_score_threshold=0.05,
-    #                       topn=1000,
-    #                       nms_type='python_nms',
-    #                       nms_threshold=0.6)
-    # batch_scores, batch_classes, batch_pred_bboxes = decode(preds)
-    # print('5555', batch_scores.shape, batch_classes.shape,
-    #       batch_pred_bboxes.shape)
+    from simpleAICV.detection.models.fcos import resnet50_fcos
+    net = resnet50_fcos()
+    image_h, image_w = 640, 640
+    preds = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    decode = FCOSDecoder(strides=[8, 16, 32, 64, 128],
+                         topn=1000,
+                         min_score_threshold=0.01,
+                         nms_type='torch_nms',
+                         nms_threshold=0.6,
+                         max_object_num=100)
+    batch_scores, batch_classes, batch_pred_bboxes = decode(preds)
+    print('2222', batch_scores.shape, batch_classes.shape,
+          batch_pred_bboxes.shape)
 
     from simpleAICV.detection.models.centernet import resnet18_centernet
     net = resnet18_centernet()
@@ -1042,7 +796,7 @@ if __name__ == '__main__':
                               min_score_threshold=0.05,
                               max_object_num=100)
     batch_scores, batch_classes, batch_pred_bboxes = decode(preds)
-    print('6666', batch_scores.shape, batch_classes.shape,
+    print('3333', batch_scores.shape, batch_classes.shape,
           batch_pred_bboxes.shape)
 
     from simpleAICV.detection.models.ttfnet import resnet18_ttfnet
@@ -1060,5 +814,19 @@ if __name__ == '__main__':
                            min_score_threshold=0.05,
                            max_object_num=100)
     batch_scores, batch_classes, batch_pred_bboxes = decode(preds)
-    print('7777', batch_scores.shape, batch_classes.shape,
+    print('4444', batch_scores.shape, batch_classes.shape,
+          batch_pred_bboxes.shape)
+
+    from simpleAICV.detection.models.yolox import yoloxl
+    net = yoloxl()
+    image_h, image_w = 640, 640
+    preds = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    decode = YoloxDecoder(strides=[8, 16, 32],
+                          max_object_num=100,
+                          min_score_threshold=0.05,
+                          topn=1000,
+                          nms_type='python_nms',
+                          nms_threshold=0.6)
+    batch_scores, batch_classes, batch_pred_bboxes = decode(preds)
+    print('5555', batch_scores.shape, batch_classes.shape,
           batch_pred_bboxes.shape)

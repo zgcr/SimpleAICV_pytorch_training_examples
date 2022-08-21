@@ -1,19 +1,18 @@
-2022-03-21 21:49:45 - network: resnet152
-2022-03-21 21:49:45 - num_classes: 1000
-2022-03-21 21:49:45 - input_image_size: 224
-2022-03-21 21:49:45 - scale: 1.1428571428571428
-2022-03-21 21:49:45 - trained_model_path: /root/code/simpleAICV-pytorch-ImageNet-COCO-training/distillation_training/imagenet/resnet_152_dml_50/checkpoints/teacher-epoch100-acc79.462.pth
-2022-03-21 21:49:45 - criterion: CELoss(
+2022-08-03 08:02:31 - network: resnet50
+2022-08-03 08:02:31 - num_classes: 1000
+2022-08-03 08:02:31 - input_image_size: 224
+2022-08-03 08:02:31 - scale: 1.1428571428571428
+2022-08-03 08:02:31 - trained_model_path: /root/code/SimpleAICV-ImageNet-CIFAR-COCO-VOC-training/distillation_training/imagenet/resnet_152_dml_50/checkpoints/student-epoch100-acc77.658.pth
+2022-08-03 08:02:31 - test_criterion: CELoss(
   (loss): CrossEntropyLoss()
 )
-2022-03-21 21:49:45 - val_dataset: <simpleAICV.classification.datasets.ilsvrc2012dataset.ILSVRC2012Dataset object at 0x7fcea0039ca0>
-2022-03-21 21:49:45 - collater: <simpleAICV.classification.common.ClassificationCollater object at 0x7fcea0039c70>
-2022-03-21 21:49:45 - seed: 0
-2022-03-21 21:49:45 - batch_size: 256
-2022-03-21 21:49:45 - num_workers: 16
-2022-03-21 21:49:45 - distributed: True
-2022-03-21 21:49:45 - gpus_type: NVIDIA GeForce RTX 3090
-2022-03-21 21:49:45 - gpus_num: 2
-2022-03-21 21:49:45 - group: <torch._C._distributed_c10d.ProcessGroupNCCL object at 0x7fce8aca4b70>
-2022-03-21 21:49:46 - model: resnet152, macs: 11.559G, params: 60.193M
-2022-03-21 21:51:04 - acc1: 79.492%, acc5: 94.650%, test_loss: 0.7945, per_image_load_time: 1.218ms, per_image_inference_time: 1.642ms
+2022-08-03 08:02:31 - test_dataset: <simpleAICV.classification.datasets.ilsvrc2012dataset.ILSVRC2012Dataset object at 0x7f030006d250>
+2022-08-03 08:02:31 - test_collater: <simpleAICV.classification.common.ClassificationCollater object at 0x7f030006d280>
+2022-08-03 08:02:31 - seed: 0
+2022-08-03 08:02:31 - batch_size: 256
+2022-08-03 08:02:31 - num_workers: 16
+2022-08-03 08:02:31 - gpus_type: NVIDIA RTX A5000
+2022-08-03 08:02:31 - gpus_num: 2
+2022-08-03 08:02:31 - group: <torch._C._distributed_c10d.ProcessGroupNCCL object at 0x7f02e62373b0>
+2022-08-03 08:02:31 - model: resnet50, macs: 4.112G, params: 25.557M
+2022-08-03 08:03:48 - acc1: 77.622%, acc5: 93.802%, test_loss: 0.8864, per_image_load_time: 1.459ms, per_image_inference_time: 0.811ms

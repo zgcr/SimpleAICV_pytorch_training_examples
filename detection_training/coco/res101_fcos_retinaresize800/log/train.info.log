@@ -1,0 +1,58 @@
+2022-07-20 08:16:23 - train: epoch 0013, iter [10900, 14658], lr: 0.000001, total_loss: 0.9741, cls_loss: 0.2549, reg_loss: 0.1254, center_ness_loss: 0.5938, 
+2022-07-20 08:17:09 - train: epoch 0013, iter [11000, 14658], lr: 0.000001, total_loss: 0.9486, cls_loss: 0.2240, reg_loss: 0.1182, center_ness_loss: 0.6064, 
+2022-07-20 08:17:51 - train: epoch 0013, iter [11100, 14658], lr: 0.000001, total_loss: 0.9365, cls_loss: 0.2499, reg_loss: 0.0935, center_ness_loss: 0.5931, 
+2022-07-20 08:18:37 - train: epoch 0013, iter [11200, 14658], lr: 0.000001, total_loss: 0.8656, cls_loss: 0.1595, reg_loss: 0.1014, center_ness_loss: 0.6047, 
+2022-07-20 08:19:20 - train: epoch 0013, iter [11300, 14658], lr: 0.000001, total_loss: 0.9763, cls_loss: 0.2495, reg_loss: 0.1196, center_ness_loss: 0.6072, 
+2022-07-20 08:20:05 - train: epoch 0013, iter [11400, 14658], lr: 0.000001, total_loss: 0.9902, cls_loss: 0.2409, reg_loss: 0.1392, center_ness_loss: 0.6102, 
+2022-07-20 08:20:51 - train: epoch 0013, iter [11500, 14658], lr: 0.000001, total_loss: 0.9856, cls_loss: 0.2464, reg_loss: 0.1297, center_ness_loss: 0.6096, 
+2022-07-20 08:21:32 - train: epoch 0013, iter [11600, 14658], lr: 0.000001, total_loss: 0.8778, cls_loss: 0.2081, reg_loss: 0.0761, center_ness_loss: 0.5937, 
+2022-07-20 08:22:19 - train: epoch 0013, iter [11700, 14658], lr: 0.000001, total_loss: 0.8369, cls_loss: 0.1518, reg_loss: 0.0855, center_ness_loss: 0.5996, 
+2022-07-20 08:23:03 - train: epoch 0013, iter [11800, 14658], lr: 0.000001, total_loss: 0.8788, cls_loss: 0.1764, reg_loss: 0.1063, center_ness_loss: 0.5961, 
+2022-07-20 08:23:46 - train: epoch 0013, iter [11900, 14658], lr: 0.000001, total_loss: 0.8100, cls_loss: 0.1510, reg_loss: 0.0731, center_ness_loss: 0.5859, 
+2022-07-20 08:24:32 - train: epoch 0013, iter [12000, 14658], lr: 0.000001, total_loss: 1.0409, cls_loss: 0.2715, reg_loss: 0.1476, center_ness_loss: 0.6217, 
+2022-07-20 08:25:16 - train: epoch 0013, iter [12100, 14658], lr: 0.000001, total_loss: 0.9275, cls_loss: 0.1893, reg_loss: 0.1184, center_ness_loss: 0.6197, 
+2022-07-20 08:26:00 - train: epoch 0013, iter [12200, 14658], lr: 0.000001, total_loss: 1.0585, cls_loss: 0.2716, reg_loss: 0.1578, center_ness_loss: 0.6291, 
+2022-07-20 08:26:43 - train: epoch 0013, iter [12300, 14658], lr: 0.000001, total_loss: 0.9782, cls_loss: 0.2265, reg_loss: 0.1318, center_ness_loss: 0.6200, 
+2022-07-20 08:27:28 - train: epoch 0013, iter [12400, 14658], lr: 0.000001, total_loss: 0.9962, cls_loss: 0.2532, reg_loss: 0.1261, center_ness_loss: 0.6168, 
+2022-07-20 08:28:13 - train: epoch 0013, iter [12500, 14658], lr: 0.000001, total_loss: 0.9142, cls_loss: 0.2205, reg_loss: 0.0992, center_ness_loss: 0.5945, 
+2022-07-20 08:28:58 - train: epoch 0013, iter [12600, 14658], lr: 0.000001, total_loss: 0.9270, cls_loss: 0.2263, reg_loss: 0.0906, center_ness_loss: 0.6100, 
+2022-07-20 08:29:41 - train: epoch 0013, iter [12700, 14658], lr: 0.000001, total_loss: 0.9473, cls_loss: 0.2262, reg_loss: 0.1087, center_ness_loss: 0.6124, 
+2022-07-20 08:30:25 - train: epoch 0013, iter [12800, 14658], lr: 0.000001, total_loss: 0.9902, cls_loss: 0.2790, reg_loss: 0.1090, center_ness_loss: 0.6022, 
+2022-07-20 08:31:09 - train: epoch 0013, iter [12900, 14658], lr: 0.000001, total_loss: 0.9785, cls_loss: 0.2321, reg_loss: 0.1419, center_ness_loss: 0.6044, 
+2022-07-20 08:31:55 - train: epoch 0013, iter [13000, 14658], lr: 0.000001, total_loss: 0.9915, cls_loss: 0.2428, reg_loss: 0.1302, center_ness_loss: 0.6185, 
+2022-07-20 08:32:39 - train: epoch 0013, iter [13100, 14658], lr: 0.000001, total_loss: 0.9352, cls_loss: 0.2344, reg_loss: 0.1071, center_ness_loss: 0.5937, 
+2022-07-20 08:33:24 - train: epoch 0013, iter [13200, 14658], lr: 0.000001, total_loss: 0.9009, cls_loss: 0.2165, reg_loss: 0.0965, center_ness_loss: 0.5879, 
+2022-07-20 08:34:10 - train: epoch 0013, iter [13300, 14658], lr: 0.000001, total_loss: 0.8682, cls_loss: 0.1837, reg_loss: 0.0992, center_ness_loss: 0.5853, 
+2022-07-20 08:34:53 - train: epoch 0013, iter [13400, 14658], lr: 0.000001, total_loss: 0.9358, cls_loss: 0.2045, reg_loss: 0.1135, center_ness_loss: 0.6178, 
+2022-07-20 08:35:37 - train: epoch 0013, iter [13500, 14658], lr: 0.000001, total_loss: 0.7950, cls_loss: 0.1496, reg_loss: 0.0777, center_ness_loss: 0.5676, 
+2022-07-20 08:36:20 - train: epoch 0013, iter [13600, 14658], lr: 0.000001, total_loss: 0.9449, cls_loss: 0.1872, reg_loss: 0.1357, center_ness_loss: 0.6219, 
+2022-07-20 08:37:04 - train: epoch 0013, iter [13700, 14658], lr: 0.000001, total_loss: 0.9004, cls_loss: 0.2106, reg_loss: 0.0979, center_ness_loss: 0.5919, 
+2022-07-20 08:37:49 - train: epoch 0013, iter [13800, 14658], lr: 0.000001, total_loss: 1.0166, cls_loss: 0.2506, reg_loss: 0.1499, center_ness_loss: 0.6162, 
+2022-07-20 08:38:32 - train: epoch 0013, iter [13900, 14658], lr: 0.000001, total_loss: 0.9241, cls_loss: 0.2126, reg_loss: 0.1187, center_ness_loss: 0.5928, 
+2022-07-20 08:39:18 - train: epoch 0013, iter [14000, 14658], lr: 0.000001, total_loss: 0.8238, cls_loss: 0.1333, reg_loss: 0.0902, center_ness_loss: 0.6003, 
+2022-07-20 08:40:02 - train: epoch 0013, iter [14100, 14658], lr: 0.000001, total_loss: 0.8645, cls_loss: 0.1420, reg_loss: 0.1043, center_ness_loss: 0.6182, 
+2022-07-20 08:40:46 - train: epoch 0013, iter [14200, 14658], lr: 0.000001, total_loss: 0.9109, cls_loss: 0.2260, reg_loss: 0.0994, center_ness_loss: 0.5854, 
+2022-07-20 08:41:32 - train: epoch 0013, iter [14300, 14658], lr: 0.000001, total_loss: 0.8722, cls_loss: 0.1733, reg_loss: 0.1024, center_ness_loss: 0.5966, 
+2022-07-20 08:42:16 - train: epoch 0013, iter [14400, 14658], lr: 0.000001, total_loss: 0.8924, cls_loss: 0.1634, reg_loss: 0.1263, center_ness_loss: 0.6027, 
+2022-07-20 08:43:00 - train: epoch 0013, iter [14500, 14658], lr: 0.000001, total_loss: 0.9726, cls_loss: 0.2629, reg_loss: 0.1168, center_ness_loss: 0.5929, 
+2022-07-20 08:43:43 - train: epoch 0013, iter [14600, 14658], lr: 0.000001, total_loss: 0.9199, cls_loss: 0.2049, reg_loss: 0.1118, center_ness_loss: 0.6032, 
+2022-07-20 08:44:09 - train: epoch 013, train_loss: 0.9370
+2022-07-20 08:50:31 - eval: epoch: 013
+test_loss: 0.0000
+per_image_load_time: 5.542ms
+per_image_inference_time: 59.202ms
+IoU=0.50:0.95,area=all,maxDets=100,mAP: 39.559924219661625
+IoU=0.50,area=all,maxDets=100,mAP: 57.94620724457723
+IoU=0.75,area=all,maxDets=100,mAP: 42.611603343694995
+IoU=0.50:0.95,area=small,maxDets=100,mAP: 23.22757617912199
+IoU=0.50:0.95,area=medium,maxDets=100,mAP: 43.54950612768157
+IoU=0.50:0.95,area=large,maxDets=100,mAP: 49.92584273989728
+IoU=0.50:0.95,area=all,maxDets=1,mAR: 31.18869614820489
+IoU=0.50:0.95,area=all,maxDets=10,mAR: 50.13402251422786
+IoU=0.50:0.95,area=all,maxDets=100,mAR: 53.75591389200862
+IoU=0.50:0.95,area=small,maxDets=100,mAR: 34.09691318696598
+IoU=0.50:0.95,area=medium,maxDets=100,mAR: 58.955028320827985
+IoU=0.50:0.95,area=large,maxDets=100,mAR: 64.47560087874356
+
+2022-07-20 08:50:32 - until epoch: 013, best_metric: 39.560%
+2022-07-20 08:50:32 - train done. model: resnet101_fcos, train time: 24.569 hours, best_metric: 39.560%

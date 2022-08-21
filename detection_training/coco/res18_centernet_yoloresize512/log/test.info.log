@@ -1,33 +1,34 @@
-2022-04-30 22:28:00 - network: resnet18_centernet
-2022-04-30 22:28:00 - num_classes: 80
-2022-04-30 22:28:00 - input_image_size: [512, 512]
-2022-04-30 22:28:00 - trained_model_path: /root/code/simpleAICV-pytorch-ImageNet-COCO-training/detection_training/coco/res18_centernet_yoloresize512/checkpoints/resnet18_centernet-metric27.750.pth
-2022-04-30 22:28:00 - criterion: CenterNetLoss()
-2022-04-30 22:28:00 - decoder: CenterNetDecoder()
-2022-04-30 22:28:00 - val_dataset: <simpleAICV.detection.datasets.cocodataset.CocoDetection object at 0x7f1f52d4da00>
-2022-04-30 22:28:00 - collater: <simpleAICV.detection.common.DetectionCollater object at 0x7f1f502dbf70>
-2022-04-30 22:28:00 - eval_type: COCO
-2022-04-30 22:28:00 - eval_voc_iou_threshold_list: [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
-2022-04-30 22:28:00 - seed: 0
-2022-04-30 22:28:00 - batch_size: 64
-2022-04-30 22:28:00 - num_workers: 4
-2022-04-30 22:28:00 - gpus_type: NVIDIA RTX A5000
-2022-04-30 22:28:00 - gpus_num: 2
-2022-04-30 22:28:00 - group: <torch._C._distributed_c10d.ProcessGroupNCCL object at 0x7f1f3ec4e4f0>
-2022-04-30 22:28:01 - model: resnet18_centernet, macs: 14.854G, params: 12.889M
-2022-04-30 22:29:09 - eval type: COCO
-per_image_load_time: 2.514ms
-per_image_inference_time: 2.682ms
-IoU=0.50:0.95,area=all,maxDets=100,mAP: 27.813107257186577
-IoU=0.50,area=all,maxDets=100,mAP: 44.5027536000261
-IoU=0.75,area=all,maxDets=100,mAP: 28.87370194031557
-IoU=0.50:0.95,area=small,maxDets=100,mAP: 8.74778255413059
-IoU=0.50:0.95,area=medium,maxDets=100,mAP: 29.39968752455951
-IoU=0.50:0.95,area=large,maxDets=100,mAP: 45.902535080900634
-IoU=0.50:0.95,area=all,maxDets=1,mAR: 26.0417981632054
-IoU=0.50:0.95,area=all,maxDets=10,mAR: 39.82279897965727
-IoU=0.50:0.95,area=all,maxDets=100,mAR: 41.10166095664197
-IoU=0.50:0.95,area=small,maxDets=100,mAR: 15.957304576080714
-IoU=0.50:0.95,area=medium,maxDets=100,mAR: 45.046895403312334
-IoU=0.50:0.95,area=large,maxDets=100,mAR: 65.26868895372506
+2022-07-29 07:06:26 - network: resnet18_centernet
+2022-07-29 07:06:26 - num_classes: 80
+2022-07-29 07:06:26 - input_image_size: [512, 512]
+2022-07-29 07:06:26 - trained_model_path: /root/code/SimpleAICV-ImageNet-CIFAR-COCO-VOC-training/detection_training/coco/res18_centernet_yoloresize512/checkpoints/resnet18_centernet-metric27.848.pth
+2022-07-29 07:06:26 - test_criterion: CenterNetLoss()
+2022-07-29 07:06:26 - decoder: CenterNetDecoder()
+2022-07-29 07:06:26 - test_dataset: <simpleAICV.detection.datasets.cocodataset.CocoDetection object at 0x7f449e0813d0>
+2022-07-29 07:06:26 - test_collater: <simpleAICV.detection.common.DetectionCollater object at 0x7f449c091f70>
+2022-07-29 07:06:26 - eval_type: COCO
+2022-07-29 07:06:26 - eval_voc_iou_threshold_list: [0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
+2022-07-29 07:06:26 - seed: 0
+2022-07-29 07:06:26 - batch_size: 64
+2022-07-29 07:06:26 - num_workers: 16
+2022-07-29 07:06:26 - gpus_type: NVIDIA RTX A5000
+2022-07-29 07:06:26 - gpus_num: 2
+2022-07-29 07:06:26 - group: <torch._C._distributed_c10d.ProcessGroupNCCL object at 0x7f4495d3a030>
+2022-07-29 07:06:27 - model: resnet18_centernet, macs: 14.854G, params: 12.889M
+2022-07-29 07:08:02 - eval type: COCO
+test_loss: 2.6412
+per_image_load_time: 2.039ms
+per_image_inference_time: 8.584ms
+IoU=0.50:0.95,area=all,maxDets=100,mAP: 27.947762057244645
+IoU=0.50,area=all,maxDets=100,mAP: 44.46651615163996
+IoU=0.75,area=all,maxDets=100,mAP: 29.094804088056424
+IoU=0.50:0.95,area=small,maxDets=100,mAP: 8.671178334862912
+IoU=0.50:0.95,area=medium,maxDets=100,mAP: 29.25360649695104
+IoU=0.50:0.95,area=large,maxDets=100,mAP: 47.195399577753484
+IoU=0.50:0.95,area=all,maxDets=1,mAR: 25.781894137447537
+IoU=0.50:0.95,area=all,maxDets=10,mAR: 39.652706537698265
+IoU=0.50:0.95,area=all,maxDets=100,mAR: 41.006678660819894
+IoU=0.50:0.95,area=small,maxDets=100,mAR: 15.154274385542507
+IoU=0.50:0.95,area=medium,maxDets=100,mAR: 44.731389908837
+IoU=0.50:0.95,area=large,maxDets=100,mAR: 65.54667730223281
 

@@ -1,18 +1,17 @@
-2022-03-23 08:21:08 - network: resnet50cifar
-2022-03-23 08:21:08 - num_classes: 100
-2022-03-23 08:21:08 - input_image_size: 32
-2022-03-23 08:21:08 - trained_model_path: /root/code/simpleAICV-pytorch-ImageNet-COCO-training/classification_training/cifar100/resnet50cifar/checkpoints/resnet50cifar-acc76.960.pth
-2022-03-23 08:21:08 - criterion: CELoss(
+2022-07-17 10:00:52 - network: resnet50cifar
+2022-07-17 10:00:52 - num_classes: 100
+2022-07-17 10:00:52 - input_image_size: 32
+2022-07-17 10:00:52 - trained_model_path: /root/code/SimpleAICV-ImageNet-CIFAR-COCO-VOC-training/classification_training/cifar100/resnet50cifar/checkpoints/resnet50cifar-acc75.880.pth
+2022-07-17 10:00:52 - test_criterion: CELoss(
   (loss): CrossEntropyLoss()
 )
-2022-03-23 08:21:08 - val_dataset: <simpleAICV.classification.datasets.cifar100dataset.CIFAR100Dataset object at 0x7f6292fd07f0>
-2022-03-23 08:21:08 - collater: <simpleAICV.classification.common.ClassificationCollater object at 0x7f629006b520>
-2022-03-23 08:21:08 - seed: 0
-2022-03-23 08:21:08 - batch_size: 256
-2022-03-23 08:21:08 - num_workers: 16
-2022-03-23 08:21:08 - distributed: True
-2022-03-23 08:21:08 - gpus_type: NVIDIA RTX A5000
-2022-03-23 08:21:08 - gpus_num: 1
-2022-03-23 08:21:08 - group: <torch._C._distributed_c10d.ProcessGroupNCCL object at 0x7f629006ebf0>
-2022-03-23 08:21:08 - model: resnet50cifar, macs: 1.305G, params: 23.705M
-2022-03-23 08:21:15 - acc1: 76.950%, acc5: 93.560%, test_loss: 0.9441, per_image_load_time: 0.402ms, per_image_inference_time: 0.233ms
+2022-07-17 10:00:52 - test_dataset: <simpleAICV.classification.datasets.cifar100dataset.CIFAR100Dataset object at 0x7f78a0070ca0>
+2022-07-17 10:00:52 - test_collater: <simpleAICV.classification.common.ClassificationCollater object at 0x7f78a0070cd0>
+2022-07-17 10:00:52 - seed: 0
+2022-07-17 10:00:52 - batch_size: 256
+2022-07-17 10:00:52 - num_workers: 16
+2022-07-17 10:00:52 - gpus_type: NVIDIA RTX A5000
+2022-07-17 10:00:52 - gpus_num: 1
+2022-07-17 10:00:52 - group: <torch._C._distributed_c10d.ProcessGroupNCCL object at 0x7f78b7260c30>
+2022-07-17 10:00:52 - model: resnet50cifar, macs: 1.312G, params: 23.705M
+2022-07-17 10:00:57 - acc1: 75.890%, acc5: 93.020%, test_loss: 1.2693, per_image_load_time: 0.246ms, per_image_inference_time: 0.232ms
