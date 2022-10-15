@@ -222,8 +222,8 @@ Warning:  apex was installed without --cpp_ext.  Falling back to Python flatten 
 # Contrastive learning training results
 
 ## ILSVRC2012(ImageNet) pretrained results
-| Network              | input size | gpu num      | batch     | warm up | lr decay  | apex | syncbn | epochs | Loss  |
-| -------------        | -------- | ----------- | ---------- | ------------ | --------- | ------- | --------  | ---- | ------ | ------ | ------ |
+| Network              | input size | gpu num      | batch     | warm up | lr decay  | apex | syncbn | epochs | Loss |
+| -------------        | -------- | ----------- | ---------- | ------------ | --------- | ------- | --------  | ---- | ------ |
 | ResNet50_dino_pretrained_epoch100 | 224x224    | 2 RTX A5000  | 128       | 10       | Cosine | True | False  | 100    | 2.4567 |
 
 ## ILSVRC2012(ImageNet) finetune results
@@ -234,8 +234,8 @@ Warning:  apex was installed without --cpp_ext.  Falling back to Python flatten 
 # masked image modeling training results
 
 ## ILSVRC2012(ImageNet) pretrained results
-| Network              | input size | gpu num      | batch     | warm up | lr decay  | apex | syncbn | epochs | Loss  |
-| -------------        | -------- | ----------- | ---------- | ------------ | --------- | ------- | --------  | ---- | ------ | ------ | ------ |
+| Network              | input size | gpu num      | batch     | warm up | lr decay  | apex | syncbn | epochs | Loss |
+| -------------        | -------- | ----------- | ---------- | ------------ | --------- | ------- | --------  | ---- | ------ |
 | ViT_Base_Patch16_mae_pretrained_epoch100 | 224x224    | 2 RTX A5000  | 256x4       | 10       | CosineLR | True | False  | 100    | 0.3986 |
 | ViT_Base_Patch16_mae_pretrained_epoch400 | 224x224    | 2 RTX A5000  | 256x4       | 40       | CosineLR | True | False  | 400    | 0.3879 |
 
