@@ -1,7 +1,16 @@
+import os
+import sys
+
+BASE_DIR = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append(BASE_DIR)
+
 import cv2
 import numpy as np
 
 import torch
+
+from simpleAICV.classification.common import load_state_dict
 
 
 class RetinaStyleResize:
@@ -320,64 +329,44 @@ class DetectionCollater:
         }
 
 
-class DetectionDataPrefetcher:
+class AlignResizeDetectionCollater:
 
-    def __init__(self, loader):
-        self.loader = iter(loader)
-        self.stream = torch.cuda.Stream()
-        self.preload()
+    def __init__(self, resize=512):
+        self.resize = resize
 
-    def preload(self):
-        try:
-            sample = next(self.loader)
-            self.next_input, self.next_annot = sample['image'], sample[
-                'annots']
-        except StopIteration:
-            self.next_input = None
-            self.next_annot = None
-            return
-        with torch.cuda.stream(self.stream):
-            self.next_input = self.next_input.cuda(non_blocking=True)
-            self.next_annot = self.next_annot.cuda(non_blocking=True)
-            self.next_input = self.next_input.float()
+    def __call__(self, data):
+        images = [s['image'] for s in data]
+        annots = [s['annots'] for s in data]
+        scales = [s['scale'] for s in data]
+        sizes = [s['size'] for s in data]
 
-    def next(self):
-        torch.cuda.current_stream().wait_stream(self.stream)
-        inputs = self.next_input
-        annots = self.next_annot
-        self.preload()
+        input_images = np.zeros((len(images), self.resize, self.resize, 3),
+                                dtype=np.float32)
+        for i, image in enumerate(images):
+            input_images[i, 0:image.shape[0], 0:image.shape[1], :] = image
+        input_images = torch.from_numpy(input_images)
+        # B H W 3 ->B 3 H W
+        input_images = input_images.permute(0, 3, 1, 2)
 
-        return inputs, annots
+        max_annots_num = max(annot.shape[0] for annot in annots)
+        if max_annots_num > 0:
+            input_annots = np.ones(
+                (len(annots), max_annots_num, 5), dtype=np.float32) * (-1)
+            for i, annot in enumerate(annots):
+                if annot.shape[0] > 0:
+                    input_annots[i, :annot.shape[0], :] = annot
+        else:
+            input_annots = np.ones(
+                (len(annots), 1, 5), dtype=np.float32) * (-1)
 
+        input_annots = torch.from_numpy(input_annots)
 
-def load_state_dict(saved_model_path, model, excluded_layer_name=()):
-    '''
-    saved_model_path: a saved model.state_dict() .pth file path
-    model: a new defined model
-    excluded_layer_name: layer names that doesn't want to load parameters
-    only load layer parameters which has same layer name and same layer weight shape
-    '''
-    if not saved_model_path:
-        print('No pretrained model file!')
-        return
+        scales = np.array(scales, dtype=np.float32)
+        sizes = np.array(sizes, dtype=np.float32)
 
-    saved_state_dict = torch.load(saved_model_path,
-                                  map_location=torch.device('cpu'))
-
-    filtered_state_dict = {
-        name: weight
-        for name, weight in saved_state_dict.items()
-        if name in model.state_dict() and not any(
-            excluded_name in name for excluded_name in excluded_layer_name)
-        and weight.shape == model.state_dict()[name].shape
-    }
-
-    if len(filtered_state_dict) == 0:
-        print('No pretrained parameters to load!')
-    else:
-        print(
-            f'load/model weight nums:{len(filtered_state_dict)}/{len(model.state_dict())}'
-        )
-        model.load_state_dict(filtered_state_dict, strict=False)
-
-    return
+        return {
+            'image': input_images,
+            'annots': input_annots,
+            'scale': scales,
+            'size': sizes,
+        }

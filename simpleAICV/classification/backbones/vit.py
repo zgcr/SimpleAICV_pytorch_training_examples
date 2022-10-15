@@ -7,10 +7,11 @@ import torch
 import torch.nn as nn
 
 __all__ = [
-    'vit_tiny_patch16_224',
-    'vit_small_patch16_224',
-    'vit_base_patch16_224',
-    'vit_large_patch16_224',
+    'vit_tiny_patch16',
+    'vit_small_patch16',
+    'vit_base_patch16',
+    'vit_large_patch16',
+    'vit_huge_patch14',
 ]
 
 
@@ -27,29 +28,27 @@ class PatchEmbeddingBlock(nn.Module):
         super(PatchEmbeddingBlock, self).__init__()
         bias = False if has_norm else True
 
-        self.layer = nn.Sequential(
-            nn.Conv2d(inplanes,
-                      planes,
-                      kernel_size,
-                      stride=stride,
-                      padding=padding,
-                      groups=groups,
-                      bias=bias),
-            nn.LayerNorm(inplanes, eps=1e-6) if has_norm else nn.Sequential(),
-        )
+        self.conv = nn.Conv2d(inplanes,
+                              planes,
+                              kernel_size,
+                              stride=stride,
+                              padding=padding,
+                              groups=groups,
+                              bias=bias)
+        self.norm = nn.LayerNorm(inplanes) if has_norm else nn.Identity()
 
     def forward(self, x):
-        x = self.layer(x)
+        x = self.conv(x)
+        x = x.flatten(2).transpose(1, 2)  # BCHW -> BNC
 
-        # [B,C,H,W] -> [B,N,C]
-        x = x.view(x.shape[0], x.shape[1], -1).permute(0, 2, 1)
+        x = self.norm(x)
 
         return x
 
 
 class MultiHeadAttention(nn.Module):
 
-    def __init__(self, inplanes, head_nums=8, dropout_prob=0.1):
+    def __init__(self, inplanes, head_nums=8, dropout_prob=0.):
         super(MultiHeadAttention, self).__init__()
         self.head_nums = head_nums
         self.scale = (inplanes // head_nums)**-0.5
@@ -74,8 +73,7 @@ class MultiHeadAttention(nn.Module):
         attn = self.softmax(attn)
         attn = self.dropout(attn)
 
-        # [b,head_num,n,n] -> [b,head_num,n,c//head_num] -> [b,n,head_num,c//head_num] -> [b,n,c]
-        x = (attn @ v).permute(0, 2, 1, 3).reshape(b, n, c)
+        x = (attn @ v).transpose(1, 2).reshape(b, n, c)
         x = self.out_linear(x)
         x = self.dropout(x)
 
@@ -84,7 +82,7 @@ class MultiHeadAttention(nn.Module):
 
 class FeedForward(nn.Module):
 
-    def __init__(self, inplanes, feedforward_planes, dropout_prob=0.1):
+    def __init__(self, inplanes, feedforward_planes, dropout_prob=0.):
         super(FeedForward, self).__init__()
         self.fc1 = nn.Linear(inplanes, feedforward_planes)
         self.gelu = nn.GELU()
@@ -143,14 +141,14 @@ class TransformerEncoderLayer(nn.Module):
                  inplanes,
                  head_nums,
                  feedforward_ratio=4,
-                 dropout_prob=0.1,
-                 drop_path_prob=0.1):
+                 dropout_prob=0.,
+                 drop_path_prob=0.):
         super(TransformerEncoderLayer, self).__init__()
-        self.norm1 = nn.LayerNorm(inplanes, eps=1e-6)
+        self.norm1 = nn.LayerNorm(inplanes)
         self.attention = MultiHeadAttention(inplanes,
                                             head_nums,
                                             dropout_prob=dropout_prob)
-        self.norm2 = nn.LayerNorm(inplanes, eps=1e-6)
+        self.norm2 = nn.LayerNorm(inplanes)
         self.feed_forward = FeedForward(inplanes,
                                         int(inplanes * feedforward_ratio),
                                         dropout_prob=dropout_prob)
@@ -174,9 +172,9 @@ class ViT(nn.Module):
                  head_nums,
                  feedforward_ratio,
                  image_size=224,
-                 dropout_prob=0.1,
-                 drop_path_prob=0.1,
-                 global_pool=True,
+                 dropout_prob=0.,
+                 drop_path_prob=0.,
+                 global_pool=False,
                  num_classes=1000):
         super(ViT, self).__init__()
         self.image_size = image_size
@@ -220,23 +218,20 @@ class ViT(nn.Module):
                     feedforward_ratio=self.feedforward_ratio,
                     dropout_prob=dropout_prob,
                     drop_path_prob=drop_path_prob_list[i]))
-        self.blocks = nn.Sequential(*blocks)
+        self.blocks = nn.ModuleList(blocks)
 
-        self.norm = nn.LayerNorm(self.embedding_planes, eps=1e-6)
+        self.norm = nn.LayerNorm(self.embedding_planes)
         self.fc = nn.Linear(self.embedding_planes, self.num_classes)
 
         for m in self.modules():
             if isinstance(m, nn.Linear):
                 nn.init.trunc_normal_(m.weight, std=.02)
-                if isinstance(m, nn.Linear) and m.bias is not None:
+                if m.bias is not None:
                     nn.init.constant_(m.bias, 0)
-            elif isinstance(m, nn.LayerNorm):
-                nn.init.constant_(m.bias, 0)
-                nn.init.constant_(m.weight, 1.0)
-            elif isinstance(m, nn.Parameter):
-                nn.init.trunc_normal_(m, std=.02)
 
+        nn.init.trunc_normal_(self.position_encoding, std=.02)
         nn.init.normal_(self.cls_token, std=1e-6)
+        nn.init.trunc_normal_(self.fc.weight, std=2e-5)
         nn.init.zeros_(self.fc.bias)
 
     def forward(self, x):
@@ -246,7 +241,8 @@ class ViT(nn.Module):
         x = x + self.position_encoding
         x = self.embedding_dropout(x)
 
-        x = self.blocks(x)
+        for block in self.blocks:
+            x = block(x)
 
         if self.global_pool:
             # global pool without cls token
@@ -262,27 +258,31 @@ class ViT(nn.Module):
 
 
 def _vit(patch_size, embedding_planes, block_nums, head_nums,
-         feedforward_ratio, image_size, **kwargs):
+         feedforward_ratio, **kwargs):
     model = ViT(patch_size, embedding_planes, block_nums, head_nums,
-                feedforward_ratio, image_size, **kwargs)
+                feedforward_ratio, **kwargs)
 
     return model
 
 
-def vit_tiny_patch16_224(**kwargs):
-    return _vit(16, 192, 12, 3, 4, 224, **kwargs)
+def vit_tiny_patch16(**kwargs):
+    return _vit(16, 192, 12, 3, 4, **kwargs)
 
 
-def vit_small_patch16_224(**kwargs):
-    return _vit(16, 384, 12, 6, 4, 224, **kwargs)
+def vit_small_patch16(**kwargs):
+    return _vit(16, 384, 12, 6, 4, **kwargs)
 
 
-def vit_base_patch16_224(**kwargs):
-    return _vit(16, 768, 12, 12, 4, 224, **kwargs)
+def vit_base_patch16(**kwargs):
+    return _vit(16, 768, 12, 12, 4, **kwargs)
 
 
-def vit_large_patch16_224(**kwargs):
-    return _vit(16, 1024, 24, 16, 4, 224, **kwargs)
+def vit_large_patch16(**kwargs):
+    return _vit(16, 1024, 24, 16, 4, **kwargs)
+
+
+def vit_huge_patch14(**kwargs):
+    return _vit(14, 1280, 32, 16, 4, **kwargs)
 
 
 if __name__ == '__main__':
@@ -301,7 +301,7 @@ if __name__ == '__main__':
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-    net = vit_tiny_patch16_224(num_classes=1000)
+    net = vit_tiny_patch16(num_classes=1000)
     image_h, image_w = 224, 224
     from thop import profile
     from thop import clever_format
@@ -309,38 +309,49 @@ if __name__ == '__main__':
                            inputs=(torch.randn(1, 3, image_h, image_w), ),
                            verbose=False)
     macs, params = clever_format([macs, params], '%.3f')
-    out = net(torch.autograd.Variable(torch.randn(6, 3, image_h, image_w)))
+    out = net(torch.autograd.Variable(torch.randn(1, 3, image_h, image_w)))
     print(f'1111, macs: {macs}, params: {params},out_shape: {out.shape}')
 
-    # net = vit_small_patch16_224(num_classes=1000)
-    # image_h, image_w = 224, 224
-    # from thop import profile
-    # from thop import clever_format
-    # macs, params = profile(net,
-    #                        inputs=(torch.randn(1, 3, image_h, image_w), ),
-    #                        verbose=False)
-    # macs, params = clever_format([macs, params], '%.3f')
-    # out = net(torch.autograd.Variable(torch.randn(1, 3, image_h, image_w)))
-    # print(f'2222, macs: {macs}, params: {params},out_shape: {out.shape}')
+    net = vit_small_patch16(num_classes=1000)
+    image_h, image_w = 224, 224
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    out = net(torch.autograd.Variable(torch.randn(1, 3, image_h, image_w)))
+    print(f'2222, macs: {macs}, params: {params},out_shape: {out.shape}')
 
-    # net = vit_base_patch16_224(num_classes=1000)
-    # image_h, image_w = 224, 224
-    # from thop import profile
-    # from thop import clever_format
-    # macs, params = profile(net,
-    #                        inputs=(torch.randn(1, 3, image_h, image_w), ),
-    #                        verbose=False)
-    # macs, params = clever_format([macs, params], '%.3f')
-    # out = net(torch.autograd.Variable(torch.randn(1, 3, image_h, image_w)))
-    # print(f'3333, macs: {macs}, params: {params},out_shape: {out.shape}')
+    net = vit_base_patch16(num_classes=1000)
+    image_h, image_w = 224, 224
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    out = net(torch.autograd.Variable(torch.randn(1, 3, image_h, image_w)))
+    print(f'3333, macs: {macs}, params: {params},out_shape: {out.shape}')
 
-    # net = vit_large_patch16_224(num_classes=1000)
-    # image_h, image_w = 224, 224
-    # from thop import profile
-    # from thop import clever_format
-    # macs, params = profile(net,
-    #                        inputs=(torch.randn(1, 3, image_h, image_w), ),
-    #                        verbose=False)
-    # macs, params = clever_format([macs, params], '%.3f')
-    # out = net(torch.autograd.Variable(torch.randn(1, 3, image_h, image_w)))
-    # print(f'4444, macs: {macs}, params: {params},out_shape: {out.shape}')
+    net = vit_large_patch16(num_classes=1000)
+    image_h, image_w = 224, 224
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    out = net(torch.autograd.Variable(torch.randn(1, 3, image_h, image_w)))
+    print(f'4444, macs: {macs}, params: {params},out_shape: {out.shape}')
+
+    net = vit_huge_patch14(num_classes=1000)
+    image_h, image_w = 224, 224
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    out = net(torch.autograd.Variable(torch.randn(1, 3, image_h, image_w)))
+    print(f'5555, macs: {macs}, params: {params},out_shape: {out.shape}')

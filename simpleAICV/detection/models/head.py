@@ -12,7 +12,7 @@ import torch
 import torch.nn as nn
 
 from simpleAICV.detection.models.dcnv2 import DeformableConv2d
-from simpleAICV.classification.backbones.yoloxbackbone import ConvBnActBlock, DWConvBnActBlock
+from simpleAICV.detection.models.backbones.yoloxbackbone import ConvBnActBlock, DWConvBnActBlock
 
 
 class RetinaClsHead(nn.Module):
@@ -523,18 +523,18 @@ class YOLOXHead(nn.Module):
             cls_out = self.cls_conv_list[i](x)
             reg_out = self.reg_conv_list[i](x)
 
+            cls_out = self.cls_pred_list[i](cls_out)
             obj_out = self.obj_pred_list[i](reg_out)
             reg_out = self.reg_pred_list[i](reg_out)
-            cls_out = self.cls_pred_list[i](cls_out)
 
-            obj_out = self.sigmoid(obj_out)
             cls_out = self.sigmoid(cls_out)
+            obj_out = self.sigmoid(obj_out)
 
-            obj_outputs.append(obj_out)
             cls_outputs.append(cls_out)
             reg_outputs.append(reg_out)
+            obj_outputs.append(obj_out)
 
-        return obj_outputs, cls_outputs, reg_outputs
+        return cls_outputs, reg_outputs, obj_outputs
 
 
 if __name__ == '__main__':

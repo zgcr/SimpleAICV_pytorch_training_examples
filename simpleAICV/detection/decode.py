@@ -20,6 +20,7 @@ __all__ = [
     'FCOSDecoder',
     'CenterNetDecoder',
     'TTFNetDecoder',
+    'YoloxDecoder',
 ]
 
 
@@ -645,7 +646,7 @@ class YoloxDecoder:
             nms_threshold=nms_threshold)
 
     def __call__(self, preds):
-        obj_preds, cls_preds, reg_preds = preds
+        cls_preds, reg_preds, obj_preds = preds
 
         feature_size = [[
             per_level_cls_pred.shape[2], per_level_cls_pred.shape[1]
@@ -817,8 +818,8 @@ if __name__ == '__main__':
     print('4444', batch_scores.shape, batch_classes.shape,
           batch_pred_bboxes.shape)
 
-    from simpleAICV.detection.models.yolox import yoloxl
-    net = yoloxl()
+    from simpleAICV.detection.models.yolox import yoloxm
+    net = yoloxm()
     image_h, image_w = 640, 640
     preds = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
     decode = YoloxDecoder(strides=[8, 16, 32],

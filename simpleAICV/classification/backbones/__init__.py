@@ -5,5 +5,3 @@ from .resnet import *
 from .resnetforcifar import *
 from .metaformer import *
 from .vit import *
-from .vitc import *
-from .yoloxbackbone import *

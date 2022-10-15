@@ -70,22 +70,16 @@ class LabelSmoothCELoss(nn.Module):
 
 class OneHotLabelCELoss(nn.Module):
     '''
-    Cross Entropy Loss,input label is one-hot format
+    Cross Entropy Loss,input label is one-hot format(include soft label)
     '''
 
     def __init__(self):
         super(OneHotLabelCELoss, self).__init__()
-        self.softmax = nn.Softmax(dim=-1)
 
-    def forward(self, pred, label):
-        pred = self.softmax(pred)
-        pred = torch.clamp(pred, min=1e-4, max=1. - 1e-4)
+    def forward(self, x, target):
+        loss = torch.sum(-target * F.log_softmax(x, dim=-1), dim=-1)
 
-        loss = (-torch.log(pred)) * label
-        loss = loss.sum(axis=1, keepdim=False)
-        loss = loss.mean()
-
-        return loss
+        return loss.mean()
 
 
 if __name__ == '__main__':

@@ -12,7 +12,6 @@ import math
 import torch
 import torch.nn as nn
 
-from simpleAICV.classification.backbones.yoloxbackbone import DWConvBnActBlock, ConvBnActBlock, YOLOXCSPBottleneck, SPP
 from simpleAICV.detection.common import load_state_dict
 
 __all__ = [
@@ -52,6 +51,288 @@ types_config = {
 }
 
 
+class ActivationBlock(nn.Module):
+
+    def __init__(self, act_type='silu', inplace=True):
+        super(ActivationBlock, self).__init__()
+        assert act_type in ['silu', 'relu',
+                            'leakyrelu'], 'Unsupport activation function!'
+        if act_type == 'silu':
+            self.act = nn.SiLU(inplace=inplace)
+        elif act_type == 'relu':
+            self.act = nn.ReLU(inplace=inplace)
+        elif act_type == 'leakyrelu':
+            self.act = nn.LeakyReLU(0.1, inplace=inplace)
+
+    def forward(self, x):
+        x = self.act(x)
+
+        return x
+
+
+class ConvBnActBlock(nn.Module):
+
+    def __init__(self,
+                 inplanes,
+                 planes,
+                 kernel_size,
+                 stride,
+                 padding,
+                 groups=1,
+                 has_bn=True,
+                 has_act=True,
+                 act_type='silu'):
+        super(ConvBnActBlock, self).__init__()
+        bias = False if has_bn else True
+
+        self.layer = nn.Sequential(
+            nn.Conv2d(inplanes,
+                      planes,
+                      kernel_size,
+                      stride=stride,
+                      padding=padding,
+                      groups=groups,
+                      bias=bias),
+            nn.BatchNorm2d(planes) if has_bn else nn.Sequential(),
+            ActivationBlock(act_type=act_type, inplace=True)
+            if has_act else nn.Sequential(),
+        )
+
+    def forward(self, x):
+        x = self.layer(x)
+
+        return x
+
+
+class DWConvBnActBlock(nn.Module):
+
+    def __init__(self,
+                 inplanes,
+                 planes,
+                 kernel_size,
+                 stride,
+                 padding,
+                 groups,
+                 has_bn=True,
+                 has_act=True,
+                 act_type='silu'):
+        super(DWConvBnActBlock, self).__init__()
+
+        self.depthwise_conv = ConvBnActBlock(inplanes,
+                                             inplanes,
+                                             kernel_size=kernel_size,
+                                             stride=stride,
+                                             padding=padding,
+                                             groups=inplanes,
+                                             has_bn=has_bn,
+                                             has_act=has_act,
+                                             act_type=act_type)
+        self.pointwise_conv = ConvBnActBlock(inplanes,
+                                             planes,
+                                             kernel_size=1,
+                                             stride=1,
+                                             padding=0,
+                                             groups=groups,
+                                             has_bn=has_bn,
+                                             has_act=has_act,
+                                             act_type=act_type)
+
+    def forward(self, x):
+        x = self.depthwise_conv(x)
+        x = self.pointwise_conv(x)
+
+        return x
+
+
+class FocusBlock(nn.Module):
+
+    def __init__(self,
+                 inplanes,
+                 planes,
+                 kernel_size=1,
+                 stride=1,
+                 act_type="silu"):
+        super(FocusBlock, self).__init__()
+        self.conv = ConvBnActBlock(int(inplanes * 4),
+                                   planes,
+                                   kernel_size=kernel_size,
+                                   stride=stride,
+                                   padding=kernel_size // 2,
+                                   groups=1,
+                                   has_bn=True,
+                                   has_act=True,
+                                   act_type=act_type)
+
+    def forward(self, x):
+        patch_top_left, patch_bottom_left = x[..., ::2, ::2], x[..., 1::2, ::2]
+        patch_top_right, patch_bottom_right = x[..., ::2, 1::2], x[..., 1::2,
+                                                                   1::2]
+        x = torch.cat(
+            [
+                patch_top_left,
+                patch_bottom_left,
+                patch_top_right,
+                patch_bottom_right,
+            ],
+            dim=1,
+        )
+        x = self.conv(x)
+
+        return x
+
+
+class YOLOXBottleneck(nn.Module):
+
+    def __init__(self,
+                 inplanes,
+                 planes,
+                 block=ConvBnActBlock,
+                 reduction=0.5,
+                 shortcut=True,
+                 act_type='silu'):
+        super(YOLOXBottleneck, self).__init__()
+        squeezed_planes = max(1, int(planes * reduction))
+        self.conv = nn.Sequential(
+            ConvBnActBlock(inplanes,
+                           squeezed_planes,
+                           kernel_size=1,
+                           stride=1,
+                           padding=0,
+                           groups=1,
+                           has_bn=True,
+                           has_act=True,
+                           act_type=act_type),
+            block(squeezed_planes,
+                  planes,
+                  kernel_size=3,
+                  stride=1,
+                  padding=1,
+                  groups=1,
+                  has_bn=True,
+                  has_act=True,
+                  act_type=act_type))
+
+        self.shortcut = True if shortcut and inplanes == planes else False
+
+    def forward(self, x):
+        out = self.conv(x)
+
+        if self.shortcut:
+            out = out + x
+
+        del x
+
+        return out
+
+
+class YOLOXCSPBottleneck(nn.Module):
+    '''
+    CSP Bottleneck with 3 convolution layers
+    CSPBottleneck:https://github.com/WongKinYiu/CrossStagePartialNetworks
+    '''
+
+    def __init__(self,
+                 inplanes,
+                 planes,
+                 bottleneck_nums=1,
+                 bottleneck_block_type=ConvBnActBlock,
+                 reduction=0.5,
+                 shortcut=True,
+                 act_type='silu'):
+        super(YOLOXCSPBottleneck, self).__init__()
+        squeezed_planes = max(1, int(planes * reduction))
+        self.conv1 = ConvBnActBlock(inplanes,
+                                    squeezed_planes,
+                                    kernel_size=1,
+                                    stride=1,
+                                    padding=0,
+                                    groups=1,
+                                    has_bn=True,
+                                    has_act=True,
+                                    act_type=act_type)
+        self.conv2 = ConvBnActBlock(inplanes,
+                                    squeezed_planes,
+                                    kernel_size=1,
+                                    stride=1,
+                                    padding=0,
+                                    groups=1,
+                                    has_bn=True,
+                                    has_act=True,
+                                    act_type=act_type)
+        self.conv3 = ConvBnActBlock(2 * squeezed_planes,
+                                    planes,
+                                    kernel_size=1,
+                                    stride=1,
+                                    padding=0,
+                                    groups=1,
+                                    has_bn=True,
+                                    has_act=True,
+                                    act_type=act_type)
+
+        self.bottlenecks = nn.Sequential(*[
+            YOLOXBottleneck(squeezed_planes,
+                            squeezed_planes,
+                            block=bottleneck_block_type,
+                            reduction=1.0,
+                            shortcut=shortcut,
+                            act_type=act_type) for _ in range(bottleneck_nums)
+        ])
+
+    def forward(self, x):
+        y1 = self.conv1(x)
+        y1 = self.bottlenecks(y1)
+        y2 = self.conv2(x)
+
+        del x
+
+        out = torch.cat([y1, y2], axis=1)
+        out = self.conv3(out)
+
+        del y1, y2
+
+        return out
+
+
+class SPP(nn.Module):
+    '''
+    Spatial pyramid pooling layer used in YOLOv3-SPP
+    '''
+
+    def __init__(self, inplanes, planes, kernels=[5, 9, 13], act_type='silu'):
+        super(SPP, self).__init__()
+        squeezed_planes = max(1, int(inplanes // 2))
+        self.conv1 = ConvBnActBlock(inplanes,
+                                    squeezed_planes,
+                                    kernel_size=1,
+                                    stride=1,
+                                    padding=0,
+                                    groups=1,
+                                    has_bn=True,
+                                    has_act=True,
+                                    act_type=act_type)
+        self.conv2 = ConvBnActBlock(squeezed_planes * (len(kernels) + 1),
+                                    planes,
+                                    kernel_size=1,
+                                    stride=1,
+                                    padding=0,
+                                    groups=1,
+                                    has_bn=True,
+                                    has_act=True,
+                                    act_type=act_type)
+        self.maxpool_layers = nn.ModuleList([
+            nn.MaxPool2d(kernel_size=kernel, stride=1, padding=kernel // 2)
+            for kernel in kernels
+        ])
+
+    def forward(self, x):
+        x = self.conv1(x)
+
+        x = torch.cat([x] + [layer(x) for layer in self.maxpool_layers], dim=1)
+        x = self.conv2(x)
+
+        return x
+
+
 class YoloxBackbone(nn.Module):
 
     def __init__(self,
@@ -70,15 +351,11 @@ class YoloxBackbone(nn.Module):
             self.compute_depth(num, depth_scale) for num in csp_nums
         ]
 
-        self.conv = ConvBnActBlock(3,
-                                   self.planes[0],
-                                   kernel_size=6,
-                                   stride=2,
-                                   padding=2,
-                                   groups=1,
-                                   has_bn=True,
-                                   has_act=True,
-                                   act_type=act_type)
+        self.focus = FocusBlock(3,
+                                self.planes[0],
+                                kernel_size=3,
+                                stride=1,
+                                act_type=act_type)
 
         self.layer1 = nn.Sequential(
             block(self.planes[0],
@@ -168,7 +445,8 @@ class YoloxBackbone(nn.Module):
                 nn.init.constant_(m.bias, 0)
 
     def forward(self, x):
-        x = self.conv(x)
+        x = self.focus(x)
+
         x = self.layer1(x)
         C3 = self.layer2(x)
         C4 = self.layer3(C3)

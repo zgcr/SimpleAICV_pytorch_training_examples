@@ -24,8 +24,7 @@ class config:
     input_image_size = [512, 512]
 
     # load backbone pretrained model or not
-    backbone_pretrained_path = '/root/code/SimpleAICV-ImageNet-CIFAR-COCO-VOC-training/pretrained_models/resnet/resnet18-acc70.712.pth'
-    # backbone_pretrained_path = os.path.join(BASE_DIR, '')
+    backbone_pretrained_path = '/root/code/SimpleAICV-ImageNet-CIFAR-COCO-VOC-training/pretrained_models/classification_training/resnet/resnet18-acc70.712.pth'
     model = models.__dict__[network](**{
         'backbone_pretrained_path': backbone_pretrained_path,
         'num_classes': num_classes,
@@ -96,6 +95,7 @@ class config:
     batch_size = 64
     # num_workers is total workers
     num_workers = 16
+    accumulation_steps = 1
 
     optimizer = (
         'AdamW',
@@ -120,11 +120,13 @@ class config:
 
     epochs = 140
     print_interval = 100
-    accumulation_steps = 1
 
     # 'COCO' or 'VOC'
     eval_type = 'COCO'
-    eval_epoch = [1] + [i * 5 for i in range(epochs // 5)]
+    eval_epoch = [1]
+    for i in range(epochs):
+        if i % 5 == 0:
+            eval_epoch.append(i)
     eval_voc_iou_threshold_list = [
         0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95
     ]

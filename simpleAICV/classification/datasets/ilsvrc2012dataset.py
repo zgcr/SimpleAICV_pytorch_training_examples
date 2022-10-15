@@ -289,7 +289,7 @@ if __name__ == '__main__':
         else:
             break
 
-    from simpleAICV.classification.mixupcutmixcollator import MixupCutmixClassificationCollater
+    from simpleAICV.classification.mixupcutmixclassificationcollator import MixupCutmixClassificationCollater
     from torch.utils.data import DataLoader
     collater = MixupCutmixClassificationCollater(use_mixup=True,
                                                  mixup_alpha=0.8,

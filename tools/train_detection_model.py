@@ -73,7 +73,8 @@ def main():
     train_loader = DataLoader(config.train_dataset,
                               batch_size=batch_size,
                               shuffle=False,
-                              pin_memory=False,
+                              pin_memory=True,
+                              drop_last=True,
                               num_workers=num_workers,
                               collate_fn=config.train_collater,
                               sampler=train_sampler,
@@ -82,7 +83,7 @@ def main():
     test_loader = DataLoader(config.test_dataset,
                              batch_size=batch_size,
                              shuffle=False,
-                             pin_memory=False,
+                             pin_memory=True,
                              num_workers=num_workers,
                              collate_fn=config.test_collater)
 

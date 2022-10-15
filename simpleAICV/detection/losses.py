@@ -1432,7 +1432,7 @@ class YoloxLoss(nn.Module):
         '''
         device = annotations.device
         batch_size = annotations.shape[0]
-        obj_preds, cls_preds, reg_preds = preds
+        cls_preds, reg_preds, obj_preds = preds
 
         feature_size = [[
             per_level_cls_pred.shape[2], per_level_cls_pred.shape[1]
@@ -1488,6 +1488,7 @@ class YoloxLoss(nn.Module):
         device = batch_targets.device
         positive_grid_nums = batch_targets[batch_targets[:, 5] > 0].shape[0]
 
+        # if no positive points
         if positive_grid_nums == 0:
             return torch.tensor(0.).to(device), torch.tensor(0.).to(
                 device), torch.tensor(0.).to(device)
@@ -1495,11 +1496,12 @@ class YoloxLoss(nn.Module):
         obj_preds = all_obj_preds[:, 0]
         reg_preds = all_reg_preds[batch_targets[:, 5] > 0]
         cls_preds = all_cls_preds[batch_targets[:, 5] > 0]
+
         obj_targets = batch_targets[:, 0]
         reg_targets = batch_targets[batch_targets[:, 5] > 0][:, 1:5]
+        cls_targets = batch_targets[batch_targets[:, 5] > 0][:, 5]
         all_grid_center_strides = all_grid_center_strides[batch_targets[:,
                                                                         5] > 0]
-        cls_targets = batch_targets[batch_targets[:, 5] > 0][:, 5]
 
         # compute obj loss
         obj_loss = -(obj_targets * torch.log(obj_preds) +
@@ -1522,7 +1524,6 @@ class YoloxLoss(nn.Module):
                                            box_type='xyxy')
             gamma_ious = torch.pow(gamma_ious, self.focal_eiou_gamma)
             reg_loss = gamma_ious * reg_loss
-
         reg_loss = reg_loss.mean()
 
         # compute cls loss
@@ -1588,10 +1589,11 @@ class YoloxLoss(nn.Module):
             ],
                                           dim=-1)
 
-            if per_image_annotations.shape[0] != 0:
+            if per_image_annotations.shape[0] > 0:
                 annotaion_num = per_image_annotations.shape[0]
                 per_image_gt_bboxes = per_image_annotations[:, 0:4]
                 per_image_gt_classes = per_image_annotations[:, 4]
+                # each grid center,such as 0.5
                 per_image_grid_centers = per_image_grid_center_strides[:, 0:2]
                 per_image_strides = per_image_grid_center_strides[:, 2]
 
@@ -1599,7 +1601,6 @@ class YoloxLoss(nn.Module):
                     -1)
                 per_image_grid_centers = per_image_grid_centers.unsqueeze(
                     1).repeat(1, annotaion_num, 1)
-
                 candidates = torch.zeros([grids_num, annotaion_num, 4],
                                          dtype=torch.float32,
                                          device=device)
@@ -1624,9 +1625,10 @@ class YoloxLoss(nn.Module):
                 points_to_gt_box_ltrb = torch.cat(
                     [points_to_gt_box_lt, points_to_gt_box_rb], dim=-1)
                 points_to_gt_box_ltrb_min_value, _ = points_to_gt_box_ltrb.min(
-                    axis=-1, keepdim=True)
-                points_in_gt_box_flag = (
-                    (points_to_gt_box_ltrb_min_value[:, :, 0]).sum(dim=1) > 0)
+                    axis=-1)
+                points_in_gt_box_flag = (points_to_gt_box_ltrb_min_value > 0)
+                points_in_all_gt_box_flag = (
+                    points_to_gt_box_ltrb_min_value.sum(dim=1) > 0)
 
                 # center sample
                 compute_distance = torch.sqrt(
@@ -1634,69 +1636,75 @@ class YoloxLoss(nn.Module):
                      candidates_center[:, :, 0])**2 +
                     (per_image_grid_centers[:, :, 1] -
                      candidates_center[:, :, 1])**2)
+
                 points_in_gt_box_center_flag = (
+                    (compute_distance < judge_distance.squeeze(-1)) > 0)
+                points_in_all_gt_box_center_flag = (
                     (compute_distance < judge_distance.squeeze(-1)).sum(dim=1)
                     > 0)
-
                 points_in_gt_box_or_center_flag = (
-                    points_in_gt_box_flag | points_in_gt_box_center_flag)
+                    points_in_all_gt_box_flag
+                    | points_in_all_gt_box_center_flag)
                 points_in_gt_box_and_center_flag = (
-                    points_in_gt_box_flag & points_in_gt_box_center_flag)
-                # print('1212', points_in_gt_box_or_center_flag.shape,
-                #       points_in_gt_box_and_center_flag.shape)
-                if points_in_gt_box_or_center_flag.sum() != 0:
-                    per_image_pred_bboxes = self.snap_ltrb_to_x1y1x2y2(
-                        per_image_reg_preds, per_image_grid_center_strides)
-                    ious = self.iou_function(
-                        per_image_pred_bboxes.unsqueeze(1),
+                    points_in_gt_box_flag[points_in_gt_box_or_center_flag, :]
+                    & points_in_gt_box_center_flag[
+                        points_in_gt_box_or_center_flag, :])
+
+                if points_in_gt_box_or_center_flag.sum() > 0:
+                    cost_per_image_reg_preds = per_image_reg_preds[
+                        points_in_gt_box_or_center_flag]
+                    cost_per_image_grid_center_strides = per_image_grid_center_strides[
+                        points_in_gt_box_or_center_flag]
+
+                    cost_per_image_pred_bboxes = self.snap_ltrb_to_x1y1x2y2(
+                        cost_per_image_reg_preds,
+                        cost_per_image_grid_center_strides)
+                    cost_ious = self.iou_function(
+                        cost_per_image_pred_bboxes.unsqueeze(1),
                         per_image_gt_bboxes.unsqueeze(0),
                         iou_type='IoU',
                         box_type='xyxy')
-                    iou_costs = -torch.log(ious + 1e-4)
-                    iou_costs = iou_costs * points_in_gt_box_or_center_flag.unsqueeze(
-                        1)
+                    cost_ious = -torch.log(cost_ious + 1e-4)
 
-                    per_image_cls_preds = torch.sqrt(per_image_cls_preds *
-                                                     per_image_obj_preds)
-                    cost_per_image_cls_preds = per_image_cls_preds.unsqueeze(
+                    cost_per_image_cls_preds = per_image_cls_preds[
+                        points_in_gt_box_or_center_flag]
+                    cost_per_image_obj_preds = per_image_obj_preds[
+                        points_in_gt_box_or_center_flag]
+                    cost_per_image_cls_preds = torch.sqrt(
+                        cost_per_image_cls_preds * cost_per_image_obj_preds)
+                    cost_per_image_cls_preds = cost_per_image_cls_preds.unsqueeze(
                         1).repeat(1, annotaion_num, 1)
 
                     cost_per_image_gt_classes = F.one_hot(
                         per_image_gt_classes.to(torch.int64),
                         cost_per_image_cls_preds.shape[-1]).float().unsqueeze(
-                            0).repeat(grids_num, 1, 1)
-                    cls_costs = F.binary_cross_entropy(
+                            0).repeat(cost_per_image_cls_preds.shape[0], 1, 1)
+                    cost_cls = F.binary_cross_entropy(
                         cost_per_image_cls_preds,
                         cost_per_image_gt_classes,
                         reduction="none").sum(dim=-1)
-                    cls_costs = cls_costs * points_in_gt_box_or_center_flag.unsqueeze(
-                        1)
 
-                    total_costs = cls_costs + 3 * iou_costs + 100000 * (
-                        ~points_in_gt_box_and_center_flag.unsqueeze(1).repeat(
-                            1, annotaion_num))
-                    # print("1313", ious.shape, iou_costs.shape, cls_costs.shape,
-                    #       total_costs.shape)
+                    total_costs = 1.0 * cost_cls + 3.0 * cost_ious + 100000.0 * (
+                        ~points_in_gt_box_and_center_flag).float()
+
                     matching_matrix, match_gt_box_idxs = self.dynamic_k_matching(
-                        ious, total_costs, per_image_annotations,
-                        points_in_gt_box_or_center_flag)
+                        cost_ious, total_costs)
 
-                    if matching_matrix.sum() != 0:
-                        # print("1414", per_image_obj_preds.shape,
-                        #       per_image_cls_preds.shape, per_image_reg_preds.shape)
+                    if matching_matrix.sum() > 0:
+                        cost_per_image_targets = per_image_targets[
+                            points_in_gt_box_or_center_flag]
                         # 0 or 1
-                        per_image_targets[matching_matrix, 0] = 1
+                        cost_per_image_targets[matching_matrix, 0] = 1
                         # 1 to 80 for coco dataset
-                        per_image_targets[
+                        cost_per_image_targets[
                             matching_matrix,
                             5] = per_image_gt_classes[match_gt_box_idxs] + 1
                         # [x_min,y_min,x_max,y_max]
-                        per_image_targets[
+                        cost_per_image_targets[
                             matching_matrix,
                             1:5] = per_image_gt_bboxes[match_gt_box_idxs]
-                        # print("1414", per_image_obj_preds.shape,
-                        #       per_image_cls_preds.shape, per_image_reg_preds.shape,
-                        #       per_image_targets[matching_matrix, :])
+                        per_image_targets[
+                            points_in_gt_box_or_center_flag] = cost_per_image_targets
 
             per_image_targets = per_image_targets.unsqueeze(0)
             batch_targets.append(per_image_targets)
@@ -1706,51 +1714,49 @@ class YoloxLoss(nn.Module):
         # batch_targets shape:[batch_size, grids_num, 6],6:[obj_target,scale_offset_x,scale_offset_y,tw,th,class_target]
         return all_obj_preds, all_cls_preds, all_reg_preds, all_grid_center_strides, batch_targets
 
-    def dynamic_k_matching(self, ious, total_costs, per_image_annotations,
-                           points_in_gt_box_or_center_flag):
+    def dynamic_k_matching(self, ious, total_costs):
         ious, total_costs = ious.permute(1, 0), total_costs.permute(1, 0)
-        # print("1414", ious.shape, total_costs.shape,
-        #       points_in_gt_box_or_center_flag.shape)
+
         device = ious.device
-        annotation_nums, grid_nums = ious.shape[0], ious.shape[1]
-        matching_matrix = torch.zeros([annotation_nums, grid_nums],
+        annotation_nums, point_nums = ious.shape[0], ious.shape[1]
+        matching_matrix = torch.zeros([annotation_nums, point_nums],
                                       dtype=torch.uint8,
                                       device=device)
 
-        max_candidate_k = min(10, grid_nums)
+        # 选取iou最大的max_candidate_k个点,然后求和，判断应该有多少点用于该框预测
+        if point_nums <= 10:
+            max_candidate_k = point_nums
+        else:
+            max_candidate_k = min(10, point_nums)
         per_image_topk_ious_for_all_gt, _ = torch.topk(ious,
                                                        max_candidate_k,
                                                        dim=1)
         per_image_dynamic_k_num_for_all_gt = (torch.clamp(
             per_image_topk_ious_for_all_gt.sum(dim=1).int(), min=1)).tolist()
-        # print("1515", matching_matrix.shape, max_candidate_k,
-        #       per_image_topk_ious_for_all_gt.shape,
-        #       per_image_dynamic_k_num_for_all_gt,
-        #       len(per_image_dynamic_k_num_for_all_gt))
+
         for gt_idx in range(total_costs.shape[0]):
-            _, pos_idx = torch.topk(
-                total_costs[gt_idx],
-                k=per_image_dynamic_k_num_for_all_gt[gt_idx],
-                largest=False)
-            # print("1616", pos_idx.shape, pos_idx)
+            # 给每个真实框选取最小的动态k个点
+            k = per_image_dynamic_k_num_for_all_gt[gt_idx]
+            if total_costs[gt_idx].shape[
+                    -1] < per_image_dynamic_k_num_for_all_gt[gt_idx]:
+                k = total_costs[gt_idx].shape[-1]
+
+            _, pos_idx = torch.topk(total_costs[gt_idx], k=k, largest=False)
+
             matching_matrix[gt_idx][pos_idx] = 1
-        # print("1717", matching_matrix.shape)
+
         anchor_matching_gt = matching_matrix.sum(dim=0)
-        # print("1818", anchor_matching_gt, anchor_matching_gt.shape)
+
         if (anchor_matching_gt > 1).sum() > 0:
+            # 当某一个特征点指向多个真实框的时候,选取cost最小的真实框。
             _, cost_argmin = torch.min(total_costs[:, anchor_matching_gt > 1],
                                        dim=0)
             matching_matrix[:, anchor_matching_gt > 1] *= 0
             matching_matrix[cost_argmin, anchor_matching_gt > 1] = 1
-            # print("1919", cost_argmin, cost_argmin.shape,
-            #       (anchor_matching_gt > 1).shape)
 
         match_gt_box_idxs = matching_matrix[:, (
             matching_matrix.sum(dim=0) > 0)].argmax(dim=0)
-
         matching_matrix = (matching_matrix.sum(dim=0) > 0)
-
-        # print("2222", match_gt_box_idxs.shape, matching_matrix.shape)
 
         return matching_matrix, match_gt_box_idxs
 
@@ -1931,11 +1937,11 @@ if __name__ == '__main__':
         print('3333', loss_dict)
         break
 
-    from simpleAICV.detection.models.yolox import yoloxl
-    net = yoloxl()
+    from simpleAICV.detection.models.yolox import yoloxm
+    net = yoloxm()
     loss = YoloxLoss(strides=[8, 16, 32],
                      obj_loss_weight=1.0,
-                     box_loss_weight=1.0,
+                     box_loss_weight=5.0,
                      cls_loss_weight=1.0,
                      box_loss_iou_type='CIoU',
                      center_sample_radius=2.5)

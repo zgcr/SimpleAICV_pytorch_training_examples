@@ -67,6 +67,7 @@ class config:
     batch_size = 256
     # num_workers is total workers
     num_workers = 16
+    accumulation_steps = 1
 
     optimizer = (
         'SGD',
@@ -90,7 +91,6 @@ class config:
 
     epochs = 120
     print_interval = 100
-    accumulation_steps = 1
 
     sync_bn = False
     apex = True

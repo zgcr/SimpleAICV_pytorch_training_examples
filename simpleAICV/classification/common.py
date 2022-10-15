@@ -12,9 +12,11 @@ import numpy as np
 from PIL import Image
 
 import torch
+import torch.nn.functional as F
 import torchvision.transforms as transforms
 
-from simpleAICV.classification.autorandaugment import ImageNet1KPolicy, SubAugmentPolicy
+from simpleAICV.classification.auto_rand_augment import AutoAugment, RandAugment
+from simpleAICV.classification.mixupcutmixclassificationcollator import MixupCutmixClassificationCollater
 
 
 class Opencv2PIL:
@@ -227,56 +229,6 @@ class NormalizeTo255:
 
         image = image * 255.
         image = image.astype(np.float32)
-
-        return {
-            'image': image,
-            'label': label,
-        }
-
-
-class AutoAugment:
-
-    def __init__(self, policy_list=ImageNet1KPolicy):
-        self.policy_list = policy_list
-
-    def __call__(self, sample):
-        image, label = sample['image'], sample['label']
-
-        idx = np.random.choice(len(self.policy_list))
-        policy = self.policy_list[idx]
-        for per_policy in policy:
-            func = SubAugmentPolicy(per_policy[0], per_policy[1],
-                                    per_policy[2])
-            image = func(image)
-
-        return {
-            'image': image,
-            'label': label,
-        }
-
-
-class RandAugment:
-
-    def __init__(self, N=2, M=10):
-        self.transform_list = [
-            'autocontrast', 'equalize', 'invert', 'rotate', 'posterize',
-            'solarize', 'color', 'contrast', 'brightness', 'sharpness',
-            'shearx', 'sheary', 'translatex', 'translatey', 'cutout',
-            'solarizeadd'
-        ]
-        self.N = N
-        self.M = M
-
-    def __call__(self, sample):
-        image, label = sample['image'], sample['label']
-
-        for _ in range(self.N):
-            policy_idx = np.random.choice(len(self.transform_list))
-            policy_name = self.transform_list[policy_idx]
-            magnitude_level = float(self.M)
-            prob = np.random.uniform(0.2, 0.8)
-            func = SubAugmentPolicy(policy_name, magnitude_level, prob)
-            image = func(image)
 
         return {
             'image': image,
@@ -730,37 +682,6 @@ class ClassificationCollater:
         }
 
 
-class ClassificationDataPrefetcher:
-
-    def __init__(self, loader):
-        self.loader = iter(loader)
-        self.stream = torch.cuda.Stream()
-        self.preload()
-
-    def preload(self):
-        try:
-            sample = next(self.loader)
-            self.next_inputs, self.next_labels = sample['image'], sample[
-                'label']
-        except StopIteration:
-            self.next_inputs = None
-            self.next_labels = None
-
-            return
-        with torch.cuda.stream(self.stream):
-            self.next_inputs = self.next_inputs.cuda(non_blocking=True)
-            self.next_labels = self.next_labels.cuda(non_blocking=True)
-            self.next_inputs = self.next_inputs.float()
-
-    def next(self):
-        torch.cuda.current_stream().wait_stream(self.stream)
-        inputs = self.next_inputs
-        labels = self.next_labels
-        self.preload()
-
-        return inputs, labels
-
-
 class AverageMeter:
     '''Computes and stores the average and current value'''
 
@@ -846,11 +767,15 @@ def compute_batch_accuracy(output, target, topk=(1, 5)):
         return res
 
 
-def load_state_dict(saved_model_path, model, excluded_layer_name=()):
+def load_state_dict(saved_model_path,
+                    model,
+                    excluded_layer_name=(),
+                    loading_new_input_size_position_encoding_weight=False):
     '''
     saved_model_path: a saved model.state_dict() .pth file path
     model: a new defined model
     excluded_layer_name: layer names that doesn't want to load parameters
+    loading_new_input_size_position_encoding_weight: default False, for vit net, loading a position encoding layer with new input size, set True
     only load layer parameters which has same layer name and same layer weight shape
     '''
     if not saved_model_path:
@@ -859,14 +784,57 @@ def load_state_dict(saved_model_path, model, excluded_layer_name=()):
 
     saved_state_dict = torch.load(saved_model_path,
                                   map_location=torch.device('cpu'))
-
-    filtered_state_dict = {
-        name: weight
-        for name, weight in saved_state_dict.items()
+    not_loaded_save_state_dict = []
+    filtered_state_dict = {}
+    for name, weight in saved_state_dict.items():
         if name in model.state_dict() and not any(
-            excluded_name in name for excluded_name in excluded_layer_name)
-        and weight.shape == model.state_dict()[name].shape
-    }
+                excluded_name in name for excluded_name in excluded_layer_name
+        ) and weight.shape == model.state_dict()[name].shape:
+            filtered_state_dict[name] = weight
+        else:
+            not_loaded_save_state_dict.append(name)
+
+    position_encoding_already_loaded = False
+    if 'position_encoding' in filtered_state_dict.keys():
+        position_encoding_already_loaded = True
+
+    # for vit net, loading a position encoding layer with new input size
+    if loading_new_input_size_position_encoding_weight and not position_encoding_already_loaded:
+        # assert position_encoding_layer name are unchanged for model and saved_model
+        # assert class_token num are unchanged for model and saved_model
+        # assert embedding_planes are unchanged for model and saved_model
+        model_num_cls_token = model.cls_token.shape[1]
+        model_embedding_planes = model.position_encoding.shape[2]
+        model_encoding_shape = int(
+            (model.position_encoding.shape[1] - model_num_cls_token)**0.5)
+        encoding_layer_name, encoding_layer_weight = None, None
+        for name, weight in saved_state_dict.items():
+            if 'position_encoding' in name:
+                encoding_layer_name = name
+                encoding_layer_weight = weight
+                break
+        save_model_encoding_shape = int(
+            (encoding_layer_weight.shape[1] - model_num_cls_token)**0.5)
+
+        save_model_cls_token_weight = encoding_layer_weight[:, 0:
+                                                            model_num_cls_token, :]
+        save_model_position_weight = encoding_layer_weight[:,
+                                                           model_num_cls_token:, :]
+        save_model_position_weight = save_model_position_weight.reshape(
+            -1, save_model_encoding_shape, save_model_encoding_shape,
+            model_embedding_planes).permute(0, 3, 1, 2)
+        save_model_position_weight = F.interpolate(save_model_position_weight,
+                                                   size=(model_encoding_shape,
+                                                         model_encoding_shape),
+                                                   mode='bicubic',
+                                                   align_corners=False)
+        save_model_position_weight = save_model_position_weight.permute(
+            0, 2, 3, 1).flatten(1, 2)
+        model_encoding_layer_weight = torch.cat(
+            (save_model_cls_token_weight, save_model_position_weight), dim=1)
+
+        filtered_state_dict[encoding_layer_name] = model_encoding_layer_weight
+        not_loaded_save_state_dict.remove('position_encoding')
 
     if len(filtered_state_dict) == 0:
         print('No pretrained parameters to load!')
@@ -874,6 +842,7 @@ def load_state_dict(saved_model_path, model, excluded_layer_name=()):
         print(
             f'load/model weight nums:{len(filtered_state_dict)}/{len(model.state_dict())}'
         )
+        print(f'not loaded save layer weight:\n{not_loaded_save_state_dict}')
         model.load_state_dict(filtered_state_dict, strict=False)
 
     return

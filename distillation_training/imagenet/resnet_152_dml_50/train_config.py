@@ -24,7 +24,7 @@ class config:
     input_image_size = 224
     scale = 256 / 224
 
-    teacher_pretrained_model_path = '/root/code/SimpleAICV-ImageNet-CIFAR-COCO-VOC-training/pretrained_models/resnet/resnet152-acc78.006.pth'
+    teacher_pretrained_model_path = '/root/code/SimpleAICV-ImageNet-CIFAR-COCO-VOC-training/pretrained_models/classification_training/resnet/resnet152-acc78.006.pth'
     student_pretrained_model_path = ''
     freeze_teacher = False
     model = KDModel(teacher_type=teacher,
@@ -78,6 +78,7 @@ class config:
     batch_size = 256
     # num_workers is total workers
     num_workers = 16
+    accumulation_steps = 1
 
     optimizer = (
         'SGD',
@@ -103,7 +104,6 @@ class config:
 
     epochs = 100
     print_interval = 100
-    accumulation_steps = 1
 
     sync_bn = False
     apex = True

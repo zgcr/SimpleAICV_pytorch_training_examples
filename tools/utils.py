@@ -165,13 +165,18 @@ def build_training_mode(config, model, optimizer):
         if config.sync_bn:
             model = apex.parallel.convert_syncbn_model(model).cuda()
 
-        amp.register_float_function(torch, 'sigmoid')
-        amp.register_float_function(torch.nn, 'Sigmoid')
-        amp.register_float_function(torch.nn, 'Softmax')
-        amp.register_float_function(torch.nn, 'Parameter')
-        amp.register_float_function(torch.nn.functional, 'sigmoid')
-        amp.register_float_function(torch.nn.functional, 'softmax')
-        amp.register_float_function(torchvision.ops, 'deform_conv2d')
+        float_function_list = [
+            [torch, 'sigmoid'],
+            [torch.nn, 'Sigmoid'],
+            [torch.nn, 'Softmax'],
+            [torch.nn, 'Parameter'],
+            [torch.nn.functional, 'sigmoid'],
+            [torch.nn.functional, 'softmax'],
+            [torchvision.ops, 'deform_conv2d'],
+        ]
+
+        for per_function in float_function_list:
+            amp.register_float_function(per_function[0], per_function[1])
 
         model, optimizer = amp.initialize(model, optimizer, opt_level='O1')
 
@@ -226,19 +231,19 @@ class Scheduler:
 
         if self.scheduler_name == 'MultiStepLR':
             self.current_lr = (
-                (epoch + 1)
+                epoch
             ) / self.warm_up_epochs * self.lr if epoch < self.warm_up_epochs else gamma**len(
                 [m for m in milestones if m <= epoch]) * self.lr
         elif self.scheduler_name == 'CosineLR':
             self.current_lr = (
-                epoch + 1
+                epoch
             ) / self.warm_up_epochs * self.lr if epoch < self.warm_up_epochs else 0.5 * (
                 math.cos((epoch - self.warm_up_epochs) /
                          (self.epochs - self.warm_up_epochs) * math.pi) +
                 1) * (self.lr - min_lr) + min_lr
         elif self.scheduler_name == 'PolyLR':
             self.current_lr = (
-                epoch + 1
+                epoch
             ) / self.warm_up_epochs * self.lr if epoch < self.warm_up_epochs else (
                 (1 - (epoch - self.warm_up_epochs) /
                  (self.epochs - self.warm_up_epochs))**
@@ -294,31 +299,45 @@ def build_optimizer(config, model):
         decay_weight_list, no_decay_weight_list = [], []
         decay_weight_name_list, no_decay_weight_name_list = [], []
 
+        # training trick only for VIT
         if 'lr_layer_decay' and 'lr_layer_decay_block' and 'block_name' in optimizer_parameters.keys(
         ):
             lr_layer_decay = optimizer_parameters['lr_layer_decay']
             lr_layer_decay_block = optimizer_parameters['lr_layer_decay_block']
             block_name = optimizer_parameters['block_name']
 
-            num_layers = len(lr_layer_decay_block)
+            num_layers = len(lr_layer_decay_block) + 1
             lr_layer_scales = list(lr_layer_decay**(num_layers - i)
-                                   for i in range(num_layers))
+                                   for i in range(num_layers + 1))
 
             decay_weight_list, no_decay_weight_list = [], []
             decay_weight_name_list, no_decay_weight_name_list = [], []
+            decay_weight_lr_scale_0_list, decay_weight_name_lr_scale_0_list=[],[]
 
             not_group_layer_scale_weight_list = []
             not_group_layer_scale_weight_name_list = []
+
+            layer_scale_id_0_name_list = [
+                'position_encoding',
+                'cls_token',
+                'patch_embedding',
+            ]
             for name, param in model.named_parameters():
                 if not param.requires_grad:
                     continue
 
-                if param.ndim <= 1 or name.endswith(".bias") or any(
-                        no_weight_decay_layer_name in name
-                        for no_weight_decay_layer_name in
-                        no_weight_decay_layer_name_list):
+                if param.ndim <= 1 or any(no_weight_decay_layer_name in name
+                                          for no_weight_decay_layer_name in
+                                          no_weight_decay_layer_name_list):
                     no_decay_weight_list.append(param)
                     no_decay_weight_name_list.append(name)
+                    continue
+
+                if any(per_layer_scale_id_0_name in name
+                       for per_layer_scale_id_0_name in
+                       layer_scale_id_0_name_list):
+                    decay_weight_lr_scale_0_list.append(param)
+                    decay_weight_name_lr_scale_0_list.append(name)
                     continue
 
                 if block_name in name:
@@ -339,6 +358,11 @@ def build_optimizer(config, model):
                     'params': decay_weight_list,
                     'weight_decay': weight_decay
                 },
+                {
+                    "lr_scale": lr_layer_scales[0],
+                    'params': decay_weight_lr_scale_0_list,
+                    'weight_decay': weight_decay
+                },
             ]
 
             model_layer_weight_decay_list = [
@@ -352,16 +376,18 @@ def build_optimizer(config, model):
                     'name': decay_weight_name_list,
                     'weight_decay': weight_decay,
                 },
+                {
+                    "lr_scale": lr_layer_scales[0],
+                    'name': decay_weight_name_lr_scale_0_list,
+                    'weight_decay': weight_decay,
+                },
             ]
 
-            assert len(not_group_layer_scale_weight_list) == len(
-                not_group_layer_scale_weight_name_list)
-            assert len(
-                not_group_layer_scale_weight_name_list) % num_layers == 0
-
-            per_group_weight_nums = len(
-                not_group_layer_scale_weight_name_list) // num_layers
-            for layer_id in range(0, num_layers):
+            assert len(not_group_layer_scale_weight_name_list) == len(
+                not_group_layer_scale_weight_list)
+            per_group_weight_nums = len(not_group_layer_scale_weight_name_list
+                                        ) // len(lr_layer_decay_block)
+            for layer_id in range(0, len(lr_layer_decay_block)):
                 per_group_decay_weight_list,per_group_decay_weight_name_list=[],[]
                 for per_group_id in range(per_group_weight_nums):
                     per_group_decay_weight_list.append(
@@ -372,7 +398,7 @@ def build_optimizer(config, model):
                             layer_id * per_group_weight_nums + per_group_id])
                 model_params_weight_decay_list.append({
                     "lr_scale":
-                    lr_layer_scales[layer_id],
+                    lr_layer_scales[layer_id + 1],
                     'params':
                     per_group_decay_weight_list,
                     'weight_decay':
@@ -380,13 +406,12 @@ def build_optimizer(config, model):
                 })
                 model_layer_weight_decay_list.append({
                     "lr_scale":
-                    lr_layer_scales[layer_id],
+                    lr_layer_scales[layer_id + 1],
                     'name':
                     per_group_decay_weight_name_list,
                     'weight_decay':
                     weight_decay,
                 })
-
         else:
             decay_weight_list, no_decay_weight_list = [], []
             decay_weight_name_list, no_decay_weight_name_list = [], []
@@ -394,10 +419,9 @@ def build_optimizer(config, model):
                 if not param.requires_grad:
                     continue
 
-                if param.ndim <= 1 or name.endswith(".bias") or any(
-                        no_weight_decay_layer_name in name
-                        for no_weight_decay_layer_name in
-                        no_weight_decay_layer_name_list):
+                if param.ndim == 1 or any(no_weight_decay_layer_name in name
+                                          for no_weight_decay_layer_name in
+                                          no_weight_decay_layer_name_list):
                     no_decay_weight_list.append(param)
                     no_decay_weight_name_list.append(name)
                 else:

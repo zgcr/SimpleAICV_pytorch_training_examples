@@ -25,10 +25,11 @@ This repository provides training and testing examples for image classification,
 
 **image classification:**
 ```
-ResNet(include autoaugment/randaugment)
+ResNet
 DarkNet
 RepVGG
 RegNetX
+ViT
 ```
 
 **object detection:**
@@ -68,7 +69,7 @@ Cython
 pycocotools
 opencv-python
 tqdm
-thop
+thop==0.0.31.post2005241907
 yapf
 apex
 ```
@@ -188,6 +189,62 @@ CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.run --nproc_per_node=2 --ma
 ```
 Also, You can modify super parameters in train_config.py/test_config.py.
 
+
+If you see the following log, and train.sh/test.sh keeps running, then train.sh/test.sh is running correctly.
+
+All checkpoints/log are saved in training/testing folder directory.
+```
+Warning:  apex was installed without --cpp_ext.  Falling back to Python flatten and unflatten.
+Selected optimization level O1:  Insert automatic casts around Pytorch functions and Tensor methods.
+
+Defaults for this optimization level are:
+enabled                : True
+opt_level              : O1
+cast_model_type        : None
+patch_torch_functions  : True
+keep_batchnorm_fp32    : None
+master_weights         : None
+loss_scale             : dynamic
+Processing user overrides (additional kwargs that are not None)...
+After processing overrides, optimization options are:
+enabled                : True
+opt_level              : O1
+cast_model_type        : None
+patch_torch_functions  : True
+keep_batchnorm_fp32    : None
+master_weights         : None
+loss_scale             : dynamic
+Warning:  multi_tensor_applier fused unscale kernel is unavailable, possibly because apex was installed without --cuda_ext --cpp_ext. Using Python fallback.
+Original ImportError was: ModuleNotFoundError("No module named 'amp_C'")
+Warning:  apex was installed without --cpp_ext.  Falling back to Python flatten and unflatten.
+```
+
+# Contrastive learning training results
+
+## ILSVRC2012(ImageNet) pretrained results
+| Network              | input size | gpu num      | batch     | warm up | lr decay  | apex | syncbn | epochs | Loss  |
+| -------------        | -------- | ----------- | ---------- | ------------ | --------- | ------- | --------  | ---- | ------ | ------ | ------ |
+| ResNet50_dino_pretrained_epoch100 | 224x224    | 2 RTX A5000  | 128       | 10       | Cosine | True | False  | 100    | 2.4567 |
+
+## ILSVRC2012(ImageNet) finetune results
+| Network              | macs     | params      | input size | gpu num      | batch     | warm up | lr decay  | apex | syncbn | epochs | Top-1  |
+| -------------        | -------- | ----------- | ---------- | ------------ | --------- | ------- | --------  | ---- | ------ | ------ | ------ |
+| ResNet50_finetune_epoch100_dino_pretrained_epoch_100 | 4.112G   | 25.557M     | 224x224    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 76.858 |
+
+# masked image modeling training results
+
+## ILSVRC2012(ImageNet) pretrained results
+| Network              | input size | gpu num      | batch     | warm up | lr decay  | apex | syncbn | epochs | Loss  |
+| -------------        | -------- | ----------- | ---------- | ------------ | --------- | ------- | --------  | ---- | ------ | ------ | ------ |
+| ViT_Base_Patch16_mae_pretrained_epoch100 | 224x224    | 2 RTX A5000  | 256x4       | 10       | CosineLR | True | False  | 100    | 0.3986 |
+| ViT_Base_Patch16_mae_pretrained_epoch400 | 224x224    | 2 RTX A5000  | 256x4       | 40       | CosineLR | True | False  | 400    | 0.3879 |
+
+## ILSVRC2012(ImageNet) finetune results
+| Network              | macs     | params      | input size | gpu num      | batch     | warm up | lr decay  | apex | syncbn | epochs | Top-1  |
+| -------------        | -------- | ----------- | ---------- | ------------ | --------- | ------- | --------  | ---- | ------ | ------ | ------ |
+| ViT_Base_Patch16_finetune_epoch100_mae_pretrained_epoch_100 | 16.849G  | 86.377M     | 224x224    | 2 RTX A5000  | 256x4     | 5       | cosinelr  | True | False  | 100    | 82.182 |
+| ViT_Base_Patch16_finetune_epoch100_mae_pretrained_epoch_400 | 16.849G  | 86.377M     | 224x224    | 2 RTX A5000  | 256x4     | 5       | cosinelr  | True | False  | 100    | 83.130 |
+
 # Classification training results
 
 ## ILSVRC2012(ImageNet) training results
@@ -201,9 +258,6 @@ Also, You can modify super parameters in train_config.py/test_config.py.
 | ResNet50             | 4.112G   | 25.557M     | 224x224    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 76.264 |
 | ResNet101            | 7.834G   | 44.549M     | 224x224    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 77.322 |
 | ResNet152            | 11.559G  | 60.193M     | 224x224    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 78.006 |
-| ResNet50-200epoch    | 4.112G   | 25.557M     | 224x224    | 2 RTX A5000  | 256       | 5       | cosinelr  | True | False  | 200    | 76.986 |
-| ResNet50-autoaugment | 4.112G   | 25.557M     | 224x224    | 2 RTX A5000  | 256       | 5       | cosinelr  | True | False  | 200    | 77.736 |
-| ResNet50-randaugment | 4.112G   | 25.557M     | 224x224    | 2 RTX A5000  | 256       | 5       | cosinelr  | True | False  | 200    | 77.846 |
 | DarkNetTiny          | 412.537M | 2.087M      | 256x256    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 57.602 |
 | DarkNet19            | 3.663G   | 20.842M     | 256x256    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 74.028 |
 | DarkNet53            | 9.322G   | 41.610M     | 256x256    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 76.602 |
@@ -259,18 +313,6 @@ Paper:https://arxiv.org/abs/1904.07850
 **TTFNet**
 
 Paper:https://arxiv.org/abs/1909.00700
-
-**YOLOv3**
-
-Paper:https://arxiv.org/abs/1804.02767
-
-**YOLOv4**
-
-Paper:https://arxiv.org/abs/2004.10934
-
-**YOLOv5**
-
-Code:https://github.com/ultralytics/yolov5
 
 **YOLOX**
 

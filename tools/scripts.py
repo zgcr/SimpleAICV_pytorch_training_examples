@@ -8,10 +8,7 @@ import torch
 import torch.nn.functional as F
 from pycocotools.cocoeval import COCOeval
 
-from simpleAICV.classification.common import ClassificationDataPrefetcher, AverageMeter, AccMeter
-from simpleAICV.detection.common import DetectionDataPrefetcher
-# from simpleAICV.semantic_segmentation.common import SemanticSegmentationDataPrefetcher
-# from simpleAICV.self_supervised_learning.common import SelfSupervisedPretrainDataPrefetcher
+from simpleAICV.classification.common import AverageMeter, AccMeter
 
 
 def all_reduce_operation_in_group_for_variables(variables, operator, group):
@@ -125,12 +122,10 @@ def train_classification(train_loader, model, criterion, optimizer, scheduler,
 
     local_rank = torch.distributed.get_rank()
     iters = len(train_loader.dataset) // config.batch_size
-
-    prefetcher = ClassificationDataPrefetcher(train_loader)
-    images, labels = prefetcher.next()
     iter_index = 1
 
-    while images is not None:
+    for _, data in enumerate(train_loader):
+        images, labels = data['image'], data['label']
         images, labels = images.cuda(), labels.cuda()
 
         if torch.any(torch.isinf(images)) or torch.any(torch.isinf(labels)):
@@ -178,9 +173,12 @@ def train_classification(train_loader, model, criterion, optimizer, scheduler,
 
         losses.update(loss, images.size(0))
 
-        images, labels = prefetcher.next()
-
-        scheduler.step(optimizer, iter_index / iters + (epoch - 1))
+        if hasattr(config,
+                   'accumulation_steps') and config.accumulation_steps > 1:
+            if iter_index % config.accumulation_steps == 0:
+                scheduler.step(optimizer, iter_index / iters + (epoch - 1))
+        else:
+            scheduler.step(optimizer, iter_index / iters + (epoch - 1))
 
         if hasattr(config,
                    'accumulation_steps') and config.accumulation_steps > 1:
@@ -233,12 +231,10 @@ def train_distill_classification(train_loader, model, criterion, optimizer,
 
     local_rank = torch.distributed.get_rank()
     iters = len(train_loader.dataset) // config.batch_size
-
-    prefetcher = ClassificationDataPrefetcher(train_loader)
-    images, labels = prefetcher.next()
     iter_index = 1
 
-    while images is not None:
+    for _, data in enumerate(train_loader):
+        images, labels = data['image'], data['label']
         images, labels = images.cuda(), labels.cuda()
 
         if torch.any(torch.isinf(images)) or torch.any(torch.isinf(labels)):
@@ -285,6 +281,8 @@ def train_distill_classification(train_loader, model, criterion, optimizer,
         if hasattr(config,
                    'accumulation_steps') and config.accumulation_steps > 1:
             loss = loss / config.accumulation_steps
+            for key, value in loss_value.items():
+                loss_value[key] = value / config.accumulation_steps
 
         if config.apex:
             with amp.scale_loss(loss, optimizer) as scaled_loss:
@@ -318,9 +316,12 @@ def train_distill_classification(train_loader, model, criterion, optimizer,
 
         losses.update(loss, images.size(0))
 
-        images, labels = prefetcher.next()
-
-        scheduler.step(optimizer, iter_index / iters + (epoch - 1))
+        if hasattr(config,
+                   'accumulation_steps') and config.accumulation_steps > 1:
+            if iter_index % config.accumulation_steps == 0:
+                scheduler.step(optimizer, iter_index / iters + (epoch - 1))
+        else:
+            scheduler.step(optimizer, iter_index / iters + (epoch - 1))
 
         if hasattr(config,
                    'accumulation_steps') and config.accumulation_steps > 1:
@@ -432,8 +433,8 @@ def evaluate_voc_detection(test_loader, model, criterion, decoder, config):
 
             outs_tuple = model(images)
 
-            loss_dict = criterion(outs_tuple, annots)
-            loss = sum(loss_dict.values())
+            loss_value = criterion(outs_tuple, annots)
+            loss = sum(loss_value.values())
             losses.update(loss, images.size(0))
 
             pred_scores, pred_classes, pred_boxes = decoder(outs_tuple)
@@ -606,8 +607,8 @@ def evaluate_coco_detection(test_loader, model, criterion, decoder, config):
 
             outs_tuple = model(images)
 
-            loss_dict = criterion(outs_tuple, annots)
-            loss = sum(loss_dict.values())
+            loss_value = criterion(outs_tuple, annots)
+            loss = sum(loss_value.values())
             losses.update(loss, images.size(0))
 
             scores, classes, boxes = decoder(outs_tuple)
@@ -734,12 +735,10 @@ def train_detection(train_loader, model, criterion, optimizer, scheduler,
 
     local_rank = torch.distributed.get_rank()
     iters = len(train_loader.dataset) // config.batch_size
-
-    prefetcher = DetectionDataPrefetcher(train_loader)
-    images, targets = prefetcher.next()
     iter_index = 1
 
-    while images is not None:
+    for _, data in enumerate(train_loader):
+        images, targets = data['image'], data['annots']
         images, targets = images.cuda(), targets.cuda()
 
         if torch.any(torch.isinf(images)) or torch.any(torch.isinf(targets)):
@@ -752,12 +751,12 @@ def train_detection(train_loader, model, criterion, optimizer, scheduler,
             continue
 
         outs_tuple = model(images)
-        loss_dict = criterion(outs_tuple, targets)
+        loss_value = criterion(outs_tuple, targets)
 
-        loss = sum(loss_dict.values())
+        loss = sum(loss_value.values())
 
         inf_nan_flag = False
-        for key, value in loss_dict.items():
+        for key, value in loss_value.items():
             if torch.any(torch.isinf(value)) or torch.any(torch.isnan(value)):
                 inf_nan_flag = True
 
@@ -791,12 +790,12 @@ def train_detection(train_loader, model, criterion, optimizer, scheduler,
             config.ema_model.update(model)
 
         torch.distributed.barrier()
-        for key, value in loss_dict.items():
+        for key, value in loss_value.items():
             [value] = all_reduce_operation_in_group_for_variables(
                 variables=[value],
                 operator=torch.distributed.ReduceOp.SUM,
                 group=config.group)
-            loss_dict[key] = value / float(config.gpus_num)
+            loss_value[key] = value / float(config.gpus_num)
 
         [loss] = all_reduce_operation_in_group_for_variables(
             variables=[loss],
@@ -806,9 +805,12 @@ def train_detection(train_loader, model, criterion, optimizer, scheduler,
 
         losses.update(loss, images.size(0))
 
-        images, targets = prefetcher.next()
-
-        scheduler.step(optimizer, iter_index / iters + (epoch - 1))
+        if hasattr(config,
+                   'accumulation_steps') and config.accumulation_steps > 1:
+            if iter_index % config.accumulation_steps == 0:
+                scheduler.step(optimizer, iter_index / iters + (epoch - 1))
+        else:
+            scheduler.step(optimizer, iter_index / iters + (epoch - 1))
 
         if hasattr(config,
                    'accumulation_steps') and config.accumulation_steps > 1:
@@ -818,13 +820,13 @@ def train_detection(train_loader, model, criterion, optimizer, scheduler,
             if iter_index % int(
                     config.print_interval * config.accumulation_steps) == 0:
                 log_info = f'train: epoch {epoch:0>4d}, iter [{accumulation_iter_index:0>5d}, {accumulation_iters:0>5d}], lr: {scheduler.current_lr:.6f}, total_loss: {loss*config.accumulation_steps:.4f}, '
-                for key, value in loss_dict.items():
+                for key, value in loss_value.items():
                     log_info += f'{key}: {value:.4f}, '
                 logger.info(log_info) if local_rank == 0 else None
         else:
             if iter_index % config.print_interval == 0:
                 log_info = f'train: epoch {epoch:0>4d}, iter [{iter_index:0>5d}, {iters:0>5d}], lr: {scheduler.current_lr:.6f}, total_loss: {loss:.4f}, '
-                for key, value in loss_dict.items():
+                for key, value in loss_value.items():
                     log_info += f'{key}: {value:.4f}, '
                 logger.info(log_info) if local_rank == 0 else None
 
@@ -838,369 +840,493 @@ def train_detection(train_loader, model, criterion, optimizer, scheduler,
     return avg_loss
 
 
-# def train_self_supervised_learning(train_loader, model, criterion, optimizer,
-#                                    scheduler, epoch, logger, config):
-#     '''
-#     train classification model for one epoch
-#     '''
-#     losses = AverageMeter()
-
-#     # switch to train mode
-#     model.train()
-
-#     local_rank = torch.distributed.get_rank()
-#     iters = len(train_loader.dataset) // config.batch_size
-
-#     prefetcher = SelfSupervisedPretrainDataPrefetcher(train_loader)
-#     images, labels = prefetcher.next()
-#     iter_index = 1
-
-#     while images is not None:
-#         images, labels = images.cuda(), labels.cuda()
-
-#         if torch.any(torch.isinf(images)) or torch.any(torch.isinf(labels)):
-#             continue
-
-#         if torch.any(torch.isnan(images)) or torch.any(torch.isnan(labels)):
-#             continue
-
-#         outputs, masks = model(images)
-#         loss = criterion(outputs, labels, masks)
-
-#         if loss == 0. or torch.any(torch.isinf(loss)) or torch.any(
-#                 torch.isnan(loss)):
-#             optimizer.zero_grad()
-#             continue
-
-#         if config.apex:
-#             with amp.scale_loss(loss, optimizer) as scaled_loss:
-#                 scaled_loss.backward()
-#         else:
-#             loss.backward()
-
-#         optimizer.step()
-#         optimizer.zero_grad()
-
-#         if config.use_ema_model:
-#             config.ema_model.update(model)
-
-#         torch.distributed.barrier()
-#         [loss] = all_reduce_operation_in_group_for_variables(
-#             variables=[loss],
-#             operator=torch.distributed.ReduceOp.SUM,
-#             group=config.group)
-#         loss = loss / float(config.gpus_num)
-
-#         losses.update(loss, images.size(0))
-
-#         images, labels = prefetcher.next()
-
-#         scheduler.step(optimizer, iter_index / iters + (epoch - 1))
-
-#         if iter_index % config.print_interval == 0:
-#             log_info = f'train: epoch {epoch:0>4d}, iter [{iter_index:0>5d}, {iters:0>5d}], lr: {scheduler.current_lr:.6f}, loss: {loss:.4f}'
-#             logger.info(log_info) if local_rank == 0 else None
-
-#         iter_index += 1
-
-#     return losses.avg
-
-# def validate_semantic_segmentation(test_loader, model, criterion, config):
-#     batch_time = AverageMeter()
-#     data_time = AverageMeter()
-#     losses = AverageMeter()
-
-#     # switch to evaluate mode
-#     model.eval()
-
-#     total_area_intersect = torch.zeros((config.num_classes, ),
-#                                        dtype=torch.float64).cuda()
-#     total_area_pred = torch.zeros((config.num_classes, ),
-#                                   dtype=torch.float64).cuda()
-#     total_area_gt = torch.zeros((config.num_classes, ),
-#                                 dtype=torch.float64).cuda()
-#     total_area_union = torch.zeros((config.num_classes, ),
-#                                    dtype=torch.float64).cuda()
-
-#     with torch.no_grad():
-#         end = time.time()
-#         model_on_cuda = next(model.parameters()).is_cuda
-#         for _, data in tqdm(enumerate(test_loader)):
-#             images, mask_targets, scales, sizes = data['image'], data[
-#                 'annots'], data['scale'], data['size']
-#             if model_on_cuda:
-#                 images, mask_targets = images.cuda(), mask_targets.cuda()
-
-#             torch.cuda.synchronize()
-#             data_time.update(time.time() - end)
-#             end = time.time()
-
-#             outputs = model(images)
-#             torch.cuda.synchronize()
-#             batch_time.update(time.time() - end)
-
-#             loss_dict = {}
-#             for loss_name in criterion.keys():
-#                 temp_loss = criterion[loss_name](outputs, mask_targets)
-#                 loss_dict[loss_name] = temp_loss
-
-#             loss = sum(loss_dict.values())
-
-#             torch.distributed.barrier()
-#             [loss] = all_reduce_operation_in_group_for_variables(
-#                 variables=[loss],
-#                 operator=torch.distributed.ReduceOp.SUM,
-#                 group=config.group)
-#             loss = loss / float(config.gpus_num)
-
-#             losses.update(loss, images.size(0))
-
-#             # pred shape:[b,c,h,w] -> [b,h,w,c]
-#             outputs = outputs.permute(0, 2, 3, 1)
-#             pixel_class_preds = torch.argmax(outputs, axis=3)
-
-#             for per_image_pixel_class_preds, per_image_mask_targets in zip(
-#                     pixel_class_preds, mask_targets):
-#                 per_image_pixel_class_preds, per_image_mask_targets = per_image_pixel_class_preds.view(
-#                     -1), per_image_mask_targets.view(-1)
-
-#                 per_image_filter_mask = (per_image_mask_targets !=
-#                                          config.ignore_index)
-#                 per_image_pixel_class_preds = per_image_pixel_class_preds[
-#                     per_image_filter_mask]
-#                 per_image_mask_targets = per_image_mask_targets[
-#                     per_image_filter_mask]
-
-#                 per_image_intersect = per_image_pixel_class_preds[
-#                     per_image_pixel_class_preds == per_image_mask_targets]
-
-#                 per_image_intersect_area = torch.histc(
-#                     per_image_intersect.float(),
-#                     bins=(config.num_classes),
-#                     min=0,
-#                     max=config.num_classes - 1)
-#                 per_image_pixel_class_preds_area = torch.histc(
-#                     per_image_pixel_class_preds.float(),
-#                     bins=(config.num_classes),
-#                     min=0,
-#                     max=config.num_classes - 1)
-#                 per_image_mask_targets_area = torch.histc(
-#                     per_image_mask_targets.float(),
-#                     bins=(config.num_classes),
-#                     min=0,
-#                     max=config.num_classes - 1)
-
-#                 per_image_union_area = per_image_pixel_class_preds_area + per_image_mask_targets_area - per_image_intersect_area
-
-#                 total_area_intersect = total_area_intersect + per_image_intersect_area.double(
-#                 )
-#                 total_area_pred = total_area_pred + per_image_pixel_class_preds_area.double(
-#                 )
-#                 total_area_gt = total_area_gt + per_image_mask_targets_area.double(
-#                 )
-#                 total_area_union = total_area_union + per_image_union_area.double(
-#                 )
-
-#             end = time.time()
-
-#         # avg_loss
-#         avg_loss = losses.avg
-
-#         # per image data load time(ms) and inference time(ms)
-#         per_image_load_time = data_time.avg / (config.batch_size //
-#                                                config.gpus_num) * 1000
-#         per_image_inference_time = batch_time.avg / (config.batch_size //
-#                                                      config.gpus_num) * 1000
-
-#         result_dict = collections.OrderedDict()
-
-#         result_dict['test_loss'] = f'{avg_loss :.4f}'
-#         result_dict['per_image_load_time'] = f'{per_image_load_time:.3f}ms'
-#         result_dict[
-#             'per_image_inference_time'] = f'{per_image_inference_time:.3f}ms'
-
-#         # please keep same variable on different gpus has same data type for all reduce operation
-#         torch.distributed.barrier()
-#         [
-#             total_area_intersect,
-#             total_area_pred,
-#             total_area_gt,
-#             total_area_union,
-#         ] = all_reduce_operation_in_group_for_tensors(
-#             tensors=[
-#                 total_area_intersect,
-#                 total_area_pred,
-#                 total_area_gt,
-#                 total_area_union,
-#             ],
-#             operator=torch.distributed.ReduceOp.SUM,
-#             group=config.group)
-
-#         per_class_precisions = -1. * torch.ones(
-#             (config.num_classes, ), dtype=torch.float64).cuda()
-#         per_class_recalls = -1. * torch.ones(
-#             (config.num_classes, ), dtype=torch.float64).cuda()
-#         per_class_ious = -1. * torch.ones(
-#             (config.num_classes, ), dtype=torch.float64).cuda()
-#         per_class_dices = -1. * torch.ones(
-#             (config.num_classes, ), dtype=torch.float64).cuda()
-#         exist_num_class = 0
-#         mean_precision, mean_recall, mean_iou, mean_dice = 0., 0., 0., 0.
-#         for i, (per_area_intersect, per_area_pred, per_area_gt,
-#                 per_area_union) in enumerate(
-#                     zip(total_area_intersect, total_area_pred, total_area_gt,
-#                         total_area_union)):
-#             if per_area_gt == 0:
-#                 continue
-
-#             exist_num_class += 1
-
-#             if per_area_pred != 0:
-#                 per_class_precisions[
-#                     i] = 100. * per_area_intersect / per_area_pred
-#                 mean_precision += per_class_precisions[i]
-#             if per_area_gt != 0:
-#                 per_class_recalls[i] = 100. * per_area_intersect / per_area_gt
-#                 mean_recall += per_class_recalls[i]
-#             if per_area_union != 0:
-#                 per_class_ious[i] = 100. * per_area_intersect / per_area_union
-#                 mean_iou += per_class_ious[i]
-#             if (per_area_pred + per_area_gt) != 0:
-#                 per_class_dices[i] = 100. * 2. * per_area_intersect / (
-#                     per_area_pred + per_area_gt)
-#                 mean_dice += per_class_dices[i]
-
-#         mean_precision = mean_precision / exist_num_class
-#         mean_recall = mean_recall / exist_num_class
-#         mean_iou = mean_iou / exist_num_class
-#         mean_dice = mean_dice / exist_num_class
-
-#         result_dict['existNumClass'] = exist_num_class
-#         result_dict['meanPrecision'] = mean_precision
-#         result_dict['meanRecall'] = mean_recall
-#         result_dict['meanIoU'] = mean_iou
-#         result_dict['meanDice'] = mean_dice
-
-#     precision_dict = collections.OrderedDict()
-#     for i, per_precision in enumerate(per_class_precisions):
-#         precision_dict[f'class_{i}_precision'] = per_precision
-
-#     recall_dict = collections.OrderedDict()
-#     for i, per_recall in enumerate(per_class_recalls):
-#         recall_dict[f'class_{i}_recall'] = per_recall
-
-#     iou_dict = collections.OrderedDict()
-#     for i, per_iou in enumerate(per_class_ious):
-#         iou_dict[f'class_{i}_iou'] = per_iou
-
-#     dice_dict = collections.OrderedDict()
-#     for i, per_dice in enumerate(per_class_dices):
-#         dice_dict[f'class_{i}_dice'] = per_dice
-
-#     # for key, value in precision_dict.items():
-#     #     result_dict[key] = value
-
-#     # for key, value in recall_dict.items():
-#     #     result_dict[key] = value
-
-#     # for key, value in iou_dict.items():
-#     #     result_dict[key] = value
-
-#     # for key, value in dice_dict.items():
-#     #     result_dict[key] = value
-
-#     return result_dict
-
-# def train_semantic_segmentation(train_loader, model, criterion, optimizer,
-#                                 scheduler, epoch, logger, config):
-#     '''
-#     train semantic segmentation model for one epoch
-#     '''
-#     losses = AverageMeter()
-
-#     # switch to train mode
-#     model.train()
-
-#     local_rank = torch.distributed.get_rank()
-#     iters = len(train_loader.dataset) // config.batch_size
-
-#     prefetcher = SemanticSegmentationDataPrefetcher(train_loader)
-#     images, mask_targets = prefetcher.next()
-#     iter_index = 1
-
-#     while images is not None:
-#         images, mask_targets = images.cuda(), mask_targets.cuda()
-
-#         if torch.any(torch.isinf(images)) or torch.any(
-#                 torch.isinf(mask_targets)):
-#             continue
-
-#         if torch.any(torch.isnan(images)) or torch.any(
-#                 torch.isnan(mask_targets)):
-#             continue
-
-#         if torch.sum(images) == 0:
-#             continue
-
-#         if torch.unique(mask_targets)[0] == config.ignore_index:
-#             continue
-
-#         outputs = model(images)
-
-#         loss_dict = {}
-#         for loss_name in criterion.keys():
-#             temp_loss = criterion[loss_name](outputs, mask_targets)
-#             loss_dict[loss_name] = temp_loss
-
-#         loss = sum(loss_dict.values())
-
-#         inf_nan_flag = False
-#         for key, value in loss_dict.items():
-#             if torch.any(torch.isinf(value)) or torch.any(torch.isnan(value)):
-#                 inf_nan_flag = True
-
-#         if torch.any(torch.isinf(loss)) or torch.any(torch.isnan(loss)):
-#             inf_nan_flag = True
-
-#         if loss == 0. or inf_nan_flag:
-#             optimizer.zero_grad()
-#             continue
-
-#         if config.apex:
-#             with amp.scale_loss(loss, optimizer) as scaled_loss:
-#                 scaled_loss.backward()
-#         else:
-#             loss.backward()
-
-#         optimizer.step()
-#         optimizer.zero_grad()
-
-#         torch.distributed.barrier()
-#         for key, value in loss_dict.items():
-#             [value] = all_reduce_operation_in_group_for_variables(
-#                 variables=[value],
-#                 operator=torch.distributed.ReduceOp.SUM,
-#                 group=config.group)
-#             loss_dict[key] = value / float(config.gpus_num)
-
-#         [loss] = all_reduce_operation_in_group_for_variables(
-#             variables=[loss],
-#             operator=torch.distributed.ReduceOp.SUM,
-#             group=config.group)
-#         loss = loss / float(config.gpus_num)
-
-#         losses.update(loss, images.size(0))
-
-#         images, mask_targets = prefetcher.next()
-
-#         if iter_index % config.print_interval == 0:
-#             log_info = f'train: epoch {epoch:0>4d}, iter [{iter_index:0>5d}, {iters:0>5d}], lr: {scheduler.get_lr()[0]:.6f}, total_loss: {loss:.4f}'
-#             for key, value in loss_dict.items():
-#                 log_info += f', {key}: {value:.4f}'
-#             logger.info(log_info) if local_rank == 0 else None
-
-#         iter_index += 1
-
-#     scheduler.step()
-
-#     return losses.avg
+def test_semantic_segmentation(test_loader, model, criterion, config):
+    batch_time = AverageMeter()
+    data_time = AverageMeter()
+    losses = AverageMeter()
+
+    if hasattr(config, 'use_ema_model') and config.use_ema_model:
+        model = config.ema_model.ema_model
+
+    # switch to evaluate mode
+    model.eval()
+
+    total_area_intersect = torch.zeros((config.num_classes, ),
+                                       dtype=torch.float64).cuda()
+    total_area_pred = torch.zeros((config.num_classes, ),
+                                  dtype=torch.float64).cuda()
+    total_area_gt = torch.zeros((config.num_classes, ),
+                                dtype=torch.float64).cuda()
+    total_area_union = torch.zeros((config.num_classes, ),
+                                   dtype=torch.float64).cuda()
+
+    with torch.no_grad():
+        end = time.time()
+        model_on_cuda = next(model.parameters()).is_cuda
+        for _, data in tqdm(enumerate(test_loader)):
+            images, masks, scales, sizes = data['image'], data['mask'], data[
+                'scale'], data['size']
+            if model_on_cuda:
+                images, masks = images.cuda(), masks.cuda()
+
+            torch.cuda.synchronize()
+            data_time.update(time.time() - end)
+            end = time.time()
+
+            outputs = model(images)
+            torch.cuda.synchronize()
+            batch_time.update(time.time() - end)
+
+            loss = criterion(outputs, masks)
+
+            torch.distributed.barrier()
+            [loss] = all_reduce_operation_in_group_for_variables(
+                variables=[loss],
+                operator=torch.distributed.ReduceOp.SUM,
+                group=config.group)
+            loss = loss / float(config.gpus_num)
+
+            losses.update(loss, images.size(0))
+
+            # pred shape:[b,c,h,w] -> [b,h,w,c]
+            outputs = outputs.permute(0, 2, 3, 1).contiguous()
+            pixel_preds = torch.argmax(outputs, axis=-1)
+
+            for per_image_pred, per_image_mask, per_image_size in zip(
+                    pixel_preds, masks, sizes):
+                per_image_pred = per_image_pred[0:int(per_image_size[0]),
+                                                0:int(per_image_size[1])]
+                per_image_mask = per_image_mask[0:int(per_image_size[0]),
+                                                0:int(per_image_size[1])]
+                # per_image_pred:[h,w,c] -> (-1)
+                # per_image_mask:[h,w] -> (-1)
+                per_image_pred, per_image_mask = per_image_pred.reshape(
+                    -1), per_image_mask.reshape(-1)
+
+                if config.ignore_index:
+                    per_image_filter_mask = (per_image_mask !=
+                                             config.ignore_index)
+                    per_image_pred = per_image_pred[per_image_filter_mask]
+                    per_image_mask = per_image_mask[per_image_filter_mask]
+
+                per_image_intersect = per_image_pred[per_image_pred ==
+                                                     per_image_mask]
+
+                per_image_intersect_area = torch.histc(
+                    per_image_intersect.float(),
+                    bins=(config.num_classes),
+                    min=0,
+                    max=config.num_classes - 1)
+                per_image_pred_area = torch.histc(per_image_pred.float(),
+                                                  bins=(config.num_classes),
+                                                  min=0,
+                                                  max=config.num_classes - 1)
+                per_image_mask_area = torch.histc(per_image_mask.float(),
+                                                  bins=(config.num_classes),
+                                                  min=0,
+                                                  max=config.num_classes - 1)
+
+                per_image_union_area = per_image_pred_area + per_image_mask_area - per_image_intersect_area
+
+                total_area_intersect += per_image_intersect_area.double()
+                total_area_pred += +per_image_pred_area.double()
+                total_area_gt += per_image_mask_area.double()
+                total_area_union += per_image_union_area.double()
+
+            end = time.time()
+
+        # avg_loss
+        test_loss = losses.avg
+
+        # per image data load time(ms) and inference time(ms)
+        per_image_load_time = data_time.avg / (config.batch_size //
+                                               config.gpus_num) * 1000
+        per_image_inference_time = batch_time.avg / (config.batch_size //
+                                                     config.gpus_num) * 1000
+
+        result_dict = collections.OrderedDict()
+        result_dict['test_loss'] = test_loss
+        result_dict['per_image_load_time'] = f'{per_image_load_time:.3f}ms'
+        result_dict[
+            'per_image_inference_time'] = f'{per_image_inference_time:.3f}ms'
+
+        per_class_precisions = torch.zeros((config.num_classes, ),
+                                           dtype=torch.float64).cuda()
+        per_class_recalls = torch.zeros((config.num_classes, ),
+                                        dtype=torch.float64).cuda()
+        per_class_ious = torch.zeros((config.num_classes, ),
+                                     dtype=torch.float64).cuda()
+        per_class_dices = torch.zeros((config.num_classes, ),
+                                      dtype=torch.float64).cuda()
+
+        exist_num_class = 0.
+        mean_precision, mean_recall, mean_iou, mean_dice = 0., 0., 0., 0.
+        for i, (per_class_area_intersect, per_class_area_pred,
+                per_class_area_gt, per_class_area_union) in enumerate(
+                    zip(total_area_intersect, total_area_pred, total_area_gt,
+                        total_area_union)):
+            if per_class_area_gt == 0:
+                continue
+
+            exist_num_class += 1.
+
+            if per_class_area_pred != 0:
+                per_class_precisions[i] = (per_class_area_intersect /
+                                           per_class_area_pred) * 100.
+            mean_precision += per_class_precisions[i]
+
+            if per_class_area_gt != 0:
+                per_class_recalls[i] = (per_class_area_intersect /
+                                        per_class_area_gt) * 100.
+            mean_recall += per_class_recalls[i]
+
+            if per_class_area_union != 0:
+                per_class_ious[i] = (per_class_area_intersect /
+                                     per_class_area_union) * 100.
+            mean_iou += per_class_ious[i]
+
+            if (per_class_area_pred + per_class_area_gt) != 0:
+                per_class_dices[i] = 2. * (
+                    per_class_area_intersect /
+                    (per_class_area_pred + per_class_area_gt)) * 100.
+            mean_dice += per_class_dices[i]
+
+        if exist_num_class > 0:
+            mean_precision = mean_precision / exist_num_class
+            mean_recall = mean_recall / exist_num_class
+            mean_iou = mean_iou / exist_num_class
+            mean_dice = mean_dice / exist_num_class
+
+        result_dict['exist_num_class'] = exist_num_class
+        result_dict['mean_precision'] = mean_precision
+        result_dict['mean_recall'] = mean_recall
+        result_dict['mean_iou'] = mean_iou
+        result_dict['mean_dice'] = mean_dice
+
+    precision_dict = collections.OrderedDict()
+    for i, per_precision in enumerate(per_class_precisions):
+        precision_dict[f'class_{i}_precision'] = per_precision
+
+    recall_dict = collections.OrderedDict()
+    for i, per_recall in enumerate(per_class_recalls):
+        recall_dict[f'class_{i}_recall'] = per_recall
+
+    iou_dict = collections.OrderedDict()
+    for i, per_iou in enumerate(per_class_ious):
+        iou_dict[f'class_{i}_iou'] = per_iou
+
+    dice_dict = collections.OrderedDict()
+    for i, per_dice in enumerate(per_class_dices):
+        dice_dict[f'class_{i}_dice'] = per_dice
+
+    # for key, value in precision_dict.items():
+    #     result_dict[key] = value
+
+    # for key, value in recall_dict.items():
+    #     result_dict[key] = value
+
+    # for key, value in iou_dict.items():
+    #     result_dict[key] = value
+
+    # for key, value in dice_dict.items():
+    #     result_dict[key] = value
+
+    return result_dict
+
+
+def train_semantic_segmentation(train_loader, model, criterion, optimizer,
+                                scheduler, epoch, logger, config):
+    '''
+    train semantic segmentation model for one epoch
+    '''
+    losses = AverageMeter()
+
+    # switch to train mode
+    model.train()
+
+    local_rank = torch.distributed.get_rank()
+    iters = len(train_loader.dataset) // config.batch_size
+    iter_index = 1
+
+    for _, data in enumerate(train_loader):
+        images, masks = data['image'], data['mask']
+        images, masks = images.cuda(), masks.cuda()
+
+        if torch.any(torch.isinf(images)) or torch.any(torch.isinf(masks)):
+            continue
+
+        if torch.any(torch.isnan(images)) or torch.any(torch.isnan(masks)):
+            continue
+
+        if torch.sum(images) == 0:
+            continue
+
+        outputs = model(images)
+
+        loss_value = {}
+        for loss_name in criterion.keys():
+            temp_loss = criterion[loss_name](outputs, masks)
+            loss_value[loss_name] = temp_loss
+
+        loss = sum(loss_value.values())
+
+        inf_nan_flag = False
+        for key, value in loss_value.items():
+            if torch.any(torch.isinf(value)) or torch.any(torch.isnan(value)):
+                inf_nan_flag = True
+
+        if torch.any(torch.isinf(loss)) or torch.any(torch.isnan(loss)):
+            inf_nan_flag = True
+
+        if loss == 0. or inf_nan_flag:
+            optimizer.zero_grad()
+            continue
+
+        if hasattr(config,
+                   'accumulation_steps') and config.accumulation_steps > 1:
+            loss = loss / config.accumulation_steps
+            for key, value in loss_value.items():
+                loss_value[key] = value / config.accumulation_steps
+
+        if config.apex:
+            with amp.scale_loss(loss, optimizer) as scaled_loss:
+                scaled_loss.backward()
+        else:
+            loss.backward()
+
+        if hasattr(config,
+                   'accumulation_steps') and config.accumulation_steps > 1:
+            if iter_index % config.accumulation_steps == 0:
+                optimizer.step()
+                optimizer.zero_grad()
+        else:
+            optimizer.step()
+            optimizer.zero_grad()
+
+        if hasattr(config, 'use_ema_model') and config.use_ema_model:
+            config.ema_model.update(model)
+
+        torch.distributed.barrier()
+        for key, value in loss_value.items():
+            [value] = all_reduce_operation_in_group_for_variables(
+                variables=[value],
+                operator=torch.distributed.ReduceOp.SUM,
+                group=config.group)
+            loss_value[key] = value / float(config.gpus_num)
+
+        [loss] = all_reduce_operation_in_group_for_variables(
+            variables=[loss],
+            operator=torch.distributed.ReduceOp.SUM,
+            group=config.group)
+        loss = loss / float(config.gpus_num)
+
+        losses.update(loss, images.size(0))
+
+        if hasattr(config,
+                   'accumulation_steps') and config.accumulation_steps > 1:
+            if iter_index % config.accumulation_steps == 0:
+                scheduler.step(optimizer, iter_index / iters + (epoch - 1))
+        else:
+            scheduler.step(optimizer, iter_index / iters + (epoch - 1))
+
+        if hasattr(config,
+                   'accumulation_steps') and config.accumulation_steps > 1:
+            accumulation_iter_index, accumulation_iters = int(
+                iter_index // config.accumulation_steps), int(
+                    iters // config.accumulation_steps)
+            if iter_index % int(
+                    config.print_interval * config.accumulation_steps) == 0:
+                log_info = f'train: epoch {epoch:0>4d}, iter [{accumulation_iter_index:0>5d}, {accumulation_iters:0>5d}], lr: {scheduler.current_lr:.6f}, loss: {loss*config.accumulation_steps:.4f}, '
+                for key, value in loss_value.items():
+                    log_info += f'{key}: {value*config.accumulation_steps:.4f}, '
+                logger.info(log_info) if local_rank == 0 else None
+        else:
+            if iter_index % config.print_interval == 0:
+                log_info = f'train: epoch {epoch:0>4d}, iter [{iter_index:0>5d}, {iters:0>5d}], lr: {scheduler.current_lr:.6f}, loss: {loss:.4f}, '
+                for key, value in loss_value.items():
+                    log_info += f'{key}: {value:.4f}, '
+                logger.info(log_info) if local_rank == 0 else None
+
+        iter_index += 1
+
+    avg_loss = losses.avg
+
+    if hasattr(config, 'accumulation_steps') and config.accumulation_steps > 1:
+        avg_loss = avg_loss * config.accumulation_steps
+
+    return avg_loss
+
+
+def train_mae_self_supervised_learning(train_loader, model, criterion,
+                                       optimizer, scheduler, epoch, logger,
+                                       config):
+    '''
+    train self supervised model for one epoch
+    '''
+    losses = AverageMeter()
+
+    # switch to train mode
+    model.train()
+
+    local_rank = torch.distributed.get_rank()
+    iters = len(train_loader.dataset) // config.batch_size
+    iter_index = 1
+
+    for _, data in enumerate(train_loader):
+        images, labels = data['image'], data['label']
+        images, labels = images.cuda(), labels.cuda()
+
+        if torch.any(torch.isinf(images)) or torch.any(torch.isinf(labels)):
+            continue
+
+        if torch.any(torch.isnan(images)) or torch.any(torch.isnan(labels)):
+            continue
+
+        outputs, masks = model(images)
+
+        loss = criterion(outputs, labels, masks)
+
+        if loss == 0. or torch.any(torch.isinf(loss)) or torch.any(
+                torch.isnan(loss)):
+            optimizer.zero_grad()
+            continue
+
+        if hasattr(config,
+                   'accumulation_steps') and config.accumulation_steps > 1:
+            loss = loss / config.accumulation_steps
+
+        if config.apex:
+            with amp.scale_loss(loss, optimizer) as scaled_loss:
+                scaled_loss.backward()
+        else:
+            loss.backward()
+
+        if hasattr(config,
+                   'accumulation_steps') and config.accumulation_steps > 1:
+            if iter_index % config.accumulation_steps == 0:
+                optimizer.step()
+                optimizer.zero_grad()
+        else:
+            optimizer.step()
+            optimizer.zero_grad()
+
+        if hasattr(config, 'use_ema_model') and config.use_ema_model:
+            config.ema_model.update(model)
+
+        torch.distributed.barrier()
+        [loss] = all_reduce_operation_in_group_for_variables(
+            variables=[loss],
+            operator=torch.distributed.ReduceOp.SUM,
+            group=config.group)
+        loss = loss / float(config.gpus_num)
+
+        losses.update(loss, images.size(0))
+
+        if hasattr(config,
+                   'accumulation_steps') and config.accumulation_steps > 1:
+            if iter_index % config.accumulation_steps == 0:
+                scheduler.step(optimizer, iter_index / iters + (epoch - 1))
+        else:
+            scheduler.step(optimizer, iter_index / iters + (epoch - 1))
+
+        if hasattr(config,
+                   'accumulation_steps') and config.accumulation_steps > 1:
+            accumulation_iter_index, accumulation_iters = int(
+                iter_index // config.accumulation_steps), int(
+                    iters // config.accumulation_steps)
+            if iter_index % int(
+                    config.print_interval * config.accumulation_steps) == 0:
+                log_info = f'train: epoch {epoch:0>4d}, iter [{accumulation_iter_index:0>5d}, {accumulation_iters:0>5d}], lr: {scheduler.current_lr:.6f}, loss: {loss*config.accumulation_steps:.4f}'
+                logger.info(log_info) if local_rank == 0 else None
+        else:
+            if iter_index % config.print_interval == 0:
+                log_info = f'train: epoch {epoch:0>4d}, iter [{iter_index:0>5d}, {iters:0>5d}], lr: {scheduler.current_lr:.6f}, loss: {loss:.4f}'
+                logger.info(log_info) if local_rank == 0 else None
+
+        iter_index += 1
+
+    avg_loss = losses.avg
+
+    if hasattr(config, 'accumulation_steps') and config.accumulation_steps > 1:
+        avg_loss = avg_loss * config.accumulation_steps
+
+    return avg_loss
+
+
+def train_dino_self_supervised_learning(train_loader, teacher_model,
+                                        student_model, criterion,
+                                        student_optimizer, lr_scheduler,
+                                        weight_decay_scheduler,
+                                        momentum_teacher_scheduler, epoch,
+                                        logger, config):
+    '''
+    train self supervised model for one epoch
+    '''
+    losses = AverageMeter()
+
+    # switch to train mode
+    student_model.train()
+    teacher_model.train()
+
+    local_rank = torch.distributed.get_rank()
+    iters = len(train_loader.dataset) // config.batch_size
+    iter_index = 1
+
+    for _, data in enumerate(train_loader):
+        images = data['image']
+        images = [image.cuda() for image in images]
+
+        # only the 2 global views pass through the teacher
+        teacher_outputs = teacher_model(images[0:config.global_crop_nums])
+        student_outputs = student_model(images)
+
+        currnet_epoch = iter_index / iters + (epoch - 1)
+        loss = criterion(student_outputs, teacher_outputs, currnet_epoch)
+
+        if loss == 0. or torch.any(torch.isinf(loss)) or torch.any(
+                torch.isnan(loss)):
+            student_optimizer.zero_grad()
+            continue
+
+        if config.apex:
+            with amp.scale_loss(loss, student_optimizer) as scaled_loss:
+                scaled_loss.backward()
+        else:
+            loss.backward()
+
+        student_optimizer.step()
+        student_optimizer.zero_grad()
+
+        # EMA update for the teacher
+        with torch.no_grad():
+            momentum = momentum_teacher_scheduler.current_value
+            for param_student, param_teacher in zip(
+                    student_model.module.parameters(),
+                    teacher_model.module.parameters()):
+                param_teacher.data = param_teacher.data * momentum + (
+                    1 - momentum) * param_student.detach().data
+
+        torch.distributed.barrier()
+        [loss] = all_reduce_operation_in_group_for_variables(
+            variables=[loss],
+            operator=torch.distributed.ReduceOp.SUM,
+            group=config.group)
+        loss = loss / float(config.gpus_num)
+
+        losses.update(loss, images[0].size(0))
+
+        lr_scheduler.step(student_optimizer, iter_index / iters + (epoch - 1))
+        weight_decay_scheduler.step(student_optimizer,
+                                    iter_index / iters + (epoch - 1))
+        momentum_teacher_scheduler.step(student_optimizer,
+                                        iter_index / iters + (epoch - 1))
+
+        if iter_index % config.print_interval == 0:
+            log_info = f'train: epoch {epoch:0>4d}, iter [{iter_index:0>5d}, {iters:0>5d}], lr: {lr_scheduler.current_value:.6f}, weight_decay: {weight_decay_scheduler.current_value:.6f}, momentum_teacher: {momentum_teacher_scheduler.current_value:.6f}, loss: {loss:.4f}'
+            logger.info(log_info) if local_rank == 0 else None
+
+        iter_index += 1
+
+    avg_loss = losses.avg
+
+    return avg_loss
