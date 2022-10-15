@@ -222,71 +222,71 @@ Warning:  apex was installed without --cpp_ext.  Falling back to Python flatten 
 # Contrastive learning training results
 
 ## ILSVRC2012(ImageNet) pretrained results
-| Network              | input size | gpu num      | batch     | warm up | lr decay  | apex | syncbn | epochs | Loss |
-| -------------        | -------- | ----------- | ---------- | ------------ | --------- | ------- | --------  | ---- | ------ |
-| ResNet50_dino_pretrained_epoch100 | 224x224    | 2 RTX A5000  | 128       | 10       | Cosine | True | False  | 100    | 2.4567 |
+| Network | input size | gpu num | batch | epochs | Loss |
+| ------- | ---------- | ------- | ----- | ------ | ---- |
+| ResNet50_dino_pretrained_epoch100 | 224x224 | 2 RTX A5000 | 128 | 100 | 2.4567 |
 
 ## ILSVRC2012(ImageNet) finetune results
-| Network              | macs     | params      | input size | gpu num      | batch     | warm up | lr decay  | apex | syncbn | epochs | Top-1  |
-| -------------        | -------- | ----------- | ---------- | ------------ | --------- | ------- | --------  | ---- | ------ | ------ | ------ |
-| ResNet50_finetune_epoch100_dino_pretrained_epoch_100 | 4.112G   | 25.557M     | 224x224    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 76.858 |
+| Network | macs | params | input size | gpu num | batch | epochs | Top-1  |
+| ------- | ---- | ------ | ---------- | ------- | ----- | ------ | -----  |
+| ResNet50_finetune_epoch100_dino_pretrained_epoch_100 | 4.112G | 25.557M | 224x224 | 2 RTX A5000 | 256 | 100 | 76.858 |
 
 # masked image modeling training results
 
 ## ILSVRC2012(ImageNet) pretrained results
-| Network              | input size | gpu num      | batch     | warm up | lr decay  | apex | syncbn | epochs | Loss |
-| -------------        | -------- | ----------- | ---------- | ------------ | --------- | ------- | --------  | ---- | ------ |
-| ViT_Base_Patch16_mae_pretrained_epoch100 | 224x224    | 2 RTX A5000  | 256x4       | 10       | CosineLR | True | False  | 100    | 0.3986 |
-| ViT_Base_Patch16_mae_pretrained_epoch400 | 224x224    | 2 RTX A5000  | 256x4       | 40       | CosineLR | True | False  | 400    | 0.3879 |
+| Network | input size | gpu num | batch | epochs | Loss |
+| ------- | ---------- | ------- | ----- | ------ | ---- |
+| ViT_Base_Patch16_mae_pretrained_epoch100 | 224x224 | 2 RTX A5000 | 256x4 | 100 | 0.3986 |
+| ViT_Base_Patch16_mae_pretrained_epoch400 | 224x224 | 2 RTX A5000 | 256x4 | 400 | 0.3879 |
 
 ## ILSVRC2012(ImageNet) finetune results
-| Network              | macs     | params      | input size | gpu num      | batch     | warm up | lr decay  | apex | syncbn | epochs | Top-1  |
-| -------------        | -------- | ----------- | ---------- | ------------ | --------- | ------- | --------  | ---- | ------ | ------ | ------ |
-| ViT_Base_Patch16_finetune_epoch100_mae_pretrained_epoch_100 | 16.849G  | 86.377M     | 224x224    | 2 RTX A5000  | 256x4     | 5       | cosinelr  | True | False  | 100    | 82.182 |
-| ViT_Base_Patch16_finetune_epoch100_mae_pretrained_epoch_400 | 16.849G  | 86.377M     | 224x224    | 2 RTX A5000  | 256x4     | 5       | cosinelr  | True | False  | 100    | 83.130 |
+| Network | macs | params | input size | gpu num | batch | epochs | Top-1  |
+| ------- | ---- | ------ | ---------- | ------- | ----- | ------ | -----  |
+| ViT_Base_Patch16_finetune_epoch100_mae_pretrained_epoch_100 | 16.849G | 86.377M | 224x224 | 2 RTX A5000 | 256x4 | 100 | 82.182 |
+| ViT_Base_Patch16_finetune_epoch100_mae_pretrained_epoch_400 | 16.849G | 86.377M | 224x224 | 2 RTX A5000 | 256x4 | 100 | 83.130 |
 
 # Classification training results
 
 ## ILSVRC2012(ImageNet) training results
 
-| Network              | macs     | params      | input size | gpu num      | batch     | warm up | lr decay  | apex | syncbn | epochs | Top-1  |
-| -------------        | -------- | ----------- | ---------- | ------------ | --------- | ------- | --------  | ---- | ------ | ------ | ------ |
-| ResNet18             | 1.819G   | 11.690M     | 224x224    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 70.712 |
-| ResNet34half         | 949.323M | 5.585M      | 224x224    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 67.752 |
-| ResNet34             | 3.671G   | 21.798M     | 224x224    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 73.752 |
-| ResNet50half         | 1.063G   | 6.918M      | 224x224    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 72.902 |
-| ResNet50             | 4.112G   | 25.557M     | 224x224    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 76.264 |
-| ResNet101            | 7.834G   | 44.549M     | 224x224    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 77.322 |
-| ResNet152            | 11.559G  | 60.193M     | 224x224    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 78.006 |
-| DarkNetTiny          | 412.537M | 2.087M      | 256x256    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 57.602 |
-| DarkNet19            | 3.663G   | 20.842M     | 256x256    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 74.028 |
-| DarkNet53            | 9.322G   | 41.610M     | 256x256    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 76.602 |
-| RepVGG_A0_deploy     | 1.362G   | 8.309M      | 224x224    | 2 RTX A5000  | 256       | 0       | cosinelr  | True | False  | 120    | 72.156 |
-| RepVGG_A1_deploy     | 2.364G   | 12.790M     | 224x224    | 2 RTX A5000  | 256       | 0       | cosinelr  | True | False  | 120    | 74.056 |
-| RepVGG_A2_deploy     | 5.117G   | 25.500M     | 224x224    | 2 RTX A5000  | 256       | 0       | cosinelr  | True | False  | 120    | 76.022 |
-| RepVGG_B0_deploy     | 3.058G   | 14.339M     | 224x224    | 2 RTX A5000  | 256       | 0       | cosinelr  | True | False  | 120    | 74.750 |
-| RepVGG_B1_deploy     | 11.816G  | 51.829M     | 224x224    | 2 RTX A5000  | 256       | 0       | cosinelr  | True | False  | 120    | 77.834 |
-| RepVGG_B2_deploy     | 18.377G  | 80.315M     | 224x224    | 2 RTX A5000  | 256       | 0       | cosinelr  | True | False  | 120    | 78.226 |
-| RegNetX_400MF        | 410.266M | 5.158M      | 224x224    | 2 RTX A5000  | 256       | 0       | cosinelr  | True | False  | 120    | 72.364 |
-| RegNetX_600MF        | 616.813M | 6.196M      | 224x224    | 2 RTX A5000  | 256       | 0       | cosinelr  | True | False  | 120    | 73.598 |
-| RegNetX_800MF        | 820.324M | 7.260M      | 224x224    | 2 RTX A5000  | 256       | 0       | cosinelr  | True | False  | 120    | 74.444 |
-| RegNetX_1_6GF        | 1.635G   | 9.190M      | 224x224    | 2 RTX A5000  | 256       | 0       | cosinelr  | True | False  | 120    | 76.580 |
-| RegNetX_3_2GF        | 3.222G   | 15.297M     | 224x224    | 2 RTX A5000  | 256       | 0       | cosinelr  | True | False  | 120    | 77.512 |
-| RegNetX_4_0GF        | 4.013G   | 22.118M     | 224x224    | 2 RTX A5000  | 256       | 0       | cosinelr  | True | False  | 120    | 77.722 |
+| Network | macs | params | input size | gpu num | batch | epochs | Top-1  |
+| ------- | ---- | ------ | ---------- | ------- | ----- | ------ | -----  |
+| ResNet18     | 1.819G   | 11.690M     | 224x224    | 2 RTX A5000  | 256       | 100    | 70.712 |
+| ResNet34half | 949.323M | 5.585M      | 224x224    | 2 RTX A5000  | 256       | 100    | 67.752 |
+| ResNet34     | 3.671G   | 21.798M     | 224x224    | 2 RTX A5000  | 256       | 100    | 73.752 |
+| ResNet50half | 1.063G   | 6.918M      | 224x224    | 2 RTX A5000  | 256       | 100    | 72.902 |
+| ResNet50     | 4.112G   | 25.557M     | 224x224    | 2 RTX A5000  | 256       | 100    | 76.264 |
+| ResNet101    | 7.834G   | 44.549M     | 224x224    | 2 RTX A5000  | 256       | 100    | 77.322 |
+| ResNet152    | 11.559G  | 60.193M     | 224x224    | 2 RTX A5000  | 256       | 100    | 78.006 |
+| DarkNetTiny  | 412.537M | 2.087M      | 256x256    | 2 RTX A5000  | 256       | 100    | 57.602 |
+| DarkNet19    | 3.663G   | 20.842M     | 256x256    | 2 RTX A5000  | 256       | 100    | 74.028 |
+| DarkNet53    | 9.322G   | 41.610M     | 256x256    | 2 RTX A5000  | 256       | 100    | 76.602 |
+| RepVGG_A0_deploy | 1.362G   | 8.309M      | 224x224    | 2 RTX A5000  | 256   | 120    | 72.156 |
+| RepVGG_A1_deploy | 2.364G   | 12.790M     | 224x224    | 2 RTX A5000  | 256   | 120    | 74.056 |
+| RepVGG_A2_deploy | 5.117G   | 25.500M     | 224x224    | 2 RTX A5000  | 256   | 120    | 76.022 |
+| RepVGG_B0_deploy | 3.058G   | 14.339M     | 224x224    | 2 RTX A5000  | 256   | 120    | 74.750 |
+| RepVGG_B1_deploy | 11.816G  | 51.829M     | 224x224    | 2 RTX A5000  | 256   | 120    | 77.834 |
+| RepVGG_B2_deploy | 18.377G  | 80.315M     | 224x224    | 2 RTX A5000  | 256   | 120    | 78.226 |
+| RegNetX_400MF    | 410.266M | 5.158M      | 224x224    | 2 RTX A5000  | 256   | 100    | 72.364 |
+| RegNetX_600MF    | 616.813M | 6.196M      | 224x224    | 2 RTX A5000  | 256   | 100    | 73.598 |
+| RegNetX_800MF    | 820.324M | 7.260M      | 224x224    | 2 RTX A5000  | 256   | 100    | 74.444 |
+| RegNetX_1_6GF    | 1.635G   | 9.190M      | 224x224    | 2 RTX A5000  | 256   | 100    | 76.580 |
+| RegNetX_3_2GF    | 3.222G   | 15.297M     | 224x224    | 2 RTX A5000  | 256   | 100    | 77.512 |
+| RegNetX_4_0GF    | 4.013G   | 22.118M     | 224x224    | 2 RTX A5000  | 256   | 100    | 77.722 |
 
 You can find more model training details in classification_training/imagenet/.
 
 ## CIFAR100 training results
 
-| Network              | macs     | params      | input size | gpu num      | batch     | warm up | lr decay  | apex | syncbn | epochs | Top-1  |
-| -------------        | -------- | ----------- | ---------- | ------------ | --------- | ------- | --------  | ---- | ------ | ------ | ------ |
-| ResNet18Cifar        | 557.935M | 11.220M     | 32x32      | 1 RTX A5000  | 128       | 0       | multistep | True | False  | 200    | 76.730 |
-| ResNet34halfCifar    | 292.370M | 5.350M      | 32x32      | 1 RTX A5000  | 128       | 0       | multistep | True | False  | 200    | 75.730 |
-| ResNet34Cifar        | 1.164G   | 21.328M     | 32x32      | 1 RTX A5000  | 128       | 0       | multistep | True | False  | 200    | 77.850 |
-| ResNet50halfCifar    | 331.879M | 5.991M      | 32x32      | 1 RTX A5000  | 128       | 0       | multistep | True | False  | 200    | 75.880 |
-| ResNet50Cifar        | 1.312G   | 23.705M     | 32x32      | 1 RTX A5000  | 128       | 0       | multistep | True | False  | 200    | 75.890 |
-| ResNet101Cifar       | 2.531G   | 42.697M     | 32x32      | 1 RTX A5000  | 128       | 0       | multistep | True | False  | 200    | 79.710 |
-| ResNet152Cifar       | 3.751G   | 58.341M     | 32x32      | 1 RTX A5000  | 128       | 0       | multistep | True | False  | 200    | 77.150 |
+| Network | macs | params | input size | gpu num | batch | epochs | Top-1  |
+| ------- | ---- | ------ | ---------- | ------- | ----- | ------ | -----  |
+| ResNet18Cifar     | 557.935M | 11.220M     | 32x32      | 1 RTX A5000  | 128  | 200    | 76.730 |
+| ResNet34halfCifar | 292.370M | 5.350M      | 32x32      | 1 RTX A5000  | 128  | 200    | 75.730 |
+| ResNet34Cifar     | 1.164G   | 21.328M     | 32x32      | 1 RTX A5000  | 128  | 200    | 77.850 |
+| ResNet50halfCifar | 331.879M | 5.991M      | 32x32      | 1 RTX A5000  | 128  | 200    | 75.880 |
+| ResNet50Cifar     | 1.312G   | 23.705M     | 32x32      | 1 RTX A5000  | 128  | 200    | 75.890 |
+| ResNet101Cifar    | 2.531G   | 42.697M     | 32x32      | 1 RTX A5000  | 128  | 200    | 79.710 |
+| ResNet152Cifar    | 3.751G   | 58.341M     | 32x32      | 1 RTX A5000  | 128  | 200    | 77.150 |
 
 You can find more model training details in classification_training/cifar100/.
 
@@ -322,18 +322,18 @@ Paper:https://arxiv.org/abs/2107.08430
 
 I provide a script in simpleAICV/detection/yolov3_anchor_cluster.py,and I give two examples for generate anchors on COCO2017 and VOC2007+2012 datasets.If you want to generate anchors for your dataset,just modify the part of input code,get width and height of all annotaion boxes,then use the script to compute anchors.The anchors size will change with different datasets or different input resizes.
 
-| Network               | resize-style    | input size | macs     | params   | gpu num      | batch     | warm up | lr decay  | apex | syncbn | epochs | mAP    |
-| -------------         | ------------    | ---------- | -------- | -------- | ------------ | --------- | ------- | --------  | ---- | ------ | ------ | ------ |
-| ResNet50-RetinaNet    | RetinaStyle-400 | 400x667    | 63.093G  | 37.969M  | 2 RTX A5000  | 32        | 0       | multistep | True | False  | 13     | 31.939 |
-| ResNet50-RetinaNet    | RetinaStyle-800 | 800x1333   | 250.069G | 37.969M  | 2 RTX A5000  | 8         | 0       | multistep | True | False  | 13     | 35.082 |
-| ResNet50-RetinaNet    | YoloStyle-640   | 640x640    | 95.558G  | 37.969M  | 2 RTX A5000  | 32        | 0       | multistep | True | False  | 13     | 33.475 |
-| ResNet101-RetinaNet   | RetinaStyle-800 | 800x1333   | 329.836G | 56.961M  | 2 RTX A5000  | 8         | 0       | multistep | True | False  | 13     | 36.406 |
-| ResNet50-FCOS         | RetinaStyle-400 | 400x667    | 54.066G  | 32.291M  | 2 RTX A5000  | 32        | 0       | multistep | True | False  | 13     | 34.671 |
-| ResNet50-FCOS         | RetinaStyle-800 | 800x1333   | 214.406G | 32.291M  | 2 RTX A5000  | 8         | 0       | multistep | True | False  | 13     | 37.850 |
-| ResNet50-FCOS         | YoloStyle-640   | 640x640    | 81.943G  | 32.291M  | 2 RTX A5000  | 32        | 0       | multistep | True | False  | 13     | 35.629 |
-| ResNet101-FCOS        | RetinaStyle-800 | 800x1333   | 294.173G | 51.283M  | 2 RTX A5000  | 8         | 0       | multistep | True | False  | 13     | 39.547 |
-| ResNet18DCN-CenterNet | YoloStyle-512   | 512x512    | 14.854G  | 12.889M  | 2 RTX A5000  | 64        | 0       | multistep | True | False  | 140    | 27.947 |
-| ResNet18DCN-TTFNet-3x | YoloStyle-512   | 512x512    | 16.063G  | 13.737M  | 2 RTX A5000  | 64        | 0       | multistep | True | False  | 39     | 27.847 |
+| Network | resize-style | input size | macs | params | gpu num | batch | epochs | mAP |
+| ------- | ------------ | ---------- | ---- | ------ | ------- | ----- | ------ | --- |
+| ResNet50-RetinaNet    | RetinaStyle-400 | 400x667    | 63.093G  | 37.969M  | 2 RTX A5000  | 32        | 13     | 31.939 |
+| ResNet50-RetinaNet    | RetinaStyle-800 | 800x1333   | 250.069G | 37.969M  | 2 RTX A5000  | 8         | 13     | 35.082 |
+| ResNet50-RetinaNet    | YoloStyle-640   | 640x640    | 95.558G  | 37.969M  | 2 RTX A5000  | 32        | 13     | 33.475 |
+| ResNet101-RetinaNet   | RetinaStyle-800 | 800x1333   | 329.836G | 56.961M  | 2 RTX A5000  | 8         | 13     | 36.406 |
+| ResNet50-FCOS         | RetinaStyle-400 | 400x667    | 54.066G  | 32.291M  | 2 RTX A5000  | 32        | 13     | 34.671 |
+| ResNet50-FCOS         | RetinaStyle-800 | 800x1333   | 214.406G | 32.291M  | 2 RTX A5000  | 8         | 13     | 37.850 |
+| ResNet50-FCOS         | YoloStyle-640   | 640x640    | 81.943G  | 32.291M  | 2 RTX A5000  | 32        | 13     | 35.629 |
+| ResNet101-FCOS        | RetinaStyle-800 | 800x1333   | 294.173G | 51.283M  | 2 RTX A5000  | 8         | 13     | 39.547 |
+| ResNet18DCN-CenterNet | YoloStyle-512   | 512x512    | 14.854G  | 12.889M  | 2 RTX A5000  | 64        | 140    | 27.947 |
+| ResNet18DCN-TTFNet-3x | YoloStyle-512   | 512x512    | 16.063G  | 13.737M  | 2 RTX A5000  | 64        | 39     | 27.847 |
 
 You can find more model training details in detection_training/coco/.
 
@@ -343,10 +343,10 @@ Trained on VOC2007 trainval dataset + VOC2012 trainval dataset, tested on VOC200
 
 mAP is IoU=0.50,area=all,maxDets=100,mAP.
 
-| Network               | resize-style    | input size | macs     | params   | gpu num      | batch     | warm up | lr decay  | apex | syncbn | epochs | mAP    |
-| -------------         | ------------    | ---------- | -------- | -------- | ------------ | --------- | ------- | --------  | ---- | ------ | ------ | ------ |
-| ResNet50-RetinaNet    | YoloStyle-640   | 640x640    | 84.947G  | 36.724M  | 2 RTX A5000  | 32        | 0       | multistep | True | False  | 13     | 80.693 |
-| ResNet50-FCOS         | YoloStyle-640   | 640x640    | 80.764G  | 32.153M  | 2 RTX A5000  | 32        | 0       | multistep | True | False  | 13     | 79.960 |
+| Network | resize-style | input size | macs | params | gpu num | batch | epochs | mAP |
+| ------- | ------------ | ---------- | ---- | ------ | ------- | ----- | ------ | --- |
+| ResNet50-RetinaNet    | YoloStyle-640   | 640x640    | 84.947G  | 36.724M  | 2 RTX A5000  | 32        | 13     | 80.693 |
+| ResNet50-FCOS         | YoloStyle-640   | 640x640    | 80.764G  | 32.153M  | 2 RTX A5000  | 32        | 13     | 79.960 |
 
 You can find more model training details in detection_training/voc/.
 
@@ -366,14 +366,14 @@ Paper:https://arxiv.org/abs/2203.08679
 
 Paper:https://arxiv.org/abs/1706.00384
 
-| Teacher Network  | Student Network  | method  | Freeze Teacher | input size | gpu num      | batch     | warm up | lr decay  | apex | syncbn | epochs | Teacher Top-1  | Student Top-1  |
-| ---------------- | ---------------- | ------- | -------------- | ---------- | ------------ | --------- | ------- | --------  | ---- | ------ | ------ | -------------- | -------------- |
-| ResNet34         | ResNet18         | CE+KD   | True           | 224x224    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | /              | 71.984         |
-| ResNet34         | ResNet18         | CE+DKD  | True           | 224x224    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | /              | 72.110         |
-| ResNet34         | ResNet18         | CE+DML  | False          | 224x224    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 74.674         | 72.064         |
-| ResNet152        | ResNet50         | CE+KD   | True           | 224x224    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | /              | 76.476         |
-| ResNet152        | ResNet50         | CE+DKD  | True           | 224x224    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | /              | 77.616         |
-| ResNet152        | ResNet50         | CE+DML  | False          | 224x224    | 2 RTX A5000  | 256       | 0       | multistep | True | False  | 100    | 79.148         | 77.622         |
+| Teacher Network  | Student Network  | method  | Freeze Teacher | input size | gpu num      | batch     | epochs | Teacher Top-1  | Student Top-1  |
+| ---------------- | ---------------- | ------- | -------------- | ---------- | ------------ | --------- | ------ | ---------------  | ------------ |
+| ResNet34         | ResNet18         | CE+KD   | True           | 224x224    | 2 RTX A5000  | 256       | 100    | /              | 71.984         |
+| ResNet34         | ResNet18         | CE+DKD  | True           | 224x224    | 2 RTX A5000  | 256       | 100    | /              | 72.110         |
+| ResNet34         | ResNet18         | CE+DML  | False          | 224x224    | 2 RTX A5000  | 256       | 100    | 74.674         | 72.064         |
+| ResNet152        | ResNet50         | CE+KD   | True           | 224x224    | 2 RTX A5000  | 256       | 100    | /              | 76.476         |
+| ResNet152        | ResNet50         | CE+DKD  | True           | 224x224    | 2 RTX A5000  | 256       | 100    | /              | 77.616         |
+| ResNet152        | ResNet50         | CE+DML  | False          | 224x224    | 2 RTX A5000  | 256       | 100    | 79.148         | 77.622         |
 
 You can find more model training details in distillation_training/imagenet/.
 
