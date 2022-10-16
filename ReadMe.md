@@ -21,7 +21,17 @@ https://www.zhihu.com/column/c_1249719688055193600
 
 # Introduction
 
-This repository provides training and testing examples for image classification, object detection, and knowledge distillation tasks.
+This repository provides training and testing examples for image classification, object detection,  knowledge distillation, contrastive learning, masked image modeling training.
+
+**contrastive learning**
+```
+DINO(for ResNet50)
+```
+
+**masked image modeling training**
+```
+MAE(for ViT_Base_Patch16)
+```
 
 **image classification:**
 ```
@@ -29,7 +39,6 @@ ResNet
 DarkNet
 RepVGG
 RegNetX
-ViT
 ```
 
 **object detection:**
@@ -221,6 +230,10 @@ Warning:  apex was installed without --cpp_ext.  Falling back to Python flatten 
 
 # Contrastive learning training results
 
+**DINO:Emerging Properties in Self-Supervised Vision Transformers**
+
+Paper:https://arxiv.org/abs/2104.14294
+
 ## ILSVRC2012(ImageNet) pretrained results
 | Network | input size | gpu num | batch | epochs | Loss |
 | ------- | ---------- | ------- | ----- | ------ | ---- |
@@ -232,6 +245,14 @@ Warning:  apex was installed without --cpp_ext.  Falling back to Python flatten 
 | ResNet50_finetune_epoch100_dino_pretrained_epoch_100 | 4.112G | 25.557M | 224x224 | 2 RTX A5000 | 256 | 100 | 76.858 |
 
 # masked image modeling training results
+
+**MAE:Masked Autoencoders Are Scalable Vision Learners**
+
+Paper:https://arxiv.org/abs/2111.06377
+
+**VIT:An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale**
+
+Paper:https://arxiv.org/abs/2010.11929
 
 ## ILSVRC2012(ImageNet) pretrained results
 | Network | input size | gpu num | batch | epochs | Loss |
@@ -246,6 +267,22 @@ Warning:  apex was installed without --cpp_ext.  Falling back to Python flatten 
 | ViT_Base_Patch16_finetune_epoch100_mae_pretrained_epoch_400 | 16.849G | 86.377M | 224x224 | 2 RTX A5000 | 256x4 | 100 | 83.130 |
 
 # Classification training results
+
+**ResNet**
+
+Paper:https://arxiv.org/abs/1512.03385
+
+**DarkNet**
+
+Paper:https://arxiv.org/abs/1804.02767?e05802c1_page=1
+
+**RepVGG**
+
+Paper:https://arxiv.org/abs/2101.03697
+
+**RegNet**
+
+Paper:https://arxiv.org/abs/2003.13678
 
 ## ILSVRC2012(ImageNet) training results
 
@@ -292,12 +329,6 @@ You can find more model training details in classification_training/cifar100/.
 
 # Detection training results
 
-## COCO2017 training results
-
-Trained on COCO2017_train dataset, tested on COCO2017_val dataset.
-
-mAP is IoU=0.5:0.95,area=all,maxDets=100,mAP(COCOeval,stats[0]).
-
 **RetinaNet**
 
 Paper:https://arxiv.org/abs/1708.02002
@@ -321,6 +352,12 @@ Paper:https://arxiv.org/abs/2107.08430
 **How to use yolov3 anchor clustering method to generate a set of custom anchors for your own dataset?**
 
 I provide a script in simpleAICV/detection/yolov3_anchor_cluster.py,and I give two examples for generate anchors on COCO2017 and VOC2007+2012 datasets.If you want to generate anchors for your dataset,just modify the part of input code,get width and height of all annotaion boxes,then use the script to compute anchors.The anchors size will change with different datasets or different input resizes.
+
+## COCO2017 training results
+
+Trained on COCO2017_train dataset, tested on COCO2017_val dataset.
+
+mAP is IoU=0.5:0.95,area=all,maxDets=100,mAP(COCOeval,stats[0]).
 
 | Network | resize-style | input size | macs | params | gpu num | batch | epochs | mAP |
 | ------- | ------------ | ---------- | ---- | ------ | ------- | ----- | ------ | --- |
@@ -352,8 +389,6 @@ You can find more model training details in detection_training/voc/.
 
 # Distillation training results
 
-## ImageNet training results
-
 **KD loss**
 
 Paper:https://arxiv.org/abs/1503.02531
@@ -365,6 +400,8 @@ Paper:https://arxiv.org/abs/2203.08679
 **DML loss**
 
 Paper:https://arxiv.org/abs/1706.00384
+
+## ImageNet training results
 
 | Teacher Network  | Student Network  | method  | Freeze Teacher | input size | gpu num      | batch     | epochs | Teacher Top-1  | Student Top-1  |
 | ---------------- | ---------------- | ------- | -------------- | ---------- | ------------ | --------- | ------ | ---------------  | ------------ |
