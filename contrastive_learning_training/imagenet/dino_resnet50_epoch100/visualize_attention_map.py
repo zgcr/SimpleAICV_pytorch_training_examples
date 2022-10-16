@@ -14,6 +14,7 @@ import numpy as np
 from tqdm import tqdm
 
 import torch
+import torchvision
 import torch.nn.functional as F
 from tools.utils import set_seed
 
@@ -59,16 +60,22 @@ def main():
             input_image = image
             origin_h, origin_w = input_image.shape[2], input_image.shape[3]
 
-            output = model.get_attention_map(image.float())
-            output = F.interpolate(output,
-                                   size=(origin_h, origin_w),
-                                   mode='bilinear',
-                                   align_corners=True)
-            output = output.squeeze(dim=0)
-            output = torch.einsum('chw->hwc', output)
-            output = torch.mean(output, dim=-1)
-            output = torch.sigmoid(output)
-            output = torch.unsqueeze(output, dim=-1).repeat(1, 1, 3)
+            outputs = model(image.float())
+            print("1111", origin_h, origin_w, outputs[0].shape,
+                  outputs[1].shape, outputs[2].shape)
+            outputs = [
+                F.interpolate(output,
+                              size=(origin_h, origin_w),
+                              mode='bilinear',
+                              align_corners=True) for output in outputs
+            ]
+            outputs = [output.squeeze(dim=0) for output in outputs]
+            outputs = [torch.einsum('chw->hwc', output) for output in outputs]
+            output = [torch.sigmoid(output) for output in outputs]
+
+            output = outputs[config.save_level]
+            print("1111", origin_h, origin_w, outputs[0].shape,
+                  outputs[1].shape, outputs[2].shape, output.shape)
 
             input_image = input_image.squeeze(dim=0)
             input_image = torch.einsum('chw->hwc', input_image)
@@ -78,18 +85,34 @@ def main():
                 255, 0, 255).int().numpy().astype(np.float32)
             input_image = cv2.cvtColor(input_image, cv2.COLOR_RGB2BGR)
 
-            output = output.numpy().astype(np.float32)
-            output = (output - np.min(output)) / (np.max(output) -
-                                                  np.min(output)) * 255.
-            output = cv2.cvtColor(output, cv2.COLOR_RGB2BGR)
-
             input_image_name = f'image_{i}_input.jpg'
-            output_image_name = f'image_{i}_output.jpg'
-
             cv2.imencode('.jpg', input_image)[1].tofile(
                 os.path.join(save_image_dir, input_image_name))
-            cv2.imencode('.jpg', output)[1].tofile(
-                os.path.join(save_image_dir, output_image_name))
+
+            output = output.numpy().astype(np.float32)
+            output = output * 255.
+
+            if config.save_type == 'mean':
+                output = np.mean(output, axis=-1)
+                output_image_name = f'image_{i}_output.jpg'
+                cv2.imencode('.jpg', output)[1].tofile(
+                    os.path.join(save_image_dir, output_image_name))
+            elif config.save_type == 'per_channel':
+                for j in tqdm(range(output.shape[-1])):
+                    output_image_name = f'image_{i}_output_channel_{j}.jpg'
+                    cv2.imencode('.jpg', output[:, :, j])[1].tofile(
+                        os.path.join(save_image_dir, output_image_name))
+            # output = (output - np.min(output)) / (np.max(output) -
+            #                                       np.min(output)) * 255.
+            # output = cv2.cvtColor(output, cv2.COLOR_RGB2BGR)
+
+            # input_image_name = f'image_{i}_input.jpg'
+            # output_image_name = f'image_{i}_output.jpg'
+
+            # cv2.imencode('.jpg', input_image)[1].tofile(
+            #     os.path.join(save_image_dir, input_image_name))
+            # cv2.imencode('.jpg', output)[1].tofile(
+            #     os.path.join(save_image_dir, output_image_name))
 
 
 if __name__ == '__main__':

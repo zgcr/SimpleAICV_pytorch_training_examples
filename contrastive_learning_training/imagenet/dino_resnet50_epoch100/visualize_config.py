@@ -8,7 +8,7 @@ sys.path.append(BASE_DIR)
 
 from tools.path import ILSVRC2012_path
 
-from simpleAICV.contrastive_learning import models
+import resnet
 from simpleAICV.classification.datasets.ilsvrc2012dataset import ILSVRC2012Dataset
 from simpleAICV.classification.common import Opencv2PIL, TorchResize, TorchCenterCrop, TorchMeanStdNormalize, load_state_dict
 
@@ -17,25 +17,21 @@ import torchvision.transforms as transforms
 
 
 class config:
-    network = 'resnet50_dino_pretrain_model'
-    head_planes = 65536
-    global_crop_nums = 2
-    local_crop_nums = 8
+    network = 'resnet50backbone'
     input_image_size = 224
     scale = 256 / 224
 
-    model = models.__dict__[network](**{
-        'head_planes': head_planes,
-        'head_use_bn': False,
-        'head_use_norm_last_layer': True,
-    })
+    model = resnet.__dict__[network](**{})
 
     # load pretrained model or not
-    trained_model_path = '/root/code/SimpleAICV-ImageNet-CIFAR-COCO-VOC-training/contrastive_learning_training/imagenet/dino_resnet50_epoch100/checkpoints/best_student.pth'
+    trained_model_path = '/root/code/SimpleAICV-ImageNet-CIFAR-COCO-VOC-training/contrastive_learning_training/imagenet/dino_resnet50_epoch100/checkpoints/resnet50_dino_pretrain_model-student-loss2.457.pth'
     load_state_dict(trained_model_path, model)
 
     seed = 0
     save_num = 1
+    save_level = 2
+    save_type = 'mean'
+    assert save_type in ['mean', 'per_channel']
     mean = [0.485, 0.456, 0.406]
     std = [0.229, 0.224, 0.225]
 

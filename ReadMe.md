@@ -1,9 +1,15 @@
 - [My ZhiHu column](#my-zhihu-column)
 - [Introduction](#introduction)
 - [Environments](#environments)
+- [Download datasets and my pretrained models](#download-datasets-and-my-pretrained-models)
 - [Prepare datasets](#prepare-datasets)
-- [Download my pretrained models](#download-my-pretrained-models)
 - [Train and test model](#train-and-test-model)
+- [Contrastive learning training results](#contrastive-learning-training-results)
+  - [ILSVRC2012(ImageNet) pretrained results](#ilsvrc2012imagenet-pretrained-results)
+  - [ILSVRC2012(ImageNet) finetune results](#ilsvrc2012imagenet-finetune-results)
+- [Masked image modeling training results](#masked-image-modeling-training-results)
+  - [ILSVRC2012(ImageNet) pretrained results](#ilsvrc2012imagenet-pretrained-results)
+  - [ILSVRC2012(ImageNet) finetune results](#ilsvrc2012imagenet-finetune-results)
 - [Classification training results](#classification-training-results)
   - [ILSVRC2012(ImageNet) training results](#ilsvrc2012imagenet-training-results)
   - [CIFAR100 training results](#cifar100-training-results)
@@ -106,6 +112,21 @@ pip install -v --no-cache-dir ./
 ```
 Using apex to train can reduce video memory usage by 25%-30%, but the training speed will be slower, the trained model has the same performance as not using apex.
 
+# Download datasets and my pretrained models
+
+You can download all datasets、all my pretrained models and all my experiments records/checkpoints from Baidu-Netdisk:
+```
+# all datasets
+链接：https://pan.baidu.com/s/16fAq74UMe6M1FVO_IDbqgA 
+提取码：vtm8
+# all my pretrained models
+链接：https://pan.baidu.com/s/1j7jm3I-UpMH7lJUOmJxhqg 
+提取码：okm8
+# all my experiments records/checkpoints
+链接：https://pan.baidu.com/s/17yT6m98lXi9gXYgIK5afyw 
+提取码：ofc0
+```
+
 # Prepare datasets
 
 If you want to reproduce my imagenet pretrained models,you need download ILSVRC2012 dataset,and make sure the folder architecture as follows:
@@ -165,18 +186,6 @@ ADE20K
 |        
 |                 |----training
 |---annotations---|----validation
-```
-
-# Download datasets and my pretrained models
-
-You can download all my pretrained models from Baidu-Netdisk:
-```
-# datasets
-链接：https://pan.baidu.com/s/1F31vYxtx8r_hp5sfg16gJQ 
-提取码：qsuc
-# my pretrained models and records
-链接：https://pan.baidu.com/s/10XSnqU51qWf___VG0dipBg 
-提取码：30xh
 ```
 
 # Train and test model
@@ -244,7 +253,7 @@ Paper:https://arxiv.org/abs/2104.14294
 | ------- | ---- | ------ | ---------- | ------- | ----- | ------ | -----  |
 | ResNet50_finetune_epoch100_dino_pretrained_epoch_100 | 4.112G | 25.557M | 224x224 | 2 RTX A5000 | 256 | 100 | 76.858 |
 
-# masked image modeling training results
+# Masked image modeling training results
 
 **MAE:Masked Autoencoders Are Scalable Vision Learners**
 
