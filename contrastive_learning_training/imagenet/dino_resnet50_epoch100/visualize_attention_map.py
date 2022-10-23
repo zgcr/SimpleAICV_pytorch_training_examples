@@ -102,17 +102,6 @@ def main():
                     output_image_name = f'image_{i}_output_channel_{j}.jpg'
                     cv2.imencode('.jpg', output[:, :, j])[1].tofile(
                         os.path.join(save_image_dir, output_image_name))
-            # output = (output - np.min(output)) / (np.max(output) -
-            #                                       np.min(output)) * 255.
-            # output = cv2.cvtColor(output, cv2.COLOR_RGB2BGR)
-
-            # input_image_name = f'image_{i}_input.jpg'
-            # output_image_name = f'image_{i}_output.jpg'
-
-            # cv2.imencode('.jpg', input_image)[1].tofile(
-            #     os.path.join(save_image_dir, input_image_name))
-            # cv2.imencode('.jpg', output)[1].tofile(
-            #     os.path.join(save_image_dir, output_image_name))
 
 
 if __name__ == '__main__':

@@ -1,0 +1,498 @@
+2022-10-17 23:16:17 - network: segmenter_vit_base_patch16_mask
+2022-10-17 23:16:17 - input_image_size: 512
+2022-10-17 23:16:17 - num_classes: 150
+2022-10-17 23:16:17 - reduce_zero_label: True
+2022-10-17 23:16:17 - ignore_index: 255
+2022-10-17 23:16:17 - backbone_pretrained_path: /root/code/SimpleAICV-ImageNet-CIFAR-COCO-VOC-training/pretrained_models/classification_training/vit/finetune-vit-base-patch16-224-epoch100-for-mae-epoch400-acc83.130.pth
+2022-10-17 23:16:17 - trained_model_path: 
+2022-10-17 23:16:17 - loss_list: ['CELoss']
+2022-10-17 23:16:17 - train_criterion: {'CELoss': CELoss(
+  (softmax): Softmax(dim=-1)
+)}
+2022-10-17 23:16:17 - loss_name: CELoss
+2022-10-17 23:16:17 - test_criterion: CELoss(
+  (softmax): Softmax(dim=-1)
+)
+2022-10-17 23:16:17 - train_dataset: <simpleAICV.semantic_segmentation.datasets.ade20kdataset.ADE20KSemanticSegmentation object at 0x7fa3b01de100>
+2022-10-17 23:16:17 - test_dataset: <simpleAICV.semantic_segmentation.datasets.ade20kdataset.ADE20KSemanticSegmentation object at 0x7fa3b01d7eb0>
+2022-10-17 23:16:17 - train_collater: <simpleAICV.semantic_segmentation.common.AlignResizeSemanticSegmentationCollater object at 0x7fa3b01d7f10>
+2022-10-17 23:16:17 - test_collater: <simpleAICV.semantic_segmentation.common.AlignResizeSemanticSegmentationCollater object at 0x7fa3b01d7df0>
+2022-10-17 23:16:17 - seed: 0
+2022-10-17 23:16:17 - batch_size: 8
+2022-10-17 23:16:17 - num_workers: 20
+2022-10-17 23:16:17 - accumulation_steps: 1
+2022-10-17 23:16:17 - optimizer: ('AdamW', {'lr': 0.0001, 'global_weight_decay': False, 'weight_decay': 0.001, 'no_weight_decay_layer_name_list': []})
+2022-10-17 23:16:17 - scheduler: ('MultiStepLR', {'warm_up_epochs': 0, 'gamma': 0.1, 'milestones': [80, 120]})
+2022-10-17 23:16:17 - epochs: 128
+2022-10-17 23:16:17 - eval_epoch: [1, 0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120, 125]
+2022-10-17 23:16:17 - i: 127
+2022-10-17 23:16:17 - print_interval: 100
+2022-10-17 23:16:17 - save_model_metric: mean_iou
+2022-10-17 23:16:17 - sync_bn: False
+2022-10-17 23:16:17 - apex: True
+2022-10-17 23:16:17 - use_ema_model: False
+2022-10-17 23:16:17 - ema_model_decay: 0.9999
+2022-10-17 23:16:17 - gpus_type: NVIDIA RTX A5000
+2022-10-17 23:16:17 - gpus_num: 2
+2022-10-17 23:16:17 - group: <torch._C._distributed_c10d.ProcessGroupNCCL object at 0x7fa3b01ca770>
+2022-10-17 23:16:17 - --------------------parameters--------------------
+2022-10-17 23:16:17 - name: backbone.cls_token, grad: True
+2022-10-17 23:16:17 - name: backbone.position_encoding, grad: True
+2022-10-17 23:16:17 - name: backbone.patch_embedding.conv.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.patch_embedding.conv.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.0.norm1.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.0.norm1.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.0.attention.qkv_linear.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.0.attention.qkv_linear.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.0.attention.out_linear.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.0.attention.out_linear.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.0.norm2.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.0.norm2.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.0.feed_forward.fc1.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.0.feed_forward.fc1.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.0.feed_forward.fc2.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.0.feed_forward.fc2.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.1.norm1.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.1.norm1.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.1.attention.qkv_linear.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.1.attention.qkv_linear.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.1.attention.out_linear.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.1.attention.out_linear.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.1.norm2.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.1.norm2.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.1.feed_forward.fc1.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.1.feed_forward.fc1.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.1.feed_forward.fc2.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.1.feed_forward.fc2.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.2.norm1.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.2.norm1.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.2.attention.qkv_linear.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.2.attention.qkv_linear.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.2.attention.out_linear.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.2.attention.out_linear.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.2.norm2.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.2.norm2.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.2.feed_forward.fc1.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.2.feed_forward.fc1.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.2.feed_forward.fc2.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.2.feed_forward.fc2.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.3.norm1.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.3.norm1.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.3.attention.qkv_linear.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.3.attention.qkv_linear.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.3.attention.out_linear.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.3.attention.out_linear.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.3.norm2.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.3.norm2.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.3.feed_forward.fc1.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.3.feed_forward.fc1.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.3.feed_forward.fc2.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.3.feed_forward.fc2.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.4.norm1.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.4.norm1.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.4.attention.qkv_linear.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.4.attention.qkv_linear.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.4.attention.out_linear.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.4.attention.out_linear.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.4.norm2.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.4.norm2.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.4.feed_forward.fc1.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.4.feed_forward.fc1.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.4.feed_forward.fc2.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.4.feed_forward.fc2.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.5.norm1.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.5.norm1.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.5.attention.qkv_linear.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.5.attention.qkv_linear.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.5.attention.out_linear.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.5.attention.out_linear.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.5.norm2.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.5.norm2.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.5.feed_forward.fc1.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.5.feed_forward.fc1.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.5.feed_forward.fc2.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.5.feed_forward.fc2.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.6.norm1.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.6.norm1.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.6.attention.qkv_linear.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.6.attention.qkv_linear.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.6.attention.out_linear.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.6.attention.out_linear.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.6.norm2.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.6.norm2.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.6.feed_forward.fc1.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.6.feed_forward.fc1.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.6.feed_forward.fc2.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.6.feed_forward.fc2.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.7.norm1.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.7.norm1.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.7.attention.qkv_linear.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.7.attention.qkv_linear.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.7.attention.out_linear.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.7.attention.out_linear.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.7.norm2.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.7.norm2.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.7.feed_forward.fc1.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.7.feed_forward.fc1.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.7.feed_forward.fc2.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.7.feed_forward.fc2.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.8.norm1.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.8.norm1.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.8.attention.qkv_linear.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.8.attention.qkv_linear.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.8.attention.out_linear.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.8.attention.out_linear.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.8.norm2.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.8.norm2.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.8.feed_forward.fc1.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.8.feed_forward.fc1.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.8.feed_forward.fc2.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.8.feed_forward.fc2.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.9.norm1.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.9.norm1.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.9.attention.qkv_linear.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.9.attention.qkv_linear.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.9.attention.out_linear.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.9.attention.out_linear.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.9.norm2.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.9.norm2.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.9.feed_forward.fc1.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.9.feed_forward.fc1.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.9.feed_forward.fc2.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.9.feed_forward.fc2.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.10.norm1.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.10.norm1.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.10.attention.qkv_linear.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.10.attention.qkv_linear.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.10.attention.out_linear.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.10.attention.out_linear.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.10.norm2.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.10.norm2.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.10.feed_forward.fc1.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.10.feed_forward.fc1.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.10.feed_forward.fc2.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.10.feed_forward.fc2.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.11.norm1.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.11.norm1.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.11.attention.qkv_linear.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.11.attention.qkv_linear.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.11.attention.out_linear.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.11.attention.out_linear.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.11.norm2.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.11.norm2.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.11.feed_forward.fc1.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.11.feed_forward.fc1.bias, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.11.feed_forward.fc2.weight, grad: True
+2022-10-17 23:16:17 - name: backbone.blocks.11.feed_forward.fc2.bias, grad: True
+2022-10-17 23:16:17 - name: head.cls_embedding, grad: True
+2022-10-17 23:16:17 - name: head.proj_patch, grad: True
+2022-10-17 23:16:17 - name: head.proj_classes, grad: True
+2022-10-17 23:16:17 - name: head.blocks.0.norm1.weight, grad: True
+2022-10-17 23:16:17 - name: head.blocks.0.norm1.bias, grad: True
+2022-10-17 23:16:17 - name: head.blocks.0.attention.qkv_linear.weight, grad: True
+2022-10-17 23:16:17 - name: head.blocks.0.attention.qkv_linear.bias, grad: True
+2022-10-17 23:16:17 - name: head.blocks.0.attention.out_linear.weight, grad: True
+2022-10-17 23:16:17 - name: head.blocks.0.attention.out_linear.bias, grad: True
+2022-10-17 23:16:17 - name: head.blocks.0.norm2.weight, grad: True
+2022-10-17 23:16:17 - name: head.blocks.0.norm2.bias, grad: True
+2022-10-17 23:16:17 - name: head.blocks.0.feed_forward.fc1.weight, grad: True
+2022-10-17 23:16:17 - name: head.blocks.0.feed_forward.fc1.bias, grad: True
+2022-10-17 23:16:17 - name: head.blocks.0.feed_forward.fc2.weight, grad: True
+2022-10-17 23:16:17 - name: head.blocks.0.feed_forward.fc2.bias, grad: True
+2022-10-17 23:16:17 - name: head.blocks.1.norm1.weight, grad: True
+2022-10-17 23:16:17 - name: head.blocks.1.norm1.bias, grad: True
+2022-10-17 23:16:17 - name: head.blocks.1.attention.qkv_linear.weight, grad: True
+2022-10-17 23:16:17 - name: head.blocks.1.attention.qkv_linear.bias, grad: True
+2022-10-17 23:16:17 - name: head.blocks.1.attention.out_linear.weight, grad: True
+2022-10-17 23:16:17 - name: head.blocks.1.attention.out_linear.bias, grad: True
+2022-10-17 23:16:17 - name: head.blocks.1.norm2.weight, grad: True
+2022-10-17 23:16:17 - name: head.blocks.1.norm2.bias, grad: True
+2022-10-17 23:16:17 - name: head.blocks.1.feed_forward.fc1.weight, grad: True
+2022-10-17 23:16:17 - name: head.blocks.1.feed_forward.fc1.bias, grad: True
+2022-10-17 23:16:17 - name: head.blocks.1.feed_forward.fc2.weight, grad: True
+2022-10-17 23:16:17 - name: head.blocks.1.feed_forward.fc2.bias, grad: True
+2022-10-17 23:16:17 - name: head.block_norm.weight, grad: True
+2022-10-17 23:16:17 - name: head.block_norm.bias, grad: True
+2022-10-17 23:16:17 - name: head.decoder_linear.weight, grad: True
+2022-10-17 23:16:17 - name: head.decoder_linear.bias, grad: True
+2022-10-17 23:16:17 - name: head.mask_norm.weight, grad: True
+2022-10-17 23:16:17 - name: head.mask_norm.bias, grad: True
+2022-10-17 23:16:17 - --------------------buffers--------------------
+2022-10-17 23:16:17 - -----------no weight decay layers--------------
+2022-10-17 23:16:17 - name: backbone.patch_embedding.conv.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.0.norm1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.0.norm1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.0.attention.qkv_linear.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.0.attention.out_linear.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.0.norm2.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.0.norm2.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.0.feed_forward.fc1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.0.feed_forward.fc2.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.1.norm1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.1.norm1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.1.attention.qkv_linear.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.1.attention.out_linear.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.1.norm2.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.1.norm2.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.1.feed_forward.fc1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.1.feed_forward.fc2.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.2.norm1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.2.norm1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.2.attention.qkv_linear.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.2.attention.out_linear.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.2.norm2.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.2.norm2.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.2.feed_forward.fc1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.2.feed_forward.fc2.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.3.norm1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.3.norm1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.3.attention.qkv_linear.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.3.attention.out_linear.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.3.norm2.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.3.norm2.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.3.feed_forward.fc1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.3.feed_forward.fc2.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.4.norm1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.4.norm1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.4.attention.qkv_linear.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.4.attention.out_linear.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.4.norm2.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.4.norm2.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.4.feed_forward.fc1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.4.feed_forward.fc2.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.5.norm1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.5.norm1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.5.attention.qkv_linear.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.5.attention.out_linear.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.5.norm2.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.5.norm2.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.5.feed_forward.fc1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.5.feed_forward.fc2.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.6.norm1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.6.norm1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.6.attention.qkv_linear.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.6.attention.out_linear.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.6.norm2.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.6.norm2.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.6.feed_forward.fc1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.6.feed_forward.fc2.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.7.norm1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.7.norm1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.7.attention.qkv_linear.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.7.attention.out_linear.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.7.norm2.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.7.norm2.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.7.feed_forward.fc1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.7.feed_forward.fc2.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.8.norm1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.8.norm1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.8.attention.qkv_linear.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.8.attention.out_linear.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.8.norm2.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.8.norm2.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.8.feed_forward.fc1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.8.feed_forward.fc2.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.9.norm1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.9.norm1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.9.attention.qkv_linear.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.9.attention.out_linear.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.9.norm2.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.9.norm2.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.9.feed_forward.fc1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.9.feed_forward.fc2.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.10.norm1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.10.norm1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.10.attention.qkv_linear.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.10.attention.out_linear.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.10.norm2.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.10.norm2.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.10.feed_forward.fc1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.10.feed_forward.fc2.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.11.norm1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.11.norm1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.11.attention.qkv_linear.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.11.attention.out_linear.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.11.norm2.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.11.norm2.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.11.feed_forward.fc1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.11.feed_forward.fc2.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: head.blocks.0.norm1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: head.blocks.0.norm1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: head.blocks.0.attention.qkv_linear.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: head.blocks.0.attention.out_linear.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: head.blocks.0.norm2.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: head.blocks.0.norm2.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: head.blocks.0.feed_forward.fc1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: head.blocks.0.feed_forward.fc2.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: head.blocks.1.norm1.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: head.blocks.1.norm1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: head.blocks.1.attention.qkv_linear.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: head.blocks.1.attention.out_linear.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: head.blocks.1.norm2.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: head.blocks.1.norm2.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: head.blocks.1.feed_forward.fc1.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: head.blocks.1.feed_forward.fc2.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: head.block_norm.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: head.block_norm.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: head.decoder_linear.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: head.mask_norm.weight, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - name: head.mask_norm.bias, weight_decay: 0.0, lr_scale: not setting!
+2022-10-17 23:16:17 - -------------weight decay layers---------------
+2022-10-17 23:16:17 - name: backbone.cls_token, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.position_encoding, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.patch_embedding.conv.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.0.attention.qkv_linear.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.0.attention.out_linear.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.0.feed_forward.fc1.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.0.feed_forward.fc2.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.1.attention.qkv_linear.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.1.attention.out_linear.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.1.feed_forward.fc1.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.1.feed_forward.fc2.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.2.attention.qkv_linear.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.2.attention.out_linear.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.2.feed_forward.fc1.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.2.feed_forward.fc2.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.3.attention.qkv_linear.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.3.attention.out_linear.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.3.feed_forward.fc1.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.3.feed_forward.fc2.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.4.attention.qkv_linear.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.4.attention.out_linear.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.4.feed_forward.fc1.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.4.feed_forward.fc2.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.5.attention.qkv_linear.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.5.attention.out_linear.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.5.feed_forward.fc1.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.5.feed_forward.fc2.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.6.attention.qkv_linear.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.6.attention.out_linear.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.6.feed_forward.fc1.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.6.feed_forward.fc2.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.7.attention.qkv_linear.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.7.attention.out_linear.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.7.feed_forward.fc1.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.7.feed_forward.fc2.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.8.attention.qkv_linear.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.8.attention.out_linear.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.8.feed_forward.fc1.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.8.feed_forward.fc2.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.9.attention.qkv_linear.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.9.attention.out_linear.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.9.feed_forward.fc1.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.9.feed_forward.fc2.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.10.attention.qkv_linear.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.10.attention.out_linear.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.10.feed_forward.fc1.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.10.feed_forward.fc2.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.11.attention.qkv_linear.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.11.attention.out_linear.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.11.feed_forward.fc1.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: backbone.blocks.11.feed_forward.fc2.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: head.cls_embedding, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: head.proj_patch, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: head.proj_classes, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: head.blocks.0.attention.qkv_linear.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: head.blocks.0.attention.out_linear.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: head.blocks.0.feed_forward.fc1.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: head.blocks.0.feed_forward.fc2.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: head.blocks.1.attention.qkv_linear.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: head.blocks.1.attention.out_linear.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: head.blocks.1.feed_forward.fc1.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: head.blocks.1.feed_forward.fc2.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - name: head.decoder_linear.weight, weight_decay: 0.001, lr_scale: not setting!
+2022-10-17 23:16:17 - epoch 001 lr: 0.000100
+2022-10-17 23:16:55 - train: epoch 0001, iter [00100, 02526], lr: 0.000100, loss: 3.3893, CELoss: 3.3893, 
+2022-10-17 23:17:28 - train: epoch 0001, iter [00200, 02526], lr: 0.000100, loss: 3.4213, CELoss: 3.4213, 
+2022-10-17 23:18:02 - train: epoch 0001, iter [00300, 02526], lr: 0.000100, loss: 2.5498, CELoss: 2.5498, 
+2022-10-17 23:18:35 - train: epoch 0001, iter [00400, 02526], lr: 0.000100, loss: 3.6489, CELoss: 3.6489, 
+2022-10-17 23:19:09 - train: epoch 0001, iter [00500, 02526], lr: 0.000100, loss: 2.6953, CELoss: 2.6953, 
+2022-10-17 23:19:43 - train: epoch 0001, iter [00600, 02526], lr: 0.000100, loss: 1.7528, CELoss: 1.7528, 
+2022-10-17 23:20:16 - train: epoch 0001, iter [00700, 02526], lr: 0.000100, loss: 1.7345, CELoss: 1.7345, 
+2022-10-17 23:20:50 - train: epoch 0001, iter [00800, 02526], lr: 0.000100, loss: 2.0425, CELoss: 2.0425, 
+2022-10-17 23:21:24 - train: epoch 0001, iter [00900, 02526], lr: 0.000100, loss: 1.2971, CELoss: 1.2971, 
+2022-10-17 23:21:58 - train: epoch 0001, iter [01000, 02526], lr: 0.000100, loss: 1.5311, CELoss: 1.5311, 
+2022-10-17 23:22:31 - train: epoch 0001, iter [01100, 02526], lr: 0.000100, loss: 1.1625, CELoss: 1.1625, 
+2022-10-17 23:23:05 - train: epoch 0001, iter [01200, 02526], lr: 0.000100, loss: 2.5716, CELoss: 2.5716, 
+2022-10-17 23:23:39 - train: epoch 0001, iter [01300, 02526], lr: 0.000100, loss: 2.3392, CELoss: 2.3392, 
+2022-10-17 23:24:13 - train: epoch 0001, iter [01400, 02526], lr: 0.000100, loss: 1.5291, CELoss: 1.5291, 
+2022-10-17 23:24:46 - train: epoch 0001, iter [01500, 02526], lr: 0.000100, loss: 1.0025, CELoss: 1.0025, 
+2022-10-17 23:25:19 - train: epoch 0001, iter [01600, 02526], lr: 0.000100, loss: 1.3739, CELoss: 1.3739, 
+2022-10-17 23:25:53 - train: epoch 0001, iter [01700, 02526], lr: 0.000100, loss: 1.0292, CELoss: 1.0292, 
+2022-10-17 23:26:27 - train: epoch 0001, iter [01800, 02526], lr: 0.000100, loss: 1.1630, CELoss: 1.1630, 
+2022-10-17 23:27:00 - train: epoch 0001, iter [01900, 02526], lr: 0.000100, loss: 1.4569, CELoss: 1.4569, 
+2022-10-17 23:27:34 - train: epoch 0001, iter [02000, 02526], lr: 0.000100, loss: 0.8603, CELoss: 0.8603, 
+2022-10-17 23:28:08 - train: epoch 0001, iter [02100, 02526], lr: 0.000100, loss: 1.4974, CELoss: 1.4974, 
+2022-10-17 23:28:41 - train: epoch 0001, iter [02200, 02526], lr: 0.000100, loss: 1.5185, CELoss: 1.5185, 
+2022-10-17 23:29:15 - train: epoch 0001, iter [02300, 02526], lr: 0.000100, loss: 1.4260, CELoss: 1.4260, 
+2022-10-17 23:29:49 - train: epoch 0001, iter [02400, 02526], lr: 0.000100, loss: 1.5540, CELoss: 1.5540, 
+2022-10-17 23:30:22 - train: epoch 0001, iter [02500, 02526], lr: 0.000100, loss: 1.4389, CELoss: 1.4389, 
+2022-10-17 23:30:32 - train: epoch 001, train_loss: 1.8454
+2022-10-17 23:31:22 - eval: epoch: 001
+test_loss: 1.24868961840868
+per_image_load_time: 1.228ms
+per_image_inference_time: 18.122ms
+exist_num_class: 150.0
+mean_precision: 36.646372464453016
+mean_recall: 23.8063921802183
+mean_iou: 16.22444181228728
+mean_dice: 23.648076534928688
+
+2022-10-17 23:31:25 - until epoch: 001, best_metric: 16.224%
+2022-10-17 23:31:25 - epoch 002 lr: 0.000100
+2022-10-17 23:32:01 - train: epoch 0002, iter [00100, 02526], lr: 0.000100, loss: 1.5859, CELoss: 1.5859, 
+2022-10-17 23:32:35 - train: epoch 0002, iter [00200, 02526], lr: 0.000100, loss: 0.9197, CELoss: 0.9197, 
+2022-10-17 23:33:09 - train: epoch 0002, iter [00300, 02526], lr: 0.000100, loss: 1.6555, CELoss: 1.6555, 
+2022-10-17 23:33:43 - train: epoch 0002, iter [00400, 02526], lr: 0.000100, loss: 1.1059, CELoss: 1.1059, 
+2022-10-17 23:34:17 - train: epoch 0002, iter [00500, 02526], lr: 0.000100, loss: 1.7509, CELoss: 1.7509, 
+2022-10-17 23:34:50 - train: epoch 0002, iter [00600, 02526], lr: 0.000100, loss: 1.3750, CELoss: 1.3750, 
+2022-10-17 23:35:24 - train: epoch 0002, iter [00700, 02526], lr: 0.000100, loss: 1.2079, CELoss: 1.2079, 
+2022-10-17 23:35:57 - train: epoch 0002, iter [00800, 02526], lr: 0.000100, loss: 1.6997, CELoss: 1.6997, 
+2022-10-17 23:36:31 - train: epoch 0002, iter [00900, 02526], lr: 0.000100, loss: 1.2305, CELoss: 1.2305, 
+2022-10-17 23:37:04 - train: epoch 0002, iter [01000, 02526], lr: 0.000100, loss: 0.9220, CELoss: 0.9220, 
+2022-10-17 23:37:38 - train: epoch 0002, iter [01100, 02526], lr: 0.000100, loss: 0.9730, CELoss: 0.9730, 
+2022-10-17 23:38:11 - train: epoch 0002, iter [01200, 02526], lr: 0.000100, loss: 1.0133, CELoss: 1.0133, 
+2022-10-17 23:38:45 - train: epoch 0002, iter [01300, 02526], lr: 0.000100, loss: 1.1983, CELoss: 1.1983, 
+2022-10-17 23:39:18 - train: epoch 0002, iter [01400, 02526], lr: 0.000100, loss: 1.2073, CELoss: 1.2073, 
+2022-10-17 23:39:52 - train: epoch 0002, iter [01500, 02526], lr: 0.000100, loss: 1.4417, CELoss: 1.4417, 
+2022-10-17 23:40:25 - train: epoch 0002, iter [01600, 02526], lr: 0.000100, loss: 1.1115, CELoss: 1.1115, 
+2022-10-17 23:40:59 - train: epoch 0002, iter [01700, 02526], lr: 0.000100, loss: 1.1610, CELoss: 1.1610, 
+2022-10-17 23:41:33 - train: epoch 0002, iter [01800, 02526], lr: 0.000100, loss: 1.2608, CELoss: 1.2608, 
+2022-10-17 23:42:06 - train: epoch 0002, iter [01900, 02526], lr: 0.000100, loss: 1.6524, CELoss: 1.6524, 
+2022-10-17 23:42:40 - train: epoch 0002, iter [02000, 02526], lr: 0.000100, loss: 1.4140, CELoss: 1.4140, 
+2022-10-17 23:43:13 - train: epoch 0002, iter [02100, 02526], lr: 0.000100, loss: 1.5011, CELoss: 1.5011, 
+2022-10-17 23:43:47 - train: epoch 0002, iter [02200, 02526], lr: 0.000100, loss: 0.8065, CELoss: 0.8065, 
+2022-10-17 23:44:20 - train: epoch 0002, iter [02300, 02526], lr: 0.000100, loss: 1.0331, CELoss: 1.0331, 
+2022-10-17 23:44:54 - train: epoch 0002, iter [02400, 02526], lr: 0.000100, loss: 1.4219, CELoss: 1.4219, 
+2022-10-17 23:45:27 - train: epoch 0002, iter [02500, 02526], lr: 0.000100, loss: 1.4049, CELoss: 1.4049, 
+2022-10-17 23:45:37 - train: epoch 002, train_loss: 1.2833
+2022-10-17 23:45:39 - until epoch: 002, best_metric: 16.224%
+2022-10-17 23:45:39 - epoch 003 lr: 0.000100
+2022-10-17 23:46:15 - train: epoch 0003, iter [00100, 02526], lr: 0.000100, loss: 1.3567, CELoss: 1.3567, 
+2022-10-17 23:46:48 - train: epoch 0003, iter [00200, 02526], lr: 0.000100, loss: 1.1706, CELoss: 1.1706, 
+2022-10-17 23:47:22 - train: epoch 0003, iter [00300, 02526], lr: 0.000100, loss: 1.2010, CELoss: 1.2010, 
+2022-10-17 23:47:55 - train: epoch 0003, iter [00400, 02526], lr: 0.000100, loss: 0.6121, CELoss: 0.6121, 
+2022-10-17 23:48:28 - train: epoch 0003, iter [00500, 02526], lr: 0.000100, loss: 1.4989, CELoss: 1.4989, 
+2022-10-17 23:49:02 - train: epoch 0003, iter [00600, 02526], lr: 0.000100, loss: 0.8278, CELoss: 0.8278, 
+2022-10-17 23:49:35 - train: epoch 0003, iter [00700, 02526], lr: 0.000100, loss: 1.0071, CELoss: 1.0071, 
+2022-10-17 23:50:08 - train: epoch 0003, iter [00800, 02526], lr: 0.000100, loss: 1.4837, CELoss: 1.4837, 
+2022-10-17 23:50:42 - train: epoch 0003, iter [00900, 02526], lr: 0.000100, loss: 1.2804, CELoss: 1.2804, 
+2022-10-17 23:51:15 - train: epoch 0003, iter [01000, 02526], lr: 0.000100, loss: 1.2963, CELoss: 1.2963, 
+2022-10-17 23:51:48 - train: epoch 0003, iter [01100, 02526], lr: 0.000100, loss: 1.0733, CELoss: 1.0733, 
+2022-10-17 23:52:22 - train: epoch 0003, iter [01200, 02526], lr: 0.000100, loss: 1.5369, CELoss: 1.5369, 
+2022-10-17 23:52:55 - train: epoch 0003, iter [01300, 02526], lr: 0.000100, loss: 0.7829, CELoss: 0.7829, 
+2022-10-17 23:53:28 - train: epoch 0003, iter [01400, 02526], lr: 0.000100, loss: 0.9793, CELoss: 0.9793, 
+2022-10-17 23:54:02 - train: epoch 0003, iter [01500, 02526], lr: 0.000100, loss: 1.2660, CELoss: 1.2660, 
+2022-10-17 23:54:35 - train: epoch 0003, iter [01600, 02526], lr: 0.000100, loss: 1.7759, CELoss: 1.7759, 
+2022-10-17 23:55:08 - train: epoch 0003, iter [01700, 02526], lr: 0.000100, loss: 1.2298, CELoss: 1.2298, 
+2022-10-17 23:55:42 - train: epoch 0003, iter [01800, 02526], lr: 0.000100, loss: 0.9282, CELoss: 0.9282, 
+2022-10-17 23:56:15 - train: epoch 0003, iter [01900, 02526], lr: 0.000100, loss: 1.2413, CELoss: 1.2413, 
+2022-10-17 23:56:49 - train: epoch 0003, iter [02000, 02526], lr: 0.000100, loss: 2.6867, CELoss: 2.6867, 
+2022-10-17 23:57:23 - train: epoch 0003, iter [02100, 02526], lr: 0.000100, loss: 1.3262, CELoss: 1.3262, 
+2022-10-17 23:57:56 - train: epoch 0003, iter [02200, 02526], lr: 0.000100, loss: 1.0615, CELoss: 1.0615, 
+2022-10-17 23:58:29 - train: epoch 0003, iter [02300, 02526], lr: 0.000100, loss: 0.9183, CELoss: 0.9183, 
+2022-10-17 23:59:03 - train: epoch 0003, iter [02400, 02526], lr: 0.000100, loss: 1.3025, CELoss: 1.3025, 
+2022-10-17 23:59:36 - train: epoch 0003, iter [02500, 02526], lr: 0.000100, loss: 1.4842, CELoss: 1.4842, 
+2022-10-17 23:59:46 - train: epoch 003, train_loss: 1.1599
+2022-10-17 23:59:48 - until epoch: 003, best_metric: 16.224%
+2022-10-17 23:59:48 - epoch 004 lr: 0.000100

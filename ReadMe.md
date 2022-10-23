@@ -16,6 +16,8 @@
 - [Detection training results](#detection-training-results)
   - [COCO2017 training results](#coco2017-training-results)
   - [VOC2007 and VOC2012 training results](#voc2007-and-voc2012-training-results)
+- [Semantic Segmentation training results](#semantic-segmentation-training-results)
+  - [ADE20K training results](#ade20k-training-results)
 - [Distillation training results](#distillation-training-results)
   - [ImageNet training results](#imagenet-training-results)
 - [Citation](#citation)
@@ -27,7 +29,7 @@ https://www.zhihu.com/column/c_1249719688055193600
 
 # Introduction
 
-This repository provides training and testing examples for image classification, object detection,  knowledge distillation, contrastive learning, masked image modeling training.
+This repository provides training and testing examples for image classification, object detection, semantic segmentation, knowledge distillation, contrastive learning, masked image modeling training.
 
 **contrastive learning**
 ```
@@ -53,6 +55,12 @@ RetinaNet
 FCOS
 CenterNet
 TTFNet
+```
+
+**semantic segmentation:**
+```
+DeepLabv3+
+Segmenter
 ```
 
 **knowledge distillation:**
@@ -378,6 +386,7 @@ mAP is IoU=0.5:0.95,area=all,maxDets=100,mAP(COCOeval,stats[0]).
 | ResNet50-FCOS         | RetinaStyle-800 | 800x1333   | 214.406G | 32.291M  | 2 RTX A5000  | 8         | 13     | 37.850 |
 | ResNet50-FCOS         | YoloStyle-640   | 640x640    | 81.943G  | 32.291M  | 2 RTX A5000  | 32        | 13     | 35.629 |
 | ResNet101-FCOS        | RetinaStyle-800 | 800x1333   | 294.173G | 51.283M  | 2 RTX A5000  | 8         | 13     | 39.547 |
+| vit_base_patch16_fcos_yoloresize640 | YoloStyle-640 | 640x640 | 184.171G | 91.506M  | 2 RTX A5000  | 8         | 13     | 39.948 |
 | ResNet18DCN-CenterNet | YoloStyle-512   | 512x512    | 14.854G  | 12.889M  | 2 RTX A5000  | 64        | 140    | 27.947 |
 | ResNet18DCN-TTFNet-3x | YoloStyle-512   | 512x512    | 16.063G  | 13.737M  | 2 RTX A5000  | 64        | 39     | 27.847 |
 
@@ -395,6 +404,25 @@ mAP is IoU=0.50,area=all,maxDets=100,mAP.
 | ResNet50-FCOS         | YoloStyle-640   | 640x640    | 80.764G  | 32.153M  | 2 RTX A5000  | 32        | 13     | 79.960 |
 
 You can find more model training details in detection_training/voc/.
+
+# Semantic Segmentation training results
+
+**DeepLabv3+**
+
+Paper:https://arxiv.org/abs/1802.02611
+
+**Segmenter**
+
+Paper:https://arxiv.org/abs/2105.05633
+
+## ADE20K training results
+
+| Network             | input size | macs    | params  | gpu num     | batch | epochs | miou |
+| ------------------- | ---------- | ------- | ------- | ----------- | ----- | ------ | ---- |
+| ResNet50-DeepLabv3+        | 512x512    | 25.548G  | 26.738M  | 2 RTX A5000 | 8     | 128    | 34.058 |
+| vit_base_patch16_Segmenter_mae_pretrain_epoch400 | 512x512    | 104.886G | 100.368M | 2 RTX A5000 | 8     | 128    | 40.652 |
+| vit_base_patch16_Segmenter_cls_pretrain_83.130 | 512x512    | 104.886G | 100.368M | 2 RTX A5000 | 8     | 128    | 42.058 |
+
 
 # Distillation training results
 

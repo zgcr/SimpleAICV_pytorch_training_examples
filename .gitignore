@@ -3,7 +3,4 @@ __pycache__
 checkpoints
 *.pth
 pretrained_models
-semantic_segmentation_training
-simpleAICV/semantic_segmentation
-tools/test_semantic_segmentation_model.py
-tools/train_semantic_segmentation_model.py
+semantic_segmentation_training/ade20k/segmenter_vit_base_patch16_mask_3x_cls_pretrain
