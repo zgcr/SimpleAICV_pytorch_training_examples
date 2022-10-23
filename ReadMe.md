@@ -29,7 +29,7 @@ https://www.zhihu.com/column/c_1249719688055193600
 
 # Introduction
 
-This repository provides training and testing examples for image classification, object detection, semantic segmentation, knowledge distillation, contrastive learning, masked image modeling training.
+This repository provides simple training and testing examples for image classification, object detection, semantic segmentation, knowledge distillation, contrastive learning, masked image modeling training.
 
 **contrastive learning**
 ```
