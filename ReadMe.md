@@ -386,7 +386,7 @@ mAP is IoU=0.5:0.95,area=all,maxDets=100,mAP(COCOeval,stats[0]).
 | ResNet50-FCOS         | RetinaStyle-800 | 800x1333   | 214.406G | 32.291M  | 2 RTX A5000  | 8         | 13     | 37.850 |
 | ResNet50-FCOS         | YoloStyle-640   | 640x640    | 81.943G  | 32.291M  | 2 RTX A5000  | 32        | 13     | 35.629 |
 | ResNet101-FCOS        | RetinaStyle-800 | 800x1333   | 294.173G | 51.283M  | 2 RTX A5000  | 8         | 13     | 39.547 |
-| vit_base_patch16_fcos_yoloresize640 | YoloStyle-640 | 640x640 | 184.171G | 91.506M  | 2 RTX A5000  | 8         | 13     | 39.948 |
+| vit_base_patch16_fcos | YoloStyle-640 | 640x640 | 184.171G | 91.506M  | 2 RTX A5000  | 8         | 13     | 39.948 |
 | ResNet18DCN-CenterNet | YoloStyle-512   | 512x512    | 14.854G  | 12.889M  | 2 RTX A5000  | 64        | 140    | 27.947 |
 | ResNet18DCN-TTFNet-3x | YoloStyle-512   | 512x512    | 16.063G  | 13.737M  | 2 RTX A5000  | 64        | 39     | 27.847 |
 
