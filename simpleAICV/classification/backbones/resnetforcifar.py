@@ -17,9 +17,7 @@ from simpleAICV.classification.backbones.resnet import ConvBnActBlock, BasicBloc
 
 __all__ = [
     'resnet18cifar',
-    'resnet34halfcifar',
     'resnet34cifar',
-    'resnet50halfcifar',
     'resnet50cifar',
     'resnet101cifar',
     'resnet152cifar',
@@ -27,6 +25,7 @@ __all__ = [
 
 
 class ResNetCifar(nn.Module):
+
     def __init__(self, block, layer_nums, inplanes=64, num_classes=1000):
         super(ResNetCifar, self).__init__()
         self.block = block
@@ -110,16 +109,8 @@ def resnet18cifar(**kwargs):
     return _resnetcifar(BasicBlock, [2, 2, 2, 2], 64, **kwargs)
 
 
-def resnet34halfcifar(**kwargs):
-    return _resnetcifar(BasicBlock, [3, 4, 6, 3], 32, **kwargs)
-
-
 def resnet34cifar(**kwargs):
     return _resnetcifar(BasicBlock, [3, 4, 6, 3], 64, **kwargs)
-
-
-def resnet50halfcifar(**kwargs):
-    return _resnetcifar(Bottleneck, [3, 4, 6, 3], 32, **kwargs)
 
 
 def resnet50cifar(**kwargs):
@@ -161,7 +152,7 @@ if __name__ == '__main__':
     out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
     print(f'1111, macs: {macs}, params: {params},out_shape: {out.shape}')
 
-    net = resnet34halfcifar(num_classes=1000)
+    net = resnet34cifar(num_classes=1000)
     image_h, image_w = 32, 32
     from thop import profile
     from thop import clever_format
@@ -183,7 +174,7 @@ if __name__ == '__main__':
     out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
     print(f'3333, macs: {macs}, params: {params},out_shape: {out.shape}')
 
-    net = resnet152cifar(num_classes=1000)
+    net = resnet101cifar(num_classes=1000)
     image_h, image_w = 32, 32
     from thop import profile
     from thop import clever_format
@@ -193,3 +184,14 @@ if __name__ == '__main__':
     macs, params = clever_format([macs, params], '%.3f')
     out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
     print(f'4444, macs: {macs}, params: {params},out_shape: {out.shape}')
+
+    net = resnet152cifar(num_classes=1000)
+    image_h, image_w = 32, 32
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    print(f'5555, macs: {macs}, params: {params},out_shape: {out.shape}')

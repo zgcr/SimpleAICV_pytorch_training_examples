@@ -12,7 +12,7 @@ from simpleAICV.detection import models
 from simpleAICV.detection import losses
 from simpleAICV.detection import decode
 from simpleAICV.detection.datasets.cocodataset import CocoDetection
-from simpleAICV.detection.common import RetinaStyleResize, YoloStyleResize, RandomHorizontalFlip, Normalize, DetectionCollater, load_state_dict
+from simpleAICV.detection.common import DetectionResize, RandomHorizontalFlip, Normalize, DetectionCollater, load_state_dict
 
 import torch
 import torchvision.transforms as transforms
@@ -29,8 +29,7 @@ class config:
     })
 
     # load total pretrained model or not
-    trained_model_path = '/root/code/SimpleAICV-ImageNet-CIFAR-COCO-VOC-training/detection_training/coco/res18_ttfnet_yoloresize512_3x/checkpoints/resnet18_ttfnet-metric27.631.pth'
-    # trained_model_path = os.path.join(BASE_DIR, '')
+    trained_model_path = ''
     load_state_dict(trained_model_path, model)
 
     test_criterion = losses.__dict__['TTFNetLoss'](**{
@@ -54,15 +53,18 @@ class config:
     test_dataset = CocoDetection(COCO2017_path,
                                  set_name='val2017',
                                  transform=transforms.Compose([
-                                     YoloStyleResize(
+                                     DetectionResize(
                                          resize=input_image_size[0],
-                                         divisor=32,
                                          stride=32,
+                                         resize_type='yolo_style',
                                          multi_scale=False,
-                                         multi_scale_range=[0.6, 1.4]),
+                                         multi_scale_range=[0.8, 1.0]),
                                      Normalize(),
                                  ]))
-    test_collater = DetectionCollater()
+
+    test_collater = DetectionCollater(resize=input_image_size[0],
+                                      resize_type='yolo_style',
+                                      max_annots_num=100)
 
     # 'COCO' or 'VOC'
     eval_type = 'COCO'
@@ -74,4 +76,4 @@ class config:
     # batch_size is total size
     batch_size = 64
     # num_workers is total workers
-    num_workers = 16
+    num_workers = 30

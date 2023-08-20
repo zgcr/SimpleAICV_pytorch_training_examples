@@ -105,21 +105,20 @@ if __name__ == '__main__':
     import torchvision.transforms as transforms
     from simpleAICV.detection.datasets.cocodataset import CocoDetection
     from simpleAICV.detection.datasets.vocdataset import VocDetection
-    from simpleAICV.detection.common import RandomHorizontalFlip, RandomCrop, RandomTranslate, Normalize, YoloStyleResize, RetinaStyleResize, DetectionCollater
+    from simpleAICV.detection.common import RandomHorizontalFlip, RandomCrop, RandomTranslate, Normalize, DetectionResize, DetectionCollater
 
     coco = CocoDetection(
         COCO2017_path,
         set_name='train2017',
         transform=transforms.Compose([
-            RandomHorizontalFlip(prob=0.5),
+            # RandomHorizontalFlip(prob=0.5),
             # RandomCrop(prob=0.5),
             # RandomTranslate(prob=0.5),
-            YoloStyleResize(resize=resize,
-                            divisor=32,
+            DetectionResize(resize=640,
                             stride=32,
+                            resize_type='yolo_style',
                             multi_scale=False,
-                            multi_scale_range=[0.5, 1.0]),
-            # RetinaStyleResize(resize=resize, multi_scale=True),
+                            multi_scale_range=[0.8, 1.0]),
             Normalize(),
         ]))
 
@@ -127,15 +126,14 @@ if __name__ == '__main__':
         root_dir=VOCdataset_path,
         image_sets=[('2007', 'trainval'), ('2012', 'trainval')],
         transform=transforms.Compose([
-            RandomHorizontalFlip(prob=0.5),
+            # RandomHorizontalFlip(prob=0.5),
             # RandomCrop(prob=0.5),
             # RandomTranslate(prob=0.5),
-            YoloStyleResize(resize=resize,
-                            divisor=32,
+            DetectionResize(resize=640,
                             stride=32,
+                            resize_type='yolo_style',
                             multi_scale=False,
-                            multi_scale_range=[0.5, 1.0]),
-            # RetinaStyleResize(resize=resize, multi_scale=True),
+                            multi_scale_range=[0.8, 1.0]),
             Normalize(),
         ]),
         keep_difficult=True)
@@ -169,15 +167,3 @@ if __name__ == '__main__':
 
     avg_iou = compute_avg_iou(boxes_wh, anchors)
     print(avg_iou)
-
-# YoloStyleResize=640,voc2007+2012
-# np.median
-# [[22, 27], [38, 60], [95, 68], [64, 135], [180, 137], [122, 239], [230, 350],
-#  [403, 215], [497, 426]]
-# avg_iou:0.6657713134621938
-
-# YoloStyleResize=640,coco2017
-# np.median
-# [[8, 10], [17, 23], [49, 30], [27, 55], [53, 106], [99, 65], [111, 207],
-#  [213, 141], [366, 363]]
-# avg_iou:0.6070449695289617

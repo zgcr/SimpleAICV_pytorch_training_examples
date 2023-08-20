@@ -424,5 +424,4 @@ if __name__ == '__main__':
     inputs = torch.randn(3, 3, 224, 224)
     out1 = trained_model(inputs)
     out2 = deployed_model(inputs)
-    print(out1[0][1:20], out2[0][1:20])
     print(((out1 - out2)**2).sum())  # Will be around 1e-10

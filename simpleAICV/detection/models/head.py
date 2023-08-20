@@ -12,7 +12,6 @@ import torch
 import torch.nn as nn
 
 from simpleAICV.detection.models.dcnv2 import DeformableConv2d
-from simpleAICV.detection.models.backbones.yoloxbackbone import ConvBnActBlock, DWConvBnActBlock
 
 
 class RetinaClsHead(nn.Module):
@@ -421,120 +420,35 @@ class TTFHetWhHead(nn.Module):
         return heatmap_output, wh_output
 
 
-class YOLOXHead(nn.Module):
+class DETRClsRegHead(nn.Module):
 
-    def __init__(self,
-                 inplanes_list,
-                 planes,
-                 num_classes,
-                 block=ConvBnActBlock,
-                 act_type='silu'):
-        super(YOLOXHead, self).__init__()
+    def __init__(self, hidden_inplanes, num_classes, num_layers=3):
+        super(DETRClsRegHead, self).__init__()
 
-        self.stem_conv_list = nn.ModuleList()
-        self.cls_conv_list = nn.ModuleList()
-        self.reg_conv_list = nn.ModuleList()
-        self.cls_pred_list = nn.ModuleList()
-        self.reg_pred_list = nn.ModuleList()
-        self.obj_pred_list = nn.ModuleList()
+        self.cls_head = nn.Linear(hidden_inplanes, num_classes)
 
-        for i in range(len(inplanes_list)):
-            self.stem_conv_list.append(
-                ConvBnActBlock(inplanes_list[i],
-                               planes,
-                               kernel_size=1,
-                               stride=1,
-                               padding=0,
-                               groups=1,
-                               has_bn=True,
-                               has_act=True,
-                               act_type=act_type))
-            self.cls_conv_list.append(
-                nn.Sequential(
-                    block(planes,
-                          planes,
-                          kernel_size=3,
-                          stride=1,
-                          padding=1,
-                          groups=1,
-                          has_bn=True,
-                          has_act=True,
-                          act_type=act_type),
-                    block(planes,
-                          planes,
-                          kernel_size=3,
-                          stride=1,
-                          padding=1,
-                          groups=1,
-                          has_bn=True,
-                          has_act=True,
-                          act_type=act_type)))
-            self.reg_conv_list.append(
-                nn.Sequential(
-                    block(planes,
-                          planes,
-                          kernel_size=3,
-                          stride=1,
-                          padding=1,
-                          groups=1,
-                          has_bn=True,
-                          has_act=True,
-                          act_type=act_type),
-                    block(planes,
-                          planes,
-                          kernel_size=3,
-                          stride=1,
-                          padding=1,
-                          groups=1,
-                          has_bn=True,
-                          has_act=True,
-                          act_type=act_type)))
-            self.cls_pred_list.append(
-                nn.Conv2d(planes,
-                          num_classes,
-                          kernel_size=1,
-                          stride=1,
-                          padding=0,
-                          groups=1,
-                          bias=True))
-            self.reg_pred_list.append(
-                nn.Conv2d(planes,
-                          4,
-                          kernel_size=1,
-                          stride=1,
-                          padding=0,
-                          groups=1,
-                          bias=True))
-            self.obj_pred_list.append(
-                nn.Conv2d(planes,
-                          1,
-                          kernel_size=1,
-                          stride=1,
-                          padding=0,
-                          groups=1,
-                          bias=True))
+        reg_layers = []
+        for _ in range(num_layers - 1):
+            reg_layers.append(nn.Linear(hidden_inplanes, hidden_inplanes))
+            reg_layers.append(nn.ReLU(inplace=True))
+        reg_layers.append(nn.Linear(hidden_inplanes, 4))
+        self.reg_head = nn.Sequential(*reg_layers)
+
         self.sigmoid = nn.Sigmoid()
 
-    def forward(self, inputs):
-        obj_outputs, cls_outputs, reg_outputs = [], [], []
-        for i, x in enumerate(inputs):
-            x = self.stem_conv_list[i](x)
+        for m in self.parameters():
+            if m.dim() > 1:
+                nn.init.xavier_uniform_(m)
 
-            cls_out = self.cls_conv_list[i](x)
-            reg_out = self.reg_conv_list[i](x)
+    def forward(self, x):
+        cls_output = self.cls_head(x)
+        reg_output = self.reg_head(x)
 
-            cls_out = self.cls_pred_list[i](cls_out)
-            obj_out = self.obj_pred_list[i](reg_out)
-            reg_out = self.reg_pred_list[i](reg_out)
+        del x
 
-            cls_out = self.sigmoid(cls_out)
-            obj_out = self.sigmoid(obj_out)
+        reg_output = self.sigmoid(reg_output)
 
-            cls_outputs.append(cls_out)
-            reg_outputs.append(reg_out)
-            obj_outputs.append(obj_out)
-
-        return cls_outputs, reg_outputs, obj_outputs
+        return cls_output, reg_output
 
 
 if __name__ == '__main__':
@@ -610,16 +524,10 @@ if __name__ == '__main__':
     macs, params = clever_format([macs, params], '%.3f')
     print(f'5555, macs: {macs}, params: {params}')
 
-    P3, P4, P5 = torch.randn(3, 256, 80, 80), torch.randn(3, 512, 40,
-                                                          40), torch.randn(
-                                                              3, 1024, 20, 20)
-    net = YOLOXHead(inplanes_list=[256, 512, 1024],
-                    planes=256,
-                    num_classes=80,
-                    block=ConvBnActBlock,
-                    act_type='silu')
+    inputs = torch.randn(6, 3, 100, 256)
+    net = DETRClsRegHead(hidden_inplanes=256, num_classes=80, num_layers=3)
     from thop import profile
     from thop import clever_format
-    macs, params = profile(net, inputs=([P3, P4, P5], ), verbose=False)
+    macs, params = profile(net, inputs=(inputs, ), verbose=False)
     macs, params = clever_format([macs, params], '%.3f')
     print(f'6666, macs: {macs}, params: {params}')

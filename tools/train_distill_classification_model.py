@@ -8,6 +8,7 @@ warnings.filterwarnings('ignore')
 
 import argparse
 import functools
+import re
 import time
 
 import torch
@@ -121,26 +122,22 @@ def main():
 
     optimizer, model_layer_weight_decay_list = build_optimizer(config, model)
 
-    for i, per_layer_list in enumerate(model_layer_weight_decay_list):
-        if i == 0:
-            log_info = f'-----------no weight decay layers--------------'
-        elif i == 1:
-            log_info = f'-------------weight decay layers---------------'
-        logger.info(log_info) if local_rank == 0 else None
-
-        layer_name_list, layer_weight_decay = per_layer_list[
-            'name'], per_layer_list['weight_decay']
+    log_info = f'-------------layers weight decay---------------'
+    logger.info(log_info) if local_rank == 0 else None
+    for per_layer_list in model_layer_weight_decay_list:
+        layer_name_list, layer_lr, layer_weight_decay = per_layer_list[
+            'name'], per_layer_list['lr'], per_layer_list['weight_decay']
 
         lr_scale = 'not setting!'
         if 'lr_scale' in per_layer_list.keys():
             lr_scale = per_layer_list['lr_scale']
 
         for name in layer_name_list:
-            log_info = f'name: {name}, weight_decay: {layer_weight_decay}, lr_scale: {lr_scale}'
+            log_info = f'name: {name}, lr: {layer_lr}, weight_decay: {layer_weight_decay}, lr_scale: {lr_scale}'
             logger.info(log_info) if local_rank == 0 else None
 
-    scheduler = Scheduler(config)
-    model, _ = build_training_mode(config, model, optimizer)
+    scheduler = Scheduler(config, optimizer)
+    model, config.ema_model, config.scaler = build_training_mode(config, model)
 
     start_epoch, train_time = 1, 0
     tea_best_acc1, tea_acc1, tea_test_loss = 0, 0, 0
@@ -162,6 +159,27 @@ def main():
 
         log_info = f'resuming model from {resume_model}. resume_epoch: {saved_epoch:0>3d}, used_time: {used_time:.3f} hours, tea_best_acc1: {tea_best_acc1:.3f}%, tea_test_loss: {tea_test_loss:.4f}, stu_best_acc1: {stu_best_acc1:.3f}%, stu_test_loss: {stu_test_loss:.4f}, lr: {lr:.6f}'
         logger.info(log_info) if local_rank == 0 else None
+
+    # use torch 2.0 compile function
+    config.compile_support = False
+    log_info = f'using torch version:{torch.__version__}'
+    logger.info(log_info) if local_rank == 0 else None
+    if re.match(r'2.\d*.\d*', torch.__version__):
+        config.compile_support = True
+        log_info = f'this torch version support torch.compile function.'
+        logger.info(log_info) if local_rank == 0 else None
+    elif re.match(r'1.\d*.\d*', torch.__version__):
+        log_info = f'this torch version unsupport torch.compile function.'
+        logger.info(log_info) if local_rank == 0 else None
+    else:
+        log_info = f'unsupport torch version:{torch.__version__}'
+        logger.info(log_info) if local_rank == 0 else None
+        return
+
+    config.use_compile = (config.compile_support and config.use_compile)
+    if config.use_compile:
+        # _orig_mod
+        model = torch.compile(model, **config.compile_params)
 
     for epoch in range(start_epoch, config.epochs + 1):
         per_epoch_start_time = time.time()
@@ -194,13 +212,30 @@ def main():
             # save best acc1 model and each epoch checkpoint
             if tea_acc1 > tea_best_acc1 and tea_acc1 <= 100:
                 tea_best_acc1 = tea_acc1
-                torch.save(model.module.teacher.state_dict(),
+                if config.use_compile:
+                    save_best_teacher_model = model._orig_mod.module.teacher.state_dict(
+                    )
+                else:
+                    save_best_teacher_model = model.module.teacher.state_dict()
+
+                torch.save(save_best_teacher_model,
                            os.path.join(checkpoint_dir, 'best_teacher.pth'))
 
             if stu_acc1 > stu_best_acc1 and stu_acc1 <= 100:
                 stu_best_acc1 = stu_acc1
-                torch.save(model.module.student.state_dict(),
+                if config.use_compile:
+                    save_best_student_model = model._orig_mod.module.student.state_dict(
+                    )
+                else:
+                    save_best_student_model = model.module.student.state_dict()
+
+                torch.save(save_best_student_model,
                            os.path.join(checkpoint_dir, 'best_student.pth'))
+
+            if config.use_compile:
+                save_checkpoint_model = model._orig_mod.state_dict()
+            else:
+                save_checkpoint_model = model.state_dict()
 
             torch.save(
                 {
@@ -211,7 +246,7 @@ def main():
                     'stu_best_acc1': stu_best_acc1,
                     'stu_test_loss': stu_test_loss,
                     'lr': scheduler.current_lr,
-                    'model_state_dict': model.state_dict(),
+                    'model_state_dict': save_checkpoint_model,
                     'optimizer_state_dict': optimizer.state_dict(),
                     'scheduler_state_dict': scheduler.state_dict(),
                 }, os.path.join(checkpoint_dir, 'latest.pth'))

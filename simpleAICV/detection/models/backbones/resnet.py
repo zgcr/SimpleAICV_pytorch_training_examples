@@ -15,9 +15,7 @@ from simpleAICV.detection.common import load_state_dict
 
 __all__ = [
     'resnet18backbone',
-    'resnet34halfbackbone',
     'resnet34backbone',
-    'resnet50halfbackbone',
     'resnet50backbone',
     'resnet101backbone',
     'resnet152backbone',
@@ -120,25 +118,9 @@ def resnet18backbone(pretrained_path=''):
     return model
 
 
-def resnet34halfbackbone(pretrained_path=''):
-    model = _resnetbackbone(BasicBlock, [3, 4, 6, 3],
-                            32,
-                            pretrained_path=pretrained_path)
-
-    return model
-
-
 def resnet34backbone(pretrained_path=''):
     model = _resnetbackbone(BasicBlock, [3, 4, 6, 3],
                             64,
-                            pretrained_path=pretrained_path)
-
-    return model
-
-
-def resnet50halfbackbone(pretrained_path=''):
-    model = _resnetbackbone(Bottleneck, [3, 4, 6, 3],
-                            32,
                             pretrained_path=pretrained_path)
 
     return model
@@ -193,11 +175,11 @@ if __name__ == '__main__':
                            verbose=False)
     macs, params = clever_format([macs, params], '%.3f')
     print(f'1111, macs: {macs}, params: {params}')
-    outs = net(torch.autograd.Variable(torch.randn(8, 3, image_h, image_w)))
+    outs = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
     for out in outs:
         print('2222', out.shape)
 
-    net = resnet34halfbackbone()
+    net = resnet34backbone()
     image_h, image_w = 640, 640
     from thop import profile
     from thop import clever_format
@@ -206,7 +188,7 @@ if __name__ == '__main__':
                            verbose=False)
     macs, params = clever_format([macs, params], '%.3f')
     print(f'1111, macs: {macs}, params: {params}')
-    outs = net(torch.autograd.Variable(torch.randn(8, 3, image_h, image_w)))
+    outs = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
     for out in outs:
         print('2222', out.shape)
 
@@ -219,6 +201,32 @@ if __name__ == '__main__':
                            verbose=False)
     macs, params = clever_format([macs, params], '%.3f')
     print(f'1111, macs: {macs}, params: {params}')
-    outs = net(torch.autograd.Variable(torch.randn(8, 3, image_h, image_w)))
+    outs = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    for out in outs:
+        print('2222', out.shape)
+
+    net = resnet101backbone()
+    image_h, image_w = 640, 640
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    outs = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    for out in outs:
+        print('2222', out.shape)
+
+    net = resnet152backbone()
+    image_h, image_w = 640, 640
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    outs = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
     for out in outs:
         print('2222', out.shape)

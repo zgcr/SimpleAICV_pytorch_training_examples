@@ -172,61 +172,6 @@ class TTFNetPositions:
         return feature_map_positions
 
 
-class YoloxAnchors:
-
-    def __init__(self, strides=[8, 16, 32]):
-        self.strides = np.array(strides, dtype=np.float32)
-
-    def __call__(self, fpn_feature_sizes):
-        '''
-        generate one image grid strides
-        '''
-        one_image_grid_strides = []
-        for stride, fpn_feature_size in zip(self.strides, fpn_feature_sizes):
-            feature_map_grid_strides = self.generate_positions_on_feature_map(
-                fpn_feature_size, stride)
-            one_image_grid_strides.append(feature_map_grid_strides)
-
-        # if input size:[640,640]
-        # one_image_positions shape:[[80, 80, 3],[40, 40, 3],[20, 20, 3]]
-        # per position format:[grids_x_index,grids_y_index,stride]
-        return one_image_grid_strides
-
-    def generate_positions_on_feature_map(self, feature_map_size, stride):
-        '''
-        generate one feature map positions
-        '''
-        # shifts_x shape:[w],shifts_x shape:[h]
-        shifts_x = np.arange(0, feature_map_size[0]) + 0.5
-        shifts_y = np.arange(0, feature_map_size[1]) + 0.5
-
-        # feature_map_grids shape:[w,h,2] -> [h,w,2]
-        feature_map_grid_centers = np.array([[[shift_x, shift_y]
-                                              for shift_y in shifts_y]
-                                             for shift_x in shifts_x],
-                                            dtype=np.float32)
-        feature_map_grid_centers = np.transpose(feature_map_grid_centers,
-                                                axes=(1, 0, 2))
-        feature_map_grid_centers = np.ascontiguousarray(
-            feature_map_grid_centers, dtype=np.float32)
-
-        # feature_map_strides shape:[] -> [1,1,1] -> [h,w,1]
-        feature_map_strides = np.expand_dims(np.expand_dims(np.expand_dims(
-            stride, axis=0),
-                                                            axis=0),
-                                             axis=0)
-
-        feature_map_strides = np.tile(feature_map_strides,
-                                      (feature_map_grid_centers.shape[0],
-                                       feature_map_grid_centers.shape[1], 1))
-
-        feature_map_grid_center_strides = np.concatenate(
-            (feature_map_grid_centers, feature_map_strides), axis=-1)
-
-        # feature_map_grid_center_strides format: [point_nums,3],3:[scale_grid_x_center,scale_grid_y_center,stride]
-        return feature_map_grid_center_strides
-
-
 if __name__ == '__main__':
     import os
     import random

@@ -9,7 +9,7 @@ import cv2
 import math
 import numpy as np
 
-from PIL import Image
+from PIL import Image, ImageDraw
 
 import torch
 import torch.nn.functional as F
@@ -194,6 +194,31 @@ class TorchCenterCrop:
             'image': image,
             'label': label,
         }
+
+
+class PILCutOut:
+
+    def __init__(self, factor=0.5):
+        self.factor = factor
+
+    def __call__(self, x):
+        img_draw = ImageDraw.Draw(x)
+
+        h, w = x.size[0], x.size[1]  # HWC
+        h_cutout = int(self.cutout_factor * h + 0.5)
+        w_cutout = int(self.cutout_factor * w + 0.5)
+        y_c = np.random.randint(h)
+        x_c = np.random.randint(w)
+
+        y1 = np.clip(y_c - h_cutout // 2, 0, h)
+        y2 = np.clip(y_c + h_cutout // 2, 0, h)
+        x1 = np.clip(x_c - w_cutout // 2, 0, w)
+        x2 = np.clip(x_c + w_cutout // 2, 0, w)
+        fill_color = (np.random.randint(0, 255), np.random.randint(0, 255),
+                      np.random.randint(0, 255))
+        img_draw.rectangle([x1, y1, x2, y2], fill=fill_color)
+
+        return x
 
 
 class Normalize:
@@ -749,6 +774,52 @@ class TotalAccMeter:
         self.acc5_avg = float(self.acc5) / self.count if self.count != 0 else 0
 
 
+class SemanticSoftmaxMeter:
+    "Average the values of `func` taking into account potential different batch sizes"
+
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self.acc1 = 0
+        self.sum = 0
+        self.count = 0
+
+    def compute_per_batch(self, semantic_outputs, semantic_labels):
+        accuracy_list = []
+        accuracy_valid_list = []
+        result = 0
+
+        # scanning hirarchy_level_list
+        for i in range(len(semantic_outputs)):
+            outputs_i = semantic_outputs[i]
+            labels_i = semantic_labels[:, i]
+
+            pred_i = outputs_i.argmax(dim=-1)
+
+            index_valid = (labels_i >= 0)
+            num_valids = torch.sum(index_valid)
+            accuracy_valid_list.append(num_valids)
+
+            if num_valids > 0:
+                accuracy_list.append(
+                    (pred_i[index_valid] == labels_i[index_valid]
+                     ).float().mean())
+            else:
+                accuracy_list.append(0)
+            result += accuracy_list[-1] * accuracy_valid_list[-1]
+        num_valids_total = sum(accuracy_valid_list)
+
+        return result, num_valids_total
+
+    def update_per_batch(self, result, num_valids_total):
+        self.sum += result
+        self.count += num_valids_total
+
+    def compute(self):
+        self.acc1 = self.sum / self.count if self.count != 0 else 0
+
+
 def compute_batch_accuracy(output, target, topk=(1, 5)):
     '''Computes the accuracy over the k top predictions for the specified values of k'''
     with torch.no_grad():
@@ -784,6 +855,7 @@ def load_state_dict(saved_model_path,
 
     saved_state_dict = torch.load(saved_model_path,
                                   map_location=torch.device('cpu'))
+
     not_loaded_save_state_dict = []
     filtered_state_dict = {}
     for name, weight in saved_state_dict.items():

@@ -12,7 +12,7 @@ from simpleAICV.detection import models
 from simpleAICV.detection import losses
 from simpleAICV.detection import decode
 from simpleAICV.detection.datasets.cocodataset import CocoDetection
-from simpleAICV.detection.common import RetinaStyleResize, YoloStyleResize, RandomHorizontalFlip, RandomCrop, RandomTranslate, Normalize, DetectionCollater, load_state_dict
+from simpleAICV.detection.common import DetectionResize, RandomHorizontalFlip, RandomCrop, RandomTranslate, Normalize, DetectionCollater, load_state_dict
 
 import torch
 import torchvision.transforms as transforms
@@ -24,7 +24,7 @@ class config:
     input_image_size = [640, 640]
 
     # load backbone pretrained model or not
-    backbone_pretrained_path = '/root/code/SimpleAICV-ImageNet-CIFAR-COCO-VOC-training/pretrained_models/classification_training/resnet/resnet50-acc76.264.pth'
+    backbone_pretrained_path = '/root/code/SimpleAICV_pytorch_training_examples_on_ImageNet_COCO_ADE20K/pretrained_models/resnet_dino_pretrain_on_imagenet1k/resnet50_dino_pretrain_model-student-loss1.997.pth'
     model = models.__dict__[network](**{
         'backbone_pretrained_path': backbone_pretrained_path,
         'num_classes': num_classes,
@@ -78,10 +78,10 @@ class config:
                                       RandomHorizontalFlip(prob=0.5),
                                       RandomCrop(prob=0.5),
                                       RandomTranslate(prob=0.5),
-                                      YoloStyleResize(
+                                      DetectionResize(
                                           resize=input_image_size[0],
-                                          divisor=32,
                                           stride=32,
+                                          resize_type='yolo_style',
                                           multi_scale=True,
                                           multi_scale_range=[0.8, 1.0]),
                                       Normalize(),
@@ -90,22 +90,27 @@ class config:
     test_dataset = CocoDetection(COCO2017_path,
                                  set_name='val2017',
                                  transform=transforms.Compose([
-                                     YoloStyleResize(
+                                     DetectionResize(
                                          resize=input_image_size[0],
-                                         divisor=32,
                                          stride=32,
+                                         resize_type='yolo_style',
                                          multi_scale=False,
                                          multi_scale_range=[0.8, 1.0]),
                                      Normalize(),
                                  ]))
-    train_collater = DetectionCollater()
-    test_collater = DetectionCollater()
+
+    train_collater = DetectionCollater(resize=input_image_size[0],
+                                       resize_type='yolo_style',
+                                       max_annots_num=100)
+    test_collater = DetectionCollater(resize=input_image_size[0],
+                                      resize_type='yolo_style',
+                                      max_annots_num=100)
 
     seed = 0
     # batch_size is total size
     batch_size = 32
     # num_workers is total workers
-    num_workers = 16
+    num_workers = 30
     accumulation_steps = 1
 
     optimizer = (
@@ -141,7 +146,14 @@ class config:
     save_model_metric = 'IoU=0.50:0.95,area=all,maxDets=100,mAP'
 
     sync_bn = False
-    apex = True
+    use_amp = True
+    use_compile = False
+    compile_params = {
+        # 'default': optimizes for large models, low compile-time and no extra memory usage.
+        # 'reduce-overhead': optimizes to reduce the framework overhead and uses some extra memory, helps speed up small models, model update may not correct.
+        # 'max-autotune': optimizes to produce the fastest model, but takes a very long time to compile and may failed.
+        'mode': 'default',
+    }
 
     use_ema_model = False
     ema_model_decay = 0.9999

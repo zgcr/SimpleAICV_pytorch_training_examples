@@ -13,6 +13,7 @@ warnings.filterwarnings('ignore')
 import argparse
 import functools
 import math
+import re
 import time
 
 import torch
@@ -193,32 +194,28 @@ def main():
     student_optimizer, student_model_layer_weight_decay_list = build_optimizer(
         config, student_model)
 
-    for i, per_layer_list in enumerate(student_model_layer_weight_decay_list):
-        if i == 0:
-            log_info = f'--------student no weight decay layers--------'
-        elif i == 1:
-            log_info = f'--------student weight decay layers--------'
-        logger.info(log_info) if local_rank == 0 else None
-
-        layer_name_list, layer_weight_decay = per_layer_list[
-            'name'], per_layer_list['weight_decay']
+    log_info = f'-------------student layers weight decay---------------'
+    logger.info(log_info) if local_rank == 0 else None
+    for per_layer_list in student_model_layer_weight_decay_list:
+        layer_name_list, layer_lr, layer_weight_decay = per_layer_list[
+            'name'], per_layer_list['lr'], per_layer_list['weight_decay']
 
         lr_scale = 'not setting!'
         if 'lr_scale' in per_layer_list.keys():
             lr_scale = per_layer_list['lr_scale']
 
         for name in layer_name_list:
-            log_info = f'student model. name: {name}, weight_decay: {layer_weight_decay}, lr_scale: {lr_scale}'
+            log_info = f'name: {name}, lr: {layer_lr}, weight_decay: {layer_weight_decay}, lr_scale: {lr_scale}'
             logger.info(log_info) if local_rank == 0 else None
 
     lr_scheduler = Scheduler(config, scheduler_name='lr')
     weight_decay_scheduler = Scheduler(config, scheduler_name='weight_decay')
     momentum_teacher_scheduler = Scheduler(config,
                                            scheduler_name='momentum_teacher')
-    teacher_model, _ = build_training_mode(config, teacher_model,
-                                           teacher_optimizer)
-    student_model, _ = build_training_mode(config, student_model,
-                                           student_optimizer)
+
+    teacher_model, _, _ = build_training_mode(config, teacher_model)
+    student_model, _, config.scaler = build_training_mode(
+        config, student_model)
 
     for param in teacher_model.parameters():
         param.requires_grad = False
@@ -278,6 +275,28 @@ def main():
         log_info = f'resuming model from {resume_model}. resume_epoch: {saved_epoch:0>3d}, used_time: {used_time:.3f} hours, best_loss: {best_loss:.4f}, lr: {lr:.6f}, weight_decay: {weight_decay:.6f}, momentum_teacher: {momentum_teacher:.6f}'
         logger.info(log_info) if local_rank == 0 else None
 
+    # use torch 2.0 compile function
+    config.compile_support = False
+    log_info = f'using torch version:{torch.__version__}'
+    logger.info(log_info) if local_rank == 0 else None
+    if re.match(r'2.\d*.\d*', torch.__version__):
+        config.compile_support = True
+        log_info = f'this torch version support torch.compile function.'
+        logger.info(log_info) if local_rank == 0 else None
+    elif re.match(r'1.\d*.\d*', torch.__version__):
+        log_info = f'this torch version unsupport torch.compile function.'
+        logger.info(log_info) if local_rank == 0 else None
+    else:
+        log_info = f'unsupport torch version:{torch.__version__}'
+        logger.info(log_info) if local_rank == 0 else None
+        return
+
+    config.use_compile = (config.compile_support and config.use_compile)
+    if config.use_compile:
+        # _orig_mod
+        teacher_model = torch.compile(teacher_model, **config.compile_params)
+        student_model = torch.compile(student_model, **config.compile_params)
+
     for epoch in range(start_epoch, config.epochs + 1):
         per_epoch_start_time = time.time()
 
@@ -302,10 +321,29 @@ def main():
             # save best acc1 model and each epoch checkpoint
             if train_loss < best_loss:
                 best_loss = train_loss
-                torch.save(teacher_model.module.state_dict(),
+
+                if config.use_compile:
+                    save_best_teacher_model = teacher_model._orig_mod.module.state_dict(
+                    )
+                    save_best_student_model = student_model._orig_mod.module.state_dict(
+                    )
+                else:
+                    save_best_teacher_model = teacher_model.module.state_dict()
+                    save_best_student_model = student_model.module.state_dict()
+
+                torch.save(save_best_teacher_model,
                            os.path.join(checkpoint_dir, 'best_teacher.pth'))
-                torch.save(student_model.module.state_dict(),
+                torch.save(save_best_student_model,
                            os.path.join(checkpoint_dir, 'best_student.pth'))
+
+            if config.use_compile:
+                save_checkpoint_teacher_model = teacher_model._orig_mod.state_dict(
+                )
+                save_checkpoint_studet_model = student_model._orig_mod.state_dict(
+                )
+            else:
+                save_checkpoint_teacher_model = teacher_model.state_dict()
+                save_checkpoint_studet_model = student_model.state_dict()
 
             torch.save(
                 {
@@ -324,9 +362,9 @@ def main():
                     'momentum_teacher':
                     momentum_teacher_scheduler.current_value,
                     'teacher_model_state_dict':
-                    teacher_model.state_dict(),
+                    save_checkpoint_teacher_model,
                     'student_model_state_dict':
-                    student_model.state_dict(),
+                    save_checkpoint_studet_model,
                     'student_optimizer_state_dict':
                     student_optimizer.state_dict(),
                     'lr_scheduler_state_dict':

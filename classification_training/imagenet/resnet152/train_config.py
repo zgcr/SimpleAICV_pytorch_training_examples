@@ -65,7 +65,7 @@ class config:
     # batch_size is total size
     batch_size = 256
     # num_workers is total workers
-    num_workers = 16
+    num_workers = 20
     accumulation_steps = 1
 
     optimizer = (
@@ -94,7 +94,14 @@ class config:
     print_interval = 100
 
     sync_bn = False
-    apex = True
+    use_amp = True
+    use_compile = False
+    compile_params = {
+        # 'default': optimizes for large models, low compile-time and no extra memory usage.
+        # 'reduce-overhead': optimizes to reduce the framework overhead and uses some extra memory, helps speed up small models, model update may not correct.
+        # 'max-autotune': optimizes to produce the fastest model, but takes a very long time to compile and may failed.
+        'mode': 'default',
+    }
 
     use_ema_model = False
     ema_model_decay = 0.9999

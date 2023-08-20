@@ -437,7 +437,7 @@ if __name__ == '__main__':
                            inputs=(torch.randn(1, 3, image_h, image_w), ),
                            verbose=False)
     macs, params = clever_format([macs, params], '%.3f')
-    out = net(torch.autograd.Variable(torch.randn(1, 3, image_h, image_w)))
+    out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
     print(f'1111, macs: {macs}, params: {params},out_shape: {out.shape}')
 
     net = RegNetX_400MF(num_classes=1000)

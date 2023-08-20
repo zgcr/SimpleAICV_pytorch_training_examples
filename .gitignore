@@ -1,6 +1,13 @@
 .vscode
 __pycache__
 checkpoints
+log
 *.pth
+*.log
+flagged
 pretrained_models
-semantic_segmentation_training/ade20k/segmenter_vit_base_patch16_mask_3x_cls_pretrain
+images.zip
+res50_detr_yoloresize1024
+res50_dinodetr_yoloresize1024
+z_detr_main
+z_dino_main

@@ -14,9 +14,7 @@ from simpleAICV.semantic_segmentation.common import load_state_dict
 
 __all__ = [
     'resnet18backbone',
-    'resnet34halfbackbone',
     'resnet34backbone',
-    'resnet50halfbackbone',
     'resnet50backbone',
     'resnet101backbone',
     'resnet152backbone',
@@ -283,8 +281,6 @@ def _resnetbackbone(block,
 
     return model
 
-    return model
-
 
 def resnet18backbone(pretrained_path='', **kwargs):
     return _resnetbackbone(BasicBlock, [2, 2, 2, 2],
@@ -293,23 +289,9 @@ def resnet18backbone(pretrained_path='', **kwargs):
                            **kwargs)
 
 
-def resnet34halfbackbone(pretrained_path='', **kwargs):
-    return _resnetbackbone(BasicBlock, [3, 4, 6, 3],
-                           32, [1, 1, 1, 1],
-                           pretrained_path=pretrained_path,
-                           **kwargs)
-
-
 def resnet34backbone(pretrained_path='', **kwargs):
     return _resnetbackbone(BasicBlock, [3, 4, 6, 3],
                            64, [1, 1, 1, 1],
-                           pretrained_path=pretrained_path,
-                           **kwargs)
-
-
-def resnet50halfbackbone(pretrained_path='', **kwargs):
-    return _resnetbackbone(Bottleneck, [3, 4, 6, 3],
-                           32, [1, 1, 2, 4],
                            pretrained_path=pretrained_path,
                            **kwargs)
 
@@ -364,7 +346,7 @@ if __name__ == '__main__':
     for per_out in outs:
         print(f'1111', per_out.shape)
 
-    net = resnet34halfbackbone()
+    net = resnet34backbone()
     image_h, image_w = 512, 512
     from thop import profile
     from thop import clever_format
@@ -377,7 +359,7 @@ if __name__ == '__main__':
     for per_out in outs:
         print(f'2222', per_out.shape)
 
-    net = resnet34backbone()
+    net = resnet50backbone()
     image_h, image_w = 512, 512
     from thop import profile
     from thop import clever_format
@@ -390,7 +372,7 @@ if __name__ == '__main__':
     for per_out in outs:
         print(f'3333', per_out.shape)
 
-    net = resnet50halfbackbone()
+    net = resnet101backbone()
     image_h, image_w = 512, 512
     from thop import profile
     from thop import clever_format
@@ -403,7 +385,7 @@ if __name__ == '__main__':
     for per_out in outs:
         print(f'4444', per_out.shape)
 
-    net = resnet50backbone()
+    net = resnet152backbone()
     image_h, image_w = 512, 512
     from thop import profile
     from thop import clever_format
@@ -415,29 +397,3 @@ if __name__ == '__main__':
     print(f'5555, macs: {macs}, params: {params}')
     for per_out in outs:
         print(f'5555', per_out.shape)
-
-    net = resnet101backbone()
-    image_h, image_w = 512, 512
-    from thop import profile
-    from thop import clever_format
-    macs, params = profile(net,
-                           inputs=(torch.randn(1, 3, image_h, image_w), ),
-                           verbose=False)
-    macs, params = clever_format([macs, params], '%.3f')
-    outs = net(torch.autograd.Variable(torch.randn(6, 3, image_h, image_w)))
-    print(f'6666, macs: {macs}, params: {params}')
-    for per_out in outs:
-        print(f'6666', per_out.shape)
-
-    net = resnet152backbone()
-    image_h, image_w = 512, 512
-    from thop import profile
-    from thop import clever_format
-    macs, params = profile(net,
-                           inputs=(torch.randn(1, 3, image_h, image_w), ),
-                           verbose=False)
-    macs, params = clever_format([macs, params], '%.3f')
-    outs = net(torch.autograd.Variable(torch.randn(6, 3, image_h, image_w)))
-    print(f'7777, macs: {macs}, params: {params}')
-    for per_out in outs:
-        print(f'7777', per_out.shape)

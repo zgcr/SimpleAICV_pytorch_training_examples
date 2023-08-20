@@ -353,7 +353,7 @@ if __name__ == '__main__':
                            verbose=False)
     macs, params = clever_format([macs, params], '%.3f')
     print(f'1111, macs: {macs}, params: {params}')
-    outs = net(torch.autograd.Variable(torch.randn(8, 3, image_h, image_w)))
+    outs = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
     for out in outs:
         print('2222', out.shape)
 
@@ -366,7 +366,7 @@ if __name__ == '__main__':
                            verbose=False)
     macs, params = clever_format([macs, params], '%.3f')
     print(f'1111, macs: {macs}, params: {params}')
-    outs = net(torch.autograd.Variable(torch.randn(8, 3, image_h, image_w)))
+    outs = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
     for out in outs:
         print('2222', out.shape)
 
@@ -379,6 +379,6 @@ if __name__ == '__main__':
                            verbose=False)
     macs, params = clever_format([macs, params], '%.3f')
     print(f'1111, macs: {macs}, params: {params}')
-    outs = net(torch.autograd.Variable(torch.randn(8, 3, image_h, image_w)))
+    outs = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
     for out in outs:
         print('2222', out.shape)

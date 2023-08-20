@@ -57,8 +57,8 @@ class KDModel(nn.Module):
 
 
 if __name__ == '__main__':
-    net = KDModel(teacher_type='resnet34',
-                  student_type='resnet18',
+    net = KDModel(teacher_type='resnet152',
+                  student_type='resnet50',
                   teacher_pretrained_path='',
                   student_pretrained_path='',
                   freeze_teacher=True,

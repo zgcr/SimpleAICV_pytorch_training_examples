@@ -14,7 +14,6 @@ import torch.nn as nn
 from simpleAICV.classification.backbones.vit import PatchEmbeddingBlock, TransformerEncoderLayer
 
 __all__ = [
-    'vit_tiny_patch16_224_mae_pretrain_model',
     'vit_small_patch16_224_mae_pretrain_model',
     'vit_base_patch16_224_mae_pretrain_model',
     'vit_large_patch16_224_mae_pretrain_model',
@@ -202,6 +201,7 @@ class VITMAEPretrainModelEncoder(nn.Module):
         # generate the binary mask: 0 is keep, 1 is remove
         mask = torch.ones([b, n], device=x.device)
         mask[:, :keep_length] = 0
+
         # unshuffle to get the binary mask
         mask = torch.gather(mask, dim=1, index=restore_ids)
 
@@ -332,6 +332,7 @@ class VITMAEPretrainModelDecoder(nn.Module):
         # append mask tokens to sequence
         mask_tokens = self.mask_token.repeat(
             x.shape[0], restore_ids.shape[1] + 1 - x.shape[1], 1)
+
         # no inclued cls token
         x_ = torch.cat([x[:, 1:, :], mask_tokens], dim=1)
         # unshuffle
@@ -451,22 +452,6 @@ def _vitmaepretrainmodel(**kwargs):
     return model
 
 
-def vit_tiny_patch16_224_mae_pretrain_model(**kwargs):
-    return _vitmaepretrainmodel(patch_size=16,
-                                image_size=224,
-                                encoder_embedding_planes=192,
-                                encoder_block_nums=12,
-                                encoder_head_nums=3,
-                                encoder_feedforward_ratio=4,
-                                encoder_dropout_prob=0.,
-                                decoder_embedding_planes=192,
-                                decoder_block_nums=4,
-                                decoder_head_nums=3,
-                                decoder_feedforward_ratio=4,
-                                decoder_dropout_prob=0.,
-                                **kwargs)
-
-
 def vit_small_patch16_224_mae_pretrain_model(**kwargs):
     return _vitmaepretrainmodel(patch_size=16,
                                 image_size=224,
@@ -547,7 +532,7 @@ if __name__ == '__main__':
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-    net = vit_tiny_patch16_224_mae_pretrain_model()
+    net = vit_small_patch16_224_mae_pretrain_model()
     image_h, image_w = 224, 224
     from thop import profile
     from thop import clever_format
@@ -561,7 +546,7 @@ if __name__ == '__main__':
         f'1111, macs: {macs}, params: {params}, out_shape: {out.shape}, mask_shape: {mask.shape}'
     )
 
-    net = vit_small_patch16_224_mae_pretrain_model()
+    net = vit_base_patch16_224_mae_pretrain_model()
     image_h, image_w = 224, 224
     from thop import profile
     from thop import clever_format
@@ -575,7 +560,7 @@ if __name__ == '__main__':
         f'2222, macs: {macs}, params: {params}, out_shape: {out.shape}, mask_shape: {mask.shape}'
     )
 
-    net = vit_base_patch16_224_mae_pretrain_model()
+    net = vit_large_patch16_224_mae_pretrain_model()
     image_h, image_w = 224, 224
     from thop import profile
     from thop import clever_format
@@ -589,20 +574,6 @@ if __name__ == '__main__':
         f'3333, macs: {macs}, params: {params}, out_shape: {out.shape}, mask_shape: {mask.shape}'
     )
 
-    net = vit_large_patch16_224_mae_pretrain_model()
-    image_h, image_w = 224, 224
-    from thop import profile
-    from thop import clever_format
-    macs, params = profile(net,
-                           inputs=(torch.randn(1, 3, image_h, image_w), ),
-                           verbose=False)
-    macs, params = clever_format([macs, params], '%.3f')
-    out, mask = net(
-        torch.autograd.Variable(torch.randn(1, 3, image_h, image_w)))
-    print(
-        f'4444, macs: {macs}, params: {params}, out_shape: {out.shape}, mask_shape: {mask.shape}'
-    )
-
     net = vit_huge_patch14_224_mae_pretrain_model()
     image_h, image_w = 224, 224
     from thop import profile
@@ -614,5 +585,5 @@ if __name__ == '__main__':
     out, mask = net(
         torch.autograd.Variable(torch.randn(1, 3, image_h, image_w)))
     print(
-        f'5555, macs: {macs}, params: {params}, out_shape: {out.shape}, mask_shape: {mask.shape}'
+        f'4444, macs: {macs}, params: {params}, out_shape: {out.shape}, mask_shape: {mask.shape}'
     )

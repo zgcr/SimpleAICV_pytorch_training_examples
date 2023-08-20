@@ -13,84 +13,27 @@ import torch
 from simpleAICV.classification.common import load_state_dict
 
 
-class RetinaStyleResize:
+class DetectionResize:
 
     def __init__(self,
-                 resize=400,
-                 divisor=32,
+                 resize=800,
                  stride=32,
+                 resize_type='retina_style',
                  multi_scale=False,
                  multi_scale_range=[0.8, 1.0]):
+        assert resize_type in ['retina_style', 'yolo_style']
+
         self.resize = resize
-        self.divisor = divisor
         self.stride = stride
         self.multi_scale = multi_scale
         self.multi_scale_range = multi_scale_range
+        self.resize_type = resize_type
+
         self.ratio = 1333. / 800
 
-    def __call__(self, sample):
-        '''
-        sample must be a dict,contains 'image'、'annots'、'scale' keys.
-        '''
-        image, annots, scale, size = sample['image'], sample['annots'], sample[
-            'scale'], sample['size']
-        h, w, _ = image.shape
-
-        if self.multi_scale:
-            scale_range = [
-                int(self.multi_scale_range[0] * self.resize),
-                int(self.multi_scale_range[1] * self.resize)
-            ]
-            resize_list = [
-                i // self.stride * self.stride
-                for i in range(scale_range[0], scale_range[1] + self.stride)
-            ]
-            resize_list = list(set(resize_list))
-
-            random_idx = np.random.randint(0, len(resize_list))
-            scales = (resize_list[random_idx],
-                      int(round(self.resize * self.ratio)))
-        else:
-            scales = (self.resize, int(round(self.resize * self.ratio)))
-
-        max_long_edge, max_short_edge = max(scales), min(scales)
-        factor = min(max_long_edge / max(h, w), max_short_edge / min(h, w))
-
-        resize_h, resize_w = int(round(h * factor)), int(round(w * factor))
-        image = cv2.resize(image, (resize_w, resize_h))
-
-        pad_w = 0 if resize_w % self.divisor == 0 else self.divisor - resize_w % self.divisor
-        pad_h = 0 if resize_h % self.divisor == 0 else self.divisor - resize_h % self.divisor
-
-        padded_image = np.zeros((resize_h + pad_h, resize_w + pad_w, 3),
-                                dtype=np.float32)
-        padded_image[:resize_h, :resize_w, :] = image
-
-        factor = np.float32(factor)
-        annots[:, :4] *= factor
-        scale *= factor
-
-        return {
-            'image': padded_image,
-            'annots': annots,
-            'scale': scale,
-            'size': size,
-        }
-
-
-class YoloStyleResize:
-
-    def __init__(self,
-                 resize=640,
-                 divisor=32,
-                 stride=32,
-                 multi_scale=False,
-                 multi_scale_range=[0.5, 1.0]):
-        self.resize = resize
-        self.divisor = divisor
-        self.stride = stride
-        self.multi_scale = multi_scale
-        self.multi_scale_range = multi_scale_range
+        assert 0.0 < self.multi_scale_range[0] <= 1.0
+        assert 0.0 < self.multi_scale_range[1] <= 1.0
+        assert self.multi_scale_range[0] <= self.multi_scale_range[1]
 
     def __call__(self, sample):
         '''
@@ -100,40 +43,56 @@ class YoloStyleResize:
             'scale'], sample['size']
         h, w, _ = image.shape
 
-        if self.multi_scale:
-            scale_range = [
-                int(self.multi_scale_range[0] * self.resize),
-                int(self.multi_scale_range[1] * self.resize)
-            ]
-            resize_list = [
-                i // self.stride * self.stride
-                for i in range(scale_range[0], scale_range[1] + self.stride)
-            ]
-            resize_list = list(set(resize_list))
+        if self.resize_type == 'retina_style':
+            if self.multi_scale:
+                scale_range = [
+                    int(self.multi_scale_range[0] * self.resize),
+                    int(self.multi_scale_range[1] * self.resize)
+                ]
+                resize_list = [
+                    i // self.stride * self.stride
+                    for i in range(scale_range[0], scale_range[1] +
+                                   self.stride)
+                ]
+                resize_list = list(set(resize_list))
 
-            random_idx = np.random.randint(0, len(resize_list))
-            final_resize = resize_list[random_idx]
+                random_idx = np.random.randint(0, len(resize_list))
+                scales = (resize_list[random_idx],
+                          int(round(self.resize * self.ratio)))
+            else:
+                scales = (self.resize, int(round(self.resize * self.ratio)))
+
+            max_long_edge, max_short_edge = max(scales), min(scales)
+            factor = min(max_long_edge / max(h, w), max_short_edge / min(h, w))
         else:
-            final_resize = self.resize
+            if self.multi_scale:
+                scale_range = [
+                    int(self.multi_scale_range[0] * self.resize),
+                    int(self.multi_scale_range[1] * self.resize)
+                ]
+                resize_list = [
+                    i // self.stride * self.stride
+                    for i in range(scale_range[0], scale_range[1] +
+                                   self.stride)
+                ]
+                resize_list = list(set(resize_list))
 
-        factor = final_resize / max(h, w)
+                random_idx = np.random.randint(0, len(resize_list))
+                final_resize = resize_list[random_idx]
+            else:
+                final_resize = self.resize
+
+            factor = final_resize / max(h, w)
 
         resize_h, resize_w = int(round(h * factor)), int(round(w * factor))
         image = cv2.resize(image, (resize_w, resize_h))
-
-        pad_w = 0 if resize_w % self.divisor == 0 else self.divisor - resize_w % self.divisor
-        pad_h = 0 if resize_h % self.divisor == 0 else self.divisor - resize_h % self.divisor
-
-        padded_image = np.zeros((resize_h + pad_h, resize_w + pad_w, 3),
-                                dtype=np.float32)
-        padded_image[:resize_h, :resize_w, :] = image
 
         factor = np.float32(factor)
         annots[:, :4] *= factor
         scale *= factor
 
         return {
-            'image': padded_image,
+            'image': image,
             'annots': annots,
             'scale': scale,
             'size': size,
@@ -282,57 +241,16 @@ class Normalize:
 
 class DetectionCollater:
 
-    def __init__(self, divisor=32):
-        self.divisor = divisor
-
-    def __call__(self, data):
-        images = [s['image'] for s in data]
-        annots = [s['annots'] for s in data]
-        scales = [s['scale'] for s in data]
-        sizes = [s['size'] for s in data]
-
-        max_h = max(image.shape[0] for image in images)
-        max_w = max(image.shape[1] for image in images)
-
-        pad_h = 0 if max_h % self.divisor == 0 else self.divisor - max_h % self.divisor
-        pad_w = 0 if max_w % self.divisor == 0 else self.divisor - max_w % self.divisor
-
-        input_images = np.zeros((len(images), max_h + pad_h, max_w + pad_w, 3),
-                                dtype=np.float32)
-        for i, image in enumerate(images):
-            input_images[i, 0:image.shape[0], 0:image.shape[1], :] = image
-        input_images = torch.from_numpy(input_images)
-        # B H W 3 ->B 3 H W
-        input_images = input_images.permute(0, 3, 1, 2)
-
-        max_annots_num = max(annot.shape[0] for annot in annots)
-        if max_annots_num > 0:
-            input_annots = np.ones(
-                (len(annots), max_annots_num, 5), dtype=np.float32) * (-1)
-            for i, annot in enumerate(annots):
-                if annot.shape[0] > 0:
-                    input_annots[i, :annot.shape[0], :] = annot
-        else:
-            input_annots = np.ones(
-                (len(annots), 1, 5), dtype=np.float32) * (-1)
-
-        input_annots = torch.from_numpy(input_annots)
-
-        scales = np.array(scales, dtype=np.float32)
-        sizes = np.array(sizes, dtype=np.float32)
-
-        return {
-            'image': input_images,
-            'annots': input_annots,
-            'scale': scales,
-            'size': sizes,
-        }
-
-
-class AlignResizeDetectionCollater:
-
-    def __init__(self, resize=512):
+    def __init__(self,
+                 resize=800,
+                 resize_type='retina_style',
+                 max_annots_num=100):
+        assert resize_type in ['retina_style', 'yolo_style']
         self.resize = resize
+        if resize_type == 'retina_style':
+            self.resize = int(round(self.resize * 1333. / 800))
+
+        self.max_annots_num = max_annots_num
 
     def __call__(self, data):
         images = [s['image'] for s in data]
@@ -348,16 +266,11 @@ class AlignResizeDetectionCollater:
         # B H W 3 ->B 3 H W
         input_images = input_images.permute(0, 3, 1, 2)
 
-        max_annots_num = max(annot.shape[0] for annot in annots)
-        if max_annots_num > 0:
-            input_annots = np.ones(
-                (len(annots), max_annots_num, 5), dtype=np.float32) * (-1)
-            for i, annot in enumerate(annots):
-                if annot.shape[0] > 0:
-                    input_annots[i, :annot.shape[0], :] = annot
-        else:
-            input_annots = np.ones(
-                (len(annots), 1, 5), dtype=np.float32) * (-1)
+        input_annots = np.ones(
+            (len(annots), self.max_annots_num, 5), dtype=np.float32) * (-1)
+        for i, annot in enumerate(annots):
+            if annot.shape[0] > 0:
+                input_annots[i, :annot.shape[0], :] = annot
 
         input_annots = torch.from_numpy(input_annots)
 
@@ -369,4 +282,77 @@ class AlignResizeDetectionCollater:
             'annots': input_annots,
             'scale': scales,
             'size': sizes,
+        }
+
+
+class DETRDetectionCollater:
+
+    def __init__(self,
+                 resize=800,
+                 resize_type='yolo_style',
+                 max_annots_num=100):
+        assert resize_type in ['retina_style', 'yolo_style']
+        self.resize = resize
+        if resize_type == 'retina_style':
+            self.resize = int(round(self.resize * 1333. / 800))
+        self.max_annots_num = max_annots_num
+
+    def __call__(self, data):
+        images = [s['image'] for s in data]
+        annots = [s['annots'] for s in data]
+        scales = [s['scale'] for s in data]
+        sizes = [s['size'] for s in data]
+
+        input_images = np.zeros((len(images), self.resize, self.resize, 3),
+                                dtype=np.float32)
+        masks = torch.ones((len(images), self.resize, self.resize),
+                           dtype=torch.bool)
+        scaled_sizes = []
+        for i, image in enumerate(images):
+            scaled_sizes.append([image.shape[0], image.shape[1]])
+            input_images[i, 0:image.shape[0], 0:image.shape[1], :] = image
+            masks[i, 0:image.shape[0], 0:image.shape[1]] = False
+        input_images = torch.from_numpy(input_images)
+        # B H W 3 ->B 3 H W
+        input_images = input_images.permute(0, 3, 1, 2)
+
+        # x_min,y_min,x_max,y_max
+        input_annots = np.ones(
+            (len(annots), self.max_annots_num, 5), dtype=np.float32) * (-1)
+        for i, annot in enumerate(annots):
+            if annot.shape[0] > 0:
+                input_annots[i, :annot.shape[0], :] = annot
+
+        input_annots = torch.from_numpy(input_annots)
+
+        # x_center,y_center,w,h
+        scaled_annots = np.ones(
+            (len(annots), self.max_annots_num, 5), dtype=np.float32) * (-1)
+        for i, annot in enumerate(annots):
+            h, w = scaled_sizes[i][0], scaled_sizes[i][1]
+            per_image_size = np.array([w, h, w, h], dtype=np.float32)
+            if annot.shape[0] > 0:
+                annot_center = (annot[:, 0:2] + annot[:, 2:4]) / 2
+                annot_wh = annot[:, 2:4] - annot[:, 0:2]
+                annot_label = annot[:, 4:5]
+                annot_cxcywh = np.concatenate([annot_center, annot_wh], axis=1)
+                annot_cxcywh = annot_cxcywh / per_image_size
+                annot_cxcywh = np.concatenate([annot_cxcywh, annot_label],
+                                              axis=1)
+                scaled_annots[i, :annot_cxcywh.shape[0], :] = annot_cxcywh
+
+        scaled_annots = torch.from_numpy(scaled_annots)
+
+        scales = np.array(scales, dtype=np.float32)
+        sizes = np.array(sizes, dtype=np.float32)
+        scaled_sizes = np.array(scaled_sizes, dtype=np.float32)
+
+        return {
+            'image': input_images,
+            'annots': input_annots,
+            'mask': masks,
+            'scale': scales,
+            'size': sizes,
+            'scaled_annots': scaled_annots,
+            'scaled_size': scaled_sizes,
         }

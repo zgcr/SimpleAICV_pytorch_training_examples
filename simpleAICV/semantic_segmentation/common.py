@@ -15,18 +15,59 @@ from simpleAICV.classification.common import load_state_dict
 
 class Resize:
 
-    def __init__(self,
-                 image_scale=(2048, 512),
-                 multi_scale=False,
-                 multi_scale_range=(0.5, 2.0)):
-        assert multi_scale_range[0] <= multi_scale_range[1]
-        self.image_scale = image_scale
-        self.multi_scale = multi_scale
-        self.multi_scale_range = multi_scale_range
+    def __init__(self, resize=512):
+        self.resize = resize
 
     def __call__(self, sample):
         image, mask, scale, size = sample['image'], sample['mask'], sample[
             'scale'], sample['size']
+
+        h, w, _ = image.shape
+
+        scale_factor = min(self.resize / max(h, w), self.resize / min(h, w))
+        resize_w, resize_h = int(round(w * scale_factor)), int(
+            round(h * scale_factor))
+
+        image = cv2.resize(image, (resize_w, resize_h))
+        mask = cv2.resize(mask, (resize_w, resize_h),
+                          interpolation=cv2.INTER_NEAREST)
+
+        scale *= np.float32(scale_factor)
+        size = np.array([image.shape[0], image.shape[1]]).astype(np.float32)
+
+        return {
+            'image': image,
+            'mask': mask,
+            'scale': scale,
+            'size': size,
+        }
+
+
+class RandomCropResize:
+
+    def __init__(self,
+                 image_scale=(2048, 512),
+                 multi_scale=False,
+                 multi_scale_range=(0.5, 2.0),
+                 crop_size=(512, 512),
+                 cat_max_ratio=0.75,
+                 ignore_index=None):
+        self.image_scale = image_scale
+        self.multi_scale = multi_scale
+        self.multi_scale_range = multi_scale_range
+        self.crop_size = crop_size
+        self.cat_max_ratio = cat_max_ratio
+        self.ignore_index = ignore_index
+
+        assert self.multi_scale_range[0] <= self.multi_scale_range[1]
+        assert self.multi_scale_range[0] > 0 and self.multi_scale_range[1] > 0
+        assert self.crop_size[0] > 0 and self.crop_size[1] > 0
+
+    def __call__(self, sample):
+        image, mask, scale, size = sample['image'], sample['mask'], sample[
+            'scale'], sample['size']
+
+        # multi scale resize
         h, w, _ = image.shape
         min_ratio, max_ratio = self.multi_scale_range
 
@@ -42,39 +83,17 @@ class Resize:
         max_long_edge, max_short_edge = max(resize_scale), min(resize_scale)
         scale_factor = min(max_long_edge / max(h, w),
                            max_short_edge / min(h, w))
-        resize_w, resize_h = int(w * float(scale_factor) +
-                                 0.5), int(h * float(scale_factor) + 0.5)
-        image = cv2.resize(image, (resize_w, resize_h))
+        resize_w, resize_h = int(round(w * scale_factor)), int(
+            round(h * scale_factor))
 
+        image = cv2.resize(image, (resize_w, resize_h))
         mask = cv2.resize(mask, (resize_w, resize_h),
                           interpolation=cv2.INTER_NEAREST)
 
         scale *= np.float32(scale_factor)
         size = np.array([image.shape[0], image.shape[1]]).astype(np.float32)
 
-        return {
-            'image': image,
-            'mask': mask,
-            'scale': scale,
-            'size': size,
-        }
-
-
-class RandomCrop:
-
-    def __init__(self,
-                 crop_size=(512, 512),
-                 cat_max_ratio=0.75,
-                 ignore_index=None):
-        assert crop_size[0] > 0 and crop_size[1] > 0
-        self.crop_size = crop_size
-        self.cat_max_ratio = cat_max_ratio
-        self.ignore_index = ignore_index
-
-    def __call__(self, sample):
-        image, mask, scale, size = sample['image'], sample['mask'], sample[
-            'scale'], sample['size']
-
+        # random crop
         crop_bbox = self.get_crop_bbox(image)
         if self.cat_max_ratio < 1.:
             for _ in range(10):
@@ -270,63 +289,8 @@ class Normalize:
 
 class SemanticSegmentationCollater:
 
-    def __init__(self, divisor=32, ignore_index=None):
-        self.divisor = divisor
-        self.ignore_index = ignore_index
-
-    def __call__(self, data):
-        images = [s['image'] for s in data]
-        masks = [s['mask'] for s in data]
-        scales = [s['scale'] for s in data]
-        sizes = [s['size'] for s in data]
-
-        max_h = max(image.shape[0] for image in images)
-        max_w = max(image.shape[1] for image in images)
-
-        pad_h = 0 if max_h % self.divisor == 0 else self.divisor - max_h % self.divisor
-        pad_w = 0 if max_w % self.divisor == 0 else self.divisor - max_w % self.divisor
-
-        input_images = np.zeros((len(images), max_h + pad_h, max_w + pad_w, 3),
-                                dtype=np.float32)
-        for i, image in enumerate(images):
-            input_images[i, 0:image.shape[0], 0:image.shape[1], :] = image
-        input_images = torch.from_numpy(input_images)
-        # B H W 3 ->B 3 H W
-        input_images = input_images.permute(0, 3, 1, 2)
-
-        max_h = max(mask.shape[0] for mask in masks)
-        max_w = max(mask.shape[1] for mask in masks)
-
-        pad_h = 0 if max_h % self.divisor == 0 else self.divisor - max_h % self.divisor
-        pad_w = 0 if max_w % self.divisor == 0 else self.divisor - max_w % self.divisor
-
-        if self.ignore_index:
-            input_masks = np.ones((len(masks), max_h + pad_h, max_w + pad_w),
-                                  dtype=np.float32) * self.ignore_index
-        else:
-            input_masks = np.zeros((len(masks), max_h + pad_h, max_w + pad_w),
-                                   dtype=np.float32)
-        for i, per_mask in enumerate(masks):
-            input_masks[i, 0:per_mask.shape[0], 0:per_mask.shape[1]] = per_mask
-        # [B,h,w]
-        input_masks = torch.from_numpy(input_masks)
-
-        scales = np.array(scales, dtype=np.float32)
-        sizes = np.array(sizes, dtype=np.float32)
-
-        return {
-            'image': input_images,
-            'mask': input_masks,
-            'scale': scales,
-            'size': sizes,
-        }
-
-
-class AlignResizeSemanticSegmentationCollater:
-
-    def __init__(self, resize=512, divisor=32, ignore_index=None):
+    def __init__(self, resize=512, ignore_index=None):
         self.resize = resize
-        self.divisor = divisor
         self.ignore_index = ignore_index
 
     def __call__(self, data):

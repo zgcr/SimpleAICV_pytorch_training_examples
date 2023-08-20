@@ -7,6 +7,7 @@ __all__ = [
     'FocalCELoss',
     'LabelSmoothCELoss',
     'OneHotLabelCELoss',
+    'SemanticSoftmaxLoss',
 ]
 
 
@@ -82,6 +83,53 @@ class OneHotLabelCELoss(nn.Module):
         return loss.mean()
 
 
+class SemanticSoftmaxLoss(torch.nn.Module):
+
+    def __init__(self, normalization_factor_list, smoothing):
+        super(SemanticSoftmaxLoss, self).__init__()
+        self.normalization_factor_list = normalization_factor_list
+        self.smoothing = smoothing
+
+    def forward(self, semantic_outputs, semantic_labels):
+        """
+        Calculates the semantic cross-entropy loss distance between outputs and labels
+        """
+        losses = []
+
+        # scanning hirarchy_level_list
+        for i in range(len(semantic_outputs)):
+            outputs_i = semantic_outputs[i]
+            labels_i = semantic_labels[:, i]
+
+            # generate probs
+            log_preds = F.log_softmax(outputs_i, dim=1)
+
+            # generate labels (with protections)
+            labels_i_valid = labels_i.clone()
+            labels_i_valid[labels_i_valid < 0] = 0
+            num_classes = outputs_i.shape[-1]
+
+            labels_classes = torch.zeros_like(outputs_i).scatter_(
+                1, labels_i_valid.unsqueeze(1), 1)
+            labels_classes.mul_(1 - self.smoothing).add_(self.smoothing /
+                                                         num_classes)
+
+            cross_entropy_loss_tot = -labels_classes.mul(log_preds)
+            cross_entropy_loss_tot *= ((labels_i >= 0).unsqueeze(1))
+            # sum over classes and mean over batch
+            cross_entropy_loss = cross_entropy_loss_tot.sum(dim=-1)
+            loss_i = cross_entropy_loss.mean()
+
+            losses.append(loss_i)
+
+        total_loss = 0
+        # summing over hirarchies
+        for i, loss_h in enumerate(losses):
+            total_loss += loss_h * self.normalization_factor_list[i]
+
+        return total_loss
+
+
 if __name__ == '__main__':
     import os
     import random
@@ -98,25 +146,63 @@ if __name__ == '__main__':
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-    pred = torch.autograd.Variable(torch.randn(5, 5))
+    # pred = torch.autograd.Variable(torch.randn(5, 5))
+    # label = torch.tensor(np.array([0, 1, 2, 3, 4]))
+    # print('1111', pred.shape, label.shape)
+
+    # loss1 = CELoss()
+    # out = loss1(pred, label)
+    # print('1111', out)
+
+    # loss2 = FocalCELoss(gamma=2.0)
+    # out = loss2(pred, label)
+    # print('2222', out)
+
+    # loss3 = LabelSmoothCELoss(smoothing=0.1)
+    # out = loss3(pred, label)
+    # print('3333', out)
+
+    # label = torch.tensor(
+    #     np.array([[1, 0, 0, 0, 0], [0, 1, 0, 0, 0], [0, 0, 1, 0, 0],
+    #               [0, 0, 0, 1, 0], [0, 0, 0, 0, 1]]))
+    # loss4 = OneHotLabelCELoss()
+    # out = loss4(pred, label)
+    # print('4444', out)
+
+    pred = torch.autograd.Variable(torch.randn(5, 10450))
     label = torch.tensor(np.array([0, 1, 2, 3, 4]))
-    print('1111', pred.shape, label.shape)
 
-    loss1 = CELoss()
-    out = loss1(pred, label)
-    print('1111', out)
+    import os
+    import sys
 
-    loss2 = FocalCELoss(gamma=2.0)
-    out = loss2(pred, label)
-    print('2222', out)
+    BASE_DIR = os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    sys.path.append(BASE_DIR)
 
-    loss3 = LabelSmoothCELoss(smoothing=0.1)
-    out = loss3(pred, label)
-    print('3333', out)
+    from tools.path import ImageNet21K_path
 
-    label = torch.tensor(
-        np.array([[1, 0, 0, 0, 0], [0, 1, 0, 0, 0], [0, 0, 1, 0, 0],
-                  [0, 0, 0, 1, 0], [0, 0, 0, 0, 1]]))
-    loss4 = OneHotLabelCELoss()
-    out = loss4(pred, label)
-    print('4444', out)
+    import torchvision.transforms as transforms
+    from tqdm import tqdm
+
+    from simpleAICV.classification.datasets.imagenet21kdataset import ImageNet21KSemanticTreeLabelDataset
+    from simpleAICV.classification.common import Opencv2PIL, PIL2Opencv, TorchRandomResizedCrop, TorchRandomHorizontalFlip, RandomErasing, TorchResize, TorchCenterCrop, Normalize, AutoAugment, RandAugment, ClassificationCollater
+
+    imagenet21kdataset = ImageNet21KSemanticTreeLabelDataset(
+        root_dir=ImageNet21K_path,
+        set_name='train',
+        transform=transforms.Compose([
+            Opencv2PIL(),
+            TorchRandomResizedCrop(resize=224),
+            TorchRandomHorizontalFlip(prob=0.5),
+            PIL2Opencv(),
+            Normalize(),
+        ]))
+    semantic_pred = imagenet21kdataset.convert_outputs_to_semantic_outputs(
+        pred)
+    semantic_label = imagenet21kdataset.convert_single_labels_to_semantic_labels(
+        label)
+    loss5 = SemanticSoftmaxLoss(
+        normalization_factor_list=imagenet21kdataset.normalization_factor_list,
+        smoothing=0.1)
+    out = loss5(semantic_pred, semantic_label)
+    print('5555', semantic_label.shape, out)

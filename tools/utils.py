@@ -1,3 +1,11 @@
+import os
+import sys
+import warnings
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(BASE_DIR)
+warnings.filterwarnings('ignore')
+
 import argparse
 import logging
 import logging.handlers
@@ -8,14 +16,15 @@ import os
 import random
 import time
 
-import apex
-from apex import amp
 from thop import profile
 from thop import clever_format
 import torch
 import torch.nn as nn
 import torch.backends.cudnn as cudnn
-import torchvision.ops
+
+from torch.cuda.amp import GradScaler
+
+from tools.optimizers import Lion
 
 
 def parse_args_example():
@@ -63,19 +72,21 @@ def get_logger(name, log_dir):
 
     logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
-
-    info_name = os.path.join(log_dir, '{}.info.log'.format(name))
-    info_handler = logging.handlers.TimedRotatingFileHandler(info_name,
-                                                             when='W0',
-                                                             encoding='utf-8')
-    info_handler.setLevel(logging.INFO)
-
     formatter = logging.Formatter('%(asctime)s - %(message)s',
                                   datefmt='%Y-%m-%d %H:%M:%S')
 
-    info_handler.setFormatter(formatter)
+    file_name = os.path.join(log_dir, '{}.info.log'.format(name))
+    file_handler = logging.handlers.TimedRotatingFileHandler(file_name,
+                                                             when='W0',
+                                                             encoding='utf-8')
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
 
-    logger.addHandler(info_handler)
+    stream_handler = logging.StreamHandler()
+    stream_handler.setLevel(logging.INFO)
+    stream_handler.setFormatter(formatter)
+    logger.addHandler(stream_handler)
 
     return logger
 
@@ -150,60 +161,35 @@ class EmaModel(nn.Module):
         with torch.no_grad():
             for ema_v, model_v in zip(self.ema_model.state_dict().values(),
                                       model.state_dict().values()):
+                assert ema_v.shape == model_v.shape, 'wrong ema model!'
                 ema_v.copy_(self.update_fn(ema_v, model_v))
 
 
-def build_training_mode(config, model, optimizer):
-    '''
-    Choose model training mode:nn.DataParallel/nn.parallel.DistributedDataParallel,use apex or not
-    apex only used in mode:nn.parallel.DistributedDataParallel
-    '''
-    ema_model = None
+def build_training_mode(config, model):
+    ema_model, scaler = None, None
     if config.sync_bn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model).cuda()
-    if config.apex:
-        if config.sync_bn:
-            model = apex.parallel.convert_syncbn_model(model).cuda()
 
-        float_function_list = [
-            [torch, 'sigmoid'],
-            [torch.nn, 'Sigmoid'],
-            [torch.nn, 'Softmax'],
-            [torch.nn, 'Parameter'],
-            [torch.nn.functional, 'sigmoid'],
-            [torch.nn.functional, 'softmax'],
-            [torchvision.ops, 'deform_conv2d'],
-        ]
+    local_rank = torch.distributed.get_rank()
+    if hasattr(config, 'use_ema_model') and config.use_ema_model:
+        ema_model = EmaModel(model, decay=config.ema_model_decay)
+        ema_model.ema_model = nn.parallel.DistributedDataParallel(
+            ema_model.ema_model,
+            device_ids=[local_rank],
+            output_device=local_rank)
+    model = nn.parallel.DistributedDataParallel(model,
+                                                device_ids=[local_rank],
+                                                output_device=local_rank)
 
-        for per_function in float_function_list:
-            amp.register_float_function(per_function[0], per_function[1])
+    if hasattr(config, 'use_amp') and config.use_amp:
+        scaler = GradScaler()
 
-        model, optimizer = amp.initialize(model, optimizer, opt_level='O1')
-
-        if hasattr(config, 'use_ema_model') and config.use_ema_model:
-            ema_model = EmaModel(model, decay=config.ema_model_decay)
-            ema_model.ema_model = apex.parallel.DistributedDataParallel(
-                ema_model.ema_model, delay_allreduce=True)
-        model = apex.parallel.DistributedDataParallel(model,
-                                                      delay_allreduce=True)
-    else:
-        local_rank = torch.distributed.get_rank()
-        if hasattr(config, 'use_ema_model') and config.use_ema_model:
-            ema_model = EmaModel(model, decay=config.ema_model_decay)
-            ema_model.ema_model = nn.parallel.DistributedDataParallel(
-                ema_model.ema_model,
-                device_ids=[local_rank],
-                output_device=local_rank)
-        model = nn.parallel.DistributedDataParallel(model,
-                                                    device_ids=[local_rank],
-                                                    output_device=local_rank)
-
-    return model, ema_model
+    return model, ema_model, scaler
 
 
 class Scheduler:
 
-    def __init__(self, config):
+    def __init__(self, config, optimizer):
         self.scheduler_name = config.scheduler[0]
         self.scheduler_parameters = config.scheduler[1]
         self.warm_up_epochs = self.scheduler_parameters['warm_up_epochs']
@@ -211,6 +197,10 @@ class Scheduler:
         self.optimizer_parameters = config.optimizer[1]
         self.lr = self.optimizer_parameters['lr']
         self.current_lr = self.lr
+
+        self.init_param_groups_lr = [
+            param_group["lr"] for param_group in optimizer.param_groups
+        ]
 
         assert self.scheduler_name in ['MultiStepLR', 'CosineLR',
                                        'PolyLR'], 'Unsupported scheduler!'
@@ -228,6 +218,34 @@ class Scheduler:
             power = self.scheduler_parameters['power']
             min_lr = 0. if 'min_lr' not in self.scheduler_parameters.keys(
             ) else self.scheduler_parameters['min_lr']
+
+        assert len(self.init_param_groups_lr) == len(optimizer.param_groups)
+
+        for idx, param_group in enumerate(optimizer.param_groups):
+            param_group_init_lr = self.init_param_groups_lr[idx]
+
+            if self.scheduler_name == 'MultiStepLR':
+                param_group_current_lr = (
+                    epoch
+                ) / self.warm_up_epochs * param_group_init_lr if epoch < self.warm_up_epochs else gamma**len(
+                    [m
+                     for m in milestones if m <= epoch]) * param_group_init_lr
+            elif self.scheduler_name == 'CosineLR':
+                param_group_current_lr = (
+                    epoch
+                ) / self.warm_up_epochs * param_group_init_lr if epoch < self.warm_up_epochs else 0.5 * (
+                    math.cos((epoch - self.warm_up_epochs) /
+                             (self.epochs - self.warm_up_epochs) * math.pi) +
+                    1) * (param_group_init_lr - min_lr) + min_lr
+            elif self.scheduler_name == 'PolyLR':
+                param_group_current_lr = (
+                    epoch
+                ) / self.warm_up_epochs * param_group_init_lr if epoch < self.warm_up_epochs else (
+                    (1 - (epoch - self.warm_up_epochs) /
+                     (self.epochs - self.warm_up_epochs))**
+                    power) * (param_group_init_lr - min_lr) + min_lr
+
+            param_group["lr"] = param_group_current_lr
 
         if self.scheduler_name == 'MultiStepLR':
             self.current_lr = (
@@ -249,12 +267,6 @@ class Scheduler:
                  (self.epochs - self.warm_up_epochs))**
                 power) * (self.lr - min_lr) + min_lr
 
-        for param_group in optimizer.param_groups:
-            if "lr_scale" in param_group:
-                param_group["lr"] = self.current_lr * param_group["lr_scale"]
-            else:
-                param_group["lr"] = self.current_lr
-
     def state_dict(self):
         return {key: value for key, value in self.__dict__.items()}
 
@@ -265,190 +277,290 @@ class Scheduler:
 def build_optimizer(config, model):
     optimizer_name = config.optimizer[0]
     optimizer_parameters = config.optimizer[1]
-    assert optimizer_name in ['SGD', 'AdamW'], 'Unsupported optimizer!'
+    assert optimizer_name in ['SGD', 'AdamW', 'Lion'], 'Unsupported optimizer!'
 
     lr = optimizer_parameters['lr']
-    global_weight_decay = optimizer_parameters['global_weight_decay']
     weight_decay = optimizer_parameters['weight_decay']
 
-    if global_weight_decay:
-        decay_weight_list, decay_weight_name_list = [], []
+    # if global_weight_decay = False,set 1d parms weight decay = 0.
+    global_weight_decay = optimizer_parameters['global_weight_decay']
+
+    # if global_weight_decay = True,no_weight_decay_layer_name_list can't be set.
+    no_weight_decay_layer_name_list = []
+    if 'no_weight_decay_layer_name_list' in optimizer_parameters.keys(
+    ) and isinstance(optimizer_parameters['no_weight_decay_layer_name_list'],
+                     list):
+        no_weight_decay_layer_name_list = optimizer_parameters[
+            'no_weight_decay_layer_name_list']
+
+    # training trick only for VIT
+    if 'lr_layer_decay' and 'lr_layer_decay_block' and 'block_name' in optimizer_parameters.keys(
+    ):
+        lr_layer_decay = optimizer_parameters['lr_layer_decay']
+        lr_layer_decay_block = optimizer_parameters['lr_layer_decay_block']
+        block_name = optimizer_parameters['block_name']
+
+        num_layers = len(lr_layer_decay_block) + 1
+        lr_layer_scales = list(lr_layer_decay**(num_layers - i)
+                               for i in range(num_layers + 1))
+
+        layer_scale_id_0_name_list = [
+            'position_encoding',
+            'cls_token',
+            'patch_embedding',
+        ]
+
+        param_layer_name_list = []
+        param_layer_weight_dict = {}
+        param_layer_decay_dict, param_layer_lr_dict = {}, {}
+        param_layer_lr_scale_dict = {}
+
+        not_group_layer_name_list = []
+        not_group_layer_weight_dict = {}
+        not_group_layer_decay_dict, not_group_layer_lr_dict = {}, {}
+
         for name, param in model.named_parameters():
             if not param.requires_grad:
                 continue
 
-            decay_weight_list.append(param)
-            decay_weight_name_list.append(name)
+            in_not_group_layer = False
+            if block_name in name:
+                not_group_layer_name_list.append(name)
+                not_group_layer_weight_dict[name] = param
+                in_not_group_layer = True
+            else:
+                param_layer_name_list.append(name)
+                param_layer_weight_dict[name] = param
 
-        model_params_weight_decay_list = [
-            {
-                'params': decay_weight_list,
-                'weight_decay': weight_decay
-            },
-        ]
-        model_layer_weight_decay_list = [
-            {
-                'name': decay_weight_name_list,
-                'weight_decay': weight_decay
-            },
-        ]
-
-    else:
-        no_weight_decay_layer_name_list = optimizer_parameters[
-            'no_weight_decay_layer_name_list']
-        decay_weight_list, no_decay_weight_list = [], []
-        decay_weight_name_list, no_decay_weight_name_list = [], []
-
-        # training trick only for VIT
-        if 'lr_layer_decay' and 'lr_layer_decay_block' and 'block_name' in optimizer_parameters.keys(
-        ):
-            lr_layer_decay = optimizer_parameters['lr_layer_decay']
-            lr_layer_decay_block = optimizer_parameters['lr_layer_decay_block']
-            block_name = optimizer_parameters['block_name']
-
-            num_layers = len(lr_layer_decay_block) + 1
-            lr_layer_scales = list(lr_layer_decay**(num_layers - i)
-                                   for i in range(num_layers + 1))
-
-            decay_weight_list, no_decay_weight_list = [], []
-            decay_weight_name_list, no_decay_weight_name_list = [], []
-            decay_weight_lr_scale_0_list, decay_weight_name_lr_scale_0_list=[],[]
-
-            not_group_layer_scale_weight_list = []
-            not_group_layer_scale_weight_name_list = []
-
-            layer_scale_id_0_name_list = [
-                'position_encoding',
-                'cls_token',
-                'patch_embedding',
-            ]
-            for name, param in model.named_parameters():
-                if not param.requires_grad:
-                    continue
-
-                if param.ndim <= 1 or any(no_weight_decay_layer_name in name
-                                          for no_weight_decay_layer_name in
-                                          no_weight_decay_layer_name_list):
-                    no_decay_weight_list.append(param)
-                    no_decay_weight_name_list.append(name)
-                    continue
-
+            if in_not_group_layer is False:
                 if any(per_layer_scale_id_0_name in name
                        for per_layer_scale_id_0_name in
                        layer_scale_id_0_name_list):
-                    decay_weight_lr_scale_0_list.append(param)
-                    decay_weight_name_lr_scale_0_list.append(name)
-                    continue
-
-                if block_name in name:
-                    not_group_layer_scale_weight_list.append(param)
-                    not_group_layer_scale_weight_name_list.append(name)
+                    param_layer_lr_scale_dict[name] = lr_layer_scales[0]
                 else:
-                    decay_weight_list.append(param)
-                    decay_weight_name_list.append(name)
+                    param_layer_lr_scale_dict[name] = 1.
 
-            model_params_weight_decay_list = [
-                {
-                    "lr_scale": 1.,
-                    'params': no_decay_weight_list,
-                    'weight_decay': 0.
-                },
-                {
-                    "lr_scale": 1.,
-                    'params': decay_weight_list,
-                    'weight_decay': weight_decay
-                },
-                {
-                    "lr_scale": lr_layer_scales[0],
-                    'params': decay_weight_lr_scale_0_list,
-                    'weight_decay': weight_decay
-                },
-            ]
-
-            model_layer_weight_decay_list = [
-                {
-                    "lr_scale": 1.,
-                    'name': no_decay_weight_name_list,
-                    'weight_decay': 0.,
-                },
-                {
-                    "lr_scale": 1.,
-                    'name': decay_weight_name_list,
-                    'weight_decay': weight_decay,
-                },
-                {
-                    "lr_scale": lr_layer_scales[0],
-                    'name': decay_weight_name_lr_scale_0_list,
-                    'weight_decay': weight_decay,
-                },
-            ]
-
-            assert len(not_group_layer_scale_weight_name_list) == len(
-                not_group_layer_scale_weight_list)
-            per_group_weight_nums = len(not_group_layer_scale_weight_name_list
-                                        ) // len(lr_layer_decay_block)
-            for layer_id in range(0, len(lr_layer_decay_block)):
-                per_group_decay_weight_list,per_group_decay_weight_name_list=[],[]
-                for per_group_id in range(per_group_weight_nums):
-                    per_group_decay_weight_list.append(
-                        not_group_layer_scale_weight_list[
-                            layer_id * per_group_weight_nums + per_group_id])
-                    per_group_decay_weight_name_list.append(
-                        not_group_layer_scale_weight_name_list[
-                            layer_id * per_group_weight_nums + per_group_id])
-                model_params_weight_decay_list.append({
-                    "lr_scale":
-                    lr_layer_scales[layer_id + 1],
-                    'params':
-                    per_group_decay_weight_list,
-                    'weight_decay':
-                    weight_decay,
-                })
-                model_layer_weight_decay_list.append({
-                    "lr_scale":
-                    lr_layer_scales[layer_id + 1],
-                    'name':
-                    per_group_decay_weight_name_list,
-                    'weight_decay':
-                    weight_decay,
-                })
-        else:
-            decay_weight_list, no_decay_weight_list = [], []
-            decay_weight_name_list, no_decay_weight_name_list = [], []
-            for name, param in model.named_parameters():
-                if not param.requires_grad:
-                    continue
-
+            if global_weight_decay is False:
                 if param.ndim == 1 or any(no_weight_decay_layer_name in name
                                           for no_weight_decay_layer_name in
                                           no_weight_decay_layer_name_list):
-                    no_decay_weight_list.append(param)
-                    no_decay_weight_name_list.append(name)
+                    if in_not_group_layer:
+                        not_group_layer_decay_dict[name] = 0.
+                    else:
+                        param_layer_decay_dict[name] = 0.
                 else:
-                    decay_weight_list.append(param)
-                    decay_weight_name_list.append(name)
+                    per_layer_weight_decay = weight_decay
+                    if 'sub_layer_weight_decay' in optimizer_parameters.keys(
+                    ) and isinstance(
+                            optimizer_parameters['sub_layer_weight_decay'],
+                            dict):
+                        for per_sub_layer_name_prefix, per_sub_layer_weight_decay in optimizer_parameters[
+                                'sub_layer_weight_decay'].items():
+                            if per_sub_layer_name_prefix in name:
+                                per_layer_weight_decay = per_sub_layer_weight_decay
+                                break
 
-            model_params_weight_decay_list = [
-                {
-                    'params': no_decay_weight_list,
-                    'weight_decay': 0.
-                },
-                {
-                    'params': decay_weight_list,
-                    'weight_decay': weight_decay
-                },
-            ]
+                    if in_not_group_layer:
+                        not_group_layer_decay_dict[
+                            name] = per_layer_weight_decay
+                    else:
+                        param_layer_decay_dict[name] = per_layer_weight_decay
+            else:
+                if in_not_group_layer:
+                    not_group_layer_decay_dict[name] = weight_decay
+                else:
+                    param_layer_decay_dict[name] = weight_decay
 
-            model_layer_weight_decay_list = [
-                {
-                    'name': no_decay_weight_name_list,
-                    'weight_decay': 0.
-                },
-                {
-                    'name': decay_weight_name_list,
-                    'weight_decay': weight_decay
-                },
-            ]
+            per_layer_lr = lr
+            if 'sub_layer_lr' in optimizer_parameters.keys() and isinstance(
+                    optimizer_parameters['sub_layer_lr'], dict):
+                for per_sub_layer_name_prefix, per_sub_layer_lr in optimizer_parameters[
+                        'sub_layer_lr'].items():
+                    if per_sub_layer_name_prefix in name:
+                        per_layer_lr = per_sub_layer_lr
+                        break
+            if in_not_group_layer:
+                not_group_layer_lr_dict[name] = per_layer_lr
+            else:
+                param_layer_lr_dict[name] = per_layer_lr
+
+        assert len(param_layer_name_list) == len(
+            param_layer_weight_dict) == len(param_layer_decay_dict) == len(
+                param_layer_lr_dict) == len(param_layer_lr_scale_dict)
+
+        assert len(not_group_layer_name_list) == len(
+            not_group_layer_weight_dict) == len(
+                not_group_layer_decay_dict) == len(not_group_layer_lr_dict)
+
+        per_group_weight_nums = len(not_group_layer_name_list) // len(
+            lr_layer_decay_block)
+        for layer_id in range(0, len(lr_layer_decay_block)):
+            for per_group_id in range(per_group_weight_nums):
+                per_group_layer_names = not_group_layer_name_list[
+                    layer_id * per_group_weight_nums + per_group_id]
+
+                if not isinstance(per_group_layer_names, list):
+                    per_layer_name = per_group_layer_names
+                    param_layer_name_list.append(per_layer_name)
+                    param_layer_weight_dict[
+                        per_layer_name] = not_group_layer_weight_dict[
+                            per_layer_name]
+                    param_layer_decay_dict[
+                        per_layer_name] = not_group_layer_decay_dict[
+                            per_layer_name]
+                    param_layer_lr_dict[
+                        per_layer_name] = not_group_layer_lr_dict[
+                            per_layer_name]
+                    param_layer_lr_scale_dict[
+                        per_layer_name] = lr_layer_scales[layer_id + 1]
+                else:
+                    for per_layer_name in per_group_layer_names:
+                        param_layer_name_list.append(per_layer_name)
+                        param_layer_weight_dict[
+                            per_layer_name] = not_group_layer_weight_dict[
+                                per_layer_name]
+                        param_layer_decay_dict[
+                            per_layer_name] = not_group_layer_decay_dict[
+                                per_layer_name]
+                        param_layer_lr_dict[
+                            per_layer_name] = not_group_layer_lr_dict[
+                                per_layer_name]
+                        param_layer_lr_scale_dict[
+                            per_layer_name] = lr_layer_scales[layer_id + 1]
+
+        assert len(param_layer_name_list) == len(
+            param_layer_weight_dict) == len(param_layer_decay_dict) == len(
+                param_layer_lr_dict) == len(param_layer_lr_scale_dict)
+
+        unique_decays = list(set(param_layer_decay_dict.values()))
+        unique_lrs = list(set(param_layer_lr_dict.values()))
+        unique_lr_scales = list(set(param_layer_lr_scale_dict.values()))
+
+        lr_weight_decay_combination = []
+        for per_decay in unique_decays:
+            for per_lr in unique_lrs:
+                for per_lr_scale in unique_lr_scales:
+                    lr_weight_decay_combination.append(
+                        [per_decay, per_lr, per_lr_scale])
+
+        model_params_weight_decay_list = []
+        model_layer_weight_decay_list = []
+        for per_decay, per_lr, per_lr_scale in lr_weight_decay_combination:
+            per_decay_lr_lrscale_param_list, per_decay_lr_lrscale_name_list = [], []
+            for per_layer_name in param_layer_name_list:
+                per_layer_weight = param_layer_weight_dict[per_layer_name]
+                per_layer_weight_decay = param_layer_decay_dict[per_layer_name]
+                per_layer_lr = param_layer_lr_dict[per_layer_name]
+                per_layer_lr_scale = param_layer_lr_scale_dict[per_layer_name]
+
+                if per_layer_weight_decay == per_decay and per_layer_lr == per_lr and per_layer_lr_scale == per_lr_scale:
+                    per_decay_lr_lrscale_param_list.append(per_layer_weight)
+                    per_decay_lr_lrscale_name_list.append(per_layer_name)
+
+            assert len(per_decay_lr_lrscale_param_list) == len(
+                per_decay_lr_lrscale_name_list)
+
+            if len(per_decay_lr_lrscale_param_list) > 0:
+                model_params_weight_decay_list.append({
+                    'params':
+                    per_decay_lr_lrscale_param_list,
+                    'weight_decay':
+                    per_decay,
+                    'lr':
+                    per_lr * per_lr_scale,
+                })
+                model_layer_weight_decay_list.append({
+                    'name': per_decay_lr_lrscale_name_list,
+                    'weight_decay': per_decay,
+                    'lr': per_lr,
+                    'lr_scale': per_lr_scale,
+                })
+
+        assert len(model_params_weight_decay_list) == len(
+            model_layer_weight_decay_list)
+
+    else:
+        param_layer_name_list = []
+        param_layer_weight_dict = {}
+        param_layer_decay_dict, param_layer_lr_dict = {}, {}
+        for name, param in model.named_parameters():
+            if not param.requires_grad:
+                continue
+
+            param_layer_name_list.append(name)
+            param_layer_weight_dict[name] = param
+
+            if global_weight_decay is False:
+                if param.ndim == 1 or any(no_weight_decay_layer_name in name
+                                          for no_weight_decay_layer_name in
+                                          no_weight_decay_layer_name_list):
+                    param_layer_decay_dict[name] = 0.
+                else:
+                    per_layer_weight_decay = weight_decay
+                    if 'sub_layer_weight_decay' in optimizer_parameters.keys(
+                    ) and isinstance(
+                            optimizer_parameters['sub_layer_weight_decay'],
+                            dict):
+                        for per_sub_layer_name_prefix, per_sub_layer_weight_decay in optimizer_parameters[
+                                'sub_layer_weight_decay'].items():
+                            if per_sub_layer_name_prefix in name:
+                                per_layer_weight_decay = per_sub_layer_weight_decay
+                                break
+                    param_layer_decay_dict[name] = per_layer_weight_decay
+            else:
+                param_layer_decay_dict[name] = weight_decay
+
+            per_layer_lr = lr
+            if 'sub_layer_lr' in optimizer_parameters.keys() and isinstance(
+                    optimizer_parameters['sub_layer_lr'], dict):
+                for per_sub_layer_name_prefix, per_sub_layer_lr in optimizer_parameters[
+                        'sub_layer_lr'].items():
+                    if per_sub_layer_name_prefix in name:
+                        per_layer_lr = per_sub_layer_lr
+                        break
+            param_layer_lr_dict[name] = per_layer_lr
+
+        assert len(param_layer_name_list) == len(
+            param_layer_weight_dict) == len(param_layer_decay_dict) == len(
+                param_layer_lr_dict)
+
+        unique_decays = list(set(param_layer_decay_dict.values()))
+        unique_lrs = list(set(param_layer_lr_dict.values()))
+
+        lr_weight_decay_combination = []
+        for per_decay in unique_decays:
+            for per_lr in unique_lrs:
+                lr_weight_decay_combination.append([per_decay, per_lr])
+
+        model_params_weight_decay_list = []
+        model_layer_weight_decay_list = []
+        for per_decay, per_lr in lr_weight_decay_combination:
+            per_decay_lr_param_list, per_decay_lr_name_list = [], []
+            for per_layer_name in param_layer_name_list:
+                per_layer_weight = param_layer_weight_dict[per_layer_name]
+                per_layer_weight_decay = param_layer_decay_dict[per_layer_name]
+                per_layer_lr = param_layer_lr_dict[per_layer_name]
+
+                if per_layer_weight_decay == per_decay and per_layer_lr == per_lr:
+                    per_decay_lr_param_list.append(per_layer_weight)
+                    per_decay_lr_name_list.append(per_layer_name)
+
+            assert len(per_decay_lr_param_list) == len(per_decay_lr_name_list)
+
+            if len(per_decay_lr_param_list) > 0:
+                model_params_weight_decay_list.append({
+                    'params': per_decay_lr_param_list,
+                    'weight_decay': per_decay,
+                    'lr': per_lr,
+                })
+                model_layer_weight_decay_list.append({
+                    'name': per_decay_lr_name_list,
+                    'weight_decay': per_decay,
+                    'lr': per_lr,
+                })
+
+        assert len(model_params_weight_decay_list) == len(
+            model_layer_weight_decay_list)
 
     if optimizer_name == 'SGD':
         momentum = optimizer_parameters['momentum']
@@ -468,3 +580,11 @@ def build_optimizer(config, model):
                                  lr=lr,
                                  betas=(beta1,
                                         beta2)), model_layer_weight_decay_list
+    elif optimizer_name == 'Lion':
+        beta1 = 0.9 if 'beta1' not in optimizer_parameters.keys(
+        ) else optimizer_parameters['beta1']
+        beta2 = 0.99 if 'beta2' not in optimizer_parameters.keys(
+        ) else optimizer_parameters['beta2']
+        return Lion(model_params_weight_decay_list,
+                    lr=lr,
+                    betas=(beta1, beta2)), model_layer_weight_decay_list

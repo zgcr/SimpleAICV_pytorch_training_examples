@@ -434,21 +434,25 @@ if __name__ == '__main__':
     import torchvision.transforms as transforms
     from tqdm import tqdm
 
-    from simpleAICV.semantic_segmentation.common import Resize, RandomCrop, RandomHorizontalFlip, PhotoMetricDistortion, Normalize, SemanticSegmentationCollater
+    from simpleAICV.semantic_segmentation.common import RandomCropResize, RandomHorizontalFlip, PhotoMetricDistortion, Normalize, SemanticSegmentationCollater
 
     ade20kdataset = ADE20KSemanticSegmentation(
         ADE20Kdataset_path,
         image_sets='training',
         reduce_zero_label=True,
         transform=transforms.Compose([
-            Resize(image_scale=(2048, 512),
-                   multi_scale=True,
-                   multi_scale_range=(0.5, 2.0)),
-            RandomCrop(crop_size=(512, 512),
-                       cat_max_ratio=0.75,
-                       ignore_index=255),
+            RandomCropResize(image_scale=(2048, 512),
+                             multi_scale=True,
+                             multi_scale_range=(0.5, 2.0),
+                             crop_size=(512, 512),
+                             cat_max_ratio=0.75,
+                             ignore_index=255),
             RandomHorizontalFlip(prob=0.5),
-            PhotoMetricDistortion(),
+            PhotoMetricDistortion(brightness_delta=32,
+                                  contrast_range=(0.5, 1.5),
+                                  saturation_range=(0.5, 1.5),
+                                  hue_delta=18,
+                                  prob=0.5),
             # Normalize(),
         ]))
 
@@ -459,39 +463,42 @@ if __name__ == '__main__':
         print('1111', per_sample['image'].dtype, per_sample['mask'].dtype,
               per_sample['scale'].dtype, per_sample['size'].dtype)
 
-        # temp_dir = './temp1'
-        # if not os.path.exists(temp_dir):
-        #     os.makedirs(temp_dir)
+        temp_dir = './temp1'
+        if not os.path.exists(temp_dir):
+            os.makedirs(temp_dir)
 
-        # image = np.ascontiguousarray(per_sample['image'], dtype=np.uint8)
-        # image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-        # mask = per_sample['mask']
-        # mask_jpg = np.zeros((image.shape[0], image.shape[1], 3))
+        image = np.ascontiguousarray(per_sample['image'], dtype=np.uint8)
+        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        mask = per_sample['mask']
+        mask_jpg = np.zeros((image.shape[0], image.shape[1], 3))
 
-        # all_classes = np.unique(mask)
-        # print("1212", all_classes)
-        # for per_class in all_classes:
-        #     per_class = int(per_class)
-        #     if per_class < 0 or per_class >= 255:
-        #         continue
-        #     class_name, class_color = ADE20K_CLASSES[
-        #         per_class], ADK20K_CLASSES_COLOR[per_class]
-        #     class_color = np.array(
-        #         (class_color[2], class_color[1], class_color[0]))
-        #     per_mask = (mask == per_class).astype(np.float32)
-        #     per_mask = np.expand_dims(per_mask, axis=-1)
-        #     per_mask = np.tile(per_mask, (1, 1, 3))
-        #     mask_color = np.expand_dims(np.expand_dims(class_color, axis=0),
-        #                                 axis=0)
+        all_classes = np.unique(mask)
+        print("1212", all_classes)
+        for per_class in all_classes:
+            per_class = int(per_class)
+            if per_class < 0 or per_class > 255:
+                continue
+            if per_class != 255:
+                class_name, class_color = ADE20K_CLASSES[
+                    per_class], ADK20K_CLASSES_COLOR[per_class]
+            else:
+                class_name, class_color = 'background', (255, 255, 255)
+            class_color = np.array(
+                (class_color[0], class_color[1], class_color[2]))
+            per_mask = (mask == per_class).astype(np.float32)
+            per_mask = np.expand_dims(per_mask, axis=-1)
+            per_mask = np.tile(per_mask, (1, 1, 3))
+            mask_color = np.expand_dims(np.expand_dims(class_color, axis=0),
+                                        axis=0)
 
-        #     per_mask = per_mask * mask_color
-        #     image = 0.5 * per_mask + image
-        #     mask_jpg += per_mask
+            per_mask = per_mask * mask_color
+            image = 0.5 * per_mask + image
+            mask_jpg += per_mask
 
-        # cv2.imencode('.jpg', image)[1].tofile(
-        #     os.path.join(temp_dir, f'idx_{count}.jpg'))
-        # cv2.imencode('.jpg', mask_jpg)[1].tofile(
-        #     os.path.join(temp_dir, f'idx_{count}_mask.jpg'))
+        cv2.imencode('.jpg', image)[1].tofile(
+            os.path.join(temp_dir, f'idx_{count}.jpg'))
+        cv2.imencode('.jpg', mask_jpg)[1].tofile(
+            os.path.join(temp_dir, f'idx_{count}_mask.jpg'))
 
         if count < 10:
             count += 1
@@ -499,7 +506,7 @@ if __name__ == '__main__':
             break
 
     from torch.utils.data import DataLoader
-    collater = SemanticSegmentationCollater(divisor=32, ignore_index=255)
+    collater = SemanticSegmentationCollater(resize=512, ignore_index=255)
     train_loader = DataLoader(ade20kdataset,
                               batch_size=4,
                               shuffle=True,
@@ -513,49 +520,52 @@ if __name__ == '__main__':
         print('2222', images.shape, masks.shape, scales.shape, sizes.shape)
         print('2222', images.dtype, masks.dtype, scales.dtype, sizes.dtype)
 
-        # temp_dir = './temp2'
-        # if not os.path.exists(temp_dir):
-        #     os.makedirs(temp_dir)
+        temp_dir = './temp2'
+        if not os.path.exists(temp_dir):
+            os.makedirs(temp_dir)
 
-        # images = images.permute(0, 2, 3, 1).cpu().numpy()
-        # masks = masks.cpu().numpy()
+        images = images.permute(0, 2, 3, 1).cpu().numpy()
+        masks = masks.cpu().numpy()
 
-        # for i, (per_image,
-        #         per_image_mask_targets) in enumerate(zip(images, masks)):
-        #     per_image = np.ascontiguousarray(per_image, dtype=np.uint8)
-        #     per_image = cv2.cvtColor(per_image, cv2.COLOR_RGB2BGR)
+        for i, (per_image,
+                per_image_mask_targets) in enumerate(zip(images, masks)):
+            per_image = np.ascontiguousarray(per_image, dtype=np.uint8)
+            per_image = cv2.cvtColor(per_image, cv2.COLOR_RGB2BGR)
 
-        #     per_image_mask_jpg = np.zeros(
-        #         (per_image.shape[0], per_image.shape[1], 3))
+            per_image_mask_jpg = np.zeros(
+                (per_image.shape[0], per_image.shape[1], 3))
 
-        #     all_classes = np.unique(per_image_mask_targets)
-        #     print("2323", all_classes)
-        #     for per_class in all_classes:
-        #         per_class = int(per_class)
-        #         if per_class < 0 or per_class >= 255:
-        #             continue
-        #         class_name, class_color = ADE20K_CLASSES[
-        #             per_class], ADK20K_CLASSES_COLOR[per_class]
-        #         class_color = np.array(
-        #             (class_color[2], class_color[1], class_color[0]))
-        #         per_image_mask = (per_image_mask_targets == per_class).astype(
-        #             np.float32)
-        #         per_image_mask = np.expand_dims(per_image_mask, axis=-1)
-        #         per_image_mask = np.tile(per_image_mask, (1, 1, 3))
-        #         mask_color = np.expand_dims(np.expand_dims(class_color,
-        #                                                    axis=0),
-        #                                     axis=0)
+            all_classes = np.unique(per_image_mask_targets)
+            print("2323", all_classes)
+            for per_class in all_classes:
+                per_class = int(per_class)
+                if per_class < 0 or per_class > 255:
+                    continue
+                if per_class != 255:
+                    class_name, class_color = ADE20K_CLASSES[
+                        per_class], ADK20K_CLASSES_COLOR[per_class]
+                else:
+                    class_name, class_color = 'background', (255, 255, 255)
+                class_color = np.array(
+                    (class_color[0], class_color[1], class_color[2]))
+                per_image_mask = (per_image_mask_targets == per_class).astype(
+                    np.float32)
+                per_image_mask = np.expand_dims(per_image_mask, axis=-1)
+                per_image_mask = np.tile(per_image_mask, (1, 1, 3))
+                mask_color = np.expand_dims(np.expand_dims(class_color,
+                                                           axis=0),
+                                            axis=0)
 
-        #         per_image_mask = per_image_mask * mask_color
-        #         per_image = 0.5 * per_image_mask + per_image
-        #         per_image_mask_jpg += per_image_mask
+                per_image_mask = per_image_mask * mask_color
+                per_image = 0.5 * per_image_mask + per_image
+                per_image_mask_jpg += per_image_mask
 
-        #     cv2.imencode('.jpg', per_image)[1].tofile(
-        #         os.path.join(temp_dir, f'idx_{count}_{i}.jpg'))
-        #     cv2.imencode('.jpg', per_image_mask_jpg)[1].tofile(
-        #         os.path.join(temp_dir, f'idx_{count}_{i}_mask.jpg'))
+            cv2.imencode('.jpg', per_image)[1].tofile(
+                os.path.join(temp_dir, f'idx_{count}_{i}.jpg'))
+            cv2.imencode('.jpg', per_image_mask_jpg)[1].tofile(
+                os.path.join(temp_dir, f'idx_{count}_{i}_mask.jpg'))
 
-        if count < 10:
+        if count < 5:
             count += 1
         else:
             break
@@ -565,14 +575,18 @@ if __name__ == '__main__':
         image_sets='training',
         reduce_zero_label=False,
         transform=transforms.Compose([
-            Resize(image_scale=(2048, 512),
-                   multi_scale=True,
-                   multi_scale_range=(0.5, 2.0)),
-            RandomCrop(crop_size=(512, 512),
-                       cat_max_ratio=0.75,
-                       ignore_index=None),
+            RandomCropResize(image_scale=(2048, 512),
+                             multi_scale=True,
+                             multi_scale_range=(0.5, 2.0),
+                             crop_size=(512, 512),
+                             cat_max_ratio=0.75,
+                             ignore_index=None),
             RandomHorizontalFlip(prob=0.5),
-            PhotoMetricDistortion(),
+            PhotoMetricDistortion(brightness_delta=32,
+                                  contrast_range=(0.5, 1.5),
+                                  saturation_range=(0.5, 1.5),
+                                  hue_delta=18,
+                                  prob=0.5),
             # Normalize(),
         ]))
 
@@ -583,41 +597,44 @@ if __name__ == '__main__':
         print('1111', per_sample['image'].dtype, per_sample['mask'].dtype,
               per_sample['scale'].dtype, per_sample['size'].dtype)
 
-        # temp_dir = './temp3'
-        # if not os.path.exists(temp_dir):
-        #     os.makedirs(temp_dir)
+        temp_dir = './temp3'
+        if not os.path.exists(temp_dir):
+            os.makedirs(temp_dir)
 
-        # image = np.ascontiguousarray(per_sample['image'], dtype=np.uint8)
-        # image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-        # mask = per_sample['mask']
-        # mask_jpg = np.zeros((image.shape[0], image.shape[1], 3))
+        image = np.ascontiguousarray(per_sample['image'], dtype=np.uint8)
+        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        mask = per_sample['mask']
+        mask_jpg = np.zeros((image.shape[0], image.shape[1], 3))
 
-        # all_classes = np.unique(mask)
-        # print("1212", all_classes)
-        # for per_class in all_classes:
-        #     if per_class == 0:
-        #         continue
-        #     per_class = int(per_class)
-        #     if per_class < 0 or per_class >= 255:
-        #         continue
-        #     class_name, class_color = ADE20K_CLASSES[
-        #         per_class - 1], ADK20K_CLASSES_COLOR[per_class - 1]
-        #     class_color = np.array(
-        #         (class_color[2], class_color[1], class_color[0]))
-        #     per_mask = (mask == per_class).astype(np.float32)
-        #     per_mask = np.expand_dims(per_mask, axis=-1)
-        #     per_mask = np.tile(per_mask, (1, 1, 3))
-        #     mask_color = np.expand_dims(np.expand_dims(class_color, axis=0),
-        #                                 axis=0)
+        all_classes = np.unique(mask)
+        print("1212", all_classes)
+        for per_class in all_classes:
+            if per_class == 0:
+                continue
+            per_class = int(per_class)
+            if per_class < 0 or per_class > 150:
+                continue
+            if per_class != 0:
+                class_name, class_color = ADE20K_CLASSES[
+                    per_class - 1], ADK20K_CLASSES_COLOR[per_class - 1]
+            else:
+                class_name, class_color = 'background', (255, 255, 255)
+            class_color = np.array(
+                (class_color[0], class_color[1], class_color[2]))
+            per_mask = (mask == per_class).astype(np.float32)
+            per_mask = np.expand_dims(per_mask, axis=-1)
+            per_mask = np.tile(per_mask, (1, 1, 3))
+            mask_color = np.expand_dims(np.expand_dims(class_color, axis=0),
+                                        axis=0)
 
-        #     per_mask = per_mask * mask_color
-        #     image = 0.5 * per_mask + image
-        #     mask_jpg += per_mask
+            per_mask = per_mask * mask_color
+            image = 0.5 * per_mask + image
+            mask_jpg += per_mask
 
-        # cv2.imencode('.jpg', image)[1].tofile(
-        #     os.path.join(temp_dir, f'idx_{count}.jpg'))
-        # cv2.imencode('.jpg', mask_jpg)[1].tofile(
-        #     os.path.join(temp_dir, f'idx_{count}_mask.jpg'))
+        cv2.imencode('.jpg', image)[1].tofile(
+            os.path.join(temp_dir, f'idx_{count}.jpg'))
+        cv2.imencode('.jpg', mask_jpg)[1].tofile(
+            os.path.join(temp_dir, f'idx_{count}_mask.jpg'))
 
         if count < 10:
             count += 1
@@ -625,7 +642,7 @@ if __name__ == '__main__':
             break
 
     from torch.utils.data import DataLoader
-    collater = SemanticSegmentationCollater(divisor=32, ignore_index=None)
+    collater = SemanticSegmentationCollater(resize=512, ignore_index=None)
     train_loader = DataLoader(ade20kdataset,
                               batch_size=4,
                               shuffle=True,
@@ -639,51 +656,54 @@ if __name__ == '__main__':
         print('2222', images.shape, masks.shape, scales.shape, sizes.shape)
         print('2222', images.dtype, masks.dtype, scales.dtype, sizes.dtype)
 
-        # temp_dir = './temp4'
-        # if not os.path.exists(temp_dir):
-        #     os.makedirs(temp_dir)
+        temp_dir = './temp4'
+        if not os.path.exists(temp_dir):
+            os.makedirs(temp_dir)
 
-        # images = images.permute(0, 2, 3, 1).cpu().numpy()
-        # masks = masks.cpu().numpy()
+        images = images.permute(0, 2, 3, 1).cpu().numpy()
+        masks = masks.cpu().numpy()
 
-        # for i, (per_image,
-        #         per_image_mask_targets) in enumerate(zip(images, masks)):
-        #     per_image = np.ascontiguousarray(per_image, dtype=np.uint8)
-        #     per_image = cv2.cvtColor(per_image, cv2.COLOR_RGB2BGR)
+        for i, (per_image,
+                per_image_mask_targets) in enumerate(zip(images, masks)):
+            per_image = np.ascontiguousarray(per_image, dtype=np.uint8)
+            per_image = cv2.cvtColor(per_image, cv2.COLOR_RGB2BGR)
 
-        #     per_image_mask_jpg = np.zeros(
-        #         (per_image.shape[0], per_image.shape[1], 3))
+            per_image_mask_jpg = np.zeros(
+                (per_image.shape[0], per_image.shape[1], 3))
 
-        #     all_classes = np.unique(per_image_mask_targets)
-        #     print("2323", all_classes)
-        #     for per_class in all_classes:
-        #         if per_class == 0:
-        #             continue
-        #         per_class = int(per_class)
-        #         if per_class < 0 or per_class >= 255:
-        #             continue
-        #         class_name, class_color = ADE20K_CLASSES[
-        #             per_class - 1], ADK20K_CLASSES_COLOR[per_class - 1]
-        #         class_color = np.array(
-        #             (class_color[2], class_color[1], class_color[0]))
-        #         per_image_mask = (per_image_mask_targets == per_class).astype(
-        #             np.float32)
-        #         per_image_mask = np.expand_dims(per_image_mask, axis=-1)
-        #         per_image_mask = np.tile(per_image_mask, (1, 1, 3))
-        #         mask_color = np.expand_dims(np.expand_dims(class_color,
-        #                                                    axis=0),
-        #                                     axis=0)
+            all_classes = np.unique(per_image_mask_targets)
+            print("2323", all_classes)
+            for per_class in all_classes:
+                if per_class == 0:
+                    continue
+                per_class = int(per_class)
+                if per_class < 0 or per_class > 255:
+                    continue
+                if per_class != 255:
+                    class_name, class_color = ADE20K_CLASSES[
+                        per_class], ADK20K_CLASSES_COLOR[per_class]
+                else:
+                    class_name, class_color = 'background', (255, 255, 255)
+                class_color = np.array(
+                    (class_color[0], class_color[1], class_color[2]))
+                per_image_mask = (per_image_mask_targets == per_class).astype(
+                    np.float32)
+                per_image_mask = np.expand_dims(per_image_mask, axis=-1)
+                per_image_mask = np.tile(per_image_mask, (1, 1, 3))
+                mask_color = np.expand_dims(np.expand_dims(class_color,
+                                                           axis=0),
+                                            axis=0)
 
-        #         per_image_mask = per_image_mask * mask_color
-        #         per_image = 0.5 * per_image_mask + per_image
-        #         per_image_mask_jpg += per_image_mask
+                per_image_mask = per_image_mask * mask_color
+                per_image = 0.5 * per_image_mask + per_image
+                per_image_mask_jpg += per_image_mask
 
-        #     cv2.imencode('.jpg', per_image)[1].tofile(
-        #         os.path.join(temp_dir, f'idx_{count}_{i}.jpg'))
-        #     cv2.imencode('.jpg', per_image_mask_jpg)[1].tofile(
-        #         os.path.join(temp_dir, f'idx_{count}_{i}_mask.jpg'))
+            cv2.imencode('.jpg', per_image)[1].tofile(
+                os.path.join(temp_dir, f'idx_{count}_{i}.jpg'))
+            cv2.imencode('.jpg', per_image_mask_jpg)[1].tofile(
+                os.path.join(temp_dir, f'idx_{count}_{i}_mask.jpg'))
 
-        if count < 10:
+        if count < 5:
             count += 1
         else:
             break

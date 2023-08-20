@@ -5,11 +5,11 @@ https://github.com/pytorch/vision/blob/master/torchvision/models/resnet.py
 import torch
 import torch.nn as nn
 
+from torch.utils.checkpoint import checkpoint
+
 __all__ = [
     'resnet18',
-    'resnet34half',
     'resnet34',
-    'resnet50half',
     'resnet50',
     'resnet101',
     'resnet152',
@@ -157,7 +157,12 @@ class Bottleneck(nn.Module):
 
 class ResNet(nn.Module):
 
-    def __init__(self, block, layer_nums, inplanes=64, num_classes=1000):
+    def __init__(self,
+                 block,
+                 layer_nums,
+                 inplanes=64,
+                 num_classes=1000,
+                 use_gradient_checkpoint=False):
         super(ResNet, self).__init__()
         self.block = block
         self.layer_nums = layer_nums
@@ -165,6 +170,8 @@ class ResNet(nn.Module):
         self.inplanes = inplanes
         self.planes = [inplanes, inplanes * 2, inplanes * 4, inplanes * 8]
         self.expansion = 1 if block is BasicBlock else 4
+
+        self.use_gradient_checkpoint = use_gradient_checkpoint
 
         self.conv1 = ConvBnActBlock(3,
                                     self.inplanes,
@@ -220,10 +227,16 @@ class ResNet(nn.Module):
         x = self.conv1(x)
         x = self.maxpool1(x)
 
-        x = self.layer1(x)
-        x = self.layer2(x)
-        x = self.layer3(x)
-        x = self.layer4(x)
+        if self.use_gradient_checkpoint:
+            x = checkpoint(self.layer1, x)
+            x = checkpoint(self.layer2, x)
+            x = checkpoint(self.layer3, x)
+            x = checkpoint(self.layer4, x)
+        else:
+            x = self.layer1(x)
+            x = self.layer2(x)
+            x = self.layer3(x)
+            x = self.layer4(x)
 
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
@@ -242,16 +255,8 @@ def resnet18(**kwargs):
     return _resnet(BasicBlock, [2, 2, 2, 2], 64, **kwargs)
 
 
-def resnet34half(**kwargs):
-    return _resnet(BasicBlock, [3, 4, 6, 3], 32, **kwargs)
-
-
 def resnet34(**kwargs):
     return _resnet(BasicBlock, [3, 4, 6, 3], 64, **kwargs)
-
-
-def resnet50half(**kwargs):
-    return _resnet(Bottleneck, [3, 4, 6, 3], 32, **kwargs)
 
 
 def resnet50(**kwargs):
@@ -290,19 +295,8 @@ if __name__ == '__main__':
                            inputs=(torch.randn(1, 3, image_h, image_w), ),
                            verbose=False)
     macs, params = clever_format([macs, params], '%.3f')
-    out = net(torch.autograd.Variable(torch.randn(6, 3, image_h, image_w)))
+    out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
     print(f'1111, macs: {macs}, params: {params},out_shape: {out.shape}')
-
-    net = resnet34half(num_classes=1000)
-    image_h, image_w = 224, 224
-    from thop import profile
-    from thop import clever_format
-    macs, params = profile(net,
-                           inputs=(torch.randn(1, 3, image_h, image_w), ),
-                           verbose=False)
-    macs, params = clever_format([macs, params], '%.3f')
-    out = net(torch.autograd.Variable(torch.randn(6, 3, image_h, image_w)))
-    print(f'2222, macs: {macs}, params: {params},out_shape: {out.shape}')
 
     net = resnet34(num_classes=1000)
     image_h, image_w = 224, 224
@@ -312,19 +306,8 @@ if __name__ == '__main__':
                            inputs=(torch.randn(1, 3, image_h, image_w), ),
                            verbose=False)
     macs, params = clever_format([macs, params], '%.3f')
-    out = net(torch.autograd.Variable(torch.randn(6, 3, image_h, image_w)))
-    print(f'3333, macs: {macs}, params: {params},out_shape: {out.shape}')
-
-    net = resnet50half(num_classes=1000)
-    image_h, image_w = 224, 224
-    from thop import profile
-    from thop import clever_format
-    macs, params = profile(net,
-                           inputs=(torch.randn(1, 3, image_h, image_w), ),
-                           verbose=False)
-    macs, params = clever_format([macs, params], '%.3f')
-    out = net(torch.autograd.Variable(torch.randn(6, 3, image_h, image_w)))
-    print(f'4444, macs: {macs}, params: {params},out_shape: {out.shape}')
+    out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    print(f'2222, macs: {macs}, params: {params},out_shape: {out.shape}')
 
     net = resnet50(num_classes=1000)
     image_h, image_w = 224, 224
@@ -334,8 +317,8 @@ if __name__ == '__main__':
                            inputs=(torch.randn(1, 3, image_h, image_w), ),
                            verbose=False)
     macs, params = clever_format([macs, params], '%.3f')
-    out = net(torch.autograd.Variable(torch.randn(6, 3, image_h, image_w)))
-    print(f'5555, macs: {macs}, params: {params},out_shape: {out.shape}')
+    out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    print(f'3333, macs: {macs}, params: {params},out_shape: {out.shape}')
 
     net = resnet101(num_classes=1000)
     image_h, image_w = 224, 224
@@ -345,8 +328,8 @@ if __name__ == '__main__':
                            inputs=(torch.randn(1, 3, image_h, image_w), ),
                            verbose=False)
     macs, params = clever_format([macs, params], '%.3f')
-    out = net(torch.autograd.Variable(torch.randn(6, 3, image_h, image_w)))
-    print(f'6666, macs: {macs}, params: {params},out_shape: {out.shape}')
+    out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    print(f'4444, macs: {macs}, params: {params},out_shape: {out.shape}')
 
     net = resnet152(num_classes=1000)
     image_h, image_w = 224, 224
@@ -356,5 +339,10 @@ if __name__ == '__main__':
                            inputs=(torch.randn(1, 3, image_h, image_w), ),
                            verbose=False)
     macs, params = clever_format([macs, params], '%.3f')
-    out = net(torch.autograd.Variable(torch.randn(6, 3, image_h, image_w)))
-    print(f'7777, macs: {macs}, params: {params},out_shape: {out.shape}')
+    out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    print(f'5555, macs: {macs}, params: {params},out_shape: {out.shape}')
+
+    net = resnet152(num_classes=1000, use_gradient_checkpoint=True)
+    image_h, image_w = 224, 224
+    out = net(torch.autograd.Variable(torch.randn(4, 3, image_h, image_w)))
+    print(f'6666, out_shape: {out.shape}')

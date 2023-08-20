@@ -6,8 +6,9 @@ https://github.com/rwightman/pytorch-image-models/blob/master/timm/models/vision
 import torch
 import torch.nn as nn
 
+from torch.utils.checkpoint import checkpoint
+
 __all__ = [
-    'vit_tiny_patch16',
     'vit_small_patch16',
     'vit_base_patch16',
     'vit_large_patch16',
@@ -175,7 +176,8 @@ class ViT(nn.Module):
                  dropout_prob=0.,
                  drop_path_prob=0.,
                  global_pool=False,
-                 num_classes=1000):
+                 num_classes=1000,
+                 use_gradient_checkpoint=False):
         super(ViT, self).__init__()
         self.image_size = image_size
         self.patch_size = patch_size
@@ -185,6 +187,7 @@ class ViT(nn.Module):
         self.feedforward_ratio = feedforward_ratio
         self.global_pool = global_pool
         self.num_classes = num_classes
+        self.use_gradient_checkpoint = use_gradient_checkpoint
 
         self.patch_embedding = PatchEmbeddingBlock(3,
                                                    self.embedding_planes,
@@ -242,7 +245,10 @@ class ViT(nn.Module):
         x = self.embedding_dropout(x)
 
         for block in self.blocks:
-            x = block(x)
+            if self.use_gradient_checkpoint:
+                x = checkpoint(block, x)
+            else:
+                x = block(x)
 
         if self.global_pool:
             # global pool without cls token
@@ -263,10 +269,6 @@ def _vit(patch_size, embedding_planes, block_nums, head_nums,
                 feedforward_ratio, **kwargs)
 
     return model
-
-
-def vit_tiny_patch16(**kwargs):
-    return _vit(16, 192, 12, 3, 4, **kwargs)
 
 
 def vit_small_patch16(**kwargs):
@@ -301,17 +303,6 @@ if __name__ == '__main__':
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-    net = vit_tiny_patch16(num_classes=1000)
-    image_h, image_w = 224, 224
-    from thop import profile
-    from thop import clever_format
-    macs, params = profile(net,
-                           inputs=(torch.randn(1, 3, image_h, image_w), ),
-                           verbose=False)
-    macs, params = clever_format([macs, params], '%.3f')
-    out = net(torch.autograd.Variable(torch.randn(1, 3, image_h, image_w)))
-    print(f'1111, macs: {macs}, params: {params},out_shape: {out.shape}')
-
     net = vit_small_patch16(num_classes=1000)
     image_h, image_w = 224, 224
     from thop import profile
@@ -320,8 +311,8 @@ if __name__ == '__main__':
                            inputs=(torch.randn(1, 3, image_h, image_w), ),
                            verbose=False)
     macs, params = clever_format([macs, params], '%.3f')
-    out = net(torch.autograd.Variable(torch.randn(1, 3, image_h, image_w)))
-    print(f'2222, macs: {macs}, params: {params},out_shape: {out.shape}')
+    out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    print(f'1111, macs: {macs}, params: {params},out_shape: {out.shape}')
 
     net = vit_base_patch16(num_classes=1000)
     image_h, image_w = 224, 224
@@ -331,8 +322,8 @@ if __name__ == '__main__':
                            inputs=(torch.randn(1, 3, image_h, image_w), ),
                            verbose=False)
     macs, params = clever_format([macs, params], '%.3f')
-    out = net(torch.autograd.Variable(torch.randn(1, 3, image_h, image_w)))
-    print(f'3333, macs: {macs}, params: {params},out_shape: {out.shape}')
+    out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    print(f'2222, macs: {macs}, params: {params},out_shape: {out.shape}')
 
     net = vit_large_patch16(num_classes=1000)
     image_h, image_w = 224, 224
@@ -342,8 +333,8 @@ if __name__ == '__main__':
                            inputs=(torch.randn(1, 3, image_h, image_w), ),
                            verbose=False)
     macs, params = clever_format([macs, params], '%.3f')
-    out = net(torch.autograd.Variable(torch.randn(1, 3, image_h, image_w)))
-    print(f'4444, macs: {macs}, params: {params},out_shape: {out.shape}')
+    out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    print(f'3333, macs: {macs}, params: {params},out_shape: {out.shape}')
 
     net = vit_huge_patch14(num_classes=1000)
     image_h, image_w = 224, 224
@@ -353,5 +344,10 @@ if __name__ == '__main__':
                            inputs=(torch.randn(1, 3, image_h, image_w), ),
                            verbose=False)
     macs, params = clever_format([macs, params], '%.3f')
-    out = net(torch.autograd.Variable(torch.randn(1, 3, image_h, image_w)))
-    print(f'5555, macs: {macs}, params: {params},out_shape: {out.shape}')
+    out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    print(f'4444, macs: {macs}, params: {params},out_shape: {out.shape}')
+
+    net = vit_huge_patch14(num_classes=1000, use_gradient_checkpoint=True)
+    image_h, image_w = 224, 224
+    out = net(torch.autograd.Variable(torch.randn(4, 3, image_h, image_w)))
+    print(f'5555, out_shape: {out.shape}')

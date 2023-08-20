@@ -7,19 +7,21 @@ sys.path.append(BASE_DIR)
 
 import math
 import numpy as np
+import scipy
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from simpleAICV.detection.models.anchor import RetinaAnchors, FCOSPositions, TTFNetPositions, YoloxAnchors
+from simpleAICV.detection.models.anchor import RetinaAnchors, FCOSPositions, TTFNetPositions
 
 __all__ = [
     'RetinaLoss',
     'FCOSLoss',
     'CenterNetLoss',
     'TTFNetLoss',
-    'YoloxLoss',
+    'DETRLoss',
+    'DINODETRLoss',
 ]
 
 
@@ -1405,384 +1407,671 @@ class TTFNetLoss(nn.Module):
         return heatmap
 
 
-class YoloxLoss(nn.Module):
+class DETRLoss(nn.Module):
 
     def __init__(self,
-                 strides=[8, 16, 32],
-                 obj_loss_weight=1.0,
-                 box_loss_weight=5.0,
+                 cls_match_cost=1.0,
+                 box_match_cost=5.0,
+                 giou_match_cost=2.0,
                  cls_loss_weight=1.0,
-                 box_loss_iou_type='CIoU',
-                 center_sample_radius=2.5):
-        super(YoloxLoss, self).__init__()
-        assert box_loss_iou_type in ['IoU', 'GIoU', 'DIoU', 'CIoU',
-                                     'EIoU'], 'wrong IoU type!'
-        self.grid_strides = YoloxAnchors(strides=strides)
-        self.strides = strides
-        self.obj_loss_weight = obj_loss_weight
-        self.box_loss_weight = box_loss_weight
+                 box_l1_loss_weight=5.0,
+                 iou_loss_weight=2.0,
+                 no_object_cls_weight=0.1,
+                 num_classes=80):
+        super(DETRLoss, self).__init__()
+        self.cls_match_cost = cls_match_cost
+        self.box_match_cost = box_match_cost
+        self.giou_match_cost = giou_match_cost
+
+        # cls loss
         self.cls_loss_weight = cls_loss_weight
-        self.box_loss_iou_type = box_loss_iou_type
-        self.center_sample_radius = center_sample_radius
-        self.iou_function = IoUMethod()
+        # box l1 loss
+        self.box_l1_loss_weight = box_l1_loss_weight
+        # iou box loss
+        self.iou_loss_weight = iou_loss_weight
+        self.no_object_cls_weight = no_object_cls_weight
+        self.num_classes = num_classes
+
+        assert self.cls_match_cost != 0 or self.box_match_cost != 0 or self.giou_match_cost != 0, "all costs cant be 0"
 
     def forward(self, preds, annotations):
-        '''
-        compute cls loss, box loss and cls loss in one batch
-        '''
-        device = annotations.device
-        batch_size = annotations.shape[0]
-        cls_preds, reg_preds, obj_preds = preds
+        cls_preds, reg_preds = preds
+        reg_preds = torch.clamp(reg_preds, min=1e-4, max=1. - 1e-4)
 
-        feature_size = [[
-            per_level_cls_pred.shape[2], per_level_cls_pred.shape[1]
-        ] for per_level_cls_pred in cls_preds]
-        one_image_grid_center_strides = self.grid_strides(feature_size)
-        batch_grid_center_strides = [
-            torch.tensor(per_level_grid_center_strides).unsqueeze(0).repeat(
-                batch_size, 1, 1, 1).to(device)
-            for per_level_grid_center_strides in one_image_grid_center_strides
-        ]
+        # Retrieve the matching between the outputs of the last layer and the targets
+        indices = self.get_matched_pred_target_idxs(cls_preds[-1, :, :, :],
+                                                    reg_preds[-1, :, :, :],
+                                                    annotations)
+        loss_dict = {}
+        for idx, (per_level_cls_preds,
+                  per_level_reg_preds) in enumerate(zip(cls_preds, reg_preds)):
+            per_level_cls_loss = self.compute_batch_cls_loss(
+                per_level_cls_preds, annotations, indices)
+            per_level_box_l1_loss, per_level_box_iou_loss = self.compute_batch_l1_iou_loss(
+                per_level_reg_preds, annotations, indices)
 
-        all_obj_preds, all_cls_preds, all_reg_preds, all_grid_center_strides, batch_targets = self.get_batch_position_annotations(
-            obj_preds, cls_preds, reg_preds, batch_grid_center_strides,
-            annotations)
+            per_level_cls_loss = self.cls_loss_weight * per_level_cls_loss
+            per_level_box_l1_loss = self.box_l1_loss_weight * per_level_box_l1_loss
+            per_level_box_iou_loss = self.iou_loss_weight * per_level_box_iou_loss
 
-        all_obj_preds = torch.clamp(all_obj_preds, min=1e-4, max=1. - 1e-4)
-        all_cls_preds = torch.clamp(all_cls_preds, min=1e-4, max=1. - 1e-4)
-
-        all_obj_preds = all_obj_preds.view(-1, all_obj_preds.shape[-1])
-        all_cls_preds = all_cls_preds.view(-1, all_cls_preds.shape[-1])
-        all_reg_preds = all_reg_preds.view(-1, all_reg_preds.shape[-1])
-        all_grid_center_strides = all_grid_center_strides.view(
-            -1, all_grid_center_strides.shape[-1])
-        batch_targets = batch_targets.view(-1, batch_targets.shape[-1])
-
-        obj_loss, reg_loss, cls_loss = self.compute_per_batch_loss(
-            all_obj_preds, all_cls_preds, all_reg_preds,
-            all_grid_center_strides, batch_targets)
-
-        obj_loss = self.obj_loss_weight * obj_loss
-        reg_loss = self.box_loss_weight * reg_loss
-        cls_loss = self.cls_loss_weight * cls_loss
-
-        loss_dict = {
-            'obj_loss': obj_loss,
-            'reg_loss': reg_loss,
-            'cls_loss': cls_loss,
-        }
+            loss_dict[f'layer_{idx}_cls_loss'] = per_level_cls_loss
+            loss_dict[f'layer_{idx}_box_l1_loss'] = per_level_box_l1_loss
+            loss_dict[f'layer_{idx}_box_iou_loss'] = per_level_box_iou_loss
 
         return loss_dict
 
-    def compute_per_batch_loss(self, all_obj_preds, all_cls_preds,
-                               all_reg_preds, all_grid_center_strides,
-                               batch_targets):
-        '''
-        compute per level batch loss,include obj loss(bce loss)、reg loss(CIoU loss)、cls loss(bce loss)
-        all_obj_preds:[batch_size*grid_nums,1]
-        all_cls_preds:[batch_size*grid_nums,4]
-        all_reg_preds:[batch_size*grid_nums,num_classes]
-        all_grid_center_strides:[batch_size*grid_nums,3]
-        batch_targets:[batch_size*grid_nums,6]
-        '''
-        device = batch_targets.device
-        positive_grid_nums = batch_targets[batch_targets[:, 5] > 0].shape[0]
+    def compute_batch_cls_loss(self, cls_preds, annotations, indices):
+        batch_size, query_nums = cls_preds.shape[0], cls_preds.shape[1]
+        device = cls_preds.device
 
-        # if no positive points
-        if positive_grid_nums == 0:
-            return torch.tensor(0.).to(device), torch.tensor(0.).to(
-                device), torch.tensor(0.).to(device)
+        idx = self.get_src_permutation_idx(indices)
+        filter_targets = [
+            per_image_targets[per_image_targets[:, 4] >= 0][:, 4]
+            for per_image_targets in annotations
+        ]
+        target_classes = torch.cat([
+            per_image_targets[j]
+            for per_image_targets, (_, j) in zip(filter_targets, indices)
+        ])
 
-        obj_preds = all_obj_preds[:, 0]
-        reg_preds = all_reg_preds[batch_targets[:, 5] > 0]
-        cls_preds = all_cls_preds[batch_targets[:, 5] > 0]
+        loss_ground_truth = torch.full((batch_size, query_nums),
+                                       self.num_classes).long().to(device)
+        loss_ground_truth[idx] = target_classes.long()
 
-        obj_targets = batch_targets[:, 0]
-        reg_targets = batch_targets[batch_targets[:, 5] > 0][:, 1:5]
-        cls_targets = batch_targets[batch_targets[:, 5] > 0][:, 5]
-        all_grid_center_strides = all_grid_center_strides[batch_targets[:,
-                                                                        5] > 0]
+        empty_weight = torch.ones(self.num_classes + 1).to(device)
+        empty_weight[-1] = self.no_object_cls_weight
 
-        # compute obj loss
-        obj_loss = -(obj_targets * torch.log(obj_preds) +
-                     (1. - obj_targets) * torch.log(1. - obj_preds))
-        obj_loss = obj_loss.sum() / positive_grid_nums
+        # src_logits:[4, 100, 81] target_classes:[4, 100] empty_weight:81
+        batch_cls_loss = F.cross_entropy(cls_preds.transpose(1, 2),
+                                         loss_ground_truth, empty_weight)
 
-        # compute reg loss
-        reg_preds = self.snap_ltrb_to_x1y1x2y2(reg_preds,
-                                               all_grid_center_strides)
-        box_loss_iou_type = 'EIoU' if self.box_loss_iou_type == 'Focal_EIoU' else self.box_loss_iou_type
-        ious = self.iou_function(reg_preds,
-                                 reg_targets,
-                                 iou_type=box_loss_iou_type,
-                                 box_type='xywh')
-        reg_loss = 1 - ious
-        if self.box_loss_iou_type == 'Focal_EIoU':
-            gamma_ious = self.iou_function(reg_preds,
-                                           reg_targets,
-                                           iou_type='IoU',
-                                           box_type='xyxy')
-            gamma_ious = torch.pow(gamma_ious, self.focal_eiou_gamma)
-            reg_loss = gamma_ious * reg_loss
-        reg_loss = reg_loss.mean()
+        return batch_cls_loss
 
-        # compute cls loss
-        cls_ground_truth = F.one_hot(cls_targets.long(),
-                                     num_classes=cls_preds.shape[1] + 1)
-        cls_ground_truth = (cls_ground_truth[:, 1:]).float()
-        cls_loss = -(cls_ground_truth * torch.log(cls_preds) +
-                     (1. - cls_ground_truth) * torch.log(1. - cls_preds))
-        cls_loss = cls_loss.mean()
+    def compute_batch_l1_iou_loss(self, reg_preds, annotations, indices):
+        """
+           The target boxes are expected in format [batch_target_boxes_nums, 4] (center_x, center_y, w, h), normalized by the image size.
+        """
+        idx = self.get_src_permutation_idx(indices)
+        reg_preds = reg_preds[idx]
 
-        return obj_loss, reg_loss, cls_loss
+        filter_targets = [
+            per_image_targets[per_image_targets[:, 4] >= 0][:, 0:4]
+            for per_image_targets in annotations
+        ]
+        filter_targets_num = sum([
+            per_image_targets.shape[0] for per_image_targets in filter_targets
+        ])
+        target_boxes = torch.cat([
+            per_image_targets[j]
+            for per_image_targets, (_, j) in zip(filter_targets, indices)
+        ],
+                                 dim=0)
 
-    def get_batch_position_annotations(self, obj_preds, cls_preds, reg_preds,
-                                       batch_grid_center_strides, annotations):
-        '''
-        Assign a ground truth target for each position on feature map
-        '''
-        device = annotations.device
+        box_l1_loss = F.l1_loss(reg_preds, target_boxes, reduction='none')
+        box_l1_loss = box_l1_loss.sum() / filter_targets_num
 
-        all_obj_preds, all_cls_preds, all_reg_preds,all_grid_center_strides = [], [], [], []
-        for obj_pred, cls_pred, reg_pred, per_level_grid_center_strides in zip(
-                obj_preds, cls_preds, reg_preds, batch_grid_center_strides):
-            obj_pred = obj_pred.view(obj_pred.shape[0], -1, obj_pred.shape[-1])
-            cls_pred = cls_pred.view(cls_pred.shape[0], -1, cls_pred.shape[-1])
-            reg_pred = reg_pred.view(reg_pred.shape[0], -1, reg_pred.shape[-1])
-            per_level_grid_center_strides = per_level_grid_center_strides.view(
-                per_level_grid_center_strides.shape[0], -1,
-                per_level_grid_center_strides.shape[-1])
+        reg_preds = self.transform_cxcywh_box_to_xyxy_box(reg_preds)
+        target_boxes = self.transform_cxcywh_box_to_xyxy_box(target_boxes)
+        box_iou_loss = 1 - torch.diag(
+            self.compute_box_giou(reg_preds, target_boxes))
+        box_iou_loss = box_iou_loss.sum() / filter_targets_num
 
-            all_obj_preds.append(obj_pred)
-            all_cls_preds.append(cls_pred)
-            all_reg_preds.append(reg_pred)
-            all_grid_center_strides.append(per_level_grid_center_strides)
+        return box_l1_loss, box_iou_loss
 
-        all_obj_preds = torch.cat(all_obj_preds, dim=1)
-        all_cls_preds = torch.cat(all_cls_preds, dim=1)
-        all_reg_preds = torch.cat(all_reg_preds, dim=1)
-        all_grid_center_strides = torch.cat(all_grid_center_strides, dim=1)
+    def get_src_permutation_idx(self, indices):
+        # permute predictions following indices
+        batch_idx = torch.cat(
+            [torch.full_like(src, i) for i, (src, _) in enumerate(indices)])
+        src_idx = torch.cat([src for (src, _) in indices])
 
-        batch_targets = []
-        for per_image_obj_preds, per_image_cls_preds, per_image_reg_preds, per_image_grid_center_strides, per_image_annotations in zip(
-                all_obj_preds, all_cls_preds, all_reg_preds,
-                all_grid_center_strides, annotations):
-            per_image_annotations = per_image_annotations[
-                per_image_annotations[:, 4] >= 0]
-            grids_num = per_image_grid_center_strides.shape[0]
+        return batch_idx, src_idx
 
-            # obj target init value=0
-            per_image_obj_target = torch.zeros([grids_num, 1],
-                                               dtype=torch.float32,
-                                               device=device)
-            # reg target init value=0
-            per_image_reg_target = torch.zeros([grids_num, 4],
-                                               dtype=torch.float32,
-                                               device=device)
-            # cls target init value=-1
-            per_image_cls_target = torch.ones(
-                [grids_num, 1], dtype=torch.float32, device=device) * (-1)
-            # 6:[obj_target,scale_offset_x,scale_offset_y,tw,th,class_target]
-            per_image_targets = torch.cat([
-                per_image_obj_target, per_image_reg_target,
-                per_image_cls_target
-            ],
-                                          dim=-1)
+    def transform_cxcywh_box_to_xyxy_box(self, boxes):
+        x_center, y_center, w, h = boxes[:, 0], boxes[:, 1], boxes[:,
+                                                                   2], boxes[:,
+                                                                             3]
+        boxes = torch.stack([(x_center - 0.5 * w), (y_center - 0.5 * h),
+                             (x_center + 0.5 * w), (y_center + 0.5 * h)],
+                            dim=1)
 
-            if per_image_annotations.shape[0] > 0:
-                annotaion_num = per_image_annotations.shape[0]
-                per_image_gt_bboxes = per_image_annotations[:, 0:4]
-                per_image_gt_classes = per_image_annotations[:, 4]
-                # each grid center,such as 0.5
-                per_image_grid_centers = per_image_grid_center_strides[:, 0:2]
-                per_image_strides = per_image_grid_center_strides[:, 2]
+        return boxes
 
-                per_image_grid_centers = per_image_grid_centers * per_image_strides.unsqueeze(
-                    -1)
-                per_image_grid_centers = per_image_grid_centers.unsqueeze(
-                    1).repeat(1, annotaion_num, 1)
-                candidates = torch.zeros([grids_num, annotaion_num, 4],
-                                         dtype=torch.float32,
-                                         device=device)
-                candidates = candidates + per_image_gt_bboxes.unsqueeze(0)
+    def compute_box_giou(self, boxes1, boxes2):
+        """
+        The boxes should be in [x0, y0, x1, y1] format
+        Returns a [N, M] pairwise matrix, where N = len(boxes1)
+        and M = len(boxes2)
+        """
+        area1 = (boxes1[:, 2] - boxes1[:, 0]) * (boxes1[:, 3] - boxes1[:, 1])
+        area2 = (boxes2[:, 2] - boxes2[:, 0]) * (boxes2[:, 3] - boxes2[:, 1])
+        area1 = torch.clamp(area1, min=0)
+        area2 = torch.clamp(area2, min=0)
 
-                # center sample
-                candidates_center = (candidates[:, :, 2:4] +
-                                     candidates[:, :, 0:2]) / 2
-                judge_distance = per_image_strides * self.center_sample_radius
-                judge_distance = judge_distance.unsqueeze(-1).unsqueeze(
-                    -1).repeat(1, annotaion_num, 1)
+        lt = torch.max(boxes1[:, None, :2], boxes2[:, :2])  # [N,M,2]
+        rb = torch.min(boxes1[:, None, 2:], boxes2[:, 2:])  # [N,M,2]
 
-                # compute each point to each gt box ltrb distance
-                points_to_gt_box_lt = per_image_grid_centers[:, :, 0:
-                                                             2] - candidates[:, :,
-                                                                             0:
-                                                                             2]
-                points_to_gt_box_rb = candidates[:, :, 2:
-                                                 4] - per_image_grid_centers[:, :,
-                                                                             0:
-                                                                             2]
-                points_to_gt_box_ltrb = torch.cat(
-                    [points_to_gt_box_lt, points_to_gt_box_rb], dim=-1)
-                points_to_gt_box_ltrb_min_value, _ = points_to_gt_box_ltrb.min(
-                    axis=-1)
-                points_in_gt_box_flag = (points_to_gt_box_ltrb_min_value > 0)
-                points_in_all_gt_box_flag = (
-                    points_to_gt_box_ltrb_min_value.sum(dim=1) > 0)
+        wh = (rb - lt).clamp(min=0)  # [N,M,2]
+        inter = wh[:, :, 0] * wh[:, :, 1]  # [N,M]
+        inter = torch.clamp(inter, min=0)
 
-                # center sample
-                compute_distance = torch.sqrt(
-                    (per_image_grid_centers[:, :, 0] -
-                     candidates_center[:, :, 0])**2 +
-                    (per_image_grid_centers[:, :, 1] -
-                     candidates_center[:, :, 1])**2)
+        union = area1[:, None] + area2 - inter
+        union = torch.clamp(union, min=1e-4)
 
-                points_in_gt_box_center_flag = (
-                    (compute_distance < judge_distance.squeeze(-1)) > 0)
-                points_in_all_gt_box_center_flag = (
-                    (compute_distance < judge_distance.squeeze(-1)).sum(dim=1)
-                    > 0)
-                points_in_gt_box_or_center_flag = (
-                    points_in_all_gt_box_flag
-                    | points_in_all_gt_box_center_flag)
-                points_in_gt_box_and_center_flag = (
-                    points_in_gt_box_flag[points_in_gt_box_or_center_flag, :]
-                    & points_in_gt_box_center_flag[
-                        points_in_gt_box_or_center_flag, :])
+        iou = inter / union
 
-                if points_in_gt_box_or_center_flag.sum() > 0:
-                    cost_per_image_reg_preds = per_image_reg_preds[
-                        points_in_gt_box_or_center_flag]
-                    cost_per_image_grid_center_strides = per_image_grid_center_strides[
-                        points_in_gt_box_or_center_flag]
+        enclose_lt = torch.min(boxes1[:, None, :2], boxes2[:, :2])
+        enclose_rb = torch.max(boxes1[:, None, 2:], boxes2[:, 2:])
 
-                    cost_per_image_pred_bboxes = self.snap_ltrb_to_x1y1x2y2(
-                        cost_per_image_reg_preds,
-                        cost_per_image_grid_center_strides)
-                    cost_ious = self.iou_function(
-                        cost_per_image_pred_bboxes.unsqueeze(1),
-                        per_image_gt_bboxes.unsqueeze(0),
-                        iou_type='IoU',
-                        box_type='xyxy')
-                    cost_ious = -torch.log(cost_ious + 1e-4)
+        enclose_wh = (enclose_rb - enclose_lt).clamp(min=0)  # [N,M,2]
+        enclose_area = enclose_wh[:, :, 0] * enclose_wh[:, :, 1]
+        enclose_area = torch.clamp(enclose_area, min=1e-4)
 
-                    cost_per_image_cls_preds = per_image_cls_preds[
-                        points_in_gt_box_or_center_flag]
-                    cost_per_image_obj_preds = per_image_obj_preds[
-                        points_in_gt_box_or_center_flag]
-                    cost_per_image_cls_preds = torch.sqrt(
-                        cost_per_image_cls_preds * cost_per_image_obj_preds)
-                    cost_per_image_cls_preds = cost_per_image_cls_preds.unsqueeze(
-                        1).repeat(1, annotaion_num, 1)
+        return iou - (enclose_area - union) / enclose_area
 
-                    cost_per_image_gt_classes = F.one_hot(
-                        per_image_gt_classes.to(torch.int64),
-                        cost_per_image_cls_preds.shape[-1]).float().unsqueeze(
-                            0).repeat(cost_per_image_cls_preds.shape[0], 1, 1)
-                    cost_cls = F.binary_cross_entropy(
-                        cost_per_image_cls_preds,
-                        cost_per_image_gt_classes,
-                        reduction="none").sum(dim=-1)
+    @torch.no_grad()
+    def get_matched_pred_target_idxs(self, cls_preds, reg_preds, annotations):
+        batch_size, query_nums = cls_preds.shape[0], cls_preds.shape[1]
 
-                    total_costs = 1.0 * cost_cls + 3.0 * cost_ious + 100000.0 * (
-                        ~points_in_gt_box_and_center_flag).float()
+        # [b*query_nums,num_classes]
+        cls_preds = cls_preds.flatten(0, 1)
+        cls_preds = F.softmax(cls_preds, dim=-1)
+        cls_preds = torch.clamp(cls_preds, min=1e-4, max=1. - 1e-4)
 
-                    matching_matrix, match_gt_box_idxs = self.dynamic_k_matching(
-                        cost_ious, total_costs)
+        # [b*query_nums,4]
+        reg_preds = reg_preds.flatten(0, 1)
 
-                    if matching_matrix.sum() > 0:
-                        cost_per_image_targets = per_image_targets[
-                            points_in_gt_box_or_center_flag]
-                        # 0 or 1
-                        cost_per_image_targets[matching_matrix, 0] = 1
-                        # 1 to 80 for coco dataset
-                        cost_per_image_targets[
-                            matching_matrix,
-                            5] = per_image_gt_classes[match_gt_box_idxs] + 1
-                        # [x_min,y_min,x_max,y_max]
-                        cost_per_image_targets[
-                            matching_matrix,
-                            1:5] = per_image_gt_bboxes[match_gt_box_idxs]
-                        per_image_targets[
-                            points_in_gt_box_or_center_flag] = cost_per_image_targets
+        batch_gt_boxes_annot = []
+        per_image_gt_boxes_num = []
+        for per_image_boxes_annot in annotations:
+            per_image_boxes_annot = per_image_boxes_annot[
+                per_image_boxes_annot[:, 4] >= 0]
+            batch_gt_boxes_annot.append(per_image_boxes_annot)
+            per_image_gt_boxes_num.append(per_image_boxes_annot.shape[0])
+        batch_gt_boxes_annot = torch.cat(batch_gt_boxes_annot, dim=0)
+        batch_gt_boxes = batch_gt_boxes_annot[:, 0:4]
+        batch_gt_boxes_label = batch_gt_boxes_annot[:, 4]
 
-            per_image_targets = per_image_targets.unsqueeze(0)
-            batch_targets.append(per_image_targets)
+        # Compute the classification cost. Contrary to the loss, we don't use the NLL,
+        # but approximate it in 1 - proba[target class].
+        # The 1 is a constant that doesn't change the matching, it can be ommitted.
+        cls_cost = -cls_preds[:, batch_gt_boxes_label.long()]
 
-        batch_targets = torch.cat(batch_targets, dim=0)
+        # Compute the L1 cost between boxes
+        box_cost = torch.cdist(reg_preds, batch_gt_boxes, p=1)
 
-        # batch_targets shape:[batch_size, grids_num, 6],6:[obj_target,scale_offset_x,scale_offset_y,tw,th,class_target]
-        return all_obj_preds, all_cls_preds, all_reg_preds, all_grid_center_strides, batch_targets
+        reg_preds = self.transform_cxcywh_box_to_xyxy_box(reg_preds)
+        batch_gt_boxes = self.transform_cxcywh_box_to_xyxy_box(batch_gt_boxes)
 
-    def dynamic_k_matching(self, ious, total_costs):
-        ious, total_costs = ious.permute(1, 0), total_costs.permute(1, 0)
+        # Compute the giou cost betwen boxes
+        giou_cost = -self.compute_box_giou(reg_preds, batch_gt_boxes)
+        # Final cost matrix
+        total_cost = self.cls_match_cost * cls_cost + self.box_match_cost * box_cost + self.giou_match_cost * giou_cost
+        total_cost = total_cost.view(batch_size, query_nums, -1)
 
-        device = ious.device
-        annotation_nums, point_nums = ious.shape[0], ious.shape[1]
-        matching_matrix = torch.zeros([annotation_nums, point_nums],
-                                      dtype=torch.uint8,
-                                      device=device)
+        # for per image,assign one pred box to one GT box
+        indices = []
+        for idx, per_image_cost in enumerate(
+                total_cost.split(per_image_gt_boxes_num, -1)):
+            indices.append(
+                self.linear_sum_assignment_with_inf(
+                    per_image_cost[idx].cpu().numpy()))
 
-        # 选取iou最大的max_candidate_k个点,然后求和，判断应该有多少点用于该框预测
-        if point_nums <= 10:
-            max_candidate_k = point_nums
-        else:
-            max_candidate_k = min(10, point_nums)
-        per_image_topk_ious_for_all_gt, _ = torch.topk(ious,
-                                                       max_candidate_k,
-                                                       dim=1)
-        per_image_dynamic_k_num_for_all_gt = (torch.clamp(
-            per_image_topk_ious_for_all_gt.sum(dim=1).int(), min=1)).tolist()
+        indices = [(torch.as_tensor(i, dtype=torch.int64),
+                    torch.as_tensor(j, dtype=torch.int64)) for i, j in indices]
 
-        for gt_idx in range(total_costs.shape[0]):
-            # 给每个真实框选取最小的动态k个点
-            k = per_image_dynamic_k_num_for_all_gt[gt_idx]
-            if total_costs[gt_idx].shape[
-                    -1] < per_image_dynamic_k_num_for_all_gt[gt_idx]:
-                k = total_costs[gt_idx].shape[-1]
+        return indices
 
-            _, pos_idx = torch.topk(total_costs[gt_idx], k=k, largest=False)
+    def linear_sum_assignment_with_inf(self, cost_matrix):
+        cost_matrix = np.asarray(cost_matrix)
 
-            matching_matrix[gt_idx][pos_idx] = 1
+        nan = np.isnan(cost_matrix).any()
+        if nan:
+            cost_matrix[np.isnan(cost_matrix)] = 1e5
 
-        anchor_matching_gt = matching_matrix.sum(dim=0)
+        min_inf = np.isneginf(cost_matrix).any()
+        max_inf = np.isposinf(cost_matrix).any()
+        if min_inf and max_inf:
+            raise ValueError("matrix contains both inf and -inf")
 
-        if (anchor_matching_gt > 1).sum() > 0:
-            # 当某一个特征点指向多个真实框的时候,选取cost最小的真实框。
-            _, cost_argmin = torch.min(total_costs[:, anchor_matching_gt > 1],
-                                       dim=0)
-            matching_matrix[:, anchor_matching_gt > 1] *= 0
-            matching_matrix[cost_argmin, anchor_matching_gt > 1] = 1
+        if min_inf or max_inf:
+            values = cost_matrix[~np.isinf(cost_matrix)]
+            min_values = values.min()
+            max_values = values.max()
+            m = min(cost_matrix.shape)
 
-        match_gt_box_idxs = matching_matrix[:, (
-            matching_matrix.sum(dim=0) > 0)].argmax(dim=0)
-        matching_matrix = (matching_matrix.sum(dim=0) > 0)
+            positive = m * (max_values - min_values + np.abs(max_values) +
+                            np.abs(min_values) + 1)
+            if max_inf:
+                place_holder = (max_values + (m - 1) *
+                                (max_values - min_values)) + positive
+            elif min_inf:
+                place_holder = (min_values + (m - 1) *
+                                (min_values - max_values)) - positive
 
-        return matching_matrix, match_gt_box_idxs
+            cost_matrix[np.isinf(cost_matrix)] = place_holder
 
-    def snap_ltrb_to_x1y1x2y2(self, per_image_reg_preds,
-                              per_image_grid_center_strides):
-        '''
-        snap per image reg preds to per image pred bboxes
-        per_image_reg_preds:[point_nums,4],4:[l,t,r,b]
-        per_image_grid_center_strides:[point_nums,3],3:[scale_grid_x_center,scale_grid_y_center,stride]
-        '''
-        per_image_reg_preds = torch.exp(per_image_reg_preds)
-        per_image_grid_centers = per_image_grid_center_strides[:, 0:2]
-        per_image_strides = per_image_grid_center_strides[:, 2].unsqueeze(-1)
+        results = scipy.optimize.linear_sum_assignment(cost_matrix)
 
-        per_image_pred_bboxes_xy_min = (
-            per_image_grid_centers -
-            per_image_reg_preds[:, 0:2]) * per_image_strides
-        per_image_pred_bboxes_xy_max = (
-            per_image_grid_centers +
-            per_image_reg_preds[:, 2:4]) * per_image_strides
-        per_image_pred_bboxes = torch.cat(
-            [per_image_pred_bboxes_xy_min, per_image_pred_bboxes_xy_max],
-            dim=1)
+        return results
 
-        # per_image_pred_bboxes shape:[points_num,4]
-        return per_image_pred_bboxes
+
+class DINODETRLoss(nn.Module):
+
+    def __init__(self,
+                 cls_match_cost=2.0,
+                 box_match_cost=5.0,
+                 giou_match_cost=2.0,
+                 cls_loss_weight=1.0,
+                 box_l1_loss_weight=5.0,
+                 iou_loss_weight=2.0,
+                 alpha=0.25,
+                 gamma=2.0,
+                 num_classes=80):
+        super(DINODETRLoss, self).__init__()
+        self.cls_match_cost = cls_match_cost
+        self.box_match_cost = box_match_cost
+        self.giou_match_cost = giou_match_cost
+
+        # cls loss
+        self.cls_loss_weight = cls_loss_weight
+        # box l1 loss
+        self.box_l1_loss_weight = box_l1_loss_weight
+        # iou box loss
+        self.iou_loss_weight = iou_loss_weight
+        self.alpha = alpha
+        self.gamma = gamma
+        self.num_classes = num_classes
+
+        assert self.cls_match_cost != 0 or self.box_match_cost != 0 or self.giou_match_cost != 0, "all costs cant be 0"
+
+    def forward(self, preds, annotations):
+        last_cls_preds, last_reg_preds = preds['pred_logits'], preds[
+            'pred_boxes']
+
+        # Retrieve the matching between the outputs of the last layer and the targets
+        last_indices = self.get_matched_pred_target_idxs(
+            last_cls_preds, last_reg_preds, annotations)
+
+        # Compute all the requested loss_dict
+        loss_dict = {}
+
+        last_cls_loss = self.compute_batch_cls_loss(last_cls_preds,
+                                                    annotations, last_indices)
+        last_box_l1_loss, last_box_iou_loss = self.compute_batch_l1_iou_loss(
+            last_reg_preds, annotations, last_indices)
+
+        last_cls_loss = self.cls_loss_weight * last_cls_loss
+        last_box_l1_loss = self.box_l1_loss_weight * last_box_l1_loss
+        last_box_iou_loss = self.iou_loss_weight * last_box_iou_loss
+
+        loss_dict.update({
+            'cls_loss': last_cls_loss,
+            'box_l1_loss': last_box_l1_loss,
+            'box_iou_loss': last_box_iou_loss,
+        })
+
+        # prepare for dn loss
+        dn_meta = preds['dn_meta']
+
+        if dn_meta and 'output_known_lbs_bboxes' in dn_meta:
+            output_known_lbs_bboxes, single_pad, scalar = self.prep_for_dn(
+                dn_meta)
+
+            filter_targets = [
+                per_image_targets[per_image_targets[:, 4] >= 0][:, 4]
+                for per_image_targets in annotations
+            ]
+
+            dn_pos_idx = []
+            dn_neg_idx = []
+            for i in range(len(filter_targets)):
+                if len(filter_targets[i]) > 0:
+                    t = torch.arange(0, len(filter_targets[i])).long().cuda()
+                    t = t.unsqueeze(0).repeat(scalar, 1)
+                    tgt_idx = t.flatten()
+                    output_idx = (torch.tensor(range(scalar)) *
+                                  single_pad).long().cuda().unsqueeze(1) + t
+                    output_idx = output_idx.flatten()
+                else:
+                    output_idx = tgt_idx = torch.tensor([]).long().cuda()
+
+                dn_pos_idx.append((output_idx, tgt_idx))
+                dn_neg_idx.append((output_idx + single_pad // 2, tgt_idx))
+
+            output_known_lbs_bboxes = dn_meta['output_known_lbs_bboxes']
+            last_dn_cls_preds, last_dn_reg_preds = output_known_lbs_bboxes[
+                'pred_logits'], output_known_lbs_bboxes['pred_boxes']
+
+            last_dn_cls_loss = self.compute_batch_cls_loss(
+                last_dn_cls_preds, annotations, dn_pos_idx)
+            last_dn_box_l1_loss, last_dn_box_iou_loss = self.compute_batch_l1_iou_loss(
+                last_dn_reg_preds, annotations, dn_pos_idx)
+
+            last_dn_cls_loss = last_dn_cls_loss / scalar
+            last_dn_box_l1_loss = last_dn_box_l1_loss / scalar
+            last_dn_box_iou_loss = last_dn_box_iou_loss / scalar
+
+            last_dn_cls_loss = self.cls_loss_weight * last_dn_cls_loss
+            last_dn_box_l1_loss = self.box_l1_loss_weight * last_dn_box_l1_loss
+            last_dn_box_iou_loss = self.iou_loss_weight * last_dn_box_iou_loss
+
+            loss_dict.update({
+                'cls_loss_dn': last_dn_cls_loss,
+                'box_l1_loss_dn': last_dn_box_l1_loss,
+                'box_iou_loss_dn': last_dn_box_iou_loss,
+            })
+
+        # In case of auxiliary losses, we repeat this process with the output of each intermediate layer.
+        if 'aux_outputs' in preds:
+            for idx, per_level_aux_outputs in enumerate(preds['aux_outputs']):
+                per_level_aux_cls_preds, per_level_aux_reg_preds = per_level_aux_outputs[
+                    'pred_logits'], per_level_aux_outputs['pred_boxes']
+
+                per_level_indices = self.get_matched_pred_target_idxs(
+                    per_level_aux_cls_preds, per_level_aux_reg_preds,
+                    annotations)
+
+                per_level_cls_loss = self.compute_batch_cls_loss(
+                    per_level_aux_cls_preds, annotations, per_level_indices)
+                per_level_box_l1_loss, per_level_box_iou_loss = self.compute_batch_l1_iou_loss(
+                    per_level_aux_reg_preds, annotations, per_level_indices)
+
+                per_level_cls_loss = self.cls_loss_weight * per_level_cls_loss
+                per_level_box_l1_loss = self.box_l1_loss_weight * per_level_box_l1_loss
+                per_level_box_iou_loss = self.iou_loss_weight * per_level_box_iou_loss
+
+                loss_dict.update({
+                    f'cls_loss_aux_layer_{idx}':
+                    per_level_cls_loss,
+                    f'box_l1_loss_aux_layer_{idx}':
+                    per_level_box_l1_loss,
+                    f'box_iou_loss_aux_layer_{idx}':
+                    per_level_box_iou_loss,
+                })
+
+                if dn_meta and 'output_known_lbs_bboxes' in dn_meta:
+                    aux_outputs_known = output_known_lbs_bboxes['aux_outputs'][
+                        idx]
+                    per_level_dn_cls_preds, per_level_dn_reg_preds = aux_outputs_known[
+                        'pred_logits'], aux_outputs_known['pred_boxes']
+
+                    per_level_dn_cls_loss = self.compute_batch_cls_loss(
+                        per_level_dn_cls_preds, annotations, dn_pos_idx)
+                    per_level_dn_box_l1_loss, per_level_dn_box_iou_loss = self.compute_batch_l1_iou_loss(
+                        per_level_dn_reg_preds, annotations, dn_pos_idx)
+
+                    per_level_dn_cls_loss = per_level_dn_cls_loss / scalar
+                    per_level_dn_box_l1_loss = per_level_dn_box_l1_loss / scalar
+                    per_level_dn_box_iou_loss = per_level_dn_box_iou_loss / scalar
+
+                    per_level_dn_cls_loss = self.cls_loss_weight * per_level_dn_cls_loss
+                    per_level_dn_box_l1_loss = self.box_l1_loss_weight * per_level_dn_box_l1_loss
+                    per_level_dn_box_iou_loss = self.iou_loss_weight * per_level_dn_box_iou_loss
+
+                    loss_dict.update({
+                        f'cls_loss_dn_aux_layer_{idx}':
+                        per_level_dn_cls_loss,
+                        f'box_l1_loss_dn_aux_layer_{idx}':
+                        per_level_dn_box_l1_loss,
+                        f'box_iou_loss_dn_aux_layer_{idx}':
+                        per_level_dn_box_iou_loss,
+                    })
+
+        # interm_outputs loss
+        if 'interm_outputs' in preds:
+            interm_outputs = preds['interm_outputs']
+            interm_cls_preds, interm_reg_preds = interm_outputs[
+                'pred_logits'], interm_outputs['pred_boxes']
+
+            interm_indices = self.get_matched_pred_target_idxs(
+                interm_cls_preds, interm_reg_preds, annotations)
+
+            interm_cls_loss = self.compute_batch_cls_loss(
+                interm_cls_preds, annotations, interm_indices)
+            interm_box_l1_loss, interm_box_iou_loss = self.compute_batch_l1_iou_loss(
+                interm_reg_preds, annotations, interm_indices)
+
+            interm_cls_loss = self.cls_loss_weight * interm_cls_loss
+            interm_box_l1_loss = self.box_l1_loss_weight * interm_box_l1_loss
+            interm_box_iou_loss = self.iou_loss_weight * interm_box_iou_loss
+
+            loss_dict.update({
+                'cls_loss_interm': interm_cls_loss,
+                'box_l1_loss_interm': interm_box_l1_loss,
+                'box_iou_loss_interm': interm_box_iou_loss,
+            })
+
+        return loss_dict
+
+    def compute_batch_cls_loss(self, cls_preds, annotations, indices):
+        cls_preds = torch.sigmoid(cls_preds)
+        cls_preds = torch.clamp(cls_preds, min=1e-4, max=1. - 1e-4)
+        batch_size, query_nums = cls_preds.shape[0], cls_preds.shape[1]
+        device = cls_preds.device
+
+        idx = self.get_src_permutation_idx(indices)
+        filter_targets = [
+            per_image_targets[per_image_targets[:, 4] >= 0][:, 4]
+            for per_image_targets in annotations
+        ]
+        filter_targets_num = sum([
+            per_image_targets.shape[0] for per_image_targets in filter_targets
+        ])
+        if filter_targets_num == 0:
+            return torch.tensor(0.).to(device)
+
+        target_classes = torch.cat([
+            per_image_targets[j]
+            for per_image_targets, (_, j) in zip(filter_targets, indices)
+        ])
+        loss_ground_truth = torch.full((batch_size, query_nums),
+                                       self.num_classes).long().to(device)
+        loss_ground_truth[idx] = target_classes.long()
+
+        # generate 80 binary ground truth classes for each anchor
+        loss_ground_truth = F.one_hot(loss_ground_truth.long(),
+                                      num_classes=self.num_classes + 1)
+        loss_ground_truth = loss_ground_truth[:, :, :-1]
+        loss_ground_truth = loss_ground_truth.float()
+
+        alpha_factor = torch.ones_like(cls_preds) * self.alpha
+        alpha_factor = torch.where(torch.eq(loss_ground_truth, 1.),
+                                   alpha_factor, 1. - alpha_factor)
+        pt = torch.where(torch.eq(loss_ground_truth, 1.), cls_preds,
+                         1. - cls_preds)
+        focal_weight = alpha_factor * torch.pow((1. - pt), self.gamma)
+
+        batch_bce_loss = -(
+            loss_ground_truth * torch.log(cls_preds) +
+            (1. - loss_ground_truth) * torch.log(1. - cls_preds))
+
+        batch_focal_loss = focal_weight * batch_bce_loss
+        batch_focal_loss = batch_focal_loss.sum()
+        # according to the original paper,We divide the focal loss by the number of positive sample anchors
+        batch_focal_loss = batch_focal_loss / filter_targets_num
+
+        return batch_focal_loss
+
+    def compute_batch_l1_iou_loss(self, reg_preds, annotations, indices):
+        """
+           The target boxes are expected in format [batch_target_boxes_nums, 4] (center_x, center_y, w, h), normalized by the image size.
+        """
+        reg_preds = torch.clamp(reg_preds, min=1e-4, max=1. - 1e-4)
+
+        idx = self.get_src_permutation_idx(indices)
+        reg_preds = reg_preds[idx]
+
+        filter_targets = [
+            per_image_targets[per_image_targets[:, 4] >= 0][:, 0:4]
+            for per_image_targets in annotations
+        ]
+        filter_targets_num = sum([
+            per_image_targets.shape[0] for per_image_targets in filter_targets
+        ])
+        target_boxes = torch.cat([
+            per_image_targets[j]
+            for per_image_targets, (_, j) in zip(filter_targets, indices)
+        ],
+                                 dim=0)
+
+        box_l1_loss = F.l1_loss(reg_preds, target_boxes, reduction='none')
+        box_l1_loss = box_l1_loss.sum() / filter_targets_num
+
+        reg_preds = self.transform_cxcywh_box_to_xyxy_box(reg_preds)
+        target_boxes = self.transform_cxcywh_box_to_xyxy_box(target_boxes)
+        box_iou_loss = 1 - torch.diag(
+            self.compute_box_giou(reg_preds, target_boxes))
+        box_iou_loss = box_iou_loss.sum() / filter_targets_num
+
+        return box_l1_loss, box_iou_loss
+
+    def get_src_permutation_idx(self, indices):
+        # permute predictions following indices
+        batch_idx = torch.cat(
+            [torch.full_like(src, i) for i, (src, _) in enumerate(indices)])
+        src_idx = torch.cat([src for (src, _) in indices])
+
+        return batch_idx, src_idx
+
+    def transform_cxcywh_box_to_xyxy_box(self, boxes):
+        x_center, y_center, w, h = boxes[:, 0], boxes[:, 1], boxes[:,
+                                                                   2], boxes[:,
+                                                                             3]
+        boxes = torch.stack([(x_center - 0.5 * w), (y_center - 0.5 * h),
+                             (x_center + 0.5 * w), (y_center + 0.5 * h)],
+                            dim=1)
+
+        return boxes
+
+    def compute_box_giou(self, boxes1, boxes2):
+        """
+        The boxes should be in [x0, y0, x1, y1] format
+        Returns a [N, M] pairwise matrix, where N = len(boxes1)
+        and M = len(boxes2)
+        """
+        area1 = (boxes1[:, 2] - boxes1[:, 0]) * (boxes1[:, 3] - boxes1[:, 1])
+        area2 = (boxes2[:, 2] - boxes2[:, 0]) * (boxes2[:, 3] - boxes2[:, 1])
+        area1 = torch.clamp(area1, min=0)
+        area2 = torch.clamp(area2, min=0)
+
+        lt = torch.max(boxes1[:, None, :2], boxes2[:, :2])  # [N,M,2]
+        rb = torch.min(boxes1[:, None, 2:], boxes2[:, 2:])  # [N,M,2]
+
+        wh = (rb - lt).clamp(min=0)  # [N,M,2]
+        inter = wh[:, :, 0] * wh[:, :, 1]  # [N,M]
+        inter = torch.clamp(inter, min=0)
+
+        union = area1[:, None] + area2 - inter
+        union = torch.clamp(union, min=1e-4)
+
+        iou = inter / union
+
+        enclose_lt = torch.min(boxes1[:, None, :2], boxes2[:, :2])
+        enclose_rb = torch.max(boxes1[:, None, 2:], boxes2[:, 2:])
+
+        enclose_wh = (enclose_rb - enclose_lt).clamp(min=0)  # [N,M,2]
+        enclose_area = enclose_wh[:, :, 0] * enclose_wh[:, :, 1]
+        enclose_area = torch.clamp(enclose_area, min=1e-4)
+
+        return iou - (enclose_area - union) / enclose_area
+
+    @torch.no_grad()
+    def get_matched_pred_target_idxs(self, cls_preds, reg_preds, annotations):
+        batch_size, query_nums = cls_preds.shape[0], cls_preds.shape[1]
+
+        # [b*query_nums,num_classes]
+        cls_preds = cls_preds.flatten(0, 1)
+        cls_preds = torch.sigmoid(cls_preds)
+        cls_preds = torch.clamp(cls_preds, min=1e-4, max=1. - 1e-4)
+
+        # [b*query_nums,4]
+        reg_preds = reg_preds.flatten(0, 1)
+        reg_preds = torch.clamp(reg_preds, min=1e-4, max=1. - 1e-4)
+
+        batch_gt_boxes_annot = []
+        per_image_gt_boxes_num = []
+        for per_image_boxes_annot in annotations:
+            per_image_boxes_annot = per_image_boxes_annot[
+                per_image_boxes_annot[:, 4] >= 0]
+            batch_gt_boxes_annot.append(per_image_boxes_annot)
+            per_image_gt_boxes_num.append(per_image_boxes_annot.shape[0])
+        batch_gt_boxes_annot = torch.cat(batch_gt_boxes_annot, dim=0)
+        batch_gt_boxes = batch_gt_boxes_annot[:, 0:4]
+        batch_gt_boxes_label = batch_gt_boxes_annot[:, 4]
+
+        # Compute the classification cost.
+        neg_cls_cost = (1 - self.alpha) * (cls_preds**self.gamma) * (
+            -torch.log(1 - cls_preds + 1e-4))
+        pos_cls_cost = self.alpha * (
+            (1 - cls_preds)**self.gamma) * (-torch.log(cls_preds + 1e-4))
+        cls_cost = pos_cls_cost[:, batch_gt_boxes_label.long(
+        )] - neg_cls_cost[:, batch_gt_boxes_label.long()]
+
+        # Compute the L1 cost between boxes
+        box_cost = torch.cdist(reg_preds, batch_gt_boxes, p=1)
+
+        reg_preds = self.transform_cxcywh_box_to_xyxy_box(reg_preds)
+        batch_gt_boxes = self.transform_cxcywh_box_to_xyxy_box(batch_gt_boxes)
+
+        # Compute the giou cost betwen boxes
+        giou_cost = -self.compute_box_giou(reg_preds, batch_gt_boxes)
+        # Final cost matrix
+        total_cost = self.cls_match_cost * cls_cost + self.box_match_cost * box_cost + self.giou_match_cost * giou_cost
+        total_cost = total_cost.view(batch_size, query_nums, -1)
+
+        # for per image,assign one pred box to one GT box
+        indices = []
+        for idx, per_image_cost in enumerate(
+                total_cost.split(per_image_gt_boxes_num, -1)):
+            indices.append(
+                self.linear_sum_assignment_with_inf(
+                    per_image_cost[idx].cpu().numpy()))
+
+        indices = [(torch.as_tensor(i, dtype=torch.int64),
+                    torch.as_tensor(j, dtype=torch.int64)) for i, j in indices]
+
+        return indices
+
+    def linear_sum_assignment_with_inf(self, cost_matrix):
+        cost_matrix = np.asarray(cost_matrix)
+
+        nan = np.isnan(cost_matrix).any()
+        if nan:
+            cost_matrix[np.isnan(cost_matrix)] = 1e5
+
+        min_inf = np.isneginf(cost_matrix).any()
+        max_inf = np.isposinf(cost_matrix).any()
+        if min_inf and max_inf:
+            raise ValueError("matrix contains both inf and -inf")
+
+        if min_inf or max_inf:
+            values = cost_matrix[~np.isinf(cost_matrix)]
+            min_values = values.min()
+            max_values = values.max()
+            m = min(cost_matrix.shape)
+
+            positive = m * (max_values - min_values + np.abs(max_values) +
+                            np.abs(min_values) + 1)
+            if max_inf:
+                place_holder = (max_values + (m - 1) *
+                                (max_values - min_values)) + positive
+            elif min_inf:
+                place_holder = (min_values + (m - 1) *
+                                (min_values - max_values)) - positive
+
+            cost_matrix[np.isinf(cost_matrix)] = place_holder
+
+        results = scipy.optimize.linear_sum_assignment(cost_matrix)
+
+        return results
+
+    def prep_for_dn(self, dn_meta):
+        output_known_lbs_bboxes = dn_meta['output_known_lbs_bboxes']
+        num_dn_groups, pad_size = dn_meta['num_dn_group'], dn_meta['pad_size']
+        assert pad_size % num_dn_groups == 0
+        single_pad = pad_size // num_dn_groups
+
+        return output_known_lbs_bboxes, single_pad, num_dn_groups
 
 
 if __name__ == '__main__':
@@ -1813,147 +2102,189 @@ if __name__ == '__main__':
     from tools.path import COCO2017_path
 
     from simpleAICV.detection.datasets.cocodataset import CocoDetection
-    from simpleAICV.detection.common import RandomHorizontalFlip, RandomCrop, RandomTranslate, Normalize, YoloStyleResize, RetinaStyleResize, DetectionCollater
+    from simpleAICV.detection.common import RandomHorizontalFlip, RandomCrop, RandomTranslate, Normalize, DetectionResize, DetectionCollater, DETRDetectionCollater
 
-    cocodataset = CocoDetection(
-        COCO2017_path,
-        set_name='train2017',
-        transform=transforms.Compose([
-            RandomHorizontalFlip(prob=0.5),
-            # RandomCrop(prob=0.5),
-            # RandomTranslate(prob=0.5),
-            YoloStyleResize(resize=640,
-                            divisor=32,
-                            stride=32,
-                            multi_scale=False,
-                            multi_scale_range=[0.5, 1.0]),
-            # RetinaStyleResize(resize=400,
-            #                   divisor=32,
-            #                   stride=32,
-            #                   multi_scale=False,
-            #                   multi_scale_range=[0.8, 1.0]),
-            Normalize(),
-        ]))
+    cocodataset = CocoDetection(COCO2017_path,
+                                set_name='train2017',
+                                transform=transforms.Compose([
+                                    RandomHorizontalFlip(prob=0.5),
+                                    RandomCrop(prob=0.5),
+                                    RandomTranslate(prob=0.5),
+                                    DetectionResize(
+                                        resize=640,
+                                        stride=32,
+                                        resize_type='yolo_style',
+                                        multi_scale=True,
+                                        multi_scale_range=[0.8, 1.0]),
+                                    Normalize(),
+                                ]))
 
     from torch.utils.data import DataLoader
-    collater = DetectionCollater()
+    collater = DetectionCollater(resize=640,
+                                 resize_type='yolo_style',
+                                 max_annots_num=100)
     train_loader = DataLoader(cocodataset,
                               batch_size=16,
                               shuffle=True,
                               num_workers=2,
                               collate_fn=collater)
 
-    from simpleAICV.detection.models.retinanet import resnet50_retinanet
-    net = resnet50_retinanet()
-    loss = RetinaLoss(areas=[[32, 32], [64, 64], [128, 128], [256, 256],
-                             [512, 512]],
-                      ratios=[0.5, 1, 2],
-                      scales=[2**0, 2**(1.0 / 3.0), 2**(2.0 / 3.0)],
-                      strides=[8, 16, 32, 64, 128],
-                      alpha=0.25,
-                      gamma=2,
-                      beta=1.0 / 9.0,
-                      focal_eiou_gamma=0.5,
-                      cls_loss_weight=1.,
-                      box_loss_weight=1.,
-                      box_loss_type='CIoU')
+    # from simpleAICV.detection.models.retinanet import resnet50_retinanet
+    # net = resnet50_retinanet()
+    # loss = RetinaLoss(areas=[[32, 32], [64, 64], [128, 128], [256, 256],
+    #                          [512, 512]],
+    #                   ratios=[0.5, 1, 2],
+    #                   scales=[2**0, 2**(1.0 / 3.0), 2**(2.0 / 3.0)],
+    #                   strides=[8, 16, 32, 64, 128],
+    #                   alpha=0.25,
+    #                   gamma=2,
+    #                   beta=1.0 / 9.0,
+    #                   focal_eiou_gamma=0.5,
+    #                   cls_loss_weight=1.,
+    #                   box_loss_weight=1.,
+    #                   box_loss_type='CIoU')
 
-    for data in tqdm(train_loader):
-        images, annots, scales, sizes = data['image'], data['annots'], data[
-            'scale'], data['size']
-        print('1111', images.shape, annots.shape, scales.shape, sizes.shape)
-        preds = net(images)
+    # for data in tqdm(train_loader):
+    #     images, annots, scales, sizes = data['image'], data['annots'], data[
+    #         'scale'], data['size']
+    #     print('1111', images.shape, annots.shape, scales.shape, sizes.shape)
+    #     preds = net(images)
+    #     for pred in preds:
+    #         for per_level_pred in pred:
+    #             print('2222', per_level_pred.shape)
+    #     loss_dict = loss(preds, annots)
+    #     print('3333', loss_dict)
+    #     break
+
+    # from simpleAICV.detection.models.fcos import resnet50_fcos
+    # net = resnet50_fcos()
+    # loss = FCOSLoss(strides=[8, 16, 32, 64, 128],
+    #                 mi=[[-1, 64], [64, 128], [128, 256], [256, 512],
+    #                     [512, 100000000]],
+    #                 alpha=0.25,
+    #                 gamma=2.,
+    #                 cls_loss_weight=1.,
+    #                 box_loss_weight=1.,
+    #                 center_ness_loss_weight=1.,
+    #                 box_loss_iou_type='CIoU',
+    #                 center_sample_radius=1.5,
+    #                 use_center_sample=True)
+
+    # for data in tqdm(train_loader):
+    #     images, annots, scales, sizes = data['image'], data['annots'], data[
+    #         'scale'], data['size']
+    #     print('1111', images.shape, annots.shape, scales.shape, sizes.shape)
+    #     preds = net(images)
+    #     for pred in preds:
+    #         for per_level_pred in pred:
+    #             print('2222', per_level_pred.shape)
+    #     loss_dict = loss(preds, annots)
+    #     print('3333', loss_dict)
+    #     break
+
+    # from simpleAICV.detection.models.centernet import resnet18_centernet
+    # net = resnet18_centernet()
+    # loss = CenterNetLoss(alpha=2.,
+    #                      beta=4.,
+    #                      heatmap_loss_weight=1.0,
+    #                      offset_loss_weight=1.0,
+    #                      wh_loss_weight=0.1,
+    #                      min_overlap=0.7,
+    #                      max_object_num=100)
+
+    # for data in tqdm(train_loader):
+    #     images, annots, scales, sizes = data['image'], data['annots'], data[
+    #         'scale'], data['size']
+    #     print('1111', images.shape, annots.shape, scales.shape, sizes.shape)
+    #     preds = net(images)
+    #     print('2222', preds[0].shape, preds[1].shape, preds[2].shape)
+    #     loss_dict = loss(preds, annots)
+    #     print('3333', loss_dict)
+    #     break
+
+    # from simpleAICV.detection.models.ttfnet import resnet18_ttfnet
+    # net = resnet18_ttfnet()
+    # loss = TTFNetLoss(alpha=2.0,
+    #                   beta=4.0,
+    #                   stride=4,
+    #                   heatmap_loss_weight=1.0,
+    #                   box_loss_weight=5.0,
+    #                   box_loss_iou_type='CIoU',
+    #                   gaussian_alpha=0.54,
+    #                   gaussian_beta=0.54)
+
+    # for data in tqdm(train_loader):
+    #     images, annots, scales, sizes = data['image'], data['annots'], data[
+    #         'scale'], data['size']
+    #     print('1111', images.shape, annots.shape, scales.shape, sizes.shape)
+    #     preds = net(images)
+    #     print('2222', preds[0].shape, preds[1].shape)
+    #     loss_dict = loss(preds, annots)
+    #     print('3333', loss_dict)
+    #     break
+
+    from torch.utils.data import DataLoader
+    detr_collater = DETRDetectionCollater(resize=800,
+                                          resize_type='yolo_style',
+                                          max_annots_num=100)
+    detr_train_loader = DataLoader(cocodataset,
+                                   batch_size=4,
+                                   shuffle=True,
+                                   num_workers=2,
+                                   collate_fn=detr_collater)
+
+    from simpleAICV.detection.models.detr import resnet50_detr
+    net = resnet50_detr()
+    loss = DETRLoss(cls_match_cost=1.0,
+                    box_match_cost=5.0,
+                    giou_match_cost=2.0,
+                    cls_loss_weight=1.0,
+                    box_l1_loss_weight=5.0,
+                    iou_loss_weight=2.0,
+                    no_object_cls_weight=0.1,
+                    num_classes=80)
+    for data in tqdm(detr_train_loader):
+        images, annots, masks = data['image'], data['scaled_annots'], data[
+            'mask']
+        print('1111', images.shape, annots.shape)
+        preds = net(images, masks)
         for pred in preds:
-            for per_level_pred in pred:
-                print('2222', per_level_pred.shape)
+            print('2222', pred.shape)
         loss_dict = loss(preds, annots)
         print('3333', loss_dict)
         break
 
-    from simpleAICV.detection.models.fcos import resnet50_fcos
-    net = resnet50_fcos()
-    loss = FCOSLoss(strides=[8, 16, 32, 64, 128],
-                    mi=[[-1, 64], [64, 128], [128, 256], [256, 512],
-                        [512, 100000000]],
-                    alpha=0.25,
-                    gamma=2.,
-                    cls_loss_weight=1.,
-                    box_loss_weight=1.,
-                    center_ness_loss_weight=1.,
-                    box_loss_iou_type='CIoU',
-                    center_sample_radius=1.5,
-                    use_center_sample=True)
+    from torch.utils.data import DataLoader
+    detr_collater = DETRDetectionCollater(resize=800,
+                                          resize_type='yolo_style',
+                                          max_annots_num=100)
+    detr_train_loader = DataLoader(cocodataset,
+                                   batch_size=2,
+                                   shuffle=True,
+                                   num_workers=2,
+                                   collate_fn=detr_collater)
 
-    for data in tqdm(train_loader):
-        images, annots, scales, sizes = data['image'], data['annots'], data[
-            'scale'], data['size']
-        print('1111', images.shape, annots.shape, scales.shape, sizes.shape)
-        preds = net(images)
-        for pred in preds:
-            for per_level_pred in pred:
-                print('2222', per_level_pred.shape)
-        loss_dict = loss(preds, annots)
-        print('3333', loss_dict)
-        break
-
-    from simpleAICV.detection.models.centernet import resnet18_centernet
-    net = resnet18_centernet()
-    loss = CenterNetLoss(alpha=2.,
-                         beta=4.,
-                         heatmap_loss_weight=1.0,
-                         offset_loss_weight=1.0,
-                         wh_loss_weight=0.1,
-                         min_overlap=0.7,
-                         max_object_num=100)
-
-    for data in tqdm(train_loader):
-        images, annots, scales, sizes = data['image'], data['annots'], data[
-            'scale'], data['size']
-        print('1111', images.shape, annots.shape, scales.shape, sizes.shape)
-        preds = net(images)
-        print('2222', preds[0].shape, preds[1].shape, preds[2].shape)
-        loss_dict = loss(preds, annots)
-        print('3333', loss_dict)
-        break
-
-    from simpleAICV.detection.models.ttfnet import resnet18_ttfnet
-    net = resnet18_ttfnet()
-    loss = TTFNetLoss(alpha=2.0,
-                      beta=4.0,
-                      stride=4,
-                      heatmap_loss_weight=1.0,
-                      box_loss_weight=5.0,
-                      box_loss_iou_type='CIoU',
-                      gaussian_alpha=0.54,
-                      gaussian_beta=0.54)
-
-    for data in tqdm(train_loader):
-        images, annots, scales, sizes = data['image'], data['annots'], data[
-            'scale'], data['size']
-        print('1111', images.shape, annots.shape, scales.shape, sizes.shape)
-        preds = net(images)
-        print('2222', preds[0].shape, preds[1].shape)
-        loss_dict = loss(preds, annots)
-        print('3333', loss_dict)
-        break
-
-    from simpleAICV.detection.models.yolox import yoloxm
-    net = yoloxm()
-    loss = YoloxLoss(strides=[8, 16, 32],
-                     obj_loss_weight=1.0,
-                     box_loss_weight=5.0,
-                     cls_loss_weight=1.0,
-                     box_loss_iou_type='CIoU',
-                     center_sample_radius=2.5)
-
-    for data in tqdm(train_loader):
-        images, annots, scales, sizes = data['image'], data['annots'], data[
-            'scale'], data['size']
-        print('1111', images.shape, annots.shape, scales.shape, sizes.shape)
-        preds = net(images)
-        for pred in preds:
-            for per_level_pred in pred:
-                print('2222', per_level_pred.shape)
+    from simpleAICV.detection.models.dinodetr import resnet50_dinodetr
+    net = resnet50_dinodetr()
+    loss = DINODETRLoss(cls_match_cost=2.0,
+                        box_match_cost=5.0,
+                        giou_match_cost=2.0,
+                        cls_loss_weight=1.0,
+                        box_l1_loss_weight=5.0,
+                        iou_loss_weight=2.0,
+                        alpha=0.25,
+                        gamma=2.0,
+                        num_classes=80)
+    for data in tqdm(detr_train_loader):
+        images, annots, masks = data['image'], data['scaled_annots'], data[
+            'mask']
+        net = net.cuda()
+        images = images.cuda()
+        annots = annots.cuda()
+        masks = masks.cuda()
+        print('1111', images.shape, masks.shape, annots.shape)
+        preds = net(images, masks, annots)
+        print('2222', preds.keys())
         loss_dict = loss(preds, annots)
         print('3333', loss_dict)
         break

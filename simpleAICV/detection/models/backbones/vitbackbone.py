@@ -322,30 +322,30 @@ if __name__ == '__main__':
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-    net = vit_tiny_backbone_patch16(image_size=512, pretrained_path='')
-    image_h, image_w = 512, 512
+    net = vit_tiny_backbone_patch16(image_size=800, pretrained_path='')
+    image_h, image_w = 800, 800
     from thop import profile
     from thop import clever_format
     macs, params = profile(net,
                            inputs=(torch.randn(1, 3, image_h, image_w), ),
                            verbose=False)
     macs, params = clever_format([macs, params], '%.3f')
-    out = net(torch.autograd.Variable(torch.randn(1, 3, image_h, image_w)))
+    out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
     print(f'1111, macs: {macs}, params: {params},out_shape: {out.shape}')
 
-    net = vit_small_backbone_patch16(image_size=512, pretrained_path='')
-    image_h, image_w = 512, 512
+    net = vit_small_backbone_patch16(image_size=800, pretrained_path='')
+    image_h, image_w = 800, 800
     from thop import profile
     from thop import clever_format
     macs, params = profile(net,
                            inputs=(torch.randn(1, 3, image_h, image_w), ),
                            verbose=False)
     macs, params = clever_format([macs, params], '%.3f')
-    out = net(torch.autograd.Variable(torch.randn(1, 3, image_h, image_w)))
+    out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
     print(f'2222, macs: {macs}, params: {params},out_shape: {out.shape}')
 
-    net = vit_base_backbone_patch16(image_size=512, pretrained_path='')
-    image_h, image_w = 512, 512
+    net = vit_base_backbone_patch16(image_size=800, pretrained_path='')
+    image_h, image_w = 800, 800
     from thop import profile
     from thop import clever_format
     macs, params = profile(net,
@@ -355,13 +355,13 @@ if __name__ == '__main__':
     out = net(torch.autograd.Variable(torch.randn(1, 3, image_h, image_w)))
     print(f'3333, macs: {macs}, params: {params},out_shape: {out.shape}')
 
-    net = vit_large_backbone_patch16(image_size=512, pretrained_path='')
-    image_h, image_w = 512, 512
+    net = vit_large_backbone_patch16(image_size=800, pretrained_path='')
+    image_h, image_w = 800, 800
     from thop import profile
     from thop import clever_format
     macs, params = profile(net,
                            inputs=(torch.randn(1, 3, image_h, image_w), ),
                            verbose=False)
     macs, params = clever_format([macs, params], '%.3f')
-    out = net(torch.autograd.Variable(torch.randn(1, 3, image_h, image_w)))
+    out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
     print(f'4444, macs: {macs}, params: {params},out_shape: {out.shape}')

@@ -1,2 +1,2 @@
 from .resnetbackbone import *
-from .vitbackbone import *
+from .u2netbackbone import *

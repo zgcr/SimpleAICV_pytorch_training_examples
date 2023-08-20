@@ -1,14 +1,23 @@
+import cv2
+
+import os
+
 import collections
 import numpy as np
 import time
 from tqdm import tqdm
 
-from apex import amp
 import torch
 import torch.nn.functional as F
+
+import torchvision.transforms as transforms
+
+from torch.cuda.amp import autocast
+
 from pycocotools.cocoeval import COCOeval
 
 from simpleAICV.classification.common import AverageMeter, AccMeter
+from simpleAICV.diffusion_model.metrics.compute_fid_is_score import ImagePathDataset, calculate_frechet_distance, compute_inception_score
 
 
 def all_reduce_operation_in_group_for_variables(variables, operator, group):
@@ -58,7 +67,6 @@ def test_classification(test_loader, model, criterion, config):
 
             loss = criterion(outputs, labels)
 
-            torch.distributed.barrier()
             [loss] = all_reduce_operation_in_group_for_variables(
                 variables=[loss],
                 operator=torch.distributed.ReduceOp.SUM,
@@ -82,7 +90,6 @@ def test_classification(test_loader, model, criterion, config):
                 acc1_correct_num), float(acc5_correct_num), float(sample_num)
 
             # please keep same variable on different gpus has same data type for all reduce operation
-            torch.distributed.barrier()
             [acc1_correct_num, acc5_correct_num,
              sample_num] = all_reduce_operation_in_group_for_variables(
                  variables=[acc1_correct_num, acc5_correct_num, sample_num],
@@ -123,6 +130,7 @@ def train_classification(train_loader, model, criterion, optimizer, scheduler,
     local_rank = torch.distributed.get_rank()
     iters = len(train_loader.dataset) // config.batch_size
     iter_index = 1
+    assert config.accumulation_steps >= 1, 'illegal accumulation_steps!'
 
     for _, data in enumerate(train_loader):
         images, labels = data['image'], data['label']
@@ -134,72 +142,96 @@ def train_classification(train_loader, model, criterion, optimizer, scheduler,
         if torch.any(torch.isnan(images)) or torch.any(torch.isnan(labels)):
             continue
 
-        outputs = model(images)
-        loss = criterion(outputs, labels)
+        if config.use_amp:
+            with autocast():
+                if iter_index % config.accumulation_steps == 0:
+                    outputs = model(images)
+                    loss = criterion(outputs, labels)
+                else:
+                    # not reduce gradient while iter_index % config.accumulation_steps != 0
+                    with model.no_sync():
+                        outputs = model(images)
+                        loss = criterion(outputs, labels)
+        else:
+            if iter_index % config.accumulation_steps == 0:
+                outputs = model(images)
+                loss = criterion(outputs, labels)
+            else:
+                # not reduce gradient while iter_index % config.accumulation_steps != 0
+                with model.no_sync():
+                    outputs = model(images)
+                    loss = criterion(outputs, labels)
 
         if loss == 0. or torch.any(torch.isinf(loss)) or torch.any(
                 torch.isnan(loss)):
+            log_info = f'zero loss or nan loss or inf loss!'
+            logger.info(log_info) if local_rank == 0 else None
             optimizer.zero_grad()
             continue
 
-        if hasattr(config,
-                   'accumulation_steps') and config.accumulation_steps > 1:
-            loss = loss / config.accumulation_steps
+        loss = loss / config.accumulation_steps
 
-        if config.apex:
-            with amp.scale_loss(loss, optimizer) as scaled_loss:
-                scaled_loss.backward()
-        else:
-            loss.backward()
-
-        if hasattr(config,
-                   'accumulation_steps') and config.accumulation_steps > 1:
+        if config.use_amp:
             if iter_index % config.accumulation_steps == 0:
-                optimizer.step()
+                config.scaler.scale(loss).backward()
+            else:
+                # not reduce gradient while iter_index % config.accumulation_steps != 0
+                with model.no_sync():
+                    config.scaler.scale(loss).backward()
+        else:
+            if iter_index % config.accumulation_steps == 0:
+                loss.backward()
+            else:
+                # not reduce gradient while iter_index % config.accumulation_steps != 0
+                with model.no_sync():
+                    loss.backward()
+
+        if config.use_amp:
+            if iter_index % config.accumulation_steps == 0:
+                if hasattr(config,
+                           'clip_max_norm') and config.clip_max_norm > 0:
+                    config.scaler.unscale_(optimizer)
+                    torch.nn.utils.clip_grad_norm_(model.parameters(),
+                                                   config.clip_max_norm)
+                config.scaler.step(optimizer)
+                config.scaler.update()
                 optimizer.zero_grad()
         else:
-            optimizer.step()
-            optimizer.zero_grad()
-
-        if hasattr(config, 'use_ema_model') and config.use_ema_model:
-            config.ema_model.update(model)
-
-        torch.distributed.barrier()
-        [loss] = all_reduce_operation_in_group_for_variables(
-            variables=[loss],
-            operator=torch.distributed.ReduceOp.SUM,
-            group=config.group)
-        loss = loss / float(config.gpus_num)
-
-        losses.update(loss, images.size(0))
-
-        if hasattr(config,
-                   'accumulation_steps') and config.accumulation_steps > 1:
             if iter_index % config.accumulation_steps == 0:
-                scheduler.step(optimizer, iter_index / iters + (epoch - 1))
-        else:
+                if hasattr(config,
+                           'clip_max_norm') and config.clip_max_norm > 0:
+                    torch.nn.utils.clip_grad_norm_(model.parameters(),
+                                                   config.clip_max_norm)
+                optimizer.step()
+                optimizer.zero_grad()
+
+        if config.use_ema_model:
+            if iter_index % config.accumulation_steps == 0:
+                config.ema_model.update(model)
+
+        if iter_index % config.accumulation_steps == 0:
+            [loss] = all_reduce_operation_in_group_for_variables(
+                variables=[loss],
+                operator=torch.distributed.ReduceOp.SUM,
+                group=config.group)
+            loss = loss / float(config.gpus_num)
+            losses.update(loss, images.size(0))
+
+        if iter_index % config.accumulation_steps == 0:
             scheduler.step(optimizer, iter_index / iters + (epoch - 1))
 
-        if hasattr(config,
-                   'accumulation_steps') and config.accumulation_steps > 1:
-            accumulation_iter_index, accumulation_iters = int(
-                iter_index // config.accumulation_steps), int(
-                    iters // config.accumulation_steps)
-            if iter_index % int(
-                    config.print_interval * config.accumulation_steps) == 0:
-                log_info = f'train: epoch {epoch:0>4d}, iter [{accumulation_iter_index:0>5d}, {accumulation_iters:0>5d}], lr: {scheduler.current_lr:.6f}, loss: {loss*config.accumulation_steps:.4f}'
-                logger.info(log_info) if local_rank == 0 else None
-        else:
-            if iter_index % config.print_interval == 0:
-                log_info = f'train: epoch {epoch:0>4d}, iter [{iter_index:0>5d}, {iters:0>5d}], lr: {scheduler.current_lr:.6f}, loss: {loss:.4f}'
-                logger.info(log_info) if local_rank == 0 else None
+        accumulation_iter_index, accumulation_iters = int(
+            iter_index // config.accumulation_steps), int(
+                iters // config.accumulation_steps)
+        if iter_index % int(
+                config.print_interval * config.accumulation_steps) == 0:
+            log_info = f'train: epoch {epoch:0>4d}, iter [{accumulation_iter_index:0>5d}, {accumulation_iters:0>5d}], lr: {scheduler.current_lr:.6f}, loss: {loss*config.accumulation_steps:.4f}'
+            logger.info(log_info) if local_rank == 0 else None
 
         iter_index += 1
 
     avg_loss = losses.avg
-
-    if hasattr(config, 'accumulation_steps') and config.accumulation_steps > 1:
-        avg_loss = avg_loss * config.accumulation_steps
+    avg_loss = avg_loss * config.accumulation_steps
 
     return avg_loss
 
@@ -232,6 +264,7 @@ def train_distill_classification(train_loader, model, criterion, optimizer,
     local_rank = torch.distributed.get_rank()
     iters = len(train_loader.dataset) // config.batch_size
     iter_index = 1
+    assert config.accumulation_steps >= 1, 'illegal accumulation_steps!'
 
     for _, data in enumerate(train_loader):
         images, labels = data['image'], data['label']
@@ -243,28 +276,47 @@ def train_distill_classification(train_loader, model, criterion, optimizer,
         if torch.any(torch.isnan(images)) or torch.any(torch.isnan(labels)):
             continue
 
-        tea_outputs, stu_outputs = model(images)
+        if iter_index % config.accumulation_steps == 0:
+            tea_outputs, stu_outputs = model(images)
+            loss_value = {}
+            for loss_name in criterion.keys():
+                if loss_name in ['CELoss', 'OneHotLabelCELoss']:
+                    if not config.freeze_teacher:
+                        temp_loss = criterion[loss_name](
+                            tea_outputs, labels) * config.loss_ratio[loss_name]
+                        loss_value['tea_' + loss_name] = temp_loss
 
-        loss = 0
-        loss_value = {}
-        for loss_name in criterion.keys():
-            if loss_name in ['CELoss']:
-                if not config.freeze_teacher:
-                    temp_loss = criterion[loss_name](tea_outputs, labels)
-                    loss_value['tea_' + loss_name] = temp_loss
-                    loss += temp_loss
-                temp_loss = criterion[loss_name](stu_outputs, labels)
-                loss_value['stu_' + loss_name] = temp_loss
-                loss += temp_loss
-            elif loss_name in ['DKDLoss']:
-                temp_loss = criterion[loss_name](stu_outputs, tea_outputs,
-                                                 labels)
-                loss_value[loss_name] = temp_loss
-                loss += temp_loss
-            else:
-                temp_loss = criterion[loss_name](stu_outputs, tea_outputs)
-                loss_value[loss_name] = temp_loss
-                loss += temp_loss
+                    temp_loss = criterion[loss_name](
+                        stu_outputs, labels) * config.loss_ratio[loss_name]
+                    loss_value['stu_' + loss_name] = temp_loss
+                else:
+                    temp_loss = criterion[loss_name](
+                        stu_outputs,
+                        tea_outputs) * config.loss_ratio[loss_name]
+                    loss_value[loss_name] = temp_loss
+        else:
+            # not reduce gradient while iter_index % config.accumulation_steps != 0
+            with model.no_sync():
+                tea_outputs, stu_outputs = model(images)
+                loss_value = {}
+                for loss_name in criterion.keys():
+                    if loss_name in ['CELoss', 'OneHotLabelCELoss']:
+                        if not config.freeze_teacher:
+                            temp_loss = criterion[loss_name](
+                                tea_outputs,
+                                labels) * config.loss_ratio[loss_name]
+                            loss_value['tea_' + loss_name] = temp_loss
+
+                        temp_loss = criterion[loss_name](
+                            stu_outputs, labels) * config.loss_ratio[loss_name]
+                        loss_value['stu_' + loss_name] = temp_loss
+                    else:
+                        temp_loss = criterion[loss_name](
+                            stu_outputs,
+                            tea_outputs) * config.loss_ratio[loss_name]
+                        loss_value[loss_name] = temp_loss
+
+        loss = sum(loss_value.values())
 
         inf_nan_flag = False
         for key, value in loss_value.items():
@@ -275,78 +327,61 @@ def train_distill_classification(train_loader, model, criterion, optimizer,
             inf_nan_flag = True
 
         if loss == 0. or inf_nan_flag:
+            log_info = f'zero loss or nan loss or inf loss!'
+            logger.info(log_info) if local_rank == 0 else None
             optimizer.zero_grad()
             continue
 
-        if hasattr(config,
-                   'accumulation_steps') and config.accumulation_steps > 1:
-            loss = loss / config.accumulation_steps
-            for key, value in loss_value.items():
-                loss_value[key] = value / config.accumulation_steps
+        loss = loss / config.accumulation_steps
+        for key, value in loss_value.items():
+            loss_value[key] = value / config.accumulation_steps
 
-        if config.apex:
-            with amp.scale_loss(loss, optimizer) as scaled_loss:
-                scaled_loss.backward()
-        else:
+        if iter_index % config.accumulation_steps == 0:
             loss.backward()
-
-        if hasattr(config,
-                   'accumulation_steps') and config.accumulation_steps > 1:
-            if iter_index % config.accumulation_steps == 0:
-                optimizer.step()
-                optimizer.zero_grad()
         else:
+            # not reduce gradient while iter_index % config.accumulation_steps != 0
+            with model.no_sync():
+                loss.backward()
+
+        if iter_index % config.accumulation_steps == 0:
+            if hasattr(config, 'clip_max_norm') and config.clip_max_norm > 0:
+                torch.nn.utils.clip_grad_norm_(model.parameters(),
+                                               config.clip_max_norm)
             optimizer.step()
             optimizer.zero_grad()
 
-        torch.distributed.barrier()
+        if iter_index % config.accumulation_steps == 0:
+            for key, value in loss_value.items():
+                [value] = all_reduce_operation_in_group_for_variables(
+                    variables=[value],
+                    operator=torch.distributed.ReduceOp.SUM,
+                    group=config.group)
+                loss_value[key] = value / float(config.gpus_num)
 
-        for key, value in loss_value.items():
-            [value] = all_reduce_operation_in_group_for_variables(
-                variables=[value],
+            [loss] = all_reduce_operation_in_group_for_variables(
+                variables=[loss],
                 operator=torch.distributed.ReduceOp.SUM,
                 group=config.group)
-            loss_value[key] = value / float(config.gpus_num)
+            loss = loss / float(config.gpus_num)
+            losses.update(loss, images.size(0))
 
-        [loss] = all_reduce_operation_in_group_for_variables(
-            variables=[loss],
-            operator=torch.distributed.ReduceOp.SUM,
-            group=config.group)
-        loss = loss / float(config.gpus_num)
-
-        losses.update(loss, images.size(0))
-
-        if hasattr(config,
-                   'accumulation_steps') and config.accumulation_steps > 1:
-            if iter_index % config.accumulation_steps == 0:
-                scheduler.step(optimizer, iter_index / iters + (epoch - 1))
-        else:
+        if iter_index % config.accumulation_steps == 0:
             scheduler.step(optimizer, iter_index / iters + (epoch - 1))
 
-        if hasattr(config,
-                   'accumulation_steps') and config.accumulation_steps > 1:
-            accumulation_iter_index, accumulation_iters = int(
-                iter_index // config.accumulation_steps), int(
-                    iters // config.accumulation_steps)
-            if iter_index % int(
-                    config.print_interval * config.accumulation_steps) == 0:
-                log_info = f'train: epoch {epoch:0>4d}, iter [{accumulation_iter_index:0>5d}, {accumulation_iters:0>5d}], lr: {scheduler.current_lr:.6f}, loss: {loss*config.accumulation_steps:.4f}, '
-                for key, value in loss_value.items():
-                    log_info += f'{key}: {value*config.accumulation_steps:.4f}, '
-                logger.info(log_info) if local_rank == 0 else None
-        else:
-            if iter_index % config.print_interval == 0:
-                log_info = f'train: epoch {epoch:0>4d}, iter [{iter_index:0>5d}, {iters:0>5d}], lr: {scheduler.current_lr:.6f}, loss: {loss:.4f}, '
-                for key, value in loss_value.items():
-                    log_info += f'{key}: {value:.4f}, '
-                logger.info(log_info) if local_rank == 0 else None
+        accumulation_iter_index, accumulation_iters = int(
+            iter_index // config.accumulation_steps), int(
+                iters // config.accumulation_steps)
+        if iter_index % int(
+                config.print_interval * config.accumulation_steps) == 0:
+            log_info = f'train: epoch {epoch:0>4d}, iter [{accumulation_iter_index:0>5d}, {accumulation_iters:0>5d}], lr: {scheduler.current_lr:.6f}, loss: {loss*config.accumulation_steps:.4f}, '
+            for key, value in loss_value.items():
+                log_info += f'{key}: {value*config.accumulation_steps:.4f}, '
+            logger.info(log_info) if local_rank == 0 else None
 
         iter_index += 1
 
     avg_loss = losses.avg
-
-    if hasattr(config, 'accumulation_steps') and config.accumulation_steps > 1:
-        avg_loss = avg_loss * config.accumulation_steps
+    avg_loss = avg_loss * config.accumulation_steps
 
     return avg_loss
 
@@ -427,17 +462,30 @@ def evaluate_voc_detection(test_loader, model, criterion, decoder, config):
             if model_on_cuda:
                 images, annots = images.cuda(), annots.cuda()
 
+            if 'detr' in config.network:
+                masks = data['mask']
+                scaled_sizes = data['scaled_size']
+                if model_on_cuda:
+                    masks = masks.cuda()
+
             torch.cuda.synchronize()
             data_time.update(time.time() - end, images.size(0))
             end = time.time()
 
-            outs_tuple = model(images)
+            if 'detr' in config.network:
+                outs_tuple = model(images, masks)
+            else:
+                outs_tuple = model(images)
 
             loss_value = criterion(outs_tuple, annots)
             loss = sum(loss_value.values())
             losses.update(loss, images.size(0))
 
-            pred_scores, pred_classes, pred_boxes = decoder(outs_tuple)
+            if 'detr' in config.network:
+                pred_scores, pred_classes, pred_boxes = decoder(
+                    outs_tuple, scaled_sizes)
+            else:
+                pred_scores, pred_classes, pred_boxes = decoder(outs_tuple)
 
             pred_boxes /= np.expand_dims(np.expand_dims(scales, axis=-1),
                                          axis=-1)
@@ -599,19 +647,31 @@ def evaluate_coco_detection(test_loader, model, criterion, decoder, config):
             if model_on_cuda:
                 images, annots = images.cuda(), annots.cuda()
 
+            if 'detr' in config.network:
+                masks = data['mask']
+                scaled_sizes = data['scaled_size']
+                if model_on_cuda:
+                    masks = masks.cuda()
+
             per_batch_ids = ids[i * batch_size:(i + 1) * batch_size]
 
             torch.cuda.synchronize()
             data_time.update(time.time() - end, images.size(0))
             end = time.time()
 
-            outs_tuple = model(images)
+            if 'detr' in config.network:
+                outs_tuple = model(images, masks)
+            else:
+                outs_tuple = model(images)
 
             loss_value = criterion(outs_tuple, annots)
             loss = sum(loss_value.values())
             losses.update(loss, images.size(0))
 
-            scores, classes, boxes = decoder(outs_tuple)
+            if 'detr' in config.network:
+                scores, classes, boxes = decoder(outs_tuple, scaled_sizes)
+            else:
+                scores, classes, boxes = decoder(outs_tuple)
 
             boxes /= np.expand_dims(np.expand_dims(scales, axis=-1), axis=-1)
 
@@ -736,10 +796,18 @@ def train_detection(train_loader, model, criterion, optimizer, scheduler,
     local_rank = torch.distributed.get_rank()
     iters = len(train_loader.dataset) // config.batch_size
     iter_index = 1
+    assert config.accumulation_steps >= 1, 'illegal accumulation_steps!'
 
     for _, data in enumerate(train_loader):
         images, targets = data['image'], data['annots']
         images, targets = images.cuda(), targets.cuda()
+
+        if 'detr' in config.network:
+            targets = data['scaled_annots']
+            targets = targets.cuda()
+
+            masks = data['mask']
+            masks = masks.cuda()
 
         if torch.any(torch.isinf(images)) or torch.any(torch.isinf(targets)):
             continue
@@ -750,8 +818,37 @@ def train_detection(train_loader, model, criterion, optimizer, scheduler,
         if torch.sum(images) == 0:
             continue
 
-        outs_tuple = model(images)
-        loss_value = criterion(outs_tuple, targets)
+        if config.use_amp:
+            with autocast():
+                if iter_index % config.accumulation_steps == 0:
+                    if 'detr' in config.network:
+                        outs_tuple = model(images, masks)
+                    else:
+                        outs_tuple = model(images)
+                    loss_value = criterion(outs_tuple, targets)
+                else:
+                    # not reduce gradient while iter_index % config.accumulation_steps != 0
+                    with model.no_sync():
+                        if 'detr' in config.network:
+                            outs_tuple = model(images, masks)
+                        else:
+                            outs_tuple = model(images)
+                        loss_value = criterion(outs_tuple, targets)
+        else:
+            if iter_index % config.accumulation_steps == 0:
+                if 'detr' in config.network:
+                    outs_tuple = model(images, masks)
+                else:
+                    outs_tuple = model(images)
+                loss_value = criterion(outs_tuple, targets)
+            else:
+                # not reduce gradient while iter_index % config.accumulation_steps != 0
+                with model.no_sync():
+                    if 'detr' in config.network:
+                        outs_tuple = model(images, masks)
+                    else:
+                        outs_tuple = model(images)
+                    loss_value = criterion(outs_tuple, targets)
 
         loss = sum(loss_value.values())
 
@@ -764,78 +861,85 @@ def train_detection(train_loader, model, criterion, optimizer, scheduler,
             inf_nan_flag = True
 
         if loss == 0. or inf_nan_flag:
+            log_info = f'zero loss or nan loss or inf loss!'
+            logger.info(log_info) if local_rank == 0 else None
             optimizer.zero_grad()
             continue
 
-        if hasattr(config,
-                   'accumulation_steps') and config.accumulation_steps > 1:
-            loss = loss / config.accumulation_steps
+        loss = loss / config.accumulation_steps
+        for key, value in loss_value.items():
+            loss_value[key] = value / config.accumulation_steps
 
-        if config.apex:
-            with amp.scale_loss(loss, optimizer) as scaled_loss:
-                scaled_loss.backward()
-        else:
-            loss.backward()
-
-        if hasattr(config,
-                   'accumulation_steps') and config.accumulation_steps > 1:
+        if config.use_amp:
             if iter_index % config.accumulation_steps == 0:
-                optimizer.step()
+                config.scaler.scale(loss).backward()
+            else:
+                # not reduce gradient while iter_index % config.accumulation_steps != 0
+                with model.no_sync():
+                    config.scaler.scale(loss).backward()
+        else:
+            if iter_index % config.accumulation_steps == 0:
+                loss.backward()
+            else:
+                # not reduce gradient while iter_index % config.accumulation_steps != 0
+                with model.no_sync():
+                    loss.backward()
+
+        if config.use_amp:
+            if iter_index % config.accumulation_steps == 0:
+                if hasattr(config,
+                           'clip_max_norm') and config.clip_max_norm > 0:
+                    config.scaler.unscale_(optimizer)
+                    torch.nn.utils.clip_grad_norm_(model.parameters(),
+                                                   config.clip_max_norm)
+                config.scaler.step(optimizer)
+                config.scaler.update()
                 optimizer.zero_grad()
         else:
-            optimizer.step()
-            optimizer.zero_grad()
+            if iter_index % config.accumulation_steps == 0:
+                if hasattr(config,
+                           'clip_max_norm') and config.clip_max_norm > 0:
+                    torch.nn.utils.clip_grad_norm_(model.parameters(),
+                                                   config.clip_max_norm)
+                optimizer.step()
+                optimizer.zero_grad()
 
-        if hasattr(config, 'use_ema_model') and config.use_ema_model:
-            config.ema_model.update(model)
+        if config.use_ema_model:
+            if iter_index % config.accumulation_steps == 0:
+                config.ema_model.update(model)
 
-        torch.distributed.barrier()
-        for key, value in loss_value.items():
-            [value] = all_reduce_operation_in_group_for_variables(
-                variables=[value],
+        if iter_index % config.accumulation_steps == 0:
+            for key, value in loss_value.items():
+                [value] = all_reduce_operation_in_group_for_variables(
+                    variables=[value],
+                    operator=torch.distributed.ReduceOp.SUM,
+                    group=config.group)
+                loss_value[key] = value / float(config.gpus_num)
+
+            [loss] = all_reduce_operation_in_group_for_variables(
+                variables=[loss],
                 operator=torch.distributed.ReduceOp.SUM,
                 group=config.group)
-            loss_value[key] = value / float(config.gpus_num)
+            loss = loss / float(config.gpus_num)
+            losses.update(loss, images.size(0))
 
-        [loss] = all_reduce_operation_in_group_for_variables(
-            variables=[loss],
-            operator=torch.distributed.ReduceOp.SUM,
-            group=config.group)
-        loss = loss / float(config.gpus_num)
-
-        losses.update(loss, images.size(0))
-
-        if hasattr(config,
-                   'accumulation_steps') and config.accumulation_steps > 1:
-            if iter_index % config.accumulation_steps == 0:
-                scheduler.step(optimizer, iter_index / iters + (epoch - 1))
-        else:
+        if iter_index % config.accumulation_steps == 0:
             scheduler.step(optimizer, iter_index / iters + (epoch - 1))
 
-        if hasattr(config,
-                   'accumulation_steps') and config.accumulation_steps > 1:
-            accumulation_iter_index, accumulation_iters = int(
-                iter_index // config.accumulation_steps), int(
-                    iters // config.accumulation_steps)
-            if iter_index % int(
-                    config.print_interval * config.accumulation_steps) == 0:
-                log_info = f'train: epoch {epoch:0>4d}, iter [{accumulation_iter_index:0>5d}, {accumulation_iters:0>5d}], lr: {scheduler.current_lr:.6f}, total_loss: {loss*config.accumulation_steps:.4f}, '
-                for key, value in loss_value.items():
-                    log_info += f'{key}: {value:.4f}, '
-                logger.info(log_info) if local_rank == 0 else None
-        else:
-            if iter_index % config.print_interval == 0:
-                log_info = f'train: epoch {epoch:0>4d}, iter [{iter_index:0>5d}, {iters:0>5d}], lr: {scheduler.current_lr:.6f}, total_loss: {loss:.4f}, '
-                for key, value in loss_value.items():
-                    log_info += f'{key}: {value:.4f}, '
-                logger.info(log_info) if local_rank == 0 else None
+        accumulation_iter_index, accumulation_iters = int(
+            iter_index // config.accumulation_steps), int(
+                iters // config.accumulation_steps)
+        if iter_index % int(
+                config.print_interval * config.accumulation_steps) == 0:
+            log_info = f'train: epoch {epoch:0>4d}, iter [{accumulation_iter_index:0>5d}, {accumulation_iters:0>5d}], lr: {scheduler.current_lr:.6f}, total_loss: {loss*config.accumulation_steps:.4f}, '
+            for key, value in loss_value.items():
+                log_info += f'{key}: {value*config.accumulation_steps:.4f}, '
+            logger.info(log_info) if local_rank == 0 else None
 
         iter_index += 1
 
     avg_loss = losses.avg
-
-    if hasattr(config, 'accumulation_steps') and config.accumulation_steps > 1:
-        avg_loss = avg_loss * config.accumulation_steps
+    avg_loss = avg_loss * config.accumulation_steps
 
     return avg_loss
 
@@ -878,14 +982,6 @@ def test_semantic_segmentation(test_loader, model, criterion, config):
             batch_time.update(time.time() - end)
 
             loss = criterion(outputs, masks)
-
-            torch.distributed.barrier()
-            [loss] = all_reduce_operation_in_group_for_variables(
-                variables=[loss],
-                operator=torch.distributed.ReduceOp.SUM,
-                group=config.group)
-            loss = loss / float(config.gpus_num)
-
             losses.update(loss, images.size(0))
 
             # pred shape:[b,c,h,w] -> [b,h,w,c]
@@ -1019,18 +1115,6 @@ def test_semantic_segmentation(test_loader, model, criterion, config):
     for i, per_dice in enumerate(per_class_dices):
         dice_dict[f'class_{i}_dice'] = per_dice
 
-    # for key, value in precision_dict.items():
-    #     result_dict[key] = value
-
-    # for key, value in recall_dict.items():
-    #     result_dict[key] = value
-
-    # for key, value in iou_dict.items():
-    #     result_dict[key] = value
-
-    # for key, value in dice_dict.items():
-    #     result_dict[key] = value
-
     return result_dict
 
 
@@ -1047,6 +1131,7 @@ def train_semantic_segmentation(train_loader, model, criterion, optimizer,
     local_rank = torch.distributed.get_rank()
     iters = len(train_loader.dataset) // config.batch_size
     iter_index = 1
+    assert config.accumulation_steps >= 1, 'illegal accumulation_steps!'
 
     for _, data in enumerate(train_loader):
         images, masks = data['image'], data['mask']
@@ -1061,14 +1146,46 @@ def train_semantic_segmentation(train_loader, model, criterion, optimizer,
         if torch.sum(images) == 0:
             continue
 
-        outputs = model(images)
+        if config.use_amp:
+            with autocast():
+                if iter_index % config.accumulation_steps == 0:
+                    outputs = model(images)
+                    loss_value = {}
+                    for loss_name in criterion.keys():
+                        temp_loss = criterion[loss_name](outputs, masks)
+                        temp_loss = config.loss_ratio[loss_name] * temp_loss
+                        loss_value[loss_name] = temp_loss
 
-        loss_value = {}
-        for loss_name in criterion.keys():
-            temp_loss = criterion[loss_name](outputs, masks)
-            loss_value[loss_name] = temp_loss
+                else:
+                    # not reduce gradient while iter_index % config.accumulation_steps != 0
+                    with model.no_sync():
+                        outputs = model(images)
+                        loss_value = {}
+                        for loss_name in criterion.keys():
+                            temp_loss = criterion[loss_name](outputs, masks)
+                            temp_loss = config.loss_ratio[loss_name] * temp_loss
+                            loss_value[loss_name] = temp_loss
+        else:
+            if iter_index % config.accumulation_steps == 0:
+                outputs = model(images)
+                loss_value = {}
+                for loss_name in criterion.keys():
+                    temp_loss = criterion[loss_name](outputs, masks)
+                    temp_loss = config.loss_ratio[loss_name] * temp_loss
+                    loss_value[loss_name] = temp_loss
+            else:
+                # not reduce gradient while iter_index % config.accumulation_steps != 0
+                with model.no_sync():
+                    outputs = model(images)
+                    loss_value = {}
+                    for loss_name in criterion.keys():
+                        temp_loss = criterion[loss_name](outputs, masks)
+                        temp_loss = config.loss_ratio[loss_name] * temp_loss
+                        loss_value[loss_name] = temp_loss
 
-        loss = sum(loss_value.values())
+        loss = 0.
+        for key, value in loss_value.items():
+            loss += value
 
         inf_nan_flag = False
         for key, value in loss_value.items():
@@ -1079,80 +1196,85 @@ def train_semantic_segmentation(train_loader, model, criterion, optimizer,
             inf_nan_flag = True
 
         if loss == 0. or inf_nan_flag:
+            log_info = f'zero loss or nan loss or inf loss!'
+            logger.info(log_info) if local_rank == 0 else None
             optimizer.zero_grad()
             continue
 
-        if hasattr(config,
-                   'accumulation_steps') and config.accumulation_steps > 1:
-            loss = loss / config.accumulation_steps
-            for key, value in loss_value.items():
-                loss_value[key] = value / config.accumulation_steps
+        loss = loss / config.accumulation_steps
+        for key, value in loss_value.items():
+            loss_value[key] = value / config.accumulation_steps
 
-        if config.apex:
-            with amp.scale_loss(loss, optimizer) as scaled_loss:
-                scaled_loss.backward()
-        else:
-            loss.backward()
-
-        if hasattr(config,
-                   'accumulation_steps') and config.accumulation_steps > 1:
+        if config.use_amp:
             if iter_index % config.accumulation_steps == 0:
-                optimizer.step()
+                config.scaler.scale(loss).backward()
+            else:
+                # not reduce gradient while iter_index % config.accumulation_steps != 0
+                with model.no_sync():
+                    config.scaler.scale(loss).backward()
+        else:
+            if iter_index % config.accumulation_steps == 0:
+                loss.backward()
+            else:
+                # not reduce gradient while iter_index % config.accumulation_steps != 0
+                with model.no_sync():
+                    loss.backward()
+
+        if config.use_amp:
+            if iter_index % config.accumulation_steps == 0:
+                if hasattr(config,
+                           'clip_max_norm') and config.clip_max_norm > 0:
+                    config.scaler.unscale_(optimizer)
+                    torch.nn.utils.clip_grad_norm_(model.parameters(),
+                                                   config.clip_max_norm)
+                config.scaler.step(optimizer)
+                config.scaler.update()
                 optimizer.zero_grad()
         else:
-            optimizer.step()
-            optimizer.zero_grad()
+            if iter_index % config.accumulation_steps == 0:
+                if hasattr(config,
+                           'clip_max_norm') and config.clip_max_norm > 0:
+                    torch.nn.utils.clip_grad_norm_(model.parameters(),
+                                                   config.clip_max_norm)
+                optimizer.step()
+                optimizer.zero_grad()
 
-        if hasattr(config, 'use_ema_model') and config.use_ema_model:
-            config.ema_model.update(model)
+        if config.use_ema_model:
+            if iter_index % config.accumulation_steps == 0:
+                config.ema_model.update(model)
 
-        torch.distributed.barrier()
-        for key, value in loss_value.items():
-            [value] = all_reduce_operation_in_group_for_variables(
-                variables=[value],
+        if iter_index % config.accumulation_steps == 0:
+            for key, value in loss_value.items():
+                [value] = all_reduce_operation_in_group_for_variables(
+                    variables=[value],
+                    operator=torch.distributed.ReduceOp.SUM,
+                    group=config.group)
+                loss_value[key] = value / float(config.gpus_num)
+
+            [loss] = all_reduce_operation_in_group_for_variables(
+                variables=[loss],
                 operator=torch.distributed.ReduceOp.SUM,
                 group=config.group)
-            loss_value[key] = value / float(config.gpus_num)
+            loss = loss / float(config.gpus_num)
+            losses.update(loss, images.size(0))
 
-        [loss] = all_reduce_operation_in_group_for_variables(
-            variables=[loss],
-            operator=torch.distributed.ReduceOp.SUM,
-            group=config.group)
-        loss = loss / float(config.gpus_num)
-
-        losses.update(loss, images.size(0))
-
-        if hasattr(config,
-                   'accumulation_steps') and config.accumulation_steps > 1:
-            if iter_index % config.accumulation_steps == 0:
-                scheduler.step(optimizer, iter_index / iters + (epoch - 1))
-        else:
+        if iter_index % config.accumulation_steps == 0:
             scheduler.step(optimizer, iter_index / iters + (epoch - 1))
 
-        if hasattr(config,
-                   'accumulation_steps') and config.accumulation_steps > 1:
-            accumulation_iter_index, accumulation_iters = int(
-                iter_index // config.accumulation_steps), int(
-                    iters // config.accumulation_steps)
-            if iter_index % int(
-                    config.print_interval * config.accumulation_steps) == 0:
-                log_info = f'train: epoch {epoch:0>4d}, iter [{accumulation_iter_index:0>5d}, {accumulation_iters:0>5d}], lr: {scheduler.current_lr:.6f}, loss: {loss*config.accumulation_steps:.4f}, '
-                for key, value in loss_value.items():
-                    log_info += f'{key}: {value*config.accumulation_steps:.4f}, '
-                logger.info(log_info) if local_rank == 0 else None
-        else:
-            if iter_index % config.print_interval == 0:
-                log_info = f'train: epoch {epoch:0>4d}, iter [{iter_index:0>5d}, {iters:0>5d}], lr: {scheduler.current_lr:.6f}, loss: {loss:.4f}, '
-                for key, value in loss_value.items():
-                    log_info += f'{key}: {value:.4f}, '
-                logger.info(log_info) if local_rank == 0 else None
+        accumulation_iter_index, accumulation_iters = int(
+            iter_index // config.accumulation_steps), int(
+                iters // config.accumulation_steps)
+        if iter_index % int(
+                config.print_interval * config.accumulation_steps) == 0:
+            log_info = f'train: epoch {epoch:0>4d}, iter [{accumulation_iter_index:0>5d}, {accumulation_iters:0>5d}], lr: {scheduler.current_lr:.6f}, loss: {loss*config.accumulation_steps:.4f}, '
+            for key, value in loss_value.items():
+                log_info += f'{key}: {value*config.accumulation_steps:.4f}, '
+            logger.info(log_info) if local_rank == 0 else None
 
         iter_index += 1
 
     avg_loss = losses.avg
-
-    if hasattr(config, 'accumulation_steps') and config.accumulation_steps > 1:
-        avg_loss = avg_loss * config.accumulation_steps
+    avg_loss = avg_loss * config.accumulation_steps
 
     return avg_loss
 
@@ -1171,6 +1293,7 @@ def train_mae_self_supervised_learning(train_loader, model, criterion,
     local_rank = torch.distributed.get_rank()
     iters = len(train_loader.dataset) // config.batch_size
     iter_index = 1
+    assert config.accumulation_steps >= 1, 'illegal accumulation_steps!'
 
     for _, data in enumerate(train_loader):
         images, labels = data['image'], data['label']
@@ -1182,73 +1305,96 @@ def train_mae_self_supervised_learning(train_loader, model, criterion,
         if torch.any(torch.isnan(images)) or torch.any(torch.isnan(labels)):
             continue
 
-        outputs, masks = model(images)
-
-        loss = criterion(outputs, labels, masks)
+        if config.use_amp:
+            with autocast():
+                if iter_index % config.accumulation_steps == 0:
+                    outputs, masks = model(images)
+                    loss = criterion(outputs, labels, masks)
+                else:
+                    # not reduce gradient while iter_index % config.accumulation_steps != 0
+                    with model.no_sync():
+                        outputs, masks = model(images)
+                        loss = criterion(outputs, labels, masks)
+        else:
+            if iter_index % config.accumulation_steps == 0:
+                outputs, masks = model(images)
+                loss = criterion(outputs, labels, masks)
+            else:
+                # not reduce gradient while iter_index % config.accumulation_steps != 0
+                with model.no_sync():
+                    outputs, masks = model(images)
+                    loss = criterion(outputs, labels, masks)
 
         if loss == 0. or torch.any(torch.isinf(loss)) or torch.any(
                 torch.isnan(loss)):
+            log_info = f'zero loss or nan loss or inf loss!'
+            logger.info(log_info) if local_rank == 0 else None
             optimizer.zero_grad()
             continue
 
-        if hasattr(config,
-                   'accumulation_steps') and config.accumulation_steps > 1:
-            loss = loss / config.accumulation_steps
+        loss = loss / config.accumulation_steps
 
-        if config.apex:
-            with amp.scale_loss(loss, optimizer) as scaled_loss:
-                scaled_loss.backward()
-        else:
-            loss.backward()
-
-        if hasattr(config,
-                   'accumulation_steps') and config.accumulation_steps > 1:
+        if config.use_amp:
             if iter_index % config.accumulation_steps == 0:
-                optimizer.step()
+                config.scaler.scale(loss).backward()
+            else:
+                # not reduce gradient while iter_index % config.accumulation_steps != 0
+                with model.no_sync():
+                    config.scaler.scale(loss).backward()
+        else:
+            if iter_index % config.accumulation_steps == 0:
+                loss.backward()
+            else:
+                # not reduce gradient while iter_index % config.accumulation_steps != 0
+                with model.no_sync():
+                    loss.backward()
+
+        if config.use_amp:
+            if iter_index % config.accumulation_steps == 0:
+                if hasattr(config,
+                           'clip_max_norm') and config.clip_max_norm > 0:
+                    config.scaler.unscale_(optimizer)
+                    torch.nn.utils.clip_grad_norm_(model.parameters(),
+                                                   config.clip_max_norm)
+                config.scaler.step(optimizer)
+                config.scaler.update()
                 optimizer.zero_grad()
         else:
-            optimizer.step()
-            optimizer.zero_grad()
-
-        if hasattr(config, 'use_ema_model') and config.use_ema_model:
-            config.ema_model.update(model)
-
-        torch.distributed.barrier()
-        [loss] = all_reduce_operation_in_group_for_variables(
-            variables=[loss],
-            operator=torch.distributed.ReduceOp.SUM,
-            group=config.group)
-        loss = loss / float(config.gpus_num)
-
-        losses.update(loss, images.size(0))
-
-        if hasattr(config,
-                   'accumulation_steps') and config.accumulation_steps > 1:
             if iter_index % config.accumulation_steps == 0:
-                scheduler.step(optimizer, iter_index / iters + (epoch - 1))
-        else:
+                if hasattr(config,
+                           'clip_max_norm') and config.clip_max_norm > 0:
+                    torch.nn.utils.clip_grad_norm_(model.parameters(),
+                                                   config.clip_max_norm)
+                optimizer.step()
+                optimizer.zero_grad()
+
+        if config.use_ema_model:
+            if iter_index % config.accumulation_steps == 0:
+                config.ema_model.update(model)
+
+        if iter_index % config.accumulation_steps == 0:
+            [loss] = all_reduce_operation_in_group_for_variables(
+                variables=[loss],
+                operator=torch.distributed.ReduceOp.SUM,
+                group=config.group)
+            loss = loss / float(config.gpus_num)
+            losses.update(loss, images.size(0))
+
+        if iter_index % config.accumulation_steps == 0:
             scheduler.step(optimizer, iter_index / iters + (epoch - 1))
 
-        if hasattr(config,
-                   'accumulation_steps') and config.accumulation_steps > 1:
-            accumulation_iter_index, accumulation_iters = int(
-                iter_index // config.accumulation_steps), int(
-                    iters // config.accumulation_steps)
-            if iter_index % int(
-                    config.print_interval * config.accumulation_steps) == 0:
-                log_info = f'train: epoch {epoch:0>4d}, iter [{accumulation_iter_index:0>5d}, {accumulation_iters:0>5d}], lr: {scheduler.current_lr:.6f}, loss: {loss*config.accumulation_steps:.4f}'
-                logger.info(log_info) if local_rank == 0 else None
-        else:
-            if iter_index % config.print_interval == 0:
-                log_info = f'train: epoch {epoch:0>4d}, iter [{iter_index:0>5d}, {iters:0>5d}], lr: {scheduler.current_lr:.6f}, loss: {loss:.4f}'
-                logger.info(log_info) if local_rank == 0 else None
+        accumulation_iter_index, accumulation_iters = int(
+            iter_index // config.accumulation_steps), int(
+                iters // config.accumulation_steps)
+        if iter_index % int(
+                config.print_interval * config.accumulation_steps) == 0:
+            log_info = f'train: epoch {epoch:0>4d}, iter [{accumulation_iter_index:0>5d}, {accumulation_iters:0>5d}], lr: {scheduler.current_lr:.6f}, loss: {loss*config.accumulation_steps:.4f}'
+            logger.info(log_info) if local_rank == 0 else None
 
         iter_index += 1
 
     avg_loss = losses.avg
-
-    if hasattr(config, 'accumulation_steps') and config.accumulation_steps > 1:
-        avg_loss = avg_loss * config.accumulation_steps
+    avg_loss = avg_loss * config.accumulation_steps
 
     return avg_loss
 
@@ -1276,26 +1422,48 @@ def train_dino_self_supervised_learning(train_loader, teacher_model,
         images = data['image']
         images = [image.cuda() for image in images]
 
-        # only the 2 global views pass through the teacher
-        teacher_outputs = teacher_model(images[0:config.global_crop_nums])
-        student_outputs = student_model(images)
-
         currnet_epoch = iter_index / iters + (epoch - 1)
-        loss = criterion(student_outputs, teacher_outputs, currnet_epoch)
+
+        if config.use_amp:
+            with autocast():
+                # only the 2 global views pass through the teacher
+                teacher_outputs = teacher_model(
+                    images[0:config.global_crop_nums])
+                student_outputs = student_model(images)
+                loss = criterion(student_outputs, teacher_outputs,
+                                 currnet_epoch)
+        else:
+            # only the 2 global views pass through the teacher
+            teacher_outputs = teacher_model(images[0:config.global_crop_nums])
+            student_outputs = student_model(images)
+            loss = criterion(student_outputs, teacher_outputs, currnet_epoch)
 
         if loss == 0. or torch.any(torch.isinf(loss)) or torch.any(
                 torch.isnan(loss)):
+            log_info = f'zero loss or nan loss or inf loss!'
+            logger.info(log_info) if local_rank == 0 else None
             student_optimizer.zero_grad()
             continue
 
-        if config.apex:
-            with amp.scale_loss(loss, student_optimizer) as scaled_loss:
-                scaled_loss.backward()
+        if config.use_amp:
+            config.scaler.scale(loss).backward()
         else:
             loss.backward()
 
-        student_optimizer.step()
-        student_optimizer.zero_grad()
+        if config.use_amp:
+            if hasattr(config, 'clip_max_norm') and config.clip_max_norm > 0:
+                config.scaler.unscale_(student_optimizer)
+                torch.nn.utils.clip_grad_norm_(student_model.parameters(),
+                                               config.clip_max_norm)
+            config.scaler.step(student_optimizer)
+            config.scaler.update()
+            student_optimizer.zero_grad()
+        else:
+            if hasattr(config, 'clip_max_norm') and config.clip_max_norm > 0:
+                torch.nn.utils.clip_grad_norm_(student_model.parameters(),
+                                               config.clip_max_norm)
+            student_optimizer.step()
+            student_optimizer.zero_grad()
 
         # EMA update for the teacher
         with torch.no_grad():
@@ -1306,7 +1474,6 @@ def train_dino_self_supervised_learning(train_loader, teacher_model,
                 param_teacher.data = param_teacher.data * momentum + (
                     1 - momentum) * param_student.detach().data
 
-        torch.distributed.barrier()
         [loss] = all_reduce_operation_in_group_for_variables(
             variables=[loss],
             operator=torch.distributed.ReduceOp.SUM,
@@ -1328,5 +1495,295 @@ def train_dino_self_supervised_learning(train_loader, teacher_model,
         iter_index += 1
 
     avg_loss = losses.avg
+
+    return avg_loss
+
+
+def generate_diffusion_model_images(test_loader, model, sampler, config):
+    if hasattr(config, 'use_ema_model') and config.use_ema_model:
+        model = config.ema_model.ema_model
+
+    # switch to evaluate mode
+    model.eval()
+
+    local_rank = torch.distributed.get_rank()
+    with torch.no_grad():
+        model_on_cuda = next(model.parameters()).is_cuda
+        for batch_idx, data in tqdm(enumerate(test_loader)):
+            images = data['image']
+            if model_on_cuda:
+                images = images.cuda()
+
+            labels = None
+            if 'label' in data.keys(
+            ) and config.num_classes and config.use_condition_label:
+                labels = data['label']
+                if model_on_cuda:
+                    labels = labels.cuda()
+
+            if torch.any(torch.isinf(images)):
+                continue
+
+            if torch.any(torch.isnan(images)):
+                continue
+
+            torch.cuda.synchronize()
+
+            input_images, input_masks = None, None
+            if config.use_input_images:
+                input_images = images
+
+            _, outputs = sampler(model,
+                                 images.shape,
+                                 class_label=labels,
+                                 input_images=input_images,
+                                 input_masks=input_masks,
+                                 return_intermediates=True)
+
+            torch.cuda.synchronize()
+
+            mean = np.expand_dims(np.expand_dims(config.mean, axis=0), axis=0)
+            std = np.expand_dims(np.expand_dims(config.std, axis=0), axis=0)
+
+            for image_idx, (per_image,
+                            per_output) in enumerate(zip(images, outputs)):
+                per_image = per_image.cpu().numpy()
+                per_image = per_image.transpose(1, 2, 0)
+                per_image = (per_image * std + mean) * 255.
+
+                per_output = per_output.transpose(1, 2, 0)
+                per_output = (per_output * std + mean) * 255.
+
+                per_image = np.ascontiguousarray(per_image, dtype=np.uint8)
+                per_image = cv2.cvtColor(per_image, cv2.COLOR_RGB2BGR)
+
+                per_output = np.ascontiguousarray(per_output, dtype=np.uint8)
+                per_output = cv2.cvtColor(per_output, cv2.COLOR_RGB2BGR)
+
+                save_image_name = f'image_{local_rank}_{batch_idx}_{image_idx}.jpg'
+                save_image_path = os.path.join(config.save_test_image_dir,
+                                               save_image_name)
+                cv2.imencode('.jpg', per_image)[1].tofile(save_image_path)
+
+                save_output_name = f'output_{local_rank}_{batch_idx}_{image_idx}.jpg'
+                save_output_path = os.path.join(config.save_generate_image_dir,
+                                                save_output_name)
+                cv2.imencode('.jpg', per_output)[1].tofile(save_output_path)
+
+    torch.distributed.barrier()
+
+    test_images_path_list = []
+    for per_image_name in os.listdir(config.save_test_image_dir):
+        per_image_path = os.path.join(config.save_test_image_dir,
+                                      per_image_name)
+        test_images_path_list.append(per_image_path)
+
+    generate_images_path_list = []
+    for per_image_name in os.listdir(config.save_generate_image_dir):
+        per_image_path = os.path.join(config.save_generate_image_dir,
+                                      per_image_name)
+        generate_images_path_list.append(per_image_path)
+
+    test_image_num = len(test_images_path_list)
+    generate_image_num = len(generate_images_path_list)
+
+    return test_images_path_list, generate_images_path_list, test_image_num, generate_image_num
+
+
+def compute_diffusion_model_metric(test_images_dataloader,
+                                   generate_images_dataloader, test_image_num,
+                                   generate_image_num, fid_model, config):
+
+    for param in fid_model.parameters():
+        param.requires_grad = False
+
+    # switch to evaluate mode
+    fid_model.eval()
+
+    test_images_pred = np.empty((test_image_num, 2048))
+    with torch.no_grad():
+        test_images_start_idx = 0
+        model_on_cuda = next(fid_model.parameters()).is_cuda
+        for data in tqdm(test_images_dataloader):
+            if model_on_cuda:
+                data = data.cuda()
+
+            preds = fid_model(data)
+            per_batch_pred_features = preds[0].squeeze(-1).squeeze(
+                -1).cpu().numpy()
+
+            test_images_pred[test_images_start_idx:test_images_start_idx +
+                             per_batch_pred_features.
+                             shape[0]] = per_batch_pred_features
+            test_images_start_idx = test_images_start_idx + per_batch_pred_features.shape[
+                0]
+
+    generate_images_pred = np.empty((generate_image_num, 2048))
+    generate_images_cls_pred = np.empty((generate_image_num, 1008))
+
+    with torch.no_grad():
+        generate_images_start_idx = 0
+        model_on_cuda = next(fid_model.parameters()).is_cuda
+        for data in tqdm(generate_images_dataloader):
+            if model_on_cuda:
+                data = data.cuda()
+
+            preds = fid_model(data)
+
+            per_batch_pred_features = preds[0].squeeze(-1).squeeze(
+                -1).cpu().numpy()
+            per_batch_pred_probs = preds[1].cpu().numpy()
+
+            generate_images_pred[
+                generate_images_start_idx:generate_images_start_idx +
+                per_batch_pred_features.shape[0]] = per_batch_pred_features
+
+            generate_images_cls_pred[
+                generate_images_start_idx:generate_images_start_idx +
+                per_batch_pred_probs.shape[0]] = per_batch_pred_probs
+
+            generate_images_start_idx = generate_images_start_idx + per_batch_pred_features.shape[
+                0]
+
+    mu1 = np.mean(test_images_pred, axis=0)
+    sigma1 = np.cov(test_images_pred, rowvar=False)
+
+    mu2 = np.mean(generate_images_pred, axis=0)
+    sigma2 = np.cov(generate_images_pred, rowvar=False)
+
+    fid_value = calculate_frechet_distance(mu1, sigma1, mu2, sigma2)
+
+    is_score_mean, is_score_std = compute_inception_score(
+        generate_images_cls_pred, config.is_data_split_num)
+
+    return fid_value, is_score_mean, is_score_std
+
+
+def train_diffusion_model(train_loader, model, criterion, trainer, optimizer,
+                          scheduler, epoch, logger, config):
+    '''
+    train self supervised model for one epoch
+    '''
+    losses = AverageMeter()
+
+    # switch to train mode
+    model.train()
+
+    local_rank = torch.distributed.get_rank()
+    iters = len(train_loader.dataset) // config.batch_size
+    iter_index = 1
+    assert config.accumulation_steps >= 1, 'illegal accumulation_steps!'
+
+    for _, data in enumerate(train_loader):
+        images = data['image']
+        images = images.cuda()
+
+        labels = None
+        if 'label' in data.keys() and config.num_classes:
+            labels = data['label']
+            labels = labels.cuda()
+
+        if torch.any(torch.isinf(images)):
+            continue
+
+        if torch.any(torch.isnan(images)):
+            continue
+
+        if config.use_amp:
+            with autocast():
+                if iter_index % config.accumulation_steps == 0:
+                    pred_noise, noise = trainer(model,
+                                                images,
+                                                class_label=labels)
+                    loss = criterion(pred_noise, noise)
+                else:
+                    # not reduce gradient while iter_index % config.accumulation_steps != 0
+                    with model.no_sync():
+                        pred_noise, noise = trainer(model,
+                                                    images,
+                                                    class_label=labels)
+                        loss = criterion(pred_noise, noise)
+        else:
+            if iter_index % config.accumulation_steps == 0:
+                pred_noise, noise = trainer(model, images, class_label=labels)
+                loss = criterion(pred_noise, noise)
+            else:
+                # not reduce gradient while iter_index % config.accumulation_steps != 0
+                with model.no_sync():
+                    pred_noise, noise = trainer(model,
+                                                images,
+                                                class_label=labels)
+                    loss = criterion(pred_noise, noise)
+
+        if loss == 0. or torch.any(torch.isinf(loss)) or torch.any(
+                torch.isnan(loss)):
+            log_info = f'zero loss or nan loss or inf loss!'
+            logger.info(log_info) if local_rank == 0 else None
+            optimizer.zero_grad()
+            continue
+
+        loss = loss / config.accumulation_steps
+
+        if config.use_amp:
+            if iter_index % config.accumulation_steps == 0:
+                config.scaler.scale(loss).backward()
+            else:
+                # not reduce gradient while iter_index % config.accumulation_steps != 0
+                with model.no_sync():
+                    config.scaler.scale(loss).backward()
+        else:
+            if iter_index % config.accumulation_steps == 0:
+                loss.backward()
+            else:
+                # not reduce gradient while iter_index % config.accumulation_steps != 0
+                with model.no_sync():
+                    loss.backward()
+
+        if config.use_amp:
+            if iter_index % config.accumulation_steps == 0:
+                if hasattr(config,
+                           'clip_max_norm') and config.clip_max_norm > 0:
+                    config.scaler.unscale_(optimizer)
+                    torch.nn.utils.clip_grad_norm_(model.parameters(),
+                                                   config.clip_max_norm)
+                config.scaler.step(optimizer)
+                config.scaler.update()
+                optimizer.zero_grad()
+        else:
+            if iter_index % config.accumulation_steps == 0:
+                if hasattr(config,
+                           'clip_max_norm') and config.clip_max_norm > 0:
+                    torch.nn.utils.clip_grad_norm_(model.parameters(),
+                                                   config.clip_max_norm)
+                optimizer.step()
+                optimizer.zero_grad()
+
+        if config.use_ema_model:
+            if iter_index % config.accumulation_steps == 0:
+                config.ema_model.update(model)
+
+        if iter_index % config.accumulation_steps == 0:
+            [loss] = all_reduce_operation_in_group_for_variables(
+                variables=[loss],
+                operator=torch.distributed.ReduceOp.SUM,
+                group=config.group)
+            loss = loss / float(config.gpus_num)
+            losses.update(loss, images.size(0))
+
+        if iter_index % config.accumulation_steps == 0:
+            scheduler.step(optimizer, iter_index / iters + (epoch - 1))
+
+        accumulation_iter_index, accumulation_iters = int(
+            iter_index // config.accumulation_steps), int(
+                iters // config.accumulation_steps)
+        if iter_index % int(
+                config.print_interval * config.accumulation_steps) == 0:
+            log_info = f'train: epoch {epoch:0>4d}, iter [{accumulation_iter_index:0>5d}, {accumulation_iters:0>5d}], lr: {scheduler.current_lr:.6f}, loss: {loss*config.accumulation_steps:.4f}'
+            logger.info(log_info) if local_rank == 0 else None
+
+        iter_index += 1
+
+    avg_loss = losses.avg
+    avg_loss = avg_loss * config.accumulation_steps
 
     return avg_loss

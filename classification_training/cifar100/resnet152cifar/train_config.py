@@ -90,7 +90,14 @@ class config:
     print_interval = 50
 
     sync_bn = False
-    apex = True
+    use_amp = True
+    use_compile = False
+    compile_params = {
+        # 'default': optimizes for large models, low compile-time and no extra memory usage.
+        # 'reduce-overhead': optimizes to reduce the framework overhead and uses some extra memory, helps speed up small models, model update may not correct.
+        # 'max-autotune': optimizes to produce the fastest model, but takes a very long time to compile and may failed.
+        'mode': 'default',
+    }
 
     use_ema_model = False
     ema_model_decay = 0.9999

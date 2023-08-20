@@ -59,10 +59,7 @@ if __name__ == "__main__":
     model = backbones.__dict__['resnet50'](**{
         'num_classes': 1000,
     })
-    trained_model_path = os.path.join(
-        BASE_DIR,
-        'classification_training/imagenet/resnet50/checkpoints/resnet50-acc76.322.pth'
-    )
+    trained_model_path = '/root/code/SimpleAICV_pytorch_training_examples_on_ImageNet_COCO_ADE20K/pretrained_models/resnet_train_from_scratch_on_imagenet1k/resnet50-acc76.300.pth'
     load_state_dict(trained_model_path, model)
     model.eval()
 

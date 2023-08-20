@@ -13,14 +13,15 @@ import torch.nn.functional as F
 
 from torchvision.ops import nms
 
-from simpleAICV.detection.models.anchor import RetinaAnchors, FCOSPositions, TTFNetPositions, YoloxAnchors
+from simpleAICV.detection.models.anchor import RetinaAnchors, FCOSPositions, TTFNetPositions
 
 __all__ = [
     'RetinaDecoder',
     'FCOSDecoder',
     'CenterNetDecoder',
     'TTFNetDecoder',
-    'YoloxDecoder',
+    'DETRDecoder',
+    'DINODETRDecoder',
 ]
 
 
@@ -625,64 +626,33 @@ class TTFNetDecoder(nn.Module):
         return pred_bboxes
 
 
-class YoloxDecoder:
+class DETRDecoder:
 
     def __init__(self,
-                 strides=[8, 16, 32],
+                 num_classes=80,
                  max_object_num=100,
                  min_score_threshold=0.05,
-                 topn=1000,
-                 nms_type='python_nms',
+                 topn=100,
+                 nms_type=None,
                  nms_threshold=0.5):
-        assert nms_type in ['torch_nms', 'python_nms',
-                            'diou_python_nms'], 'wrong nms type!'
+        self.num_classes = num_classes
+        self.max_object_num = max_object_num
+        self.min_score_threshold = min_score_threshold
+        self.topn = topn
+        self.nms_type = nms_type
 
-        self.grid_strides = YoloxAnchors(strides=strides)
-        self.decode_function = DecodeMethod(
-            max_object_num=max_object_num,
-            min_score_threshold=min_score_threshold,
-            topn=topn,
-            nms_type=nms_type,
-            nms_threshold=nms_threshold)
+        if self.nms_type:
+            assert nms_type in ['torch_nms', 'python_nms',
+                                'diou_python_nms'], 'wrong nms type!'
+            self.nms_function = DetNMSMethod(nms_type=nms_type,
+                                             nms_threshold=nms_threshold)
 
-    def __call__(self, preds):
-        cls_preds, reg_preds, obj_preds = preds
+    def __call__(self, preds, scaled_sizes):
+        cls_preds, reg_preds = preds[0][-1, :, :, :], preds[1][-1, :, :, :]
 
-        feature_size = [[
-            per_level_cls_pred.shape[2], per_level_cls_pred.shape[1]
-        ] for per_level_cls_pred in cls_preds]
-        one_image_grid_center_strides = self.grid_strides(feature_size)
-
-        obj_preds = [
-            per_obj_pred.cpu().detach().numpy().reshape(
-                per_obj_pred.shape[0], -1, per_obj_pred.shape[-1])
-            for per_obj_pred in obj_preds
-        ]
-        cls_preds = [
-            per_cls_pred.cpu().detach().numpy().reshape(
-                per_cls_pred.shape[0], -1, per_cls_pred.shape[-1])
-            for per_cls_pred in cls_preds
-        ]
-        reg_preds = [
-            per_reg_pred.cpu().detach().numpy().reshape(
-                per_reg_pred.shape[0], -1, per_reg_pred.shape[-1])
-            for per_reg_pred in reg_preds
-        ]
-
-        obj_preds = np.concatenate(obj_preds, axis=1)
-        cls_preds = np.concatenate(cls_preds, axis=1)
-        reg_preds = np.concatenate(reg_preds, axis=1)
-
-        one_image_grid_center_strides = np.concatenate([
-            per_level_grid_center_strides.reshape(
-                -1, per_level_grid_center_strides.shape[-1])
-            for per_level_grid_center_strides in one_image_grid_center_strides
-        ],
-                                                       axis=0)
-        batch_grid_center_strides = np.repeat(np.expand_dims(
-            one_image_grid_center_strides, axis=0),
-                                              cls_preds.shape[0],
-                                              axis=0)
+        cls_preds = F.softmax(cls_preds, dim=2)
+        cls_preds = cls_preds.cpu().detach().numpy()
+        reg_preds = reg_preds.cpu().detach().numpy()
 
         cls_classes = np.argmax(cls_preds, axis=2)
         cls_scores = np.concatenate([
@@ -694,38 +664,195 @@ class YoloxDecoder:
         ],
                                     axis=0)
 
-        cls_scores = cls_scores * obj_preds[:, :, 0]
-        pred_bboxes = self.snap_ltrb_to_x1y1x2y2(reg_preds,
-                                                 batch_grid_center_strides)
+        pred_bboxes = []
+        for idx, per_image_reg_preds in enumerate(reg_preds):
+            # x_center,y_center,w,h -> x_min,y_min,x_max,y_max
+            per_image_reg_preds = self.transform_cxcywh_box_to_xyxy_box(
+                per_image_reg_preds)
+            h, w = scaled_sizes[idx][0], scaled_sizes[idx][1]
+            per_image_size = np.array([[w, h, w, h]], dtype=np.float32)
+            per_image_reg_preds = per_image_reg_preds * per_image_size
+            per_image_reg_preds = np.expand_dims(per_image_reg_preds, axis=0)
+            pred_bboxes.append(per_image_reg_preds)
+        pred_bboxes = np.concatenate(pred_bboxes, axis=0)
 
-        [batch_scores, batch_classes,
-         batch_bboxes] = self.decode_function(cls_scores, cls_classes,
-                                              pred_bboxes)
+        batch_size = cls_scores.shape[0]
+        batch_scores = np.ones(
+            (batch_size, self.max_object_num), dtype=np.float32) * (-1)
+        batch_classes = np.ones(
+            (batch_size, self.max_object_num), dtype=np.float32) * (-1)
+        batch_bboxes = np.zeros((batch_size, self.max_object_num, 4),
+                                dtype=np.float32)
+
+        for i, (per_image_scores, per_image_score_classes,
+                per_image_pred_bboxes) in enumerate(
+                    zip(cls_scores, cls_classes, pred_bboxes)):
+            per_image_pred_bboxes = per_image_pred_bboxes[
+                per_image_score_classes < self.num_classes].astype(np.float32)
+            per_image_scores = per_image_scores[
+                per_image_score_classes < self.num_classes].astype(np.float32)
+            per_image_score_classes = per_image_score_classes[
+                per_image_score_classes < self.num_classes].astype(np.float32)
+
+            per_image_score_classes = per_image_score_classes[
+                per_image_scores > self.min_score_threshold].astype(np.float32)
+            per_image_pred_bboxes = per_image_pred_bboxes[
+                per_image_scores > self.min_score_threshold].astype(np.float32)
+            per_image_scores = per_image_scores[
+                per_image_scores > self.min_score_threshold].astype(np.float32)
+
+            if per_image_scores.shape[0] != 0:
+                # descending sort
+                sorted_indexes = np.argsort(-per_image_scores)
+                scores = per_image_scores[sorted_indexes]
+                score_classes = per_image_score_classes[sorted_indexes]
+                bboxes = per_image_pred_bboxes[sorted_indexes]
+
+                if self.topn < scores.shape[0]:
+                    scores = scores[0:self.topn]
+                    score_classes = score_classes[0:self.topn]
+                    bboxes = bboxes[0:self.topn]
+
+                if self.nms_type:
+                    # nms
+                    keep = self.nms_function(bboxes, scores)
+                    scores = scores[keep]
+                    score_classes = score_classes[keep]
+                    bboxes = bboxes[keep]
+
+                final_detection_num = min(self.max_object_num, scores.shape[0])
+
+                batch_scores[
+                    i, 0:final_detection_num] = scores[0:final_detection_num]
+                batch_classes[i, 0:final_detection_num] = score_classes[
+                    0:final_detection_num]
+                batch_bboxes[i, 0:final_detection_num, :] = bboxes[
+                    0:final_detection_num, :]
 
         # batch_scores shape:[batch_size,max_object_num]
         # batch_classes shape:[batch_size,max_object_num]
         # batch_bboxes shape[batch_size,max_object_num,4]
         return [batch_scores, batch_classes, batch_bboxes]
 
-    def snap_ltrb_to_x1y1x2y2(self, reg_preds, grid_center_strides):
-        '''
-        snap per image reg preds to per image pred bboxes
-        reg_preds:[batch_size,point_nums,4],4:[l,t,r,b]
-        grid_center_strides:[batch_size,point_nums,3],3:[scale_grid_x_center,scale_grid_y_center,stride]
-        '''
-        reg_preds = np.exp(reg_preds)
-        grid_centers = grid_center_strides[:, :, 0:2]
-        strides = np.expand_dims(grid_center_strides[:, :, 2], axis=-1)
+    def transform_cxcywh_box_to_xyxy_box(self, boxes):
+        x_center, y_center, w, h = boxes[:, 0], boxes[:, 1], boxes[:,
+                                                                   2], boxes[:,
+                                                                             3]
+        boxes = np.stack([(x_center - 0.5 * w), (y_center - 0.5 * h),
+                          (x_center + 0.5 * w), (y_center + 0.5 * h)],
+                         axis=1)
 
-        pred_bboxes_xy_min = (grid_centers - reg_preds[:, :, 0:2]) * strides
-        pred_bboxes_xy_max = (grid_centers + reg_preds[:, :, 2:4]) * strides
-        pred_bboxes = np.concatenate([pred_bboxes_xy_min, pred_bboxes_xy_max],
-                                     axis=2)
+        return boxes
 
-        pred_bboxes = pred_bboxes.astype(np.int32)
 
-        # pred bboxes shape:[batch,points_num,4]
-        return pred_bboxes
+class DINODETRDecoder:
+
+    def __init__(self,
+                 max_object_num=100,
+                 min_score_threshold=0.05,
+                 topn=300,
+                 nms_type='python_nms',
+                 nms_threshold=0.5):
+        self.max_object_num = max_object_num
+        self.min_score_threshold = min_score_threshold
+        self.topn = topn
+        self.nms_type = nms_type
+
+        if self.nms_type:
+            assert nms_type in ['torch_nms', 'python_nms',
+                                'diou_python_nms'], 'wrong nms type!'
+            self.nms_function = DetNMSMethod(nms_type=nms_type,
+                                             nms_threshold=nms_threshold)
+
+    def __call__(self, preds, scaled_sizes):
+        cls_preds, reg_preds = preds['pred_logits'], preds['pred_boxes']
+
+        cls_preds = F.sigmoid(cls_preds)
+        cls_preds = cls_preds.cpu().detach().numpy()
+        reg_preds = reg_preds.cpu().detach().numpy()
+
+        cls_classes = np.argmax(cls_preds, axis=2)
+        cls_scores = np.concatenate([
+            np.expand_dims(per_image_preds[np.arange(per_image_preds.shape[0]),
+                                           per_image_cls_classes],
+                           axis=0)
+            for per_image_preds, per_image_cls_classes in zip(
+                cls_preds, cls_classes)
+        ],
+                                    axis=0)
+
+        pred_bboxes = []
+        for idx, per_image_reg_preds in enumerate(reg_preds):
+            # x_center,y_center,w,h -> x_min,y_min,x_max,y_max
+            per_image_reg_preds = self.transform_cxcywh_box_to_xyxy_box(
+                per_image_reg_preds)
+            h, w = scaled_sizes[idx][0], scaled_sizes[idx][1]
+            per_image_size = np.array([[w, h, w, h]], dtype=np.float32)
+            per_image_reg_preds = per_image_reg_preds * per_image_size
+            per_image_reg_preds = np.expand_dims(per_image_reg_preds, axis=0)
+            pred_bboxes.append(per_image_reg_preds)
+        pred_bboxes = np.concatenate(pred_bboxes, axis=0)
+
+        batch_size = cls_scores.shape[0]
+        batch_scores = np.ones(
+            (batch_size, self.max_object_num), dtype=np.float32) * (-1)
+        batch_classes = np.ones(
+            (batch_size, self.max_object_num), dtype=np.float32) * (-1)
+        batch_bboxes = np.zeros((batch_size, self.max_object_num, 4),
+                                dtype=np.float32)
+
+        for i, (per_image_scores, per_image_score_classes,
+                per_image_pred_bboxes) in enumerate(
+                    zip(cls_scores, cls_classes, pred_bboxes)):
+            per_image_score_classes = per_image_score_classes[
+                per_image_scores > self.min_score_threshold].astype(np.float32)
+            per_image_pred_bboxes = per_image_pred_bboxes[
+                per_image_scores > self.min_score_threshold].astype(np.float32)
+            per_image_scores = per_image_scores[
+                per_image_scores > self.min_score_threshold].astype(np.float32)
+
+            if per_image_scores.shape[0] != 0:
+                # descending sort
+                sorted_indexes = np.argsort(-per_image_scores)
+                scores = per_image_scores[sorted_indexes]
+                score_classes = per_image_score_classes[sorted_indexes]
+                bboxes = per_image_pred_bboxes[sorted_indexes]
+
+                if self.topn < scores.shape[0]:
+                    scores = scores[0:self.topn]
+                    score_classes = score_classes[0:self.topn]
+                    bboxes = bboxes[0:self.topn]
+
+                if self.nms_type:
+                    # nms
+                    keep = self.nms_function(bboxes, scores)
+                    scores = scores[keep]
+                    score_classes = score_classes[keep]
+                    bboxes = bboxes[keep]
+
+                final_detection_num = min(self.max_object_num, scores.shape[0])
+
+                batch_scores[
+                    i, 0:final_detection_num] = scores[0:final_detection_num]
+                batch_classes[i, 0:final_detection_num] = score_classes[
+                    0:final_detection_num]
+                batch_bboxes[i, 0:final_detection_num, :] = bboxes[
+                    0:final_detection_num, :]
+
+        # batch_scores shape:[batch_size,max_object_num]
+        # batch_classes shape:[batch_size,max_object_num]
+        # batch_bboxes shape[batch_size,max_object_num,4]
+        return [batch_scores, batch_classes, batch_bboxes]
+
+    def transform_cxcywh_box_to_xyxy_box(self, boxes):
+        x_center, y_center, w, h = boxes[:, 0], boxes[:, 1], boxes[:,
+                                                                   2], boxes[:,
+                                                                             3]
+        boxes = np.stack([(x_center - 0.5 * w), (y_center - 0.5 * h),
+                          (x_center + 0.5 * w), (y_center + 0.5 * h)],
+                         axis=1)
+
+        return boxes
 
 
 if __name__ == '__main__':
@@ -750,84 +877,106 @@ if __name__ == '__main__':
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-    from simpleAICV.detection.models.retinanet import resnet50_retinanet
-    net = resnet50_retinanet()
-    image_h, image_w = 640, 640
-    preds = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
-    decode = RetinaDecoder(areas=[[32, 32], [64, 64], [128, 128], [256, 256],
-                                  [512, 512]],
-                           ratios=[0.5, 1, 2],
-                           scales=[2**0, 2**(1.0 / 3.0), 2**(2.0 / 3.0)],
-                           strides=[8, 16, 32, 64, 128],
-                           topn=1000,
-                           min_score_threshold=0.01,
-                           nms_type='python_nms',
-                           nms_threshold=0.5,
-                           max_object_num=100)
-    batch_scores, batch_classes, batch_pred_bboxes = decode(preds)
-    print('1111', batch_scores.shape, batch_classes.shape,
-          batch_pred_bboxes.shape)
+    # from simpleAICV.detection.models.retinanet import resnet50_retinanet
+    # net = resnet50_retinanet()
+    # image_h, image_w = 640, 640
+    # preds = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    # decode = RetinaDecoder(areas=[[32, 32], [64, 64], [128, 128], [256, 256],
+    #                               [512, 512]],
+    #                        ratios=[0.5, 1, 2],
+    #                        scales=[2**0, 2**(1.0 / 3.0), 2**(2.0 / 3.0)],
+    #                        strides=[8, 16, 32, 64, 128],
+    #                        topn=1000,
+    #                        min_score_threshold=0.01,
+    #                        nms_type='python_nms',
+    #                        nms_threshold=0.5,
+    #                        max_object_num=100)
+    # batch_scores, batch_classes, batch_pred_bboxes = decode(preds)
+    # print('1111', batch_scores.shape, batch_classes.shape,
+    #       batch_pred_bboxes.shape)
 
-    from simpleAICV.detection.models.fcos import resnet50_fcos
-    net = resnet50_fcos()
-    image_h, image_w = 640, 640
-    preds = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
-    decode = FCOSDecoder(strides=[8, 16, 32, 64, 128],
-                         topn=1000,
-                         min_score_threshold=0.01,
-                         nms_type='torch_nms',
-                         nms_threshold=0.6,
-                         max_object_num=100)
-    batch_scores, batch_classes, batch_pred_bboxes = decode(preds)
-    print('2222', batch_scores.shape, batch_classes.shape,
-          batch_pred_bboxes.shape)
+    # from simpleAICV.detection.models.fcos import resnet50_fcos
+    # net = resnet50_fcos()
+    # image_h, image_w = 640, 640
+    # preds = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    # decode = FCOSDecoder(strides=[8, 16, 32, 64, 128],
+    #                      topn=1000,
+    #                      min_score_threshold=0.01,
+    #                      nms_type='torch_nms',
+    #                      nms_threshold=0.6,
+    #                      max_object_num=100)
+    # batch_scores, batch_classes, batch_pred_bboxes = decode(preds)
+    # print('2222', batch_scores.shape, batch_classes.shape,
+    #       batch_pred_bboxes.shape)
 
-    from simpleAICV.detection.models.centernet import resnet18_centernet
-    net = resnet18_centernet()
-    image_h, image_w = 512, 512
-    preds = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
-    annotations = torch.FloatTensor([[[113, 120, 183, 255, 5],
-                                      [13, 45, 175, 210, 2]],
-                                     [[11, 18, 223, 225, 1],
-                                      [-1, -1, -1, -1, -1]],
-                                     [[-1, -1, -1, -1, -1],
-                                      [-1, -1, -1, -1, -1]]])
-    decode = CenterNetDecoder(topk=100,
-                              stride=4,
-                              min_score_threshold=0.05,
-                              max_object_num=100)
-    batch_scores, batch_classes, batch_pred_bboxes = decode(preds)
-    print('3333', batch_scores.shape, batch_classes.shape,
-          batch_pred_bboxes.shape)
+    # from simpleAICV.detection.models.centernet import resnet18_centernet
+    # net = resnet18_centernet()
+    # image_h, image_w = 512, 512
+    # preds = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    # annotations = torch.FloatTensor([[[113, 120, 183, 255, 5],
+    #                                   [13, 45, 175, 210, 2]],
+    #                                  [[11, 18, 223, 225, 1],
+    #                                   [-1, -1, -1, -1, -1]],
+    #                                  [[-1, -1, -1, -1, -1],
+    #                                   [-1, -1, -1, -1, -1]]])
+    # decode = CenterNetDecoder(topk=100,
+    #                           stride=4,
+    #                           min_score_threshold=0.05,
+    #                           max_object_num=100)
+    # batch_scores, batch_classes, batch_pred_bboxes = decode(preds)
+    # print('3333', batch_scores.shape, batch_classes.shape,
+    #       batch_pred_bboxes.shape)
 
-    from simpleAICV.detection.models.ttfnet import resnet18_ttfnet
-    net = resnet18_ttfnet()
-    image_h, image_w = 512, 512
-    preds = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
-    annotations = torch.FloatTensor([[[113, 120, 183, 255, 5],
-                                      [13, 45, 175, 210, 2]],
-                                     [[11, 18, 223, 225, 1],
-                                      [-1, -1, -1, -1, -1]],
-                                     [[-1, -1, -1, -1, -1],
-                                      [-1, -1, -1, -1, -1]]])
-    decode = TTFNetDecoder(topk=100,
-                           stride=4,
-                           min_score_threshold=0.05,
-                           max_object_num=100)
-    batch_scores, batch_classes, batch_pred_bboxes = decode(preds)
-    print('4444', batch_scores.shape, batch_classes.shape,
-          batch_pred_bboxes.shape)
+    # from simpleAICV.detection.models.ttfnet import resnet18_ttfnet
+    # net = resnet18_ttfnet()
+    # image_h, image_w = 512, 512
+    # preds = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    # annotations = torch.FloatTensor([[[113, 120, 183, 255, 5],
+    #                                   [13, 45, 175, 210, 2]],
+    #                                  [[11, 18, 223, 225, 1],
+    #                                   [-1, -1, -1, -1, -1]],
+    #                                  [[-1, -1, -1, -1, -1],
+    #                                   [-1, -1, -1, -1, -1]]])
+    # decode = TTFNetDecoder(topk=100,
+    #                        stride=4,
+    #                        min_score_threshold=0.05,
+    #                        max_object_num=100)
+    # batch_scores, batch_classes, batch_pred_bboxes = decode(preds)
+    # print('4444', batch_scores.shape, batch_classes.shape,
+    #       batch_pred_bboxes.shape)
 
-    from simpleAICV.detection.models.yolox import yoloxm
-    net = yoloxm()
-    image_h, image_w = 640, 640
-    preds = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
-    decode = YoloxDecoder(strides=[8, 16, 32],
-                          max_object_num=100,
-                          min_score_threshold=0.05,
-                          topn=1000,
-                          nms_type='python_nms',
-                          nms_threshold=0.6)
-    batch_scores, batch_classes, batch_pred_bboxes = decode(preds)
+    from simpleAICV.detection.models.detr import resnet50_detr
+    net = resnet50_detr()
+    image_h, image_w = 800, 800
+    x = torch.randn(4, 3, image_h, image_w)
+    mask = torch.randn(4, image_h, image_w)
+    preds = net(torch.autograd.Variable(x), torch.autograd.Variable(mask))
+    decode = DETRDecoder(num_classes=80,
+                         max_object_num=100,
+                         min_score_threshold=0.05,
+                         topn=100,
+                         nms_type=None,
+                         nms_threshold=0.5)
+    scaled_sizes = torch.tensor([[640, 640], [640, 640], [640, 640],
+                                 [640, 640]])
+    batch_scores, batch_classes, batch_pred_bboxes = decode(
+        preds, scaled_sizes)
     print('5555', batch_scores.shape, batch_classes.shape,
+          batch_pred_bboxes.shape)
+
+    from simpleAICV.detection.models.dinodetr import resnet50_dinodetr
+    net = resnet50_dinodetr().cuda()
+    image_h, image_w = 800, 800
+    x = torch.randn(2, 3, image_h, image_w).cuda()
+    mask = torch.randn(2, image_h, image_w).cuda()
+    preds = net(torch.autograd.Variable(x), torch.autograd.Variable(mask))
+    decode = DINODETRDecoder(max_object_num=100,
+                             min_score_threshold=0.05,
+                             topn=100,
+                             nms_type='python_nms',
+                             nms_threshold=0.5)
+    scaled_sizes = torch.tensor([[640, 640], [640, 640]])
+    batch_scores, batch_classes, batch_pred_bboxes = decode(
+        preds, scaled_sizes)
+    print('6666', batch_scores.shape, batch_classes.shape,
           batch_pred_bboxes.shape)

@@ -10,6 +10,7 @@ __all__ = [
     'MultiClassBCELoss',
     'MultiClassFocalBCELoss',
     'MultiClassOHEMBCELoss',
+    'IoULoss',
     'DiceLoss',
     'LovaszLoss',
 ]
@@ -34,13 +35,13 @@ class CELoss(nn.Module):
         pred = self.softmax(pred)
         pred = torch.clamp(pred, min=1e-4, max=1. - 1e-4)
 
-        pred = pred.view(-1, num_classes)
-        label = label.view(-1)
+        pred = pred.view(-1, num_classes).contiguous()
+        label = label.view(-1).contiguous()
 
         if self.ignore_index:
             filter_mask = (label >= 0) & (label != self.ignore_index)
-            pred = pred[filter_mask]
-            label = label[filter_mask]
+            pred = (pred[filter_mask]).contiguous()
+            label = (label[filter_mask]).contiguous()
 
         one_hot_label = F.one_hot(label.long(),
                                   num_classes=num_classes).float()
@@ -70,13 +71,13 @@ class FocalCELoss(nn.Module):
         pred = self.softmax(pred)
         pred = torch.clamp(pred, min=1e-4, max=1. - 1e-4)
 
-        pred = pred.view(-1, num_classes)
-        label = label.view(-1)
+        pred = pred.view(-1, num_classes).contiguous()
+        label = label.view(-1).contiguous()
 
         if self.ignore_index:
             filter_mask = (label >= 0) & (label != self.ignore_index)
-            pred = pred[filter_mask]
-            label = label[filter_mask]
+            pred = (pred[filter_mask]).contiguous()
+            label = (label[filter_mask]).contiguous()
 
         one_hot_label = F.one_hot(label.long(),
                                   num_classes=num_classes).float()
@@ -112,13 +113,13 @@ class MultiClassBCELoss(nn.Module):
         pred = self.sigmoid(pred)
         pred = torch.clamp(pred, min=1e-4, max=1. - 1e-4)
 
-        pred = pred.view(-1, num_classes)
-        label = label.view(-1)
+        pred = pred.view(-1, num_classes).contiguous()
+        label = label.view(-1).contiguous()
 
         if self.ignore_index:
             filter_mask = (label >= 0) & (label != self.ignore_index)
-            pred = pred[filter_mask]
-            label = label[filter_mask]
+            pred = (pred[filter_mask]).contiguous()
+            label = (label[filter_mask]).contiguous()
 
         loss_ground_truth = F.one_hot(label.long(),
                                       num_classes=num_classes).float()
@@ -152,13 +153,13 @@ class MultiClassFocalBCELoss(nn.Module):
         pred = self.sigmoid(pred)
         pred = torch.clamp(pred, min=1e-4, max=1. - 1e-4)
 
-        pred = pred.view(-1, num_classes)
-        label = label.view(-1)
+        pred = pred.view(-1, num_classes).contiguous()
+        label = label.view(-1).contiguous()
 
         if self.ignore_index:
             filter_mask = (label >= 0) & (label != self.ignore_index)
-            pred = pred[filter_mask]
-            label = label[filter_mask]
+            pred = (pred[filter_mask]).contiguous()
+            label = (label[filter_mask]).contiguous()
 
         device = pred.device
         positive_points_num = (label >= 0).sum()
@@ -206,13 +207,13 @@ class MultiClassOHEMBCELoss(nn.Module):
         pred = self.sigmoid(pred)
         pred = torch.clamp(pred, min=1e-4, max=1. - 1e-4)
 
-        pred = pred.view(-1, num_classes)
-        label = label.view(-1)
+        pred = pred.view(-1, num_classes).contiguous()
+        label = label.view(-1).contiguous()
 
         if self.ignore_index:
             filter_mask = (label >= 0) & (label != self.ignore_index)
-            pred = pred[filter_mask]
-            label = label[filter_mask]
+            pred = (pred[filter_mask]).contiguous()
+            label = (label[filter_mask]).contiguous()
 
         positive_point_mask = (label >= 0).float()
 
@@ -240,6 +241,49 @@ class MultiClassOHEMBCELoss(nn.Module):
         return ohem_bce_loss
 
 
+class IoULoss(nn.Module):
+
+    def __init__(self, logit_type='softmax', ignore_index=None):
+        super(IoULoss, self).__init__()
+        assert logit_type in ['softmax', 'sigmoid']
+        if logit_type == 'softmax':
+            self.logit = nn.Softmax(dim=-1)
+        elif logit_type == 'sigmoid':
+            self.logit = nn.Sigmoid()
+
+        self.ignore_index = ignore_index
+
+    def forward(self, pred, label):
+        # pred shape:[b,c,h,w] -> [b,h,w,c]
+        # label shape:[b,h,w]
+        pred = pred.permute(0, 2, 3, 1).contiguous()
+        num_classes = pred.shape[3]
+
+        pred = self.logit(pred)
+        pred = torch.clamp(pred, min=1e-4, max=1. - 1e-4)
+
+        pred = pred.view(-1, num_classes).contiguous()
+        label = label.view(-1).contiguous()
+
+        if self.ignore_index:
+            filter_mask = (label >= 0) & (label != self.ignore_index)
+            pred = (pred[filter_mask]).contiguous()
+            label = (label[filter_mask]).contiguous()
+
+        loss_ground_truth = F.one_hot(label.long(),
+                                      num_classes=num_classes).float()
+
+        intersection = pred * loss_ground_truth
+
+        iou_loss = 1. - torch.sum(intersection, dim=1) / torch.clamp(
+            (torch.sum(pred, dim=1) + torch.sum(loss_ground_truth, dim=1) -
+             torch.sum(intersection, dim=1)),
+            min=1e-4)
+        iou_loss = iou_loss.mean()
+
+        return iou_loss
+
+
 class DiceLoss(nn.Module):
 
     def __init__(self, logit_type='softmax', smooth=1e-4, ignore_index=None):
@@ -262,13 +306,13 @@ class DiceLoss(nn.Module):
         pred = self.logit(pred)
         pred = torch.clamp(pred, min=1e-4, max=1. - 1e-4)
 
-        pred = pred.view(-1, num_classes)
-        label = label.view(-1)
+        pred = pred.view(-1, num_classes).contiguous()
+        label = label.view(-1).contiguous()
 
         if self.ignore_index:
             filter_mask = (label >= 0) & (label != self.ignore_index)
-            pred = pred[filter_mask]
-            label = label[filter_mask]
+            pred = (pred[filter_mask]).contiguous()
+            label = (label[filter_mask]).contiguous()
 
         loss_ground_truth = F.one_hot(label.long(),
                                       num_classes=num_classes).float()
@@ -300,13 +344,13 @@ class LovaszLoss(nn.Module):
         pred = self.logit(pred)
         pred = torch.clamp(pred, min=1e-4, max=1. - 1e-4)
 
-        pred = pred.view(-1, num_classes)
-        label = label.view(-1)
+        pred = pred.view(-1, num_classes).contiguous()
+        label = label.view(-1).contiguous()
 
         if self.ignore_index:
             filter_mask = (label >= 0) & (label != self.ignore_index)
-            pred = pred[filter_mask]
-            label = label[filter_mask]
+            pred = (pred[filter_mask]).contiguous()
+            label = (label[filter_mask]).contiguous()
 
         lovasz_loss, class_count = 0., 0
         for class_idx in range(1, num_classes + 1):
@@ -368,41 +412,45 @@ if __name__ == '__main__':
     from tqdm import tqdm
 
     from simpleAICV.semantic_segmentation.datasets.ade20kdataset import ADE20KSemanticSegmentation
-    from simpleAICV.semantic_segmentation.common import Resize, RandomCrop, RandomHorizontalFlip, PhotoMetricDistortion, Normalize, SemanticSegmentationCollater
+    from simpleAICV.semantic_segmentation.common import RandomCropResize, RandomHorizontalFlip, PhotoMetricDistortion, Normalize, SemanticSegmentationCollater
 
     ade20kdataset = ADE20KSemanticSegmentation(
         ADE20Kdataset_path,
         image_sets='training',
         reduce_zero_label=True,
         transform=transforms.Compose([
-            Resize(image_scale=(2048, 512),
-                   multi_scale=True,
-                   multi_scale_range=(0.5, 2.0)),
-            RandomCrop(crop_size=(512, 512),
-                       cat_max_ratio=0.75,
-                       ignore_index=255),
+            RandomCropResize(image_scale=(2048, 512),
+                             multi_scale=True,
+                             multi_scale_range=(0.5, 2.0),
+                             crop_size=(512, 512),
+                             cat_max_ratio=0.75,
+                             ignore_index=255),
             RandomHorizontalFlip(prob=0.5),
-            PhotoMetricDistortion(),
+            PhotoMetricDistortion(brightness_delta=32,
+                                  contrast_range=(0.5, 1.5),
+                                  saturation_range=(0.5, 1.5),
+                                  hue_delta=18,
+                                  prob=0.5),
             Normalize(),
         ]))
 
     from torch.utils.data import DataLoader
-    collater = SemanticSegmentationCollater(divisor=32, ignore_index=255)
+    collater = SemanticSegmentationCollater(resize=512, ignore_index=255)
     train_loader = DataLoader(ade20kdataset,
                               batch_size=4,
                               shuffle=True,
                               num_workers=2,
                               collate_fn=collater)
 
-    from simpleAICV.semantic_segmentation.models.unet import unet_1_00
-    net = unet_1_00(backbone_pretrained_path='', num_classes=150)
+    from simpleAICV.semantic_segmentation.models.deeplabv3plus import resnet50backbone_deeplabv3plus
+    net = resnet50backbone_deeplabv3plus(backbone_pretrained_path='',
+                                         num_classes=150)
 
     loss1 = CELoss(ignore_index=255)
     for data in tqdm(train_loader):
         images, masks, scales, sizes = data['image'], data['mask'], data[
             'scale'], data['size']
         print('1111', images.shape, masks.shape, scales.shape, sizes.shape)
-        print('1111', torch.unique(masks))
         preds = net(images)
         out = loss1(preds, masks)
         print('1212', out)
@@ -478,39 +526,63 @@ if __name__ == '__main__':
         print('8989', out)
         break
 
+    loss9 = IoULoss(logit_type='softmax', ignore_index=255)
+    for data in tqdm(train_loader):
+        images, masks, scales, sizes = data['image'], data['mask'], data[
+            'scale'], data['size']
+        print('9999', images.shape, masks.shape, scales.shape, sizes.shape)
+        preds = net(images)
+        out = loss9(preds, masks)
+        print('9191', out)
+        break
+
+    loss10 = IoULoss(logit_type='sigmoid', ignore_index=255)
+    for data in tqdm(train_loader):
+        images, masks, scales, sizes = data['image'], data['mask'], data[
+            'scale'], data['size']
+        print('9999', images.shape, masks.shape, scales.shape, sizes.shape)
+        preds = net(images)
+        out = loss10(preds, masks)
+        print('9292', out)
+        break
+
     ade20kdataset = ADE20KSemanticSegmentation(
         ADE20Kdataset_path,
         image_sets='training',
         reduce_zero_label=False,
         transform=transforms.Compose([
-            Resize(image_scale=(2048, 512),
-                   multi_scale=True,
-                   multi_scale_range=(0.5, 2.0)),
-            RandomCrop(crop_size=(512, 512),
-                       cat_max_ratio=0.75,
-                       ignore_index=None),
+            RandomCropResize(image_scale=(2048, 512),
+                             multi_scale=True,
+                             multi_scale_range=(0.5, 2.0),
+                             crop_size=(512, 512),
+                             cat_max_ratio=0.75,
+                             ignore_index=None),
             RandomHorizontalFlip(prob=0.5),
-            PhotoMetricDistortion(),
+            PhotoMetricDistortion(brightness_delta=32,
+                                  contrast_range=(0.5, 1.5),
+                                  saturation_range=(0.5, 1.5),
+                                  hue_delta=18,
+                                  prob=0.5),
             Normalize(),
         ]))
 
     from torch.utils.data import DataLoader
-    collater = SemanticSegmentationCollater(divisor=32, ignore_index=None)
+    collater = SemanticSegmentationCollater(resize=512, ignore_index=None)
     train_loader = DataLoader(ade20kdataset,
                               batch_size=4,
                               shuffle=True,
                               num_workers=2,
                               collate_fn=collater)
 
-    from simpleAICV.semantic_segmentation.models.unet import unet_1_00
-    net = unet_1_00(backbone_pretrained_path='', num_classes=151)
+    from simpleAICV.semantic_segmentation.models.deeplabv3plus import resnet50backbone_deeplabv3plus
+    net = resnet50backbone_deeplabv3plus(backbone_pretrained_path='',
+                                         num_classes=150)
 
     loss1 = CELoss(ignore_index=None)
     for data in tqdm(train_loader):
         images, masks, scales, sizes = data['image'], data['mask'], data[
             'scale'], data['size']
         print('1111', images.shape, masks.shape, scales.shape, sizes.shape)
-        print('1111', torch.unique(masks))
         preds = net(images)
         out = loss1(preds, masks)
         print('1212', out)
@@ -584,4 +656,24 @@ if __name__ == '__main__':
         preds = net(images)
         out = loss8(preds, masks)
         print('8989', out)
+        break
+
+    loss9 = IoULoss(logit_type='softmax', ignore_index=None)
+    for data in tqdm(train_loader):
+        images, masks, scales, sizes = data['image'], data['mask'], data[
+            'scale'], data['size']
+        print('9999', images.shape, masks.shape, scales.shape, sizes.shape)
+        preds = net(images)
+        out = loss9(preds, masks)
+        print('9191', out)
+        break
+
+    loss10 = IoULoss(logit_type='sigmoid', ignore_index=None)
+    for data in tqdm(train_loader):
+        images, masks, scales, sizes = data['image'], data['mask'], data[
+            'scale'], data['size']
+        print('9999', images.shape, masks.shape, scales.shape, sizes.shape)
+        preds = net(images)
+        out = loss10(preds, masks)
+        print('9292', out)
         break

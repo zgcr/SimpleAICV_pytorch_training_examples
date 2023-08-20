@@ -1,0 +1,1 @@
+OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.run --nproc_per_node=2 --master_addr 127.0.2.2 --master_port 12002 ../../../tools/test_diffusion_model.py --work-dir ./

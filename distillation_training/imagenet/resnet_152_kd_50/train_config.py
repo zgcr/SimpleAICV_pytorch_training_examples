@@ -24,8 +24,8 @@ class config:
     input_image_size = 224
     scale = 256 / 224
 
-    teacher_pretrained_model_path = '/root/code/SimpleAICV-ImageNet-CIFAR-COCO-VOC-training/pretrained_models/classification_training/resnet/resnet152-acc78.006.pth'
-    student_pretrained_model_path = ''
+    teacher_pretrained_model_path = '/root/code/SimpleAICV_pytorch_training_examples_on_ImageNet_COCO_ADE20K/pretrained_models/resnet_train_from_scratch_on_imagenet1k/resnet152-acc77.542.pth'
+    student_pretrained_model_path = '/root/code/SimpleAICV_pytorch_training_examples_on_ImageNet_COCO_ADE20K/pretrained_models/resnet_train_from_scratch_on_imagenet1k/resnet50-acc76.300.pth'
     freeze_teacher = True
     model = KDModel(teacher_type=teacher,
                     student_type=student,
@@ -35,16 +35,13 @@ class config:
                     num_classes=num_classes)
 
     loss_list = ['CELoss', 'KDLoss']
-    alpha = 1.0
-    beta = 0.5
+    loss_ratio = {'CELoss': 1.0, 'KDLoss': 1.0}
+
     T = 1.0
     train_criterion = {}
     for loss_name in loss_list:
         if loss_name in ['KDLoss', 'DMLLoss']:
             train_criterion[loss_name] = losses.__dict__[loss_name](T)
-        elif loss_name in ['DKDLoss']:
-            train_criterion[loss_name] = losses.__dict__[loss_name](alpha,
-                                                                    beta, T)
         else:
             train_criterion[loss_name] = losses.__dict__[loss_name]()
     test_criterion = losses.__dict__['CELoss']()
@@ -77,7 +74,7 @@ class config:
     # batch_size is total size
     batch_size = 256
     # num_workers is total workers
-    num_workers = 16
+    num_workers = 30
     accumulation_steps = 1
 
     optimizer = (
@@ -106,4 +103,10 @@ class config:
     print_interval = 100
 
     sync_bn = False
-    apex = True
+    use_compile = False
+    compile_params = {
+        # 'default': optimizes for large models, low compile-time and no extra memory usage.
+        # 'reduce-overhead': optimizes to reduce the framework overhead and uses some extra memory, helps speed up small models, model update may not correct.
+        # 'max-autotune': optimizes to produce the fastest model, but takes a very long time to compile and may failed.
+        'mode': 'default',
+    }

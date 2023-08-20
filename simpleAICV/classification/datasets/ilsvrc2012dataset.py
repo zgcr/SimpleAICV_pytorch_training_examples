@@ -107,145 +107,151 @@ if __name__ == '__main__':
 
     from simpleAICV.classification.common import Opencv2PIL, PIL2Opencv, TorchRandomResizedCrop, TorchRandomHorizontalFlip, RandomErasing, TorchResize, TorchCenterCrop, Normalize, AutoAugment, RandAugment, ClassificationCollater
 
-    # ilsvrc2012traindataset = ILSVRC2012Dataset(
-    #     root_dir=ILSVRC2012_path,
-    #     set_name='train',
-    #     transform=transforms.Compose([
-    #         Opencv2PIL(),
-    #         TorchRandomResizedCrop(resize=224),
-    #         TorchRandomHorizontalFlip(prob=0.5),
-    #         PIL2Opencv(),
-    #         # Normalize(),
-    #     ]))
+    ilsvrc2012traindataset = ILSVRC2012Dataset(
+        root_dir=ILSVRC2012_path,
+        set_name='train',
+        transform=transforms.Compose([
+            Opencv2PIL(),
+            TorchRandomResizedCrop(resize=224),
+            TorchRandomHorizontalFlip(prob=0.5),
+            PIL2Opencv(),
+            # Normalize(),
+        ]))
 
-    # count = 0
-    # for per_sample in tqdm(ilsvrc2012traindataset):
-    #     print(per_sample['image'].shape, per_sample['label'].shape,
-    #           per_sample['label'], type(per_sample['image']),
-    #           type(per_sample['label']))
+    count = 0
+    for per_sample in tqdm(ilsvrc2012traindataset):
+        print(per_sample['image'].shape, per_sample['label'].shape,
+              per_sample['label'], type(per_sample['image']),
+              type(per_sample['label']))
 
-    #     # temp_dir = './temp'
-    #     # if not os.path.exists(temp_dir):
-    #     #     os.makedirs(temp_dir)
+        # temp_dir = './temp'
+        # if not os.path.exists(temp_dir):
+        #     os.makedirs(temp_dir)
 
-    #     # color = [random.randint(0, 255) for _ in range(3)]
-    #     # image = np.ascontiguousarray(per_sample['image'], dtype=np.uint8)
-    #     # image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-    #     # label = per_sample['label']
-    #     # text = f'label:{int(label)}'
-    #     # cv2.putText(image,
-    #     #             text, (30, 30),
-    #     #             cv2.FONT_HERSHEY_PLAIN,
-    #     #             1.5,
-    #     #             color=color,
-    #     #             thickness=1)
+        # color = [random.randint(0, 255) for _ in range(3)]
+        # image = np.ascontiguousarray(per_sample['image'], dtype=np.uint8)
+        # image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        # label = per_sample['label']
+        # text = f'label:{int(label)}'
+        # cv2.putText(image,
+        #             text, (30, 30),
+        #             cv2.FONT_HERSHEY_PLAIN,
+        #             1.5,
+        #             color=color,
+        #             thickness=1)
 
-    #     # cv2.imencode('.jpg', image)[1].tofile(
-    #     #     os.path.join(temp_dir, f'idx_{count}.jpg'))
+        # cv2.imencode('.jpg', image)[1].tofile(
+        #     os.path.join(temp_dir, f'idx_{count}.jpg'))
 
-    #     if count < 10:
-    #         count += 1
-    #     else:
-    #         break
+        if count < 10:
+            count += 1
+        else:
+            break
 
-    # from torch.utils.data import DataLoader
-    # collater = ClassificationCollater()
-    # train_loader = DataLoader(ilsvrc2012traindataset,
-    #                           batch_size=128,
-    #                           shuffle=True,
-    #                           num_workers=4,
-    #                           collate_fn=collater)
+    from torch.utils.data import DataLoader
+    collater = ClassificationCollater()
+    train_loader = DataLoader(ilsvrc2012traindataset,
+                              batch_size=128,
+                              shuffle=True,
+                              num_workers=4,
+                              collate_fn=collater)
 
-    # count = 0
-    # for data in tqdm(train_loader):
-    #     images, labels = data['image'], data['label']
-    #     print(images.shape, labels.shape)
-    #     print(images.dtype, labels.dtype)
-    #     if count < 10:
-    #         count += 1
-    #     else:
-    #         break
+    count = 0
+    for data in tqdm(train_loader):
+        images, labels = data['image'], data['label']
+        print(images.shape, labels.shape)
+        print(images.dtype, labels.dtype)
+        if count < 10:
+            count += 1
+        else:
+            break
 
-    # ilsvrc2012valdataset = ILSVRC2012Dataset(root_dir=ILSVRC2012_path,
-    #                                          set_name='val',
-    #                                          transform=transforms.Compose([
-    #                                              Opencv2PIL(),
-    #                                              TorchResize(resize=256),
-    #                                              TorchCenterCrop(resize=224),
-    #                                              PIL2Opencv(),
-    #                                              Normalize(),
-    #                                          ]))
+    ilsvrc2012valdataset = ILSVRC2012Dataset(root_dir=ILSVRC2012_path,
+                                             set_name='val',
+                                             transform=transforms.Compose([
+                                                 Opencv2PIL(),
+                                                 TorchResize(resize=256),
+                                                 TorchCenterCrop(resize=224),
+                                                 PIL2Opencv(),
+                                                 Normalize(),
+                                             ]))
 
-    # count = 0
-    # for per_sample in tqdm(ilsvrc2012valdataset):
-    #     print(per_sample['image'].shape, per_sample['label'].shape,
-    #           per_sample['label'], type(per_sample['image']),
-    #           type(per_sample['label']))
+    count = 0
+    for per_sample in tqdm(ilsvrc2012valdataset):
+        print(per_sample['image'].shape, per_sample['label'].shape,
+              per_sample['label'], type(per_sample['image']),
+              type(per_sample['label']))
 
-    #     if count < 10:
-    #         count += 1
-    #     else:
-    #         break
+        if count < 10:
+            count += 1
+        else:
+            break
 
-    # from torch.utils.data import DataLoader
-    # collater = ClassificationCollater()
-    # val_loader = DataLoader(ilsvrc2012valdataset,
-    #                         batch_size=128,
-    #                         shuffle=False,
-    #                         num_workers=4,
-    #                         collate_fn=collater)
+    from torch.utils.data import DataLoader
+    collater = ClassificationCollater()
+    val_loader = DataLoader(ilsvrc2012valdataset,
+                            batch_size=128,
+                            shuffle=False,
+                            num_workers=4,
+                            collate_fn=collater)
 
-    # count = 0
-    # for data in tqdm(val_loader):
-    #     images, labels = data['image'], data['label']
-    #     print(images.shape, labels.shape)
-    #     print(images.dtype, labels.dtype)
-    #     if count < 10:
-    #         count += 1
-    #     else:
-    #         break
+    count = 0
+    for data in tqdm(val_loader):
+        images, labels = data['image'], data['label']
+        print(images.shape, labels.shape)
+        print(images.dtype, labels.dtype)
+        if count < 10:
+            count += 1
+        else:
+            break
 
-    # ilsvrc2012traindataset = ILSVRC2012Dataset(
-    #     root_dir=ILSVRC2012_path,
-    #     set_name='train',
-    #     transform=transforms.Compose([
-    #         Opencv2PIL(),
-    #         TorchRandomResizedCrop(resize=224),
-    #         TorchRandomHorizontalFlip(prob=0.5),
-    #         # AutoAugment(),
-    #         RandAugment(N=2, M=10),
-    #         PIL2Opencv(),
-    #         Normalize(),
-    #     ]))
+    ilsvrc2012traindataset = ILSVRC2012Dataset(
+        root_dir=ILSVRC2012_path,
+        set_name='train',
+        transform=transforms.Compose([
+            Opencv2PIL(),
+            TorchRandomResizedCrop(resize=224),
+            TorchRandomHorizontalFlip(prob=0.5),
+            RandAugment(magnitude=9,
+                        num_layers=2,
+                        resize=224,
+                        mean=[0.485, 0.456, 0.406],
+                        integer=True,
+                        weight_idx=None,
+                        magnitude_std=0.5,
+                        magnitude_max=None),
+            PIL2Opencv(),
+            Normalize(),
+        ]))
 
-    # count = 0
-    # for per_sample in tqdm(ilsvrc2012traindataset):
-    #     print(per_sample['image'].shape, per_sample['label'].shape,
-    #           per_sample['label'], type(per_sample['image']),
-    #           type(per_sample['label']))
+    count = 0
+    for per_sample in tqdm(ilsvrc2012traindataset):
+        print(per_sample['image'].shape, per_sample['label'].shape,
+              per_sample['label'], type(per_sample['image']),
+              type(per_sample['label']))
 
-    #     if count < 10:
-    #         count += 1
-    #     else:
-    #         break
+        if count < 10:
+            count += 1
+        else:
+            break
 
-    # from torch.utils.data import DataLoader
-    # collater = ClassificationCollater()
-    # train_loader = DataLoader(ilsvrc2012traindataset,
-    #                           batch_size=128,
-    #                           shuffle=True,
-    #                           num_workers=4,
-    #                           collate_fn=collater)
+    from torch.utils.data import DataLoader
+    collater = ClassificationCollater()
+    train_loader = DataLoader(ilsvrc2012traindataset,
+                              batch_size=128,
+                              shuffle=True,
+                              num_workers=4,
+                              collate_fn=collater)
 
-    # count = 0
-    # for data in tqdm(train_loader):
-    #     images, labels = data['image'], data['label']
-    #     print(images.shape, labels.shape)
-    #     print(images.dtype, labels.dtype)
-    #     if count < 10:
-    #         count += 1
-    #     else:
-    #         break
+    count = 0
+    for data in tqdm(train_loader):
+        images, labels = data['image'], data['label']
+        print(images.shape, labels.shape)
+        print(images.dtype, labels.dtype)
+        if count < 10:
+            count += 1
+        else:
+            break
 
     ilsvrc2012traindataset = ILSVRC2012Dataset(
         root_dir=ILSVRC2012_path,
@@ -295,10 +301,10 @@ if __name__ == '__main__':
                                                  mixup_alpha=0.8,
                                                  cutmix_alpha=1.0,
                                                  cutmix_minmax=None,
-                                                 mix_prob=1.0,
-                                                 mixup_switch_prob=0.5,
+                                                 mixup_cutmix_prob=1.0,
+                                                 switch_to_cutmix_prob=0.5,
                                                  mode='batch',
-                                                 correct_lambda=True,
+                                                 correct_lam=True,
                                                  label_smoothing=0.1,
                                                  num_classes=1000)
     train_loader = DataLoader(ilsvrc2012traindataset,

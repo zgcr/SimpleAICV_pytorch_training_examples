@@ -60,7 +60,7 @@ if __name__ == '__main__':
     from simpleAICV.classification import backbones
     from simpleAICV.classification.common import load_state_dict
 
-    trained_model_path = '/root/code/SimpleAICV-ImageNet-CIFAR-COCO-VOC-training/classification_training/imagenet/repvgg_a2/checkpoints/RepVGG_A2-acc76.034.pth'
+    trained_model_path = '/root/code/SimpleAICV_pytorch_training_examples_on_ImageNet_COCO_ADE20K/classification_training/imagenet/repvgg_a2/checkpoints/RepVGG_A2-acc76.078.pth'
 
     model_name = trained_model_path.split("/")[-1].rstrip(
         '.pth') + "_deployed.pth"

@@ -32,8 +32,7 @@ class config:
     })
 
     # load pretrained model or not
-    trained_model_path = '/root/code/SimpleAICV-ImageNet-CIFAR-COCO-VOC-training/classification_training/imagenet/repvgg_b1/checkpoints/RepVGG_B1-acc77.804_deployed.pth'
-    # trained_model_path = os.path.join(BASE_DIR, '')
+    trained_model_path = ''
     load_state_dict(trained_model_path, model)
 
     test_criterion = losses.__dict__['CELoss']()

@@ -14,9 +14,7 @@ from simpleAICV.semantic_segmentation.models import backbones
 
 __all__ = [
     'resnet18backbone_deeplabv3plus',
-    'resnet34halfbackbone_deeplabv3plus',
     'resnet34backbone_deeplabv3plus',
-    'resnet50halfbackbone_deeplabv3plus',
     'resnet50backbone_deeplabv3plus',
     'resnet101backbone_deeplabv3plus',
     'resnet152backbone_deeplabv3plus',
@@ -274,38 +272,12 @@ def resnet18backbone_deeplabv3plus(c1_planes=64,
                           **kwargs)
 
 
-def resnet34halfbackbone_deeplabv3plus(c1_planes=64,
-                                       planes=256,
-                                       output_stride=8,
-                                       backbone_pretrained_path='',
-                                       **kwargs):
-    return _deeplabv3plus('resnet34halfbackbone',
-                          backbone_pretrained_path=backbone_pretrained_path,
-                          c1_planes=c1_planes,
-                          planes=planes,
-                          output_stride=output_stride,
-                          **kwargs)
-
-
 def resnet34backbone_deeplabv3plus(c1_planes=64,
                                    planes=256,
                                    output_stride=8,
                                    backbone_pretrained_path='',
                                    **kwargs):
     return _deeplabv3plus('resnet34backbone',
-                          backbone_pretrained_path=backbone_pretrained_path,
-                          c1_planes=c1_planes,
-                          planes=planes,
-                          output_stride=output_stride,
-                          **kwargs)
-
-
-def resnet50halfbackbone_deeplabv3plus(c1_planes=64,
-                                       planes=256,
-                                       output_stride=8,
-                                       backbone_pretrained_path='',
-                                       **kwargs):
-    return _deeplabv3plus('resnet50halfbackbone',
                           backbone_pretrained_path=backbone_pretrained_path,
                           c1_planes=c1_planes,
                           planes=planes,
@@ -367,17 +339,6 @@ if __name__ == '__main__':
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
-
-    net = resnet18backbone_deeplabv3plus()
-    image_h, image_w = 512, 512
-    from thop import profile
-    from thop import clever_format
-    macs, params = profile(net,
-                           inputs=(torch.randn(1, 3, image_h, image_w), ),
-                           verbose=False)
-    macs, params = clever_format([macs, params], '%.3f')
-    out = net(torch.autograd.Variable(torch.randn(6, 3, image_h, image_w)))
-    print(f'1111, macs: {macs}, params: {params},out_shape: {out.shape}')
 
     net = resnet50backbone_deeplabv3plus()
     image_h, image_w = 512, 512

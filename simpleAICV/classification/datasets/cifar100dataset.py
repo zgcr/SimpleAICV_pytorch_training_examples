@@ -1,3 +1,5 @@
+import cv2
+
 import os
 import pickle
 import numpy as np
@@ -9,6 +11,7 @@ class CIFAR100Dataset(Dataset):
     '''
     CIFAR100 Dataset:https://www.cs.toronto.edu/~kriz/cifar.html
     '''
+
     def __init__(self, root_dir, set_name='train', transform=None):
         assert set_name in ['train', 'test'], 'Wrong set name!'
         set_data_file_path = os.path.join(root_dir, set_name)
@@ -19,6 +22,8 @@ class CIFAR100Dataset(Dataset):
             set_data = pickle.load(f1, encoding='latin1')
             self.images = np.array(set_data['data'])
             self.labels = np.array(set_data['fine_labels'])
+
+        # RGB image
         # [50000,3072]->[50000,3,32,32]->[50000,32,32,3] B H W 3
         self.images = self.images.reshape(-1, 3, 32, 32).transpose(
             (0, 2, 3, 1))
@@ -100,7 +105,7 @@ if __name__ == '__main__':
             TorchRandomHorizontalFlip(prob=0.5),
             TorchRandomCrop(32),
             PIL2Opencv(),
-            Normalize(),
+            # Normalize(),
         ]))
 
     count = 0
@@ -108,6 +113,25 @@ if __name__ == '__main__':
         print(per_sample['image'].shape, per_sample['label'].shape,
               per_sample['label'], type(per_sample['image']),
               type(per_sample['label']))
+
+        # temp_dir = './temp'
+        # if not os.path.exists(temp_dir):
+        #     os.makedirs(temp_dir)
+
+        # color = [random.randint(0, 255) for _ in range(3)]
+        # image = np.ascontiguousarray(per_sample['image'], dtype=np.uint8)
+        # image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        # label = per_sample['label']
+        # text = f'label:{int(label)}'
+        # cv2.putText(image,
+        #             text, (30, 30),
+        #             cv2.FONT_HERSHEY_PLAIN,
+        #             1.5,
+        #             color=color,
+        #             thickness=1)
+
+        # cv2.imencode('.jpg', image)[1].tofile(
+        #     os.path.join(temp_dir, f'idx_{count}.jpg'))
 
         if count < 10:
             count += 1
