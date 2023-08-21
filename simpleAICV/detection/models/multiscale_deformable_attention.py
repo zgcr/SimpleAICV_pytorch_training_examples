@@ -7,7 +7,12 @@ import torch.nn.functional as F
 from torch.autograd import Function
 from torch.autograd.function import once_differentiable
 
-import MultiScaleDeformableAttention
+try:
+    import MultiScaleDeformableAttention
+except ImportError:
+    raise Exception(
+        'MultiScaleDeformableAttention packge is not installed correctly! If you want to use DNIO-DETR model, compile MultiScaleDeformableAttention packge.'
+    )
 
 
 class MSDeformAttnFunction(Function):

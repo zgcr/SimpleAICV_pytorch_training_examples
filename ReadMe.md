@@ -190,9 +190,19 @@ chmod +x make.sh
 # Download my pretrained models and experiments records
 
 You can download all my pretrained models and all my experiments records/checkpoints from huggingface or Baidu-Netdisk.
+
+If you only want to download all my pretrained models(model.state_dict()),you can download pretrained_models folder.
+
 ```
 # huggingface
-coming soon.
+https://huggingface.co/zgcr654321/classification_training/tree/main
+https://huggingface.co/zgcr654321/contrastive_learning_training/tree/main
+https://huggingface.co/zgcr654321/detection_training/tree/main
+https://huggingface.co/zgcr654321/diffusion_model_training/tree/main
+https://huggingface.co/zgcr654321/distillation_training/tree/main
+https://huggingface.co/zgcr654321/masked_image_modeling_training/tree/main
+https://huggingface.co/zgcr654321/semantic_segmentation_training/tree/main
+https://huggingface.co/zgcr654321/pretrained_models/tree/main
 
 # Baidu-Netdisk
 链接：https://pan.baidu.com/s/1yhEwaZhrb2NZRpJ5eEqHBw 

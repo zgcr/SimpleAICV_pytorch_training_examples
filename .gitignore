@@ -11,3 +11,4 @@ res50_detr_yoloresize1024
 res50_dinodetr_yoloresize1024
 z_detr_main
 z_dino_main
+z_yolact_main
