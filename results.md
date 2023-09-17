@@ -42,6 +42,7 @@
 
 
 
+
 # Image classification task results
 
 **ResNet**
@@ -350,6 +351,8 @@ Paper:https://arxiv.org/abs/2104.14294
 
 | Network       | input size | gpu num     | batch | epochs | Loss  |
 | ------------- | ---------- | ----------- | ----- | ------ | ----- |
+| ResNet18-DINO | 224x224    | 4 RTX A5000 | 256   | 400    | 3.081 |
+| ResNet34-DINO | 224x224    | 4 RTX A5000 | 256   | 400    | 2.425 |
 | ResNet50-DINO | 224x224    | 4 RTX A5000 | 256   | 400    | 1.997 |
 
 You can find more model training details in contrastive_learning_training/imagenet/.
