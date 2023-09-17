@@ -77,6 +77,8 @@ RetinaNet
 FCOS
 CenterNet
 TTFNet
+DETR
+DINO-DETR
 ```
 
 ## Semantic segmentation task

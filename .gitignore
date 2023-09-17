@@ -6,8 +6,6 @@ log
 *.log
 flagged
 pretrained_models
-res50_detr_retinaresize800
-res50_dinodetr_retinaresize800
 z_solov2_main
 z_yolact_main
 weights

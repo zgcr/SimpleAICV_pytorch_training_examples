@@ -41,6 +41,7 @@
 
 
 
+
 # Image classification task results
 
 **ResNet**
@@ -203,6 +204,14 @@ Paper:https://arxiv.org/abs/1904.07850
 
 Paper:https://arxiv.org/abs/1909.00700
 
+**DETR**
+
+Paper:https://arxiv.org/abs/2005.12872
+
+**DINO-DETR**
+
+Paper:https://arxiv.org/abs/2203.03605
+
 ## All detection models training from scratch on COCO2017
 
 ResNet50 backbone using DINO pretrained weight on ImageNet1K.
@@ -221,6 +230,9 @@ mAP is IoU=0.5:0.95,area=all,maxDets=100,mAP(COCOeval,stats[0]).
 | ResNet50-FCOS         | RetinaStyle-800 | 800x1333   | 214.406G | 32.291M | 2 RTX A5000 | 8     | 13     | 39.649 |
 | ResNet18DCN-CenterNet | YoloStyle-512   | 512x512    | 14.854G  | 12.889M | 2 RTX A5000 | 64    | 140    | 26.209 |
 | ResNet18DCN-TTFNet-3x | YoloStyle-512   | 512x512    | 16.063G  | 13.737M | 2 RTX A5000 | 64    | 39     | 27.054 |
+| ResNet50-DETR         | YoloStyle-1024  | 1024x1024  | 89.577G  | 30.440M | 8 RTX A5000 | 64    | 500    | 36.941 |
+| ResNet50-DINO-DETR    | YoloStyle-1024  | 1024x1024  | 844.204G | 47.082M | 8 RTX A5000 | 16    | 13     | 42.870 |
+| ResNet50-DINO-DETR    | YoloStyle-1024  | 1024x1024  | 844.204G | 47.082M | 8 RTX A5000 | 16    | 39     | 45.445 |
 
 You can find more model training details in detection_training/coco/.
 

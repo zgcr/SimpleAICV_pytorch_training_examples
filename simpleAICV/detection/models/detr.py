@@ -409,7 +409,7 @@ if __name__ == '__main__':
                                     RandomCrop(prob=0.5),
                                     RandomTranslate(prob=0.5),
                                     DetectionResize(
-                                        resize=800,
+                                        resize=1024,
                                         stride=32,
                                         resize_type='yolo_style',
                                         multi_scale=False,
@@ -418,7 +418,7 @@ if __name__ == '__main__':
                                 ]))
 
     from torch.utils.data import DataLoader
-    collater = DETRDetectionCollater(resize=800,
+    collater = DETRDetectionCollater(resize=1024,
                                      resize_type='yolo_style',
                                      max_annots_num=100)
     train_loader = DataLoader(cocodataset,
@@ -437,7 +437,7 @@ if __name__ == '__main__':
         print('0000', images.dtype, annots.dtype, masks.dtype, scales.dtype,
               sizes.dtype)
 
-        image_h, image_w = 800, 800
+        image_h, image_w = 1024, 1024
         from thop import profile
         from thop import clever_format
         macs, params = profile(net, inputs=(images, masks), verbose=False)
