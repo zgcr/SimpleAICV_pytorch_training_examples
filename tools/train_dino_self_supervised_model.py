@@ -115,7 +115,7 @@ class Scheduler:
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description='PyTorch Self Supervised Learning Training')
+        description='PyTorch DINO Self Supervised Learning Training')
     parser.add_argument(
         '--work-dir',
         type=str,

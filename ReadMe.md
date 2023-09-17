@@ -4,8 +4,9 @@
   - [Object detection task](#object-detection-task)
   - [Semantic segmentation task](#semantic-segmentation-task)
   - [Knowledge distillation task](#knowledge-distillation-task)
-  - [Csontrastive learning task](#csontrastive-learning-task)
+  - [Contrastive learning task](#contrastive-learning-task)
   - [Masked image modeling task](#masked-image-modeling-task)
+  - [Image inpainting task](#image-inpainting-task)
   - [diffusion model task](#diffusion-model-task)
 - [All task training results](#all-task-training-results)
 - [Environments](#environments)
@@ -21,6 +22,7 @@
   - [ADE20K](#ade20k)
   - [CelebA-HQ](#celeba-hq)
   - [FFHQ](#ffhq)
+  - [Places365-standard/challenge](#places365-standardchallenge)
 - [How to train and test model](#how-to-train-and-test-model)
 - [Citation](#citation)
 
@@ -39,6 +41,7 @@ Semantic segmentation task
 Knowledge distillation task
 Contrastive learning task
 Masked image modeling task
+image inpainting task
 diffusion model task
 ```
 ## Image classification task
@@ -103,7 +106,7 @@ DML loss(for ResNet)
 ```
 
 
-## Csontrastive learning task
+## Contrastive learning task
 
 **support dataset:**
 ```
@@ -125,6 +128,20 @@ ImageNet1K(ILSVRC2012)
 **support network:**
 ```
 MAE(for ViT)
+```
+
+## Image inpainting task
+
+**support dataset:**
+```
+CelebA-HQ
+Places365-standard
+Places365-challenge
+```
+
+**support network:**
+```
+AOT-GAN
 ```
 
 ## diffusion model task
@@ -171,6 +188,7 @@ pycocotools
 opencv-python
 scipy
 eniops
+scikit-image
 tqdm
 onnx
 onnx-simplifier
@@ -179,9 +197,9 @@ gradio==3.32.0
 yapf
 ```
 
-**Install MultiScaleDeformableAttention Packge in your Python environment:**
+**If you want to use dino-detr model,install MultiScaleDeformableAttention Packge in your Python environment:**
 
-cd to SimpleAICV_pytorch_training_examples_on_ImageNet_COCO_ADE20K/simpleAICV/detection/compile_multiscale_deformable_attention,then run commands:
+cd to simpleAICV/detection/compile_multiscale_deformable_attention,then run commands:
 ```
 chmod +x make.sh
 ./make.sh
@@ -198,6 +216,7 @@ If you only want to download all my pretrained models(model.state_dict()),you ca
 https://huggingface.co/zgcr654321/classification_training/tree/main
 https://huggingface.co/zgcr654321/contrastive_learning_training/tree/main
 https://huggingface.co/zgcr654321/detection_training/tree/main
+https://huggingface.co/zgcr654321/image_inpainting_training/tree/main
 https://huggingface.co/zgcr654321/diffusion_model_training/tree/main
 https://huggingface.co/zgcr654321/distillation_training/tree/main
 https://huggingface.co/zgcr654321/masked_image_modeling_training/tree/main
@@ -345,6 +364,17 @@ FFHQ
 |---images
 |---ffhq-dataset-v1.json
 |---ffhq-dataset-v2.json
+```
+
+## Places365-standard/challenge
+
+Make sure the folder architecture as follows:
+```
+Places365-standard/challenge
+|
+|                            |---train_large all sub folders
+|---high_resolution_images---|---val_large   all images
+|                            |---test_large  all images
 ```
 
 # How to train and test model

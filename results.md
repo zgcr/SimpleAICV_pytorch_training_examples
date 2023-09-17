@@ -28,11 +28,16 @@
   - [ViT MAE pretrain on ImageNet1K(ILSVRC2012)](#vit-mae-pretrain-on-imagenet1kilsvrc2012)
   - [ViT finetune from self-trained MAE pretrain weight(400epoch) on ImageNet1K(ILSVRC2012)](#vit-finetune-from-self-trained-mae-pretrain-weight400epoch-on-imagenet1kilsvrc2012-1)
   - [ViT finetune from offical MAE pretrain weight(800 epoch) on ImageNet1K(ILSVRC2012)](#vit-finetune-from-offical-mae-pretrain-weight800-epoch-on-imagenet1kilsvrc2012-1)
+- [Image inpainting model task results](#image-inpainting-model-task-results)
+  - [All image inpainting model training from scratch on CelebA-HQ](#all-image-inpainting-model-training-from-scratch-on-celeba-hq)
+  - [All image inpainting model training from scratch on Places365-standard](#all-image-inpainting-model-training-from-scratch-on-places365-standard)
+  - [All image inpainting model training from scratch on Places365-challenge](#all-image-inpainting-model-training-from-scratch-on-places365-challenge)
 - [Diffusion model task results](#diffusion-model-task-results)
   - [All diffusion model with different sampling methods on CIFAR10](#all-diffusion-model-with-different-sampling-methods-on-cifar10)
   - [All diffusion model with different sampling methods on CIFAR100](#all-diffusion-model-with-different-sampling-methods-on-cifar100)
   - [All diffusion model with different sampling methods on CelebA-HQ](#all-diffusion-model-with-different-sampling-methods-on-celeba-hq)
   - [All diffusion model with different sampling methods on FFHQ](#all-diffusion-model-with-different-sampling-methods-on-ffhq)
+
 
 
 
@@ -379,6 +384,78 @@ You can find more model training details in classification_training/imagenet/.
 | ViT-Large-Patch16 | 59.647G | 304.024M | 224x224    | 2 RTX A5000 | 4096  | 100    | 85.876 |
 
 You can find more model training details in classification_training/imagenet/.
+
+# Image inpainting model task results
+
+**Aggregated Contextual Transformations for High-Resolution Image Inpainting**
+
+Paper:https://arxiv.org/abs/2104.01431
+
+## All image inpainting model training from scratch on CelebA-HQ
+
+Trained image inpainting model on CelebA-HQ dataset.Test image num=2000.
+
+| Network | input size | epochs | Mask     | mae    | psnr   | ssim   | fid    |
+| ------- | ---------- | ------ | -------- | ------ | ------ | ------ | ------ |
+| AOT-GAN | 512x512    | 100    | 0.01-0.1 | 0.0023 | 40.329 | 0.9858 | 0.7849 |
+| AOT-GAN | 512x512    | 100    | 0.1-0.2  | 0.0064 | 33.598 | 0.9599 | 2.1839 |
+| AOT-GAN | 512x512    | 100    | 0.2-0.3  | 0.0124 | 29.861 | 0.9253 | 3.8720 |
+| AOT-GAN | 512x512    | 100    | 0.3-0.4  | 0.0195 | 27.198 | 0.8866 | 5.7180 |
+| AOT-GAN | 512x512    | 100    | 0.4-0.5  | 0.0285 | 24.970 | 0.8424 | 8.7763 |
+| AOT-GAN | 512x512    | 100    | 0.5-0.6  | 0.0497 | 21.422 | 0.7682 | 15.476 |
+
+You can find more model training details in image_inpainting_training/celebahq/.
+
+## All image inpainting model training from scratch on Places365-standard
+
+Trained image inpainting model on Places365-standard dataset.Test image num=36500.
+
+| Network | input size | epochs | Mask     | mae    | psnr   | ssim   | fid    |
+| ------- | ---------- | ------ | -------- | ------ | ------ | ------ | ------ |
+| AOT-GAN | 512x512    | 100    | 0.01-0.1 | 0.0041 | 35.479 | 0.9772 | 0.1518 |
+| AOT-GAN | 512x512    | 100    | 0.1-0.2  | 0.0114 | 29.276 | 0.9378 | 0.5504 |
+| AOT-GAN | 512x512    | 100    | 0.2-0.3  | 0.0213 | 25.858 | 0.8866 | 1.4065 |
+| AOT-GAN | 512x512    | 100    | 0.3-0.4  | 0.0328 | 23.470 | 0.8314 | 2.9936 |
+| AOT-GAN | 512x512    | 100    | 0.4-0.5  | 0.0463 | 21.590 | 0.7711 | 5.8776 |
+| AOT-GAN | 512x512    | 100    | 0.5-0.6  | 0.0720 | 19.029 | 0.6851 | 16.803 |
+
+
+| Network       | input size | epochs | Mask     | mae    | psnr   | ssim   | fid    |
+| ------------- | ---------- | ------ | -------- | ------ | ------ | ------ | ------ |
+| AOT-GAN-light | 512x512    | 100    | 0.01-0.1 | 0.0044 | 34.932 | 0.9754 | 0.1946 |
+| AOT-GAN-light | 512x512    | 100    | 0.1-0.2  | 0.0122 | 28.858 | 0.9336 | 0.7815 |
+| AOT-GAN-light | 512x512    | 100    | 0.2-0.3  | 0.0225 | 25.526 | 0.8805 | 2.1669 |
+| AOT-GAN-light | 512x512    | 100    | 0.3-0.4  | 0.0345 | 23.196 | 0.8238 | 4.8066 |
+| AOT-GAN-light | 512x512    | 100    | 0.4-0.5  | 0.0485 | 21.362 | 0.7625 | 9.5062 |
+| AOT-GAN-light | 512x512    | 100    | 0.5-0.6  | 0.0747 | 18.879 | 0.6771 | 24.950 |
+
+You can find more model training details in image_inpainting_training/places365_standard.
+
+
+## All image inpainting model training from scratch on Places365-challenge
+
+Trained image inpainting model on Places365-challenge dataset.Test image num=36500.
+
+| Network | input size | epochs | Mask     | mae    | psnr   | ssim   | fid    |
+| ------- | ---------- | ------ | -------- | ------ | ------ | ------ | ------ |
+| AOT-GAN | 512x512    | 100    | 0.01-0.1 | 0.0040 | 35.596 | 0.9775 | 0.1396 |
+| AOT-GAN | 512x512    | 100    | 0.1-0.2  | 0.0113 | 29.338 | 0.9382 | 0.4866 |
+| AOT-GAN | 512x512    | 100    | 0.2-0.3  | 0.0212 | 25.882 | 0.8868 | 1.2023 |
+| AOT-GAN | 512x512    | 100    | 0.3-0.4  | 0.0327 | 23.464 | 0.8309 | 2.4987 |
+| AOT-GAN | 512x512    | 100    | 0.4-0.5  | 0.0462 | 21.566 | 0.7696 | 4.9181 |
+| AOT-GAN | 512x512    | 100    | 0.5-0.6  | 0.0721 | 18.974 | 0.6804 | 14.437 |
+
+
+| Network       | input size | epochs | Mask     | mae    | psnr   | ssim   | fid    |
+| ------------- | ---------- | ------ | -------- | ------ | ------ | ------ | ------ |
+| AOT-GAN-light | 512x512    | 100    | 0.01-0.1 | 0.0042 | 35.217 | 0.9763 | 0.1695 |
+| AOT-GAN-light | 512x512    | 100    | 0.1-0.2  | 0.0118 | 29.055 | 0.9356 | 0.6544 |
+| AOT-GAN-light | 512x512    | 100    | 0.2-0.3  | 0.0219 | 25.659 | 0.8835 | 1.7514 |
+| AOT-GAN-light | 512x512    | 100    | 0.3-0.4  | 0.0336 | 23.281 | 0.8275 | 3.8301 |
+| AOT-GAN-light | 512x512    | 100    | 0.4-0.5  | 0.0474 | 21.409 | 0.7665 | 7.5940 |
+| AOT-GAN-light | 512x512    | 100    | 0.5-0.6  | 0.0739 | 18.853 | 0.6803 | 20.025 |
+
+You can find more model training details in image_inpainting_training/places365_challenge.
 
 # Diffusion model task results
 

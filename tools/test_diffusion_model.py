@@ -23,7 +23,7 @@ from tools.utils import get_logger, set_seed
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description='PyTorch Classification Testing')
+        description='PyTorch Diffusion Model Testing')
     parser.add_argument('--work-dir',
                         type=str,
                         help='path for get testing config')

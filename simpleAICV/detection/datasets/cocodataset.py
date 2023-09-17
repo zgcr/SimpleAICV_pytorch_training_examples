@@ -607,7 +607,7 @@ if __name__ == '__main__':
     import torchvision.transforms as transforms
     from tqdm import tqdm
 
-    from simpleAICV.detection.common import RandomHorizontalFlip, RandomCrop, RandomTranslate, Normalize, DetectionResize, DetectionCollater, DETRDetectionCollater
+    from simpleAICV.detection.common import RandomHorizontalFlip, RandomCrop, RandomTranslate, Normalize, DetectionResize, DetectionCollater, BatchAlignDETRDetectionCollater
 
     # cocodataset = CocoDetection(
     #     COCO2017_path,
@@ -760,178 +760,31 @@ if __name__ == '__main__':
     #     else:
     #         break
 
-    mosaiccocodataset = MosaicResizeCocoDetection(
-        COCO2017_path,
-        set_name='train2017',
-        resize=640,
-        stride=32,
-        use_multi_scale=True,
-        multi_scale_range=[0.5, 2.0],
-        mosaic_prob=0.5,
-        mosaic_multi_scale_range=[0.4, 1.0],
-        mixup_prob=0.5,
-        mixup_ratio=[0.5, 0.5],
-        current_epoch=1,
-        stop_mosaic_epoch=100,
-        transform=transforms.Compose([
-            RandomHorizontalFlip(prob=0.5),
-            RandomCrop(prob=0.5),
-            RandomTranslate(prob=0.5),
-            # Normalize(),
-        ]))
-
-    count = 0
-    for per_sample in tqdm(mosaiccocodataset):
-        print('3333', per_sample['image'].shape, per_sample['annots'].shape,
-              per_sample['scale'], per_sample['size'])
-        print('3333', per_sample['image'].dtype, per_sample['annots'].dtype,
-              per_sample['scale'].dtype, per_sample['size'].dtype)
-
-        temp_dir = './temp'
-        if not os.path.exists(temp_dir):
-            os.makedirs(temp_dir)
-
-        image = np.ascontiguousarray(per_sample['image'], dtype=np.uint8)
-        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-        annots = per_sample['annots']
-
-        # draw all label boxes
-        for per_annot in annots:
-            per_box = (per_annot[0:4]).astype(np.int32)
-            per_box_class_index = per_annot[4].astype(np.int32)
-            class_name, class_color = COCO_CLASSES[
-                per_box_class_index], COCO_CLASSES_COLOR[per_box_class_index]
-            left_top, right_bottom = (per_box[0], per_box[1]), (per_box[2],
-                                                                per_box[3])
-            cv2.rectangle(image,
-                          left_top,
-                          right_bottom,
-                          color=class_color,
-                          thickness=2,
-                          lineType=cv2.LINE_AA)
-
-            text = f'{class_name}'
-            text_size = cv2.getTextSize(text, 0, 0.5, thickness=1)[0]
-            fill_right_bottom = (max(left_top[0] + text_size[0],
-                                     right_bottom[0]),
-                                 left_top[1] - text_size[1] - 3)
-            cv2.rectangle(image,
-                          left_top,
-                          fill_right_bottom,
-                          color=class_color,
-                          thickness=-1,
-                          lineType=cv2.LINE_AA)
-            cv2.putText(image,
-                        text, (left_top[0], left_top[1] - 2),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        0.5,
-                        color=(0, 0, 0),
-                        thickness=1,
-                        lineType=cv2.LINE_AA)
-
-        cv2.imencode('.jpg', image)[1].tofile(
-            os.path.join(temp_dir, f'idx_{count}.jpg'))
-
-        if count < 10:
-            count += 1
-        else:
-            break
-
-    from torch.utils.data import DataLoader
-    collater = DetectionCollater(resize=1280,
-                                 resize_type='yolo_style',
-                                 max_annots_num=100)
-    mosaic_train_loader = DataLoader(mosaiccocodataset,
-                                     batch_size=4,
-                                     shuffle=True,
-                                     num_workers=2,
-                                     collate_fn=collater)
-
-    count = 0
-    for data in tqdm(mosaic_train_loader):
-        images, annots, scales, sizes = data['image'], data['annots'], data[
-            'scale'], data['size']
-        print('4444', images.shape, annots.shape, scales.shape, sizes.shape)
-        print('4444', images.dtype, annots.dtype, scales.dtype, sizes.dtype)
-
-        temp_dir = './temp2'
-        if not os.path.exists(temp_dir):
-            os.makedirs(temp_dir)
-
-        images = images.permute(0, 2, 3, 1).cpu().numpy()
-        annots = annots.cpu().numpy()
-
-        for i, (per_image, per_image_annot) in enumerate(zip(images, annots)):
-            per_image = np.ascontiguousarray(per_image, dtype=np.uint8)
-            per_image = cv2.cvtColor(per_image, cv2.COLOR_RGB2BGR)
-
-            # draw all label boxes
-            for per_annot in per_image_annot:
-                per_box = (per_annot[0:4]).astype(np.int32)
-                per_box_class_index = per_annot[4].astype(np.int32)
-
-                if per_box_class_index == -1:
-                    continue
-
-                class_name, class_color = COCO_CLASSES[
-                    per_box_class_index], COCO_CLASSES_COLOR[
-                        per_box_class_index]
-                left_top, right_bottom = (per_box[0], per_box[1]), (per_box[2],
-                                                                    per_box[3])
-                cv2.rectangle(per_image,
-                              left_top,
-                              right_bottom,
-                              color=class_color,
-                              thickness=2,
-                              lineType=cv2.LINE_AA)
-
-                text = f'{class_name}'
-                text_size = cv2.getTextSize(text, 0, 0.5, thickness=1)[0]
-                fill_right_bottom = (max(left_top[0] + text_size[0],
-                                         right_bottom[0]),
-                                     left_top[1] - text_size[1] - 3)
-                cv2.rectangle(per_image,
-                              left_top,
-                              fill_right_bottom,
-                              color=class_color,
-                              thickness=-1,
-                              lineType=cv2.LINE_AA)
-                cv2.putText(per_image,
-                            text, (left_top[0], left_top[1] - 2),
-                            cv2.FONT_HERSHEY_SIMPLEX,
-                            0.5,
-                            color=(0, 0, 0),
-                            thickness=1,
-                            lineType=cv2.LINE_AA)
-
-            cv2.imencode('.jpg', per_image)[1].tofile(
-                os.path.join(temp_dir, f'idx_{count}_{i}.jpg'))
-
-        if count < 5:
-            count += 1
-        else:
-            break
-
-    # cocodataset = CocoDetection(
+    # mosaiccocodataset = MosaicResizeCocoDetection(
     #     COCO2017_path,
     #     set_name='train2017',
+    #     resize=640,
+    #     stride=32,
+    #     use_multi_scale=True,
+    #     multi_scale_range=[0.5, 2.0],
+    #     mosaic_prob=0.5,
+    #     mosaic_multi_scale_range=[0.4, 1.0],
+    #     mixup_prob=0.5,
+    #     mixup_ratio=[0.5, 0.5],
+    #     current_epoch=1,
+    #     stop_mosaic_epoch=100,
     #     transform=transforms.Compose([
     #         RandomHorizontalFlip(prob=0.5),
     #         RandomCrop(prob=0.5),
     #         RandomTranslate(prob=0.5),
-    #         DetectionResize(resize=640,
-    #                         stride=32,
-    #                         resize_type='yolo_style',
-    #                         multi_scale=False,
-    #                         multi_scale_range=[0.8, 1.0]),
     #         # Normalize(),
     #     ]))
 
     # count = 0
-    # for per_sample in tqdm(cocodataset):
-    #     print('1111', per_sample['image'].shape, per_sample['annots'].shape,
+    # for per_sample in tqdm(mosaiccocodataset):
+    #     print('3333', per_sample['image'].shape, per_sample['annots'].shape,
     #           per_sample['scale'], per_sample['size'])
-    #     print('1111', per_sample['image'].dtype, per_sample['annots'].dtype,
+    #     print('3333', per_sample['image'].dtype, per_sample['annots'].dtype,
     #           per_sample['scale'].dtype, per_sample['size'].dtype)
 
     #     temp_dir = './temp'
@@ -946,7 +799,6 @@ if __name__ == '__main__':
     #     for per_annot in annots:
     #         per_box = (per_annot[0:4]).astype(np.int32)
     #         per_box_class_index = per_annot[4].astype(np.int32)
-
     #         class_name, class_color = COCO_CLASSES[
     #             per_box_class_index], COCO_CLASSES_COLOR[per_box_class_index]
     #         left_top, right_bottom = (per_box[0], per_box[1]), (per_box[2],
@@ -980,27 +832,27 @@ if __name__ == '__main__':
     #     cv2.imencode('.jpg', image)[1].tofile(
     #         os.path.join(temp_dir, f'idx_{count}.jpg'))
 
-    #     if count < 5:
+    #     if count < 10:
     #         count += 1
     #     else:
     #         break
 
     # from torch.utils.data import DataLoader
-    # collater = DETRDetectionCollater(resize=640,
-    #                                  resize_type='yolo_style',
-    #                                  max_annots_num=100)
-    # train_loader = DataLoader(cocodataset,
-    #                           batch_size=8,
-    #                           shuffle=True,
-    #                           num_workers=2,
-    #                           collate_fn=collater)
+    # collater = DetectionCollater(resize=1280,
+    #                              resize_type='yolo_style',
+    #                              max_annots_num=100)
+    # mosaic_train_loader = DataLoader(mosaiccocodataset,
+    #                                  batch_size=4,
+    #                                  shuffle=True,
+    #                                  num_workers=2,
+    #                                  collate_fn=collater)
 
     # count = 0
-    # for data in tqdm(train_loader):
+    # for data in tqdm(mosaic_train_loader):
     #     images, annots, scales, sizes = data['image'], data['annots'], data[
     #         'scale'], data['size']
-    #     print('2222', images.shape, annots.shape, scales.shape, sizes.shape)
-    #     print('2222', images.dtype, annots.dtype, scales.dtype, sizes.dtype)
+    #     print('4444', images.shape, annots.shape, scales.shape, sizes.shape)
+    #     print('4444', images.dtype, annots.dtype, scales.dtype, sizes.dtype)
 
     #     temp_dir = './temp2'
     #     if not os.path.exists(temp_dir):
@@ -1059,3 +911,149 @@ if __name__ == '__main__':
     #         count += 1
     #     else:
     #         break
+
+    cocodataset = CocoDetection(
+        COCO2017_path,
+        set_name='train2017',
+        transform=transforms.Compose([
+            RandomHorizontalFlip(prob=0.5),
+            RandomCrop(prob=0.5),
+            RandomTranslate(prob=0.5),
+            DetectionResize(resize=800,
+                            stride=32,
+                            resize_type='retina_style',
+                            multi_scale=False,
+                            multi_scale_range=[0.8, 1.0]),
+            # Normalize(),
+        ]))
+
+    count = 0
+    for per_sample in tqdm(cocodataset):
+        print('1111', per_sample['image'].shape, per_sample['annots'].shape,
+              per_sample['scale'], per_sample['size'])
+        print('1111', per_sample['image'].dtype, per_sample['annots'].dtype,
+              per_sample['scale'].dtype, per_sample['size'].dtype)
+
+        temp_dir = './temp'
+        if not os.path.exists(temp_dir):
+            os.makedirs(temp_dir)
+
+        image = np.ascontiguousarray(per_sample['image'], dtype=np.uint8)
+        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        annots = per_sample['annots']
+
+        # draw all label boxes
+        for per_annot in annots:
+            per_box = (per_annot[0:4]).astype(np.int32)
+            per_box_class_index = per_annot[4].astype(np.int32)
+
+            class_name, class_color = COCO_CLASSES[
+                per_box_class_index], COCO_CLASSES_COLOR[per_box_class_index]
+            left_top, right_bottom = (per_box[0], per_box[1]), (per_box[2],
+                                                                per_box[3])
+            cv2.rectangle(image,
+                          left_top,
+                          right_bottom,
+                          color=class_color,
+                          thickness=2,
+                          lineType=cv2.LINE_AA)
+
+            text = f'{class_name}'
+            text_size = cv2.getTextSize(text, 0, 0.5, thickness=1)[0]
+            fill_right_bottom = (max(left_top[0] + text_size[0],
+                                     right_bottom[0]),
+                                 left_top[1] - text_size[1] - 3)
+            cv2.rectangle(image,
+                          left_top,
+                          fill_right_bottom,
+                          color=class_color,
+                          thickness=-1,
+                          lineType=cv2.LINE_AA)
+            cv2.putText(image,
+                        text, (left_top[0], left_top[1] - 2),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.5,
+                        color=(0, 0, 0),
+                        thickness=1,
+                        lineType=cv2.LINE_AA)
+
+        cv2.imencode('.jpg', image)[1].tofile(
+            os.path.join(temp_dir, f'idx_{count}.jpg'))
+
+        if count < 5:
+            count += 1
+        else:
+            break
+
+    from torch.utils.data import DataLoader
+    collater = BatchAlignDETRDetectionCollater(max_annots_num=100)
+    train_loader = DataLoader(cocodataset,
+                              batch_size=8,
+                              shuffle=True,
+                              num_workers=2,
+                              collate_fn=collater)
+
+    count = 0
+    for data in tqdm(train_loader):
+        images, annots, scales, sizes = data['image'], data['annots'], data[
+            'scale'], data['size']
+        print('2222', images.shape, annots.shape, scales.shape, sizes.shape)
+        print('2222', images.dtype, annots.dtype, scales.dtype, sizes.dtype)
+
+        temp_dir = './temp2'
+        if not os.path.exists(temp_dir):
+            os.makedirs(temp_dir)
+
+        images = images.permute(0, 2, 3, 1).cpu().numpy()
+        annots = annots.cpu().numpy()
+
+        for i, (per_image, per_image_annot) in enumerate(zip(images, annots)):
+            per_image = np.ascontiguousarray(per_image, dtype=np.uint8)
+            per_image = cv2.cvtColor(per_image, cv2.COLOR_RGB2BGR)
+
+            # draw all label boxes
+            for per_annot in per_image_annot:
+                per_box = (per_annot[0:4]).astype(np.int32)
+                per_box_class_index = per_annot[4].astype(np.int32)
+
+                if per_box_class_index == -1:
+                    continue
+
+                class_name, class_color = COCO_CLASSES[
+                    per_box_class_index], COCO_CLASSES_COLOR[
+                        per_box_class_index]
+                left_top, right_bottom = (per_box[0], per_box[1]), (per_box[2],
+                                                                    per_box[3])
+                cv2.rectangle(per_image,
+                              left_top,
+                              right_bottom,
+                              color=class_color,
+                              thickness=2,
+                              lineType=cv2.LINE_AA)
+
+                text = f'{class_name}'
+                text_size = cv2.getTextSize(text, 0, 0.5, thickness=1)[0]
+                fill_right_bottom = (max(left_top[0] + text_size[0],
+                                         right_bottom[0]),
+                                     left_top[1] - text_size[1] - 3)
+                cv2.rectangle(per_image,
+                              left_top,
+                              fill_right_bottom,
+                              color=class_color,
+                              thickness=-1,
+                              lineType=cv2.LINE_AA)
+                cv2.putText(per_image,
+                            text, (left_top[0], left_top[1] - 2),
+                            cv2.FONT_HERSHEY_SIMPLEX,
+                            0.5,
+                            color=(0, 0, 0),
+                            thickness=1,
+                            lineType=cv2.LINE_AA)
+
+            cv2.imencode('.jpg', per_image)[1].tofile(
+                os.path.join(temp_dir, f'idx_{count}_{i}.jpg'))
+
+        if count < 5:
+            count += 1
+        else:
+            break

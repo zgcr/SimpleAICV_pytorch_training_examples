@@ -19,6 +19,8 @@ import torch.nn.functional as F
 from simpleAICV.classification.backbones.resnet import ConvBnActBlock, BasicBlock, Bottleneck
 
 __all__ = [
+    'resnet18_dino_pretrain_model',
+    'resnet34_dino_pretrain_model',
     'resnet50_dino_pretrain_model',
 ]
 
@@ -207,6 +209,20 @@ def _resnetdinopretrainmodel(**kwargs):
     model = ResNetDINOPretrainModel(**kwargs)
 
     return model
+
+
+def resnet18_dino_pretrain_model(**kwargs):
+    return _resnetdinopretrainmodel(block=BasicBlock,
+                                    layer_nums=[2, 2, 2, 2],
+                                    inplanes=64,
+                                    **kwargs)
+
+
+def resnet34_dino_pretrain_model(**kwargs):
+    return _resnetdinopretrainmodel(block=BasicBlock,
+                                    layer_nums=[3, 4, 6, 3],
+                                    inplanes=64,
+                                    **kwargs)
 
 
 def resnet50_dino_pretrain_model(**kwargs):

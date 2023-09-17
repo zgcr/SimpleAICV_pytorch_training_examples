@@ -6,9 +6,8 @@ log
 *.log
 flagged
 pretrained_models
-images.zip
-res50_detr_yoloresize1024
-res50_dinodetr_yoloresize1024
-z_detr_main
-z_dino_main
+res50_detr_retinaresize800
+res50_dinodetr_retinaresize800
+z_solov2_main
 z_yolact_main
+weights

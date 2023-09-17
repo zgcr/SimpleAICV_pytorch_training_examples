@@ -11,13 +11,18 @@ import torch
 import torch.nn.functional as F
 
 import torchvision.transforms as transforms
+from torch.utils.data import DataLoader
 
 from torch.cuda.amp import autocast
 
 from pycocotools.cocoeval import COCOeval
 
 from simpleAICV.classification.common import AverageMeter, AccMeter
-from simpleAICV.diffusion_model.metrics.compute_fid_is_score import ImagePathDataset, calculate_frechet_distance, compute_inception_score
+from simpleAICV.diffusion_model.metrics.compute_fid_is_score import calculate_frechet_distance, compute_inception_score
+
+from skimage.metrics import structural_similarity as compare_ssim
+from skimage.metrics import peak_signal_noise_ratio as compare_psnr
+from simpleAICV.image_inpainting.metrics.inception import InpaintingImagePathDataset, inpainting_calculate_frechet_distance
 
 
 def all_reduce_operation_in_group_for_variables(variables, operator, group):
@@ -252,7 +257,7 @@ def test_distill_classification(test_loader, model, criterion, config):
 def train_distill_classification(train_loader, model, criterion, optimizer,
                                  scheduler, epoch, logger, config):
     '''
-    distill classification model for one epoch
+    train distill classification model for one epoch
     '''
     losses = AverageMeter()
 
@@ -786,7 +791,7 @@ def test_detection(test_loader, model, criterion, decoder, config):
 def train_detection(train_loader, model, criterion, optimizer, scheduler,
                     epoch, logger, config):
     '''
-    train classification model for one epoch
+    train detection model for one epoch
     '''
     losses = AverageMeter()
 
@@ -1283,7 +1288,7 @@ def train_mae_self_supervised_learning(train_loader, model, criterion,
                                        optimizer, scheduler, epoch, logger,
                                        config):
     '''
-    train self supervised model for one epoch
+    train mae self supervised model for one epoch
     '''
     losses = AverageMeter()
 
@@ -1406,7 +1411,7 @@ def train_dino_self_supervised_learning(train_loader, teacher_model,
                                         momentum_teacher_scheduler, epoch,
                                         logger, config):
     '''
-    train self supervised model for one epoch
+    train dino self supervised model for one epoch
     '''
     losses = AverageMeter()
 
@@ -1662,7 +1667,7 @@ def compute_diffusion_model_metric(test_images_dataloader,
 def train_diffusion_model(train_loader, model, criterion, trainer, optimizer,
                           scheduler, epoch, logger, config):
     '''
-    train self supervised model for one epoch
+    train diffusion model for one epoch
     '''
     losses = AverageMeter()
 
@@ -1785,5 +1790,460 @@ def train_diffusion_model(train_loader, model, criterion, trainer, optimizer,
 
     avg_loss = losses.avg
     avg_loss = avg_loss * config.accumulation_steps
+
+    return avg_loss
+
+
+def generate_inpainting_images_for_all_dataset(generator_model, config):
+    batch_size, num_workers = config.batch_size, config.num_workers
+    assert config.batch_size % config.gpus_num == 0, 'config.batch_size is not divisible by config.gpus_num!'
+    assert config.num_workers % config.gpus_num == 0, 'config.num_workers is not divisible by config.gpus_num!'
+    batch_size = int(config.batch_size // config.gpus_num)
+    num_workers = int(config.num_workers // config.gpus_num)
+
+    all_dataset_images_num_dict = collections.OrderedDict()
+    all_dataset_images_path_dict = collections.OrderedDict()
+    for index, (per_sub_dataset_name, per_sub_dataset) in enumerate(
+            zip(config.test_dataset_name_list, config.test_dataset_list)):
+        per_sub_sampler = torch.utils.data.distributed.DistributedSampler(
+            per_sub_dataset, shuffle=False)
+        per_sub_dataset_loader = DataLoader(per_sub_dataset,
+                                            batch_size=batch_size,
+                                            shuffle=False,
+                                            pin_memory=False,
+                                            num_workers=num_workers,
+                                            collate_fn=config.test_collater,
+                                            sampler=per_sub_sampler)
+
+        per_sub_test_images_path_list, per_sub_test_image_num = generate_inpainting_images_for_per_sub_dataset(
+            per_sub_dataset_name, per_sub_dataset_loader, generator_model,
+            config)
+
+        all_dataset_images_num_dict[
+            per_sub_dataset_name] = per_sub_test_image_num
+        all_dataset_images_path_dict[
+            per_sub_dataset_name] = per_sub_test_images_path_list
+
+        torch.cuda.empty_cache()
+
+    return all_dataset_images_num_dict, all_dataset_images_path_dict
+
+
+def generate_inpainting_images_for_per_sub_dataset(per_sub_dataset_name,
+                                                   per_sub_dataset_loader,
+                                                   generator_model, config):
+    local_rank = torch.distributed.get_rank()
+
+    per_sub_save_image_dir = os.path.join(config.save_image_dir,
+                                          per_sub_dataset_name)
+    if local_rank == 0:
+        os.makedirs(per_sub_save_image_dir
+                    ) if not os.path.exists(per_sub_save_image_dir) else None
+
+    torch.distributed.barrier()
+
+    # switch to evaluate mode
+    generator_model.eval()
+
+    with torch.no_grad():
+        model_on_cuda = next(generator_model.parameters()).is_cuda
+        for batch_idx, data in tqdm(enumerate(per_sub_dataset_loader)):
+            images, masks = data['image'], data['mask']
+            if model_on_cuda:
+                images, masks = images.cuda(), masks.cuda()
+
+            if torch.any(torch.isinf(images)):
+                continue
+
+            if torch.any(torch.isnan(images)):
+                continue
+
+            torch.cuda.synchronize()
+
+            masked_images = (images * (1 - masks).float()) + masks
+            preds = generator_model(masked_images, masks)
+            composition_images = (1 - masks) * images + masks * preds
+
+            torch.cuda.synchronize()
+
+            for image_idx, (per_image, per_mask,
+                            per_composition_image) in enumerate(
+                                zip(images, masks, composition_images)):
+                per_image = per_image.cpu().numpy()
+                # to hwc
+                per_image = per_image.transpose(1, 2, 0)
+                per_image = np.clip(per_image, -1., 1.)
+                # RGB image [0,255]
+                per_image = ((per_image + 1.) / 2.) * 255.
+                per_image = np.ascontiguousarray(per_image, dtype=np.uint8)
+                per_image = cv2.cvtColor(per_image, cv2.COLOR_RGB2BGR)
+
+                per_mask = per_mask.cpu().numpy()
+                # to hwc
+                per_mask = per_mask.transpose(1, 2, 0).squeeze(axis=-1)
+                per_mask = np.clip(per_mask, 0., 1.)
+                # gray image [0,255]
+                per_mask = per_mask * 255.
+                per_mask = np.ascontiguousarray(per_mask, dtype=np.uint8)
+
+                per_composition_image = per_composition_image.cpu().numpy()
+                # to hwc
+                per_composition_image = per_composition_image.transpose(
+                    1, 2, 0)
+                per_composition_image = np.clip(per_composition_image, -1., 1.)
+                # RGB image [0,255]
+                per_composition_image = (
+                    (per_composition_image + 1.) / 2.) * 255.
+                per_composition_image = np.ascontiguousarray(
+                    per_composition_image, dtype=np.uint8)
+                per_composition_image = cv2.cvtColor(per_composition_image,
+                                                     cv2.COLOR_RGB2BGR)
+
+                save_image_name = f'{per_sub_dataset_name}_{local_rank}_{batch_idx}_{image_idx}_image.jpg'
+                save_image_path = os.path.join(per_sub_save_image_dir,
+                                               save_image_name)
+                cv2.imencode('.jpg', per_image)[1].tofile(save_image_path)
+
+                save_mask_name = f'{per_sub_dataset_name}_{local_rank}_{batch_idx}_{image_idx}_mask.jpg'
+                save_mask_path = os.path.join(per_sub_save_image_dir,
+                                              save_mask_name)
+                cv2.imencode('.jpg', per_mask)[1].tofile(save_mask_path)
+
+                save_composition_image_name = f'{per_sub_dataset_name}_{local_rank}_{batch_idx}_{image_idx}_composition.jpg'
+                save_composition_image_path = os.path.join(
+                    per_sub_save_image_dir, save_composition_image_name)
+                cv2.imencode('.jpg', per_composition_image)[1].tofile(
+                    save_composition_image_path)
+
+    torch.distributed.barrier()
+
+    per_sub_test_images_path_list = []
+    for per_image_name in os.listdir(per_sub_save_image_dir):
+        if '_image.jpg' in per_image_name:
+            per_image_path = os.path.join(per_sub_save_image_dir,
+                                          per_image_name)
+
+            per_mask_name = per_image_name.replace('_image.jpg', '_mask.jpg')
+            per_mask_path = os.path.join(per_sub_save_image_dir, per_mask_name)
+
+            per_composition_image_name = per_image_name.replace(
+                '_image.jpg', '_composition.jpg')
+            per_composition_image_path = os.path.join(
+                per_sub_save_image_dir, per_composition_image_name)
+
+            assert os.path.exists(per_image_path) and os.path.exists(
+                per_mask_path) and os.path.exists(per_composition_image_path)
+
+            per_sub_test_images_path_list.append(
+                [per_image_path, per_mask_path, per_composition_image_path])
+
+    per_sub_test_image_num = len(per_sub_test_images_path_list)
+
+    return per_sub_test_images_path_list, per_sub_test_image_num
+
+
+def compute_image_inpainting_model_metric_for_all_dataset(
+        all_dataset_images_path_dict, fid_model, config):
+    assert config.fid_model_batch_size % config.gpus_num == 0, 'config.fid_model_batch_size is not divisible by config.gpus_num!'
+    assert config.fid_model_num_workers % config.gpus_num == 0, 'config.fid_model_num_workers is not divisible by config.gpus_num!'
+    fid_model_batch_size = int(config.fid_model_batch_size // config.gpus_num)
+    fid_model_num_workers = int(config.fid_model_num_workers //
+                                config.gpus_num)
+
+    result_dict = collections.OrderedDict()
+    for index, (per_sub_dataset_name,
+                per_sub_test_images_path_list) in enumerate(
+                    all_dataset_images_path_dict.items()):
+        per_sub_dataset_image_num = len(per_sub_test_images_path_list)
+        per_sub_test_images_dataset = InpaintingImagePathDataset(
+            per_sub_test_images_path_list,
+            transform=transforms.Compose([
+                transforms.Resize(
+                    [config.input_image_size, config.input_image_size]),
+                transforms.ToTensor(),
+            ]))
+        per_sub_test_images_dataloader = DataLoader(
+            per_sub_test_images_dataset,
+            batch_size=fid_model_batch_size,
+            shuffle=False,
+            drop_last=False,
+            pin_memory=False,
+            num_workers=fid_model_num_workers)
+
+        per_sub_dataset_result_dict = compute_image_inpainting_model_metric_for_per_sub_dataset(
+            per_sub_test_images_dataloader, per_sub_dataset_image_num,
+            fid_model, config)
+        result_dict[per_sub_dataset_name] = per_sub_dataset_result_dict
+
+    return result_dict
+
+
+def compute_image_inpainting_model_metric_for_per_sub_dataset(
+        per_sub_test_images_dataloader, per_sub_dataset_image_num, fid_model,
+        config):
+    for param in fid_model.parameters():
+        param.requires_grad = False
+
+    # switch to evaluate mode
+    fid_model.eval()
+
+    mae, psnr, ssim = 0., 0., 0.
+    all_images_pred = np.empty((per_sub_dataset_image_num, 2048))
+    all_composition_images_pred = np.empty((per_sub_dataset_image_num, 2048))
+    with torch.no_grad():
+        test_images_start_idx = 0
+        model_on_cuda = next(fid_model.parameters()).is_cuda
+        for images, composition_images in tqdm(per_sub_test_images_dataloader):
+            if model_on_cuda:
+                images = images.cuda()
+                composition_images = composition_images.cuda()
+
+            images_pred = fid_model(images)
+            per_batch_images_pred_feature = images_pred[0].squeeze(-1).squeeze(
+                -1).cpu().numpy()
+            all_images_pred[test_images_start_idx:test_images_start_idx +
+                            per_batch_images_pred_feature.
+                            shape[0]] = per_batch_images_pred_feature
+
+            composition_images_pred = fid_model(composition_images)
+            per_batch_composition_images_pred_feature = composition_images_pred[
+                0].squeeze(-1).squeeze(-1).cpu().numpy()
+            all_composition_images_pred[
+                test_images_start_idx:test_images_start_idx +
+                per_batch_composition_images_pred_feature.
+                shape[0]] = per_batch_composition_images_pred_feature
+
+            test_images_start_idx = test_images_start_idx + per_batch_images_pred_feature.shape[
+                0]
+
+            for per_image, per_composition_image in zip(
+                    images, composition_images):
+                per_image = per_image * 255.
+                per_image = per_image.permute(1, 2,
+                                              0).cpu().numpy().astype(np.uint8)
+                per_composition_image = per_composition_image * 255.
+                per_composition_image = per_composition_image.permute(
+                    1, 2, 0).cpu().numpy().astype(np.uint8)
+
+                mae += np.sum(
+                    np.abs(
+                        per_image.astype(np.float32) -
+                        per_composition_image.astype(np.float32))) / np.sum(
+                            per_image.astype(np.float32) +
+                            per_composition_image.astype(np.float32))
+                psnr += compare_psnr(per_image, per_composition_image)
+                ssim += compare_ssim(per_image,
+                                     per_composition_image,
+                                     channel_axis=-1)
+
+    mae_value = mae / per_sub_dataset_image_num
+    psnr_value = psnr / per_sub_dataset_image_num
+    ssim_value = ssim / per_sub_dataset_image_num
+
+    mu1 = np.mean(all_images_pred, axis=0)
+    sigma1 = np.cov(all_images_pred, rowvar=False)
+
+    mu2 = np.mean(all_composition_images_pred, axis=0)
+    sigma2 = np.cov(all_composition_images_pred, rowvar=False)
+
+    fid_value = inpainting_calculate_frechet_distance(mu1, sigma1, mu2, sigma2)
+
+    per_sub_dataset_result_dict = {
+        'mae': mae_value,
+        'psnr': psnr_value,
+        'ssim': ssim_value,
+        'fid': fid_value,
+    }
+
+    return per_sub_dataset_result_dict
+
+
+def train_image_inpainting_aot_gan_model(
+        train_loader, generator_model, discriminator_model,
+        reconstruction_criterion, adversarial_criterion, generator_optimizer,
+        discriminator_optimizer, generator_scheduler, discriminator_scheduler,
+        epoch, logger, config):
+    '''
+    train image inpainting aot gan model for one epoch
+    '''
+    losses = AverageMeter()
+
+    # switch to train mode
+    generator_model.train()
+    discriminator_model.train()
+
+    local_rank = torch.distributed.get_rank()
+    iters = len(train_loader.dataset) // config.batch_size
+    iter_index = 1
+
+    for _, data in enumerate(train_loader):
+        images, masks = data['image'], data['mask']
+        images, masks = images.cuda(), masks.cuda()
+        masked_images = (images * (1 - masks).float()) + masks
+
+        if torch.any(torch.isinf(images)) or torch.any(torch.isinf(masks)):
+            continue
+
+        if torch.any(torch.isnan(images)) or torch.any(torch.isnan(masks)):
+            continue
+
+        if torch.sum(images) == 0:
+            continue
+
+        if config.use_amp:
+            with autocast():
+                preds = generator_model(masked_images, masks)
+                composition_images = (1 - masks) * images + masks * preds
+
+                composition_images_detach = composition_images.detach()
+
+                generator_fake = discriminator_model(composition_images)
+                discriminator_fake = discriminator_model(
+                    composition_images_detach)
+                discriminator_real = discriminator_model(images)
+
+                loss_value = {}
+                # reconstruction losses
+                for loss_name in reconstruction_criterion.keys():
+                    temp_loss = reconstruction_criterion[loss_name](preds,
+                                                                    images)
+                    temp_loss = config.reconstruction_loss_ratio[
+                        loss_name] * temp_loss
+                    loss_value[loss_name] = temp_loss
+
+                # adversarial loss
+                for loss_name in adversarial_criterion.keys():
+                    discriminator_loss, generator_loss = adversarial_criterion[
+                        loss_name](generator_fake, discriminator_fake,
+                                   discriminator_real, masks)
+                    generator_loss = config.adversarial_loss_ratio[
+                        loss_name] * generator_loss
+                    loss_value['generator_loss'] = generator_loss
+                    loss_value['discriminator_loss'] = discriminator_loss
+
+        else:
+            preds = generator_model(masked_images, masks)
+            composition_images = (1 - masks) * images + masks * preds
+
+            composition_images_detach = composition_images.detach()
+
+            generator_fake = discriminator_model(composition_images)
+            discriminator_fake = discriminator_model(composition_images_detach)
+            discriminator_real = discriminator_model(images)
+
+            loss_value = {}
+            # reconstruction losses
+            for loss_name in reconstruction_criterion.keys():
+                temp_loss = reconstruction_criterion[loss_name](preds, images)
+                temp_loss = config.reconstruction_loss_ratio[
+                    loss_name] * temp_loss
+                loss_value[loss_name] = temp_loss
+
+            # adversarial loss
+            for loss_name in adversarial_criterion.keys():
+                discriminator_loss, generator_loss = adversarial_criterion[
+                    loss_name](generator_fake, discriminator_fake,
+                               discriminator_real, masks)
+                generator_loss = config.adversarial_loss_ratio[
+                    loss_name] * generator_loss
+                loss_value['generator_loss'] = generator_loss
+                loss_value['discriminator_loss'] = discriminator_loss
+
+        inf_nan_flag = False
+        for key, value in loss_value.items():
+            if torch.any(torch.isinf(value)) or torch.any(torch.isnan(value)):
+                inf_nan_flag = True
+
+        if inf_nan_flag:
+            log_info = f'zero loss or nan loss or inf loss!'
+            logger.info(log_info) if local_rank == 0 else None
+            generator_optimizer.zero_grad()
+            discriminator_optimizer.zero_grad()
+            continue
+
+        generator_loss = 0.
+        for key, value in loss_value.items():
+            if key in config.generator_loss_list:
+                generator_loss += value
+        discriminator_loss = loss_value['discriminator_loss']
+
+        loss = 0.
+        for key, value in loss_value.items():
+            loss += value
+
+        if config.use_amp:
+            config.scaler.scale(generator_loss).backward()
+            config.scaler.scale(discriminator_loss).backward()
+        else:
+            generator_loss.backward()
+            discriminator_loss.backward()
+
+        if config.use_amp:
+            if hasattr(config, 'generator_clip_max_norm'
+                       ) and config.generator_clip_max_norm > 0:
+                config.scaler.unscale_(generator_optimizer)
+                torch.nn.utils.clip_grad_norm_(generator_model.parameters(),
+                                               config.generator_clip_max_norm)
+
+            if hasattr(config, 'discriminator_clip_max_norm'
+                       ) and config.discriminator_clip_max_norm > 0:
+                config.scaler.unscale_(discriminator_optimizer)
+                torch.nn.utils.clip_grad_norm_(
+                    discriminator_model.parameters(),
+                    config.discriminator_clip_max_norm)
+
+            config.scaler.step(generator_optimizer)
+            config.scaler.update()
+            generator_optimizer.zero_grad()
+
+            config.scaler.step(discriminator_optimizer)
+            config.scaler.update()
+            discriminator_optimizer.zero_grad()
+        else:
+            if hasattr(config, 'generator_clip_max_norm'
+                       ) and config.generator_clip_max_norm > 0:
+                torch.nn.utils.clip_grad_norm_(generator_model.parameters(),
+                                               config.generator_clip_max_norm)
+
+            if hasattr(config, 'discriminator_clip_max_norm'
+                       ) and config.discriminator_clip_max_norm > 0:
+                torch.nn.utils.clip_grad_norm_(
+                    discriminator_model.parameters(),
+                    config.discriminator_clip_max_norm)
+
+            generator_optimizer.step()
+            generator_optimizer.zero_grad()
+
+            discriminator_optimizer.step()
+            discriminator_optimizer.zero_grad()
+
+        for key, value in loss_value.items():
+            [value] = all_reduce_operation_in_group_for_variables(
+                variables=[value],
+                operator=torch.distributed.ReduceOp.SUM,
+                group=config.group)
+            loss_value[key] = value / float(config.gpus_num)
+
+        [loss] = all_reduce_operation_in_group_for_variables(
+            variables=[loss],
+            operator=torch.distributed.ReduceOp.SUM,
+            group=config.group)
+        loss = loss / float(config.gpus_num)
+        losses.update(loss, images.size(0))
+
+        generator_scheduler.step(generator_optimizer,
+                                 iter_index / iters + (epoch - 1))
+        discriminator_scheduler.step(discriminator_optimizer,
+                                     iter_index / iters + (epoch - 1))
+
+        if iter_index % config.print_interval == 0:
+            log_info = f'train: epoch {epoch:0>4d}, iter [{iter_index:0>5d}, {iters:0>5d}], generator_lr: {generator_scheduler.current_lr:.6f}, discriminator_lr: {discriminator_scheduler.current_lr:.6f}, loss: {loss:.4f}, '
+            for key, value in loss_value.items():
+                log_info += f'{key}: {value:.4f}, '
+            logger.info(log_info) if local_rank == 0 else None
+
+        iter_index += 1
+
+    avg_loss = losses.avg
 
     return avg_loss

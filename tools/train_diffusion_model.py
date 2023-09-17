@@ -21,7 +21,7 @@ from tools.utils import (get_logger, set_seed, worker_seed_init_fn,
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description='PyTorch Self Supervised Learning Training')
+        description='PyTorch Diffusion Model Training')
     parser.add_argument(
         '--work-dir',
         type=str,
