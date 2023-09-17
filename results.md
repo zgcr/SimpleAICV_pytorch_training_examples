@@ -159,6 +159,7 @@ You can find more model training details in classification_training/imagenet/.
 
 | Network           | macs    | params   | input size | gpu num     | batch | epochs | Top-1  |
 | ----------------- | ------- | -------- | ---------- | ----------- | ----- | ------ | ------ |
+| ViT-Tiny-Patch16  | 1.075G  | 5.670M   | 224x224    | 1 RTX A5000 | 4096  | 100    | 68.614 |
 | ViT-Small-Patch16 | 4.241G  | 21.955M  | 224x224    | 2 RTX A5000 | 4096  | 100    | 79.006 |
 | ViT-Base-Patch16  | 16.849G | 86.377M  | 224x224    | 2 RTX A5000 | 4096  | 100    | 83.204 |
 | ViT-Large-Patch16 | 59.647G | 304.024M | 224x224    | 2 RTX A5000 | 4096  | 100    | 85.020 |
@@ -372,6 +373,7 @@ Paper:https://arxiv.org/abs/2111.06377
 
 | Network           | input size | gpu num     | batch | epochs | Loss  |
 | ----------------- | ---------- | ----------- | ----- | ------ | ----- |
+| ViT-Tiny-Patch16  | 224x224    | 1 RTX A5000 | 256   | 400    | 0.427 |
 | ViT-Small-Patch16 | 224x224    | 2 RTX A5000 | 256   | 400    | 0.414 |
 | ViT-Base-Patch16  | 224x224    | 2 RTX A5000 | 256   | 400    | 0.388 |
 | ViT-Large-Patch16 | 224x224    | 2 RTX A5000 | 256   | 400    | 0.378 |
@@ -382,6 +384,7 @@ You can find more model training details in masked_image_modeling_training/image
 
 | Network           | macs    | params   | input size | gpu num     | batch | epochs | Top-1  |
 | ----------------- | ------- | -------- | ---------- | ----------- | ----- | ------ | ------ |
+| ViT-Tiny-Patch16  | 1.075G  | 5.670M   | 224x224    | 1 RTX A5000 | 4096  | 100    | 68.614 |
 | ViT-Small-Patch16 | 4.241G  | 21.955M  | 224x224    | 2 RTX A5000 | 4096  | 100    | 79.006 |
 | ViT-Base-Patch16  | 16.849G | 86.377M  | 224x224    | 2 RTX A5000 | 4096  | 100    | 83.204 |
 | ViT-Large-Patch16 | 59.647G | 304.024M | 224x224    | 2 RTX A5000 | 4096  | 100    | 85.020 |

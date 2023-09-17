@@ -54,4 +54,4 @@ class config:
     # batch_size is total size
     batch_size = 256
     # num_workers is total workers
-    num_workers = 15
+    num_workers = 10
