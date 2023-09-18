@@ -2,6 +2,7 @@
 __pycache__
 checkpoints
 log
+.ipynb_checkpoints
 *.pth
 *.log
 flagged
