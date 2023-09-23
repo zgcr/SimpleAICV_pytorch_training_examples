@@ -40,8 +40,6 @@
 
 
 
-
-
 # Image classification task results
 
 **ResNet**
@@ -150,6 +148,10 @@ You can find more model training details in classification_training/imagenet/.
 
 | Network  | macs   | params  | input size | gpu num     | batch | epochs | Top-1  |
 | -------- | ------ | ------- | ---------- | ----------- | ----- | ------ | ------ |
+| ResNet18 | 1.819G | 11.690M | 224x224    | 1 RTX A5000 | 256   | 100    | 70.754 |
+| ResNet18 | 1.819G | 11.690M | 224x224    | 1 RTX A5000 | 4096  | 300    | 71.362 |
+| ResNet34 | 3.671G | 21.798M | 224x224    | 2 RTX A5000 | 256   | 100    | 74.218 |
+| ResNet34 | 3.671G | 21.798M | 224x224    | 2 RTX A5000 | 4096  | 300    | 75.916 |
 | ResNet50 | 4.112G | 25.557M | 224x224    | 2 RTX A5000 | 256   | 100    | 77.114 |
 | ResNet50 | 4.112G | 25.557M | 224x224    | 2 RTX A5000 | 4096  | 300    | 79.418 |
 

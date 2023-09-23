@@ -65,7 +65,7 @@ class config:
     # batch_size is total size
     batch_size = 256
     # num_workers is total workers
-    num_workers = 30
+    num_workers = 12
     accumulation_steps = 1
 
     optimizer = (
