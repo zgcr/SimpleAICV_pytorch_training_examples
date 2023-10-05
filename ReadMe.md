@@ -1,13 +1,5 @@
-- [My ZhiHu column](#my-zhihu-column)
+- [My column](#my-column)
 - [Introduction](#introduction)
-  - [Image classification task](#image-classification-task)
-  - [Object detection task](#object-detection-task)
-  - [Semantic segmentation task](#semantic-segmentation-task)
-  - [Knowledge distillation task](#knowledge-distillation-task)
-  - [Contrastive learning task](#contrastive-learning-task)
-  - [Masked image modeling task](#masked-image-modeling-task)
-  - [Image inpainting task](#image-inpainting-task)
-  - [diffusion model task](#diffusion-model-task)
 - [All task training results](#all-task-training-results)
 - [Environments](#environments)
 - [Download my pretrained models and experiments records](#download-my-pretrained-models-and-experiments-records)
@@ -28,141 +20,26 @@
 
 
 
-# My ZhiHu column
+# My column
 
-https://www.zhihu.com/column/c_1249719688055193600
+https://www.zhihu.com/column/c_1692623656205897728
 
 # Introduction
 
 **This repository provides simple training and testing examples for the following tasks:**
-```
-Image classification task
-Object detection task
-Semantic segmentation task
-Knowledge distillation task
-Contrastive learning task
-Masked image modeling task
-image inpainting task
-diffusion model task
-```
-## Image classification task
 
-**support dataset:**
-```
-CIFAR100
-ImageNet1K(ILSVRC2012)
-ImageNet21K(Winter 2021 release)
-```
+| task                        | support dataset                                                        | support network                                               |
+| --------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Image classification task   | CIFAR100<br>ImageNet1K(ILSVRC2012)<br>ImageNet21K(Winter 2021 release) | ResNet<br>DarkNet<br>RepVGG<br>RegNetX<br>ViT                 |
+| Object detection task       | VOC2007 and VOC2012<br>COCO2017<br>Objects365(v2,2020)                 | RetinaNet<br>FCOS<br>CenterNet<br>TTFNet<br>DETR<br>DINO-DETR |
+| Semantic segmentation task  | ADE20K                                                                 | DeepLabv3+<br>U2Net                                           |
+| Instance segmentation task  | COCO2017                                                               | YOLACT<br>SOLOv2                                              |
+| Knowledge distillation task | ImageNet1K(ILSVRC2012)                                                 | KD loss(for ResNet)<br>DML loss(for ResNet)                   |
+| Contrastive learning task   | ImageNet1K(ILSVRC2012)                                                 | DINO(for ResNet)                                              |
+| Masked image modeling task  | ImageNet1K(ILSVRC2012)                                                 | MAE(for ViT)                                                  |
+| Image inpainting task       | CelebA-HQ<br>Places365-standard<br>Places365-challenge                 | AOT-GAN                                                       |
+| diffusion model task        | CIFAR10<br>CIFAR100<br>CelebA-HQ<br>FFHQ                               | DDPM<br>DDIM<br>PLMS                                          |
 
-**support network:**
-```
-ResNet
-DarkNet
-RepVGG
-RegNetX
-ViT
-```
-
-## Object detection task
-
-**support dataset:**
-```
-VOC2007 and VOC2012
-COCO2017
-Objects365(v2,2020)
-```
-
-**support network:**
-```
-RetinaNet
-FCOS
-CenterNet
-TTFNet
-DETR
-DINO-DETR
-```
-
-## Semantic segmentation task
-
-**support dataset:**
-```
-ADE20K
-```
-
-**support network:**
-```
-DeepLabv3+
-U2Net
-```
-
-## Knowledge distillation task
-
-**support dataset:**
-```
-ImageNet1K(ILSVRC2012)
-```
-
-**support network:**
-```
-KD loss(for ResNet)
-DML loss(for ResNet)
-```
-
-
-## Contrastive learning task
-
-**support dataset:**
-```
-ImageNet1K(ILSVRC2012)
-```
-
-**support network:**
-```
-DINO(for ResNet)
-```
-
-## Masked image modeling task
-
-**support dataset:**
-```
-ImageNet1K(ILSVRC2012)
-```
-
-**support network:**
-```
-MAE(for ViT)
-```
-
-## Image inpainting task
-
-**support dataset:**
-```
-CelebA-HQ
-Places365-standard
-Places365-challenge
-```
-
-**support network:**
-```
-AOT-GAN
-```
-
-## diffusion model task
-
-**support dataset:**
-```
-CIFAR10
-CIFAR100
-CelebA-HQ
-FFHQ
-```
-
-**support Sampling Method:**
-```
-DDPM
-DDIM
-PLMS
-```
 
 # All task training results
 

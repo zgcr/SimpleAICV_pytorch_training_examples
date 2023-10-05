@@ -19,6 +19,8 @@
 - [Semantic Segmentation task results](#semantic-segmentation-task-results)
   - [All semantic segmentation models training from scratch on ADE20K](#all-semantic-segmentation-models-training-from-scratch-on-ade20k)
   - [All semantic segmentation models training from scratch on COCO2017](#all-semantic-segmentation-models-training-from-scratch-on-coco2017)
+- [Instance Segmentation task results](#instance-segmentation-task-results)
+  - [All instance segmentation models training from scratch on COCO2017](#all-instance-segmentation-models-training-from-scratch-on-coco2017)
 - [Knowledge distillation task results](#knowledge-distillation-task-results)
   - [ResNet training from pretrain weight on ImageNet1K(ILSVRC2012)](#resnet-training-from-pretrain-weight-on-imagenet1kilsvrc2012)
 - [Contrastive learning task results](#contrastive-learning-task-results)
@@ -217,8 +219,6 @@ Paper:https://arxiv.org/abs/2203.03605
 
 ## All detection models training from scratch on COCO2017
 
-ResNet50 backbone using DINO pretrained weight on ImageNet1K.
-
 Trained on COCO2017 train dataset, tested on COCO2017 val dataset.
 
 mAP is IoU=0.5:0.95,area=all,maxDets=100,mAP(COCOeval,stats[0]).
@@ -320,6 +320,31 @@ You can find more model training details in semantic_segmentation_training/ade20
 | U2Net               | 512x512    | 219.012G | 46.191M | 4 RTX A5000 | 32    | 64     | 66.529 |
 
 You can find more model training details in semantic_segmentation_training/coco/.
+
+# Instance Segmentation task results
+
+**YOLACT**
+
+Paper:https://arxiv.org/abs/1904.02689
+
+**SOLOv2**
+
+Paper:https://arxiv.org/abs/2003.10152
+
+## All instance segmentation models training from scratch on COCO2017
+
+
+Trained on COCO2017 train dataset, tested on COCO2017 val dataset.
+
+mAP is IoU=0.5:0.95,area=all,maxDets=100,mAP(COCOeval,stats[0]).
+
+| Network         | resize-style   | input size | macs     | params  | gpu num     | batch | epochs | mAP    |
+| --------------- | -------------- | ---------- | -------- | ------- | ----------- | ----- | ------ | ------ |
+| ResNet50-YOLACT | YoloStyle-800  | 800x800    | 123.095G | 31.165M | 4 RTX A5000 | 64    | 39     | 28.061 |
+| ResNet50-SOLOv2 | YoloStyle-1024 | 1024x1024  | 248.546G | 46.582M | 4 RTX A5000 | 32    | 39     | 36.726 |
+
+You can find more model training details in instance_segmentation_training/coco/.
+
 
 # Knowledge distillation task results
 

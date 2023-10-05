@@ -7,6 +7,3 @@ log
 *.log
 flagged
 pretrained_models
-z_solov2_main
-z_yolact_main
-weights
