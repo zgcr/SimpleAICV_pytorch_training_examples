@@ -1,0 +1,1 @@
+python gradio_instance_segment_single_image.py

@@ -16,6 +16,7 @@
   - [FFHQ](#ffhq)
   - [Places365-standard/challenge](#places365-standardchallenge)
 - [How to train and test model](#how-to-train-and-test-model)
+- [How to use gradio demo](#how-to-use-gradio-demo)
 - [Citation](#citation)
 
 
@@ -64,6 +65,7 @@ torchvision
 pillow
 numpy
 Cython
+colormath
 pycocotools
 opencv-python
 scipy
@@ -278,6 +280,16 @@ CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.run --nproc_per_node=2 --ma
 **All checkpoints/log are saved in training/testing experiment folder directory.**
 
 **Also, You can modify super parameters in train_config.py/test_config.py.**
+
+# How to use gradio demo
+
+cd to gradio_demo,we have classification/detection/semantic_segmentation/instance_segmentation demo.
+
+For example,you can run detection gradio demo:
+```
+chmod +x run_gradio_detect_single_image.sh
+./run_gradio_detect_single_image.sh
+```
 
 # Citation
 

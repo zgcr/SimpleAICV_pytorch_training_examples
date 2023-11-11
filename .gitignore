@@ -7,3 +7,4 @@ log
 *.log
 flagged
 pretrained_models
+classification_training/imagenet/van*

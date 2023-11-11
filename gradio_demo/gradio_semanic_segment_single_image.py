@@ -85,43 +85,114 @@ def predict(image):
                          interpolation=cv2.INTER_NEAREST)
 
     origin_image = cv2.cvtColor(origin_image, cv2.COLOR_RGB2BGR)
+    origin_image = origin_image.astype('uint8')
 
     all_classes = np.unique(outputs)
-    for per_class in all_classes:
-        per_class = int(per_class)
-        if reduce_zero_label:
+    print('1212', all_classes)
+
+    if reduce_zero_label:
+        all_colors = []
+        for per_class in all_classes:
+            per_class = int(per_class)
             if per_class < 0 or per_class > 255:
                 continue
             if per_class != 255:
                 class_name, class_color = COCO_CLASSES[
                     per_class], COCO_CLASSES_COLOR[per_class]
-            else:
-                class_name, class_color = 'background', (255, 255, 255)
-        else:
-            if per_class < 0 or per_class > 255:
+                all_colors.append(class_color)
+        all_classes = list(all_classes)
+        if 255 in all_classes:
+            all_classes.remove(255)
+    else:
+        all_colors = []
+        for per_class in all_classes:
+            per_class = int(per_class)
+            if per_class == 0:
+                continue
+            if per_class < 0 or per_class > 80:
                 continue
             if per_class != 0:
                 class_name, class_color = COCO_CLASSES[
                     per_class - 1], COCO_CLASSES_COLOR[per_class - 1]
-            else:
-                class_name, class_color = 'background', (255, 255, 255)
+                all_colors.append(class_color)
+        all_classes = list(all_classes)
+        if 0 in all_classes:
+            all_classes.remove(0)
+    print('1313', len(all_classes), len(all_colors))
 
-        class_color = np.array(
-            (class_color[0], class_color[1], class_color[2]))
-        per_mask = (outputs == per_class).astype(np.float32)
-        per_mask = np.expand_dims(per_mask, axis=-1)
-        per_mask = np.tile(per_mask, (1, 1, 3))
-        mask_color = np.expand_dims(np.expand_dims(class_color, axis=0),
-                                    axis=0)
+    if len(all_classes) == 0:
+        origin_image = origin_image.astype(np.float32)
+        origin_image = cv2.cvtColor(origin_image, cv2.COLOR_BGR2RGB)
+        origin_image = Image.fromarray(np.uint8(origin_image))
 
-        per_mask = per_mask * mask_color
-        origin_image = 0.5 * per_mask + origin_image
+        return origin_image
+
+    if reduce_zero_label:
+        per_image_mask = np.zeros(
+            (origin_image.shape[0], origin_image.shape[1], 3))
+        per_image_contours = []
+        for idx, per_class in enumerate(all_classes):
+            if per_class < 0 or per_class > 255:
+                continue
+            # reduce_zero_label=True,label为255表示background
+            if per_class != 255:
+                per_class_mask = np.nonzero(outputs == per_class)
+                per_image_mask[per_class_mask[0],
+                               per_class_mask[1]] = all_colors[idx]
+                # get contours
+                new_per_image_mask = np.zeros(
+                    (origin_image.shape[0], origin_image.shape[1]))
+                new_per_image_mask[per_class_mask[0], per_class_mask[1]] = 255
+                contours, _ = cv2.findContours(
+                    new_per_image_mask.astype('uint8'), cv2.RETR_TREE,
+                    cv2.CHAIN_APPROX_SIMPLE)
+                per_image_contours.append(contours)
+    else:
+        per_image_mask = np.zeros(
+            (origin_image.shape[0], origin_image.shape[1], 3))
+        per_image_contours = []
+        for idx, per_class in enumerate(all_classes):
+            if per_class < 0 or per_class > 255:
+                continue
+            # reduce_zero_label=False,label为0表示background
+            if per_class != 0:
+                per_class_mask = np.nonzero(outputs == per_class)
+                per_image_mask[per_class_mask[0],
+                               per_class_mask[1]] = all_colors[idx]
+                # get contours
+                new_per_image_mask = np.zeros(
+                    (origin_image.shape[0], origin_image.shape[1]))
+                new_per_image_mask[per_class_mask[0], per_class_mask[1]] = 255
+                contours, _ = cv2.findContours(
+                    new_per_image_mask.astype('uint8'), cv2.RETR_TREE,
+                    cv2.CHAIN_APPROX_SIMPLE)
+                per_image_contours.append(contours)
+
+    print('1414', per_image_mask.shape, origin_image.shape)
+
+    per_image_mask = per_image_mask.astype('uint8')
+    per_image_mask = cv2.cvtColor(per_image_mask, cv2.COLOR_RGBA2BGR)
+
+    all_classes_mask = np.nonzero(per_image_mask != 0)
+    per_image_mask[all_classes_mask[0], all_classes_mask[1]] = cv2.addWeighted(
+        origin_image[all_classes_mask[0], all_classes_mask[1]], 0.5,
+        per_image_mask[all_classes_mask[0], all_classes_mask[1]], 1, 0)
+    no_class_mask = np.nonzero(per_image_mask == 0)
+    per_image_mask[no_class_mask[0],
+                   no_class_mask[1]] = origin_image[no_class_mask[0],
+                                                    no_class_mask[1]]
+    for contours in per_image_contours:
+        cv2.drawContours(per_image_mask, contours, -1, (255, 255, 255), 1)
 
     origin_image = origin_image.astype(np.float32)
     origin_image = cv2.cvtColor(origin_image, cv2.COLOR_BGR2RGB)
     origin_image = Image.fromarray(np.uint8(origin_image))
 
-    return origin_image
+    per_image_mask = per_image_mask.astype(np.float32)
+    per_image_mask = cv2.cvtColor(per_image_mask, cv2.COLOR_BGR2RGB)
+    per_image_mask = Image.fromarray(np.uint8(per_image_mask))
+
+    return per_image_mask
 
 
 title = '语义分割'

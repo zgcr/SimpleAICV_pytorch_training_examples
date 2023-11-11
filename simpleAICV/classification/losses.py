@@ -3,12 +3,32 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 __all__ = [
+    'AMPCELoss',
     'CELoss',
     'FocalCELoss',
     'LabelSmoothCELoss',
+    'AMPOneHotLabelCELoss',
     'OneHotLabelCELoss',
     'SemanticSoftmaxLoss',
 ]
+
+
+class AMPCELoss(nn.Module):
+
+    def __init__(self):
+        super(AMPCELoss, self).__init__()
+        pass
+
+    def forward(self, preds, labels):
+        preds = F.softmax(preds, dim=1)
+        preds = torch.clamp(preds, min=1e-4, max=1. - 1e-4)
+        preds = torch.log(preds)
+
+        labels = F.one_hot(labels, preds.size(1)).float()
+
+        loss = F.kl_div(preds, labels, reduction='batchmean')
+
+        return loss
 
 
 class CELoss(nn.Module):
@@ -67,6 +87,24 @@ class LabelSmoothCELoss(nn.Module):
         loss = loss.mean()
 
         return loss
+
+
+class AMPOneHotLabelCELoss(nn.Module):
+    '''
+    Cross Entropy Loss,input label is one-hot format(include soft label)
+    '''
+
+    def __init__(self):
+        super(AMPOneHotLabelCELoss, self).__init__()
+
+    def forward(self, x, target):
+        x = F.softmax(x, dim=-1)
+        x = torch.clamp(x, min=1e-4, max=1. - 1e-4)
+        x = torch.log(x)
+
+        loss = torch.sum(-target * x, dim=-1)
+
+        return loss.mean()
 
 
 class OneHotLabelCELoss(nn.Module):

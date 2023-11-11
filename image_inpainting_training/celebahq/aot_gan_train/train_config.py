@@ -142,9 +142,9 @@ class config:
 
     seed = 0
     # batch_size is total size
-    batch_size = 12
+    batch_size = 24
     # num_workers is total workers
-    num_workers = 24
+    num_workers = 48
 
     epochs = 100
     print_interval = 100
@@ -155,7 +155,7 @@ class config:
 
     sync_bn = False
     use_amp = False
-    use_compile = False
+    use_compile = True
     compile_params = {
         # 'default': optimizes for large models, low compile-time and no extra memory usage.
         # 'reduce-overhead': optimizes to reduce the framework overhead and uses some extra memory, helps speed up small models, model update may not correct.

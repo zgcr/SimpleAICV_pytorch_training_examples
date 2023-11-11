@@ -155,7 +155,7 @@ class config:
 
     sync_bn = False
     use_amp = False
-    use_compile = False
+    use_compile = True
     compile_params = {
         # 'default': optimizes for large models, low compile-time and no extra memory usage.
         # 'reduce-overhead': optimizes to reduce the framework overhead and uses some extra memory, helps speed up small models, model update may not correct.

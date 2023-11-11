@@ -23,12 +23,12 @@ from simpleAICV.detection.common import load_state_dict
 from simpleAICV.detection.datasets.cocodataset import COCO_CLASSES, COCO_CLASSES_COLOR
 
 seed = 0
-model_name = 'resnet50_fcos'
-decoder_name = 'FCOSDecoder'
+model_name = 'resnet50_detr'
+decoder_name = 'DETRDecoder'
 # coco class
 model_num_classes = 80
-trained_model_path = '/root/code/SimpleAICV_pytorch_training_examples_on_ImageNet_COCO_ADE20K/pretrained_models/fcos_finetune_on_coco_from_objects365_pretrain/resnet50_fcos-yoloresize800-metric44.526.pth'
-input_image_size = 800
+trained_model_path = '/root/code/SimpleAICV_pytorch_training_examples_on_ImageNet_COCO_ADE20K/pretrained_models/detr_train_from_scratch_on_coco/resnet50_detr-yoloresize1024-metric36.941.pth'
+input_image_size = 1024
 # 'retina_style', 'yolo_style'
 image_resize_type = 'yolo_style'
 min_score_threshold = 0.5
@@ -40,7 +40,7 @@ random.seed(seed)
 np.random.seed(seed)
 torch.manual_seed(seed)
 
-assert model_name in models.__dict__.keys(), 'Unsupported model!'
+# assert model_name in models.__dict__.keys(), 'Unsupported model!'
 model = models.__dict__[model_name](**{
     'num_classes': model_num_classes,
 })
@@ -83,19 +83,34 @@ def preprocess_image(image, resize, resize_type):
     padded_img[:resize_h, :resize_w, :] = image
     scale = factor
 
+    scaled_size = [resize_h, resize_w]
+
     # normalize
     padded_img = padded_img.astype(np.float32) / 255.
 
-    return origin_image, padded_img, scale
+    padded_mask = None
+    if 'detr' in model_name:
+        padded_mask = np.ones((resize_h + pad_h, resize_w + pad_w), dtype=bool)
+        padded_mask[:resize_h, :resize_w] = False
+
+    return origin_image, padded_img, padded_mask, scale, scaled_size
 
 
 def predict(image):
-    origin_image, resized_img, scale = preprocess_image(
+    origin_image, resized_img, padded_mask, scale, scaled_size = preprocess_image(
         image, input_image_size, image_resize_type)
     resized_img = torch.tensor(resized_img).permute(2, 0, 1).unsqueeze(0)
+    if padded_mask is not None:
+        padded_mask = torch.tensor(padded_mask).unsqueeze(0)
+        scaled_size = [scaled_size]
 
-    outputs = model(resized_img)
-    scores, classes, boxes = decoder(outputs)
+    if 'detr' in model_name:
+        outputs = model(resized_img, padded_mask)
+        scores, classes, boxes = decoder(outputs, scaled_size)
+    else:
+        outputs = model(resized_img)
+        scores, classes, boxes = decoder(outputs)
+
     boxes /= scale
 
     scores = scores.squeeze(0)

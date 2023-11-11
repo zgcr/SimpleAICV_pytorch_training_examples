@@ -35,7 +35,7 @@ class AOTGANGeneratorModel(nn.Module):
             nn.ReLU(True),
             UpConv(planes[1], planes[0]),
             nn.ReLU(True),
-            nn.Conv2d(planes[0], 3, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(planes[0], 3, kernel_size=7, stride=1, padding=3),
         )
 
         for m in self.modules():
@@ -70,10 +70,7 @@ class UpConv(nn.Module):
                               padding=1)
 
     def forward(self, x):
-        x = F.interpolate(x,
-                          scale_factor=2,
-                          mode='bilinear',
-                          align_corners=True)
+        x = F.interpolate(x, scale_factor=2, mode='nearest')
         x = self.conv(x)
 
         return x
@@ -108,7 +105,6 @@ class AOTBlock(nn.Module):
                               stride=1,
                               padding=1,
                               dilation=1)
-        self.bn = nn.BatchNorm2d(inplanes)
 
     def forward(self, x):
         out = [
@@ -119,7 +115,6 @@ class AOTBlock(nn.Module):
         out = torch.cat(out, dim=1)
         out = self.fuse(out)
         mask = self.gate(x)
-        mask = self.bn(mask)
         mask = torch.sigmoid(mask)
 
         return x * (1 - mask) + out * mask
@@ -189,6 +184,24 @@ if __name__ == '__main__':
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
+
+    generator_net = AOTGANGeneratorModel(planes=[64, 96, 128],
+                                         rates=[1, 2, 4, 8],
+                                         block_num=8)
+    batch, channel, image_h, image_w = 1, 3, 512, 512
+    images = torch.randn(batch, channel, image_h, image_w).float()
+    masks = torch.randint(0, 2, size=(batch, 1, image_h, image_w)).float()
+
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(generator_net,
+                           inputs=(images, masks),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    outs = generator_net(torch.autograd.Variable(images),
+                         torch.autograd.Variable(masks))
+    print('2222', outs.shape)
 
     generator_net = AOTGANGeneratorModel(planes=[64, 128, 256],
                                          rates=[1, 2, 4, 8],

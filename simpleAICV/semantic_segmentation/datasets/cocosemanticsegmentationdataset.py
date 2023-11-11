@@ -1,6 +1,6 @@
 import os
 import cv2
-import math
+import copy
 import numpy as np
 
 from pycocotools.coco import COCO
@@ -90,86 +90,86 @@ COCO_CLASSES = [
 ]
 
 COCO_CLASSES_COLOR = [
-    (241, 23, 78),
-    (63, 71, 49),
-    (67, 79, 143),
-    (32, 250, 205),
-    (136, 228, 157),
-    (135, 125, 104),
-    (151, 46, 171),
-    (129, 37, 28),
-    (3, 248, 159),
-    (154, 129, 58),
-    (93, 155, 200),
-    (201, 98, 152),
-    (187, 194, 70),
-    (122, 144, 121),
-    (168, 31, 32),
-    (168, 68, 189),
-    (173, 68, 45),
-    (200, 81, 154),
-    (171, 114, 139),
-    (216, 211, 39),
-    (187, 119, 238),
-    (201, 120, 112),
-    (129, 16, 164),
-    (211, 3, 208),
-    (169, 41, 248),
-    (100, 77, 159),
-    (140, 104, 243),
-    (26, 165, 41),
-    (225, 176, 197),
-    (35, 212, 67),
-    (160, 245, 68),
-    (7, 87, 70),
-    (52, 107, 85),
-    (103, 64, 188),
-    (245, 76, 17),
-    (248, 154, 59),
-    (77, 45, 123),
-    (210, 95, 230),
-    (172, 188, 171),
-    (250, 44, 233),
-    (161, 71, 46),
-    (144, 14, 134),
-    (231, 142, 186),
-    (34, 1, 200),
-    (144, 42, 108),
-    (222, 70, 139),
-    (138, 62, 77),
-    (178, 99, 61),
-    (17, 94, 132),
-    (93, 248, 254),
-    (244, 116, 204),
-    (138, 165, 238),
-    (44, 216, 225),
-    (224, 164, 12),
-    (91, 126, 184),
-    (116, 254, 49),
-    (70, 250, 105),
-    (252, 237, 54),
-    (196, 136, 21),
-    (234, 13, 149),
-    (66, 43, 47),
-    (2, 73, 234),
-    (118, 181, 5),
-    (105, 99, 225),
-    (150, 253, 92),
-    (59, 2, 121),
-    (176, 190, 223),
-    (91, 62, 47),
-    (198, 124, 140),
-    (100, 135, 185),
-    (20, 207, 98),
-    (216, 38, 133),
-    (17, 202, 208),
-    (216, 135, 81),
-    (212, 203, 33),
-    (108, 135, 76),
-    (28, 47, 170),
-    (142, 128, 121),
-    (23, 161, 179),
-    (33, 183, 224),
+    (156, 77, 36),
+    (218, 3, 199),
+    (252, 197, 160),
+    (82, 69, 38),
+    (132, 17, 27),
+    (71, 19, 213),
+    (108, 81, 1),
+    (49, 54, 81),
+    (8, 249, 143),
+    (80, 20, 4),
+    (75, 227, 112),
+    (82, 41, 57),
+    (157, 0, 97),
+    (0, 209, 246),
+    (116, 242, 109),
+    (60, 225, 243),
+    (2, 125, 5),
+    (118, 94, 170),
+    (171, 1, 17),
+    (54, 97, 38),
+    (16, 132, 55),
+    (1, 90, 238),
+    (112, 4, 197),
+    (147, 219, 248),
+    (253, 0, 14),
+    (103, 77, 249),
+    (149, 1, 222),
+    (120, 94, 51),
+    (88, 29, 129),
+    (204, 29, 128),
+    (19, 0, 244),
+    (92, 154, 54),
+    (34, 89, 7),
+    (29, 168, 224),
+    (111, 25, 1),
+    (137, 70, 83),
+    (24, 217, 19),
+    (47, 170, 155),
+    (34, 234, 107),
+    (182, 116, 221),
+    (102, 243, 211),
+    (53, 247, 123),
+    (147, 159, 24),
+    (194, 147, 121),
+    (76, 101, 233),
+    (50, 11, 88),
+    (253, 33, 83),
+    (84, 1, 57),
+    (248, 243, 24),
+    (244, 79, 35),
+    (162, 240, 132),
+    (1, 32, 203),
+    (208, 10, 8),
+    (30, 64, 206),
+    (234, 80, 229),
+    (31, 253, 207),
+    (110, 34, 78),
+    (234, 72, 73),
+    (92, 3, 16),
+    (113, 0, 65),
+    (196, 177, 53),
+    (63, 92, 139),
+    (76, 143, 1),
+    (61, 93, 84),
+    (82, 130, 157),
+    (28, 2, 84),
+    (55, 226, 12),
+    (34, 99, 82),
+    (47, 5, 239),
+    (53, 100, 219),
+    (132, 37, 147),
+    (244, 156, 224),
+    (179, 57, 59),
+    (2, 27, 76),
+    (0, 100, 83),
+    (64, 39, 116),
+    (170, 46, 246),
+    (27, 51, 87),
+    (185, 71, 0),
+    (107, 247, 29),
 ]
 
 
@@ -333,11 +333,11 @@ if __name__ == '__main__':
                              cat_max_ratio=0.75,
                              ignore_index=255),
             RandomHorizontalFlip(prob=0.5),
-            PhotoMetricDistortion(brightness_delta=32,
-                                  contrast_range=(0.5, 1.5),
-                                  saturation_range=(0.5, 1.5),
-                                  hue_delta=18,
-                                  prob=0.5),
+            # PhotoMetricDistortion(brightness_delta=32,
+            #                       contrast_range=(0.5, 1.5),
+            #                       saturation_range=(0.5, 1.5),
+            #                       hue_delta=18,
+            #                       prob=0.5),
             # Normalize(),
         ]))
 
@@ -354,11 +354,12 @@ if __name__ == '__main__':
 
         image = np.ascontiguousarray(per_sample['image'], dtype=np.uint8)
         image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        image_not_draw = copy.deepcopy(image)
         mask = per_sample['mask']
-        mask_jpg = np.zeros((image.shape[0], image.shape[1], 3))
 
         all_classes = np.unique(mask)
-        print("1212", all_classes)
+        print('1212', all_classes)
+        all_colors = []
         for per_class in all_classes:
             per_class = int(per_class)
             if per_class < 0 or per_class > 255:
@@ -366,23 +367,51 @@ if __name__ == '__main__':
             if per_class != 255:
                 class_name, class_color = COCO_CLASSES[
                     per_class], COCO_CLASSES_COLOR[per_class]
-            else:
-                class_name, class_color = 'background', (255, 255, 255)
-            class_color = np.array(
-                (class_color[0], class_color[1], class_color[2]))
-            per_mask = (mask == per_class).astype(np.float32)
-            per_mask = np.expand_dims(per_mask, axis=-1)
-            per_mask = np.tile(per_mask, (1, 1, 3))
-            mask_color = np.expand_dims(np.expand_dims(class_color, axis=0),
-                                        axis=0)
+                all_colors.append(class_color)
+        all_classes = list(all_classes)
+        if 255 in all_classes:
+            all_classes.remove(255)
 
-            per_mask = per_mask * mask_color
-            image = 0.5 * per_mask + image
-            mask_jpg += per_mask
+        if len(all_classes) == 0:
+            continue
 
-        cv2.imencode('.jpg', image)[1].tofile(
+        per_image_mask = np.zeros((image.shape[0], image.shape[1], 3))
+        per_image_contours = []
+        for idx, per_class in enumerate(all_classes):
+            if per_class < 0 or per_class > 255:
+                continue
+            # reduce_zero_label=True,label为255表示background
+            if per_class != 255:
+                per_class_mask = np.nonzero(mask == per_class)
+                per_image_mask[per_class_mask[0],
+                               per_class_mask[1]] = all_colors[idx]
+                # get contours
+                new_per_image_mask = np.zeros((image.shape[0], image.shape[1]))
+                new_per_image_mask[per_class_mask[0], per_class_mask[1]] = 255
+                contours, _ = cv2.findContours(
+                    new_per_image_mask.astype('uint8'), cv2.RETR_TREE,
+                    cv2.CHAIN_APPROX_SIMPLE)
+                per_image_contours.append(contours)
+
+        per_image_mask = per_image_mask.astype('uint8')
+        per_image_mask = cv2.cvtColor(per_image_mask, cv2.COLOR_RGBA2BGR)
+
+        all_classes_mask = np.nonzero(per_image_mask != 0)
+        per_image_mask[all_classes_mask[0],
+                       all_classes_mask[1]] = cv2.addWeighted(
+                           image[all_classes_mask[0], all_classes_mask[1]],
+                           0.5, per_image_mask[all_classes_mask[0],
+                                               all_classes_mask[1]], 1, 0)
+        no_class_mask = np.nonzero(per_image_mask == 0)
+        per_image_mask[no_class_mask[0],
+                       no_class_mask[1]] = image[no_class_mask[0],
+                                                 no_class_mask[1]]
+        for contours in per_image_contours:
+            cv2.drawContours(per_image_mask, contours, -1, (255, 255, 255), 2)
+
+        cv2.imencode('.jpg', image_not_draw)[1].tofile(
             os.path.join(temp_dir, f'idx_{count}.jpg'))
-        cv2.imencode('.jpg', mask_jpg)[1].tofile(
+        cv2.imencode('.jpg', per_image_mask)[1].tofile(
             os.path.join(temp_dir, f'idx_{count}_mask.jpg'))
 
         if count < 10:
@@ -416,12 +445,11 @@ if __name__ == '__main__':
                 per_image_mask_targets) in enumerate(zip(images, masks)):
             per_image = np.ascontiguousarray(per_image, dtype=np.uint8)
             per_image = cv2.cvtColor(per_image, cv2.COLOR_RGB2BGR)
-
-            per_image_mask_jpg = np.zeros(
-                (per_image.shape[0], per_image.shape[1], 3))
+            per_image_not_draw = copy.deepcopy(per_image)
 
             all_classes = np.unique(per_image_mask_targets)
-            print("2323", all_classes)
+            print('1212', all_classes)
+            all_colors = []
             for per_class in all_classes:
                 per_class = int(per_class)
                 if per_class < 0 or per_class > 255:
@@ -429,25 +457,57 @@ if __name__ == '__main__':
                 if per_class != 255:
                     class_name, class_color = COCO_CLASSES[
                         per_class], COCO_CLASSES_COLOR[per_class]
-                else:
-                    class_name, class_color = 'background', (255, 255, 255)
-                class_color = np.array(
-                    (class_color[0], class_color[1], class_color[2]))
-                per_image_mask = (per_image_mask_targets == per_class).astype(
-                    np.float32)
-                per_image_mask = np.expand_dims(per_image_mask, axis=-1)
-                per_image_mask = np.tile(per_image_mask, (1, 1, 3))
-                mask_color = np.expand_dims(np.expand_dims(class_color,
-                                                           axis=0),
-                                            axis=0)
+                    all_colors.append(class_color)
+            all_classes = list(all_classes)
+            if 255 in all_classes:
+                all_classes.remove(255)
 
-                per_image_mask = per_image_mask * mask_color
-                per_image = 0.5 * per_image_mask + per_image
-                per_image_mask_jpg += per_image_mask
+            if len(all_classes) == 0:
+                continue
 
-            cv2.imencode('.jpg', per_image)[1].tofile(
+            per_image_mask = np.zeros(
+                (per_image.shape[0], per_image.shape[1], 3))
+            per_image_contours = []
+            for idx, per_class in enumerate(all_classes):
+                if per_class < 0 or per_class > 255:
+                    continue
+                # reduce_zero_label=True,label为255表示background
+                if per_class != 255:
+                    per_class_mask = np.nonzero(
+                        per_image_mask_targets == per_class)
+                    per_image_mask[per_class_mask[0],
+                                   per_class_mask[1]] = all_colors[idx]
+                    # get contours
+                    new_per_image_mask = np.zeros(
+                        (per_image.shape[0], per_image.shape[1]))
+                    new_per_image_mask[per_class_mask[0],
+                                       per_class_mask[1]] = 255
+                    contours, _ = cv2.findContours(
+                        new_per_image_mask.astype('uint8'), cv2.RETR_TREE,
+                        cv2.CHAIN_APPROX_SIMPLE)
+                    per_image_contours.append(contours)
+
+            per_image_mask = per_image_mask.astype('uint8')
+            per_image_mask = cv2.cvtColor(per_image_mask, cv2.COLOR_RGBA2BGR)
+
+            all_classes_mask = np.nonzero(per_image_mask != 0)
+            per_image_mask[all_classes_mask[0],
+                           all_classes_mask[1]] = cv2.addWeighted(
+                               per_image[all_classes_mask[0],
+                                         all_classes_mask[1]], 0.5,
+                               per_image_mask[all_classes_mask[0],
+                                              all_classes_mask[1]], 1, 0)
+            no_class_mask = np.nonzero(per_image_mask == 0)
+            per_image_mask[no_class_mask[0],
+                           no_class_mask[1]] = per_image[no_class_mask[0],
+                                                         no_class_mask[1]]
+            for contours in per_image_contours:
+                cv2.drawContours(per_image_mask, contours, -1, (255, 255, 255),
+                                 2)
+
+            cv2.imencode('.jpg', per_image_not_draw)[1].tofile(
                 os.path.join(temp_dir, f'idx_{count}_{i}.jpg'))
-            cv2.imencode('.jpg', per_image_mask_jpg)[1].tofile(
+            cv2.imencode('.jpg', per_image_mask)[1].tofile(
                 os.path.join(temp_dir, f'idx_{count}_{i}_mask.jpg'))
 
         if count < 5:
@@ -455,136 +515,196 @@ if __name__ == '__main__':
         else:
             break
 
-    # cocodataset = CocoSemanticSegmentation(
-    #     COCO2017_path,
-    #     set_name='train2017',
-    #     reduce_zero_label=False,
-    #     transform=transforms.Compose([
-    #         RandomCropResize(image_scale=(2048, 512),
-    #                          multi_scale=False,
-    #                          multi_scale_range=(0.5, 2.0),
-    #                          crop_size=(512, 512),
-    #                          cat_max_ratio=0.75,
-    #                          ignore_index=255),
-    #         RandomHorizontalFlip(prob=0.5),
-    #         PhotoMetricDistortion(brightness_delta=32,
-    #                               contrast_range=(0.5, 1.5),
-    #                               saturation_range=(0.5, 1.5),
-    #                               hue_delta=18,
-    #                               prob=0.5),
-    #         # Normalize(),
-    #     ]))
+    ##########################################################
 
-    # count = 0
-    # for per_sample in tqdm(cocodataset):
-    #     print('1111', per_sample['image'].shape, per_sample['mask'].shape,
-    #           per_sample['scale'], per_sample['size'])
-    #     print('1111', per_sample['image'].dtype, per_sample['mask'].dtype,
-    #           per_sample['scale'].dtype, per_sample['size'].dtype)
+    cocodataset = CocoSemanticSegmentation(
+        COCO2017_path,
+        set_name='train2017',
+        reduce_zero_label=False,
+        transform=transforms.Compose([
+            RandomCropResize(image_scale=(2048, 512),
+                             multi_scale=False,
+                             multi_scale_range=(0.5, 2.0),
+                             crop_size=(512, 512),
+                             cat_max_ratio=0.75,
+                             ignore_index=255),
+            RandomHorizontalFlip(prob=0.5),
+            # PhotoMetricDistortion(brightness_delta=32,
+            #                       contrast_range=(0.5, 1.5),
+            #                       saturation_range=(0.5, 1.5),
+            #                       hue_delta=18,
+            #                       prob=0.5),
+            # Normalize(),
+        ]))
 
-    #     temp_dir = './temp1'
-    #     if not os.path.exists(temp_dir):
-    #         os.makedirs(temp_dir)
+    count = 0
+    for per_sample in tqdm(cocodataset):
+        print('1111', per_sample['image'].shape, per_sample['mask'].shape,
+              per_sample['scale'], per_sample['size'])
+        print('1111', per_sample['image'].dtype, per_sample['mask'].dtype,
+              per_sample['scale'].dtype, per_sample['size'].dtype)
 
-    #     image = np.ascontiguousarray(per_sample['image'], dtype=np.uint8)
-    #     image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-    #     mask = per_sample['mask']
-    #     mask_jpg = np.zeros((image.shape[0], image.shape[1], 3))
+        temp_dir = './temp3'
+        if not os.path.exists(temp_dir):
+            os.makedirs(temp_dir)
 
-    #     all_classes = np.unique(mask)
-    #     print("1212", all_classes)
-    #     for per_class in all_classes:
-    #         per_class = int(per_class)
-    #         if per_class < 0 or per_class > 80:
-    #             continue
-    #         if per_class != 0:
-    #             class_name, class_color = COCO_CLASSES[
-    #                 per_class - 1], COCO_CLASSES_COLOR[per_class - 1]
-    #         else:
-    #             class_name, class_color = 'background', (255, 255, 255)
-    #         class_color = np.array(
-    #             (class_color[0], class_color[1], class_color[2]))
-    #         per_mask = (mask == per_class).astype(np.float32)
-    #         per_mask = np.expand_dims(per_mask, axis=-1)
-    #         per_mask = np.tile(per_mask, (1, 1, 3))
-    #         mask_color = np.expand_dims(np.expand_dims(class_color, axis=0),
-    #                                     axis=0)
+        image = np.ascontiguousarray(per_sample['image'], dtype=np.uint8)
+        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        image_not_draw = copy.deepcopy(image)
+        mask = per_sample['mask']
 
-    #         per_mask = per_mask * mask_color
-    #         image = 0.5 * per_mask + image
-    #         mask_jpg += per_mask
+        all_classes = np.unique(mask)
+        print('1212', all_classes)
+        all_colors = []
+        for per_class in all_classes:
+            per_class = int(per_class)
+            if per_class == 0:
+                continue
+            if per_class < 0 or per_class > 80:
+                continue
+            if per_class != 0:
+                class_name, class_color = COCO_CLASSES[
+                    per_class - 1], COCO_CLASSES_COLOR[per_class - 1]
+                all_colors.append(class_color)
+        all_classes = list(all_classes)
+        if 0 in all_classes:
+            all_classes.remove(0)
 
-    #     cv2.imencode('.jpg', image)[1].tofile(
-    #         os.path.join(temp_dir, f'idx_{count}.jpg'))
-    #     cv2.imencode('.jpg', mask_jpg)[1].tofile(
-    #         os.path.join(temp_dir, f'idx_{count}_mask.jpg'))
+        per_image_mask = np.zeros((image.shape[0], image.shape[1], 3))
+        per_image_contours = []
+        for idx, per_class in enumerate(all_classes):
+            if per_class < 0 or per_class > 255:
+                continue
+            # reduce_zero_label=False,label为0表示background
+            if per_class != 0:
+                per_class_mask = np.nonzero(mask == per_class)
+                per_image_mask[per_class_mask[0],
+                               per_class_mask[1]] = all_colors[idx]
+                # get contours
+                new_per_image_mask = np.zeros((image.shape[0], image.shape[1]))
+                new_per_image_mask[per_class_mask[0], per_class_mask[1]] = 255
+                contours, _ = cv2.findContours(
+                    new_per_image_mask.astype('uint8'), cv2.RETR_TREE,
+                    cv2.CHAIN_APPROX_SIMPLE)
+                per_image_contours.append(contours)
 
-    #     if count < 10:
-    #         count += 1
-    #     else:
-    #         break
+        per_image_mask = per_image_mask.astype('uint8')
+        per_image_mask = cv2.cvtColor(per_image_mask, cv2.COLOR_RGBA2BGR)
 
-    # from torch.utils.data import DataLoader
-    # collater = SemanticSegmentationCollater(resize=512, ignore_index=None)
-    # train_loader = DataLoader(cocodataset,
-    #                           batch_size=4,
-    #                           shuffle=True,
-    #                           num_workers=2,
-    #                           collate_fn=collater)
+        all_classes_mask = np.nonzero(per_image_mask != 0)
+        per_image_mask[all_classes_mask[0],
+                       all_classes_mask[1]] = cv2.addWeighted(
+                           image[all_classes_mask[0], all_classes_mask[1]],
+                           0.5, per_image_mask[all_classes_mask[0],
+                                               all_classes_mask[1]], 1, 0)
+        no_class_mask = np.nonzero(per_image_mask == 0)
+        per_image_mask[no_class_mask[0],
+                       no_class_mask[1]] = image[no_class_mask[0],
+                                                 no_class_mask[1]]
+        for contours in per_image_contours:
+            cv2.drawContours(per_image_mask, contours, -1, (255, 255, 255), 2)
 
-    # count = 0
-    # for data in tqdm(train_loader):
-    #     images, masks, scales, sizes = data['image'], data['mask'], data[
-    #         'scale'], data['size']
-    #     print('2222', images.shape, masks.shape, scales.shape, sizes.shape)
-    #     print('2222', images.dtype, masks.dtype, scales.dtype, sizes.dtype)
+        cv2.imencode('.jpg', image_not_draw)[1].tofile(
+            os.path.join(temp_dir, f'idx_{count}.jpg'))
+        cv2.imencode('.jpg', per_image_mask)[1].tofile(
+            os.path.join(temp_dir, f'idx_{count}_mask.jpg'))
 
-    #     temp_dir = './temp2'
-    #     if not os.path.exists(temp_dir):
-    #         os.makedirs(temp_dir)
+        if count < 10:
+            count += 1
+        else:
+            break
 
-    #     images = images.permute(0, 2, 3, 1).cpu().numpy()
-    #     masks = masks.cpu().numpy()
+    from torch.utils.data import DataLoader
+    collater = SemanticSegmentationCollater(resize=512, ignore_index=None)
+    train_loader = DataLoader(cocodataset,
+                              batch_size=4,
+                              shuffle=True,
+                              num_workers=2,
+                              collate_fn=collater)
 
-    #     for i, (per_image,
-    #             per_image_mask_targets) in enumerate(zip(images, masks)):
-    #         per_image = np.ascontiguousarray(per_image, dtype=np.uint8)
-    #         per_image = cv2.cvtColor(per_image, cv2.COLOR_RGB2BGR)
+    count = 0
+    for data in tqdm(train_loader):
+        images, masks, scales, sizes = data['image'], data['mask'], data[
+            'scale'], data['size']
+        print('2222', images.shape, masks.shape, scales.shape, sizes.shape)
+        print('2222', images.dtype, masks.dtype, scales.dtype, sizes.dtype)
 
-    #         per_image_mask_jpg = np.zeros(
-    #             (per_image.shape[0], per_image.shape[1], 3))
+        temp_dir = './temp4'
+        if not os.path.exists(temp_dir):
+            os.makedirs(temp_dir)
 
-    #         all_classes = np.unique(per_image_mask_targets)
-    #         print("2323", all_classes)
-    #         for per_class in all_classes:
-    #             per_class = int(per_class)
-    #             if per_class < 0 or per_class > 150:
-    #                 continue
-    #             if per_class != 0:
-    #                 class_name, class_color = COCO_CLASSES[
-    #                     per_class - 1], COCO_CLASSES_COLOR[per_class - 1]
-    #             else:
-    #                 class_name, class_color = 'background', (255, 255, 255)
-    #             class_color = np.array(
-    #                 (class_color[0], class_color[1], class_color[2]))
-    #             per_image_mask = (per_image_mask_targets == per_class).astype(
-    #                 np.float32)
-    #             per_image_mask = np.expand_dims(per_image_mask, axis=-1)
-    #             per_image_mask = np.tile(per_image_mask, (1, 1, 3))
-    #             mask_color = np.expand_dims(np.expand_dims(class_color,
-    #                                                        axis=0),
-    #                                         axis=0)
+        images = images.permute(0, 2, 3, 1).cpu().numpy()
+        masks = masks.cpu().numpy()
 
-    #             per_image_mask = per_image_mask * mask_color
-    #             per_image = 0.5 * per_image_mask + per_image
-    #             per_image_mask_jpg += per_image_mask
+        for i, (per_image,
+                per_image_mask_targets) in enumerate(zip(images, masks)):
+            per_image = np.ascontiguousarray(per_image, dtype=np.uint8)
+            per_image = cv2.cvtColor(per_image, cv2.COLOR_RGB2BGR)
+            per_image_not_draw = copy.deepcopy(per_image)
 
-    #         cv2.imencode('.jpg', per_image)[1].tofile(
-    #             os.path.join(temp_dir, f'idx_{count}_{i}.jpg'))
-    #         cv2.imencode('.jpg', per_image_mask_jpg)[1].tofile(
-    #             os.path.join(temp_dir, f'idx_{count}_{i}_mask.jpg'))
+            all_classes = np.unique(per_image_mask_targets)
+            print('1212', all_classes)
+            all_colors = []
+            for per_class in all_classes:
+                per_class = int(per_class)
+                if per_class == 0:
+                    continue
+                if per_class < 0 or per_class > 80:
+                    continue
+                if per_class != 0:
+                    class_name, class_color = COCO_CLASSES[
+                        per_class - 1], COCO_CLASSES_COLOR[per_class - 1]
+                    all_colors.append(class_color)
+            all_classes = list(all_classes)
+            if 0 in all_classes:
+                all_classes.remove(0)
 
-    #     if count < 5:
-    #         count += 1
-    #     else:
-    #         break
+            per_image_mask = np.zeros(
+                (per_image.shape[0], per_image.shape[1], 3))
+            per_image_contours = []
+            for idx, per_class in enumerate(all_classes):
+                if per_class < 0 or per_class > 255:
+                    continue
+                # reduce_zero_label=False,label为0表示background
+                if per_class != 0:
+                    per_class_mask = np.nonzero(
+                        per_image_mask_targets == per_class)
+                    per_image_mask[per_class_mask[0],
+                                   per_class_mask[1]] = all_colors[idx]
+                    # get contours
+                    new_per_image_mask = np.zeros(
+                        (per_image.shape[0], per_image.shape[1]))
+                    new_per_image_mask[per_class_mask[0],
+                                       per_class_mask[1]] = 255
+                    contours, _ = cv2.findContours(
+                        new_per_image_mask.astype('uint8'), cv2.RETR_TREE,
+                        cv2.CHAIN_APPROX_SIMPLE)
+                    per_image_contours.append(contours)
+
+            per_image_mask = per_image_mask.astype('uint8')
+            per_image_mask = cv2.cvtColor(per_image_mask, cv2.COLOR_RGBA2BGR)
+
+            all_classes_mask = np.nonzero(per_image_mask != 0)
+            per_image_mask[all_classes_mask[0],
+                           all_classes_mask[1]] = cv2.addWeighted(
+                               per_image[all_classes_mask[0],
+                                         all_classes_mask[1]], 0.5,
+                               per_image_mask[all_classes_mask[0],
+                                              all_classes_mask[1]], 1, 0)
+            no_class_mask = np.nonzero(per_image_mask == 0)
+            per_image_mask[no_class_mask[0],
+                           no_class_mask[1]] = per_image[no_class_mask[0],
+                                                         no_class_mask[1]]
+            for contours in per_image_contours:
+                cv2.drawContours(per_image_mask, contours, -1, (255, 255, 255),
+                                 2)
+
+            cv2.imencode('.jpg', per_image_not_draw)[1].tofile(
+                os.path.join(temp_dir, f'idx_{count}_{i}.jpg'))
+            cv2.imencode('.jpg', per_image_mask)[1].tofile(
+                os.path.join(temp_dir, f'idx_{count}_{i}_mask.jpg'))
+
+        if count < 5:
+            count += 1
+        else:
+            break

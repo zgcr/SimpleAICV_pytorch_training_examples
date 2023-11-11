@@ -160,156 +160,156 @@ ADE20K_CLASSES = [
 
 # RGB color
 ADK20K_CLASSES_COLOR = [
-    (120, 120, 120),
-    (180, 120, 120),
-    (6, 230, 230),
-    (80, 50, 50),
-    (4, 200, 3),
-    (120, 120, 80),
-    (140, 140, 140),
-    (204, 5, 255),
-    (230, 230, 230),
-    (4, 250, 7),
-    (224, 5, 255),
-    (235, 255, 7),
-    (150, 5, 61),
-    (120, 120, 70),
-    (8, 255, 51),
-    (255, 6, 82),
-    (143, 255, 140),
-    (204, 255, 4),
-    (255, 51, 7),
-    (204, 70, 3),
-    (0, 102, 200),
-    (61, 230, 250),
-    (255, 6, 51),
-    (11, 102, 255),
-    (255, 7, 71),
-    (255, 9, 224),
-    (9, 7, 230),
-    (220, 220, 220),
-    (255, 9, 92),
-    (112, 9, 255),
-    (8, 255, 214),
-    (7, 255, 224),
-    (255, 184, 6),
-    (10, 255, 71),
-    (255, 41, 10),
-    (7, 255, 255),
-    (224, 255, 8),
-    (102, 8, 255),
-    (255, 61, 6),
-    (255, 194, 7),
-    (255, 122, 8),
-    (0, 255, 20),
-    (255, 8, 41),
-    (255, 5, 153),
-    (6, 51, 255),
-    (235, 12, 255),
-    (160, 150, 20),
-    (0, 163, 255),
-    (140, 140, 140),
-    (250, 10, 15),
-    (20, 255, 0),
-    (31, 255, 0),
-    (255, 31, 0),
-    (255, 224, 0),
-    (153, 255, 0),
-    (0, 0, 255),
-    (255, 71, 0),
-    (0, 235, 255),
-    (0, 173, 255),
-    (31, 0, 255),
-    (11, 200, 200),
-    (255, 82, 0),
-    (0, 255, 245),
-    (0, 61, 255),
-    (0, 255, 112),
-    (0, 255, 133),
-    (255, 0, 0),
-    (255, 163, 0),
-    (255, 102, 0),
-    (194, 255, 0),
-    (0, 143, 255),
-    (51, 255, 0),
-    (0, 82, 255),
-    (0, 255, 41),
-    (0, 255, 173),
-    (10, 0, 255),
-    (173, 255, 0),
-    (0, 255, 153),
-    (255, 92, 0),
-    (255, 0, 255),
-    (255, 0, 245),
-    (255, 0, 102),
-    (255, 173, 0),
-    (255, 0, 20),
-    (255, 184, 184),
-    (0, 31, 255),
-    (0, 255, 61),
-    (0, 71, 255),
-    (255, 0, 204),
-    (0, 255, 194),
-    (0, 255, 82),
-    (0, 10, 255),
-    (0, 112, 255),
-    (51, 0, 255),
-    (0, 194, 255),
-    (0, 122, 255),
-    (0, 255, 163),
-    (255, 153, 0),
-    (0, 255, 10),
-    (255, 112, 0),
-    (143, 255, 0),
-    (82, 0, 255),
-    (163, 255, 0),
-    (255, 235, 0),
-    (8, 184, 170),
-    (133, 0, 255),
-    (0, 255, 92),
-    (184, 0, 255),
-    (255, 0, 31),
-    (0, 184, 255),
-    (0, 214, 255),
-    (255, 0, 112),
-    (92, 255, 0),
-    (0, 224, 255),
-    (112, 224, 255),
-    (70, 184, 160),
-    (163, 0, 255),
-    (153, 0, 255),
-    (71, 255, 0),
-    (255, 0, 163),
-    (255, 204, 0),
-    (255, 0, 143),
-    (0, 255, 235),
-    (133, 255, 0),
-    (255, 0, 235),
-    (245, 0, 255),
-    (255, 0, 122),
-    (255, 245, 0),
-    (10, 190, 212),
-    (214, 255, 0),
-    (0, 204, 255),
-    (20, 0, 255),
-    (255, 255, 0),
-    (0, 153, 255),
-    (0, 41, 255),
-    (0, 255, 204),
-    (41, 0, 255),
-    (41, 255, 0),
-    (173, 0, 255),
-    (0, 245, 255),
-    (71, 0, 255),
-    (122, 0, 255),
-    (0, 255, 184),
-    (0, 92, 255),
-    (184, 255, 0),
-    (0, 133, 255),
-    (255, 214, 0),
-    (25, 194, 194),
-    (102, 255, 0),
-    (92, 0, 255),
+    (251, 39, 22),
+    (114, 58, 11),
+    (79, 126, 122),
+    (48, 198, 87),
+    (87, 30, 109),
+    (206, 155, 9),
+    (52, 252, 41),
+    (33, 129, 3),
+    (44, 125, 81),
+    (79, 88, 208),
+    (19, 182, 21),
+    (166, 206, 10),
+    (30, 1, 230),
+    (138, 48, 26),
+    (129, 43, 54),
+    (58, 227, 156),
+    (2, 139, 223),
+    (94, 121, 55),
+    (213, 244, 168),
+    (19, 179, 181),
+    (111, 234, 23),
+    (159, 132, 47),
+    (181, 251, 145),
+    (59, 228, 83),
+    (64, 11, 246),
+    (120, 135, 29),
+    (91, 6, 70),
+    (77, 118, 159),
+    (147, 98, 12),
+    (198, 24, 48),
+    (97, 104, 6),
+    (9, 45, 87),
+    (52, 97, 13),
+    (127, 108, 56),
+    (45, 171, 151),
+    (0, 54, 239),
+    (67, 210, 206),
+    (134, 10, 179),
+    (80, 13, 1),
+    (122, 28, 2),
+    (9, 96, 30),
+    (177, 120, 117),
+    (90, 191, 157),
+    (97, 25, 1),
+    (69, 54, 191),
+    (143, 214, 245),
+    (96, 168, 220),
+    (129, 119, 214),
+    (114, 89, 131),
+    (155, 27, 121),
+    (152, 248, 96),
+    (232, 146, 170),
+    (182, 32, 103),
+    (205, 56, 244),
+    (21, 33, 181),
+    (58, 99, 78),
+    (180, 98, 235),
+    (2, 4, 175),
+    (115, 0, 11),
+    (186, 1, 56),
+    (3, 163, 3),
+    (99, 47, 85),
+    (169, 6, 145),
+    (35, 54, 236),
+    (58, 58, 93),
+    (36, 244, 31),
+    (22, 127, 180),
+    (246, 238, 118),
+    (97, 253, 112),
+    (4, 99, 115),
+    (32, 73, 94),
+    (55, 49, 180),
+    (150, 72, 112),
+    (101, 29, 33),
+    (202, 10, 20),
+    (164, 112, 71),
+    (39, 35, 86),
+    (78, 53, 89),
+    (64, 0, 86),
+    (81, 39, 6),
+    (109, 44, 157),
+    (64, 19, 140),
+    (65, 86, 28),
+    (63, 136, 11),
+    (27, 246, 112),
+    (79, 31, 236),
+    (52, 3, 78),
+    (244, 108, 80),
+    (72, 223, 99),
+    (180, 137, 216),
+    (8, 23, 106),
+    (249, 128, 243),
+    (78, 3, 8),
+    (133, 36, 100),
+    (102, 105, 228),
+    (121, 17, 15),
+    (149, 220, 165),
+    (120, 7, 102),
+    (46, 77, 35),
+    (46, 98, 116),
+    (238, 45, 47),
+    (205, 2, 251),
+    (35, 173, 232),
+    (77, 151, 3),
+    (8, 204, 127),
+    (80, 58, 53),
+    (88, 208, 52),
+    (200, 65, 84),
+    (91, 92, 157),
+    (105, 67, 60),
+    (46, 20, 152),
+    (98, 7, 250),
+    (55, 146, 196),
+    (103, 131, 90),
+    (239, 186, 43),
+    (116, 213, 198),
+    (52, 83, 170),
+    (27, 102, 49),
+    (3, 77, 54),
+    (146, 1, 69),
+    (4, 188, 64),
+    (203, 82, 14),
+    (197, 160, 68),
+    (23, 6, 78),
+    (209, 70, 148),
+    (168, 31, 11),
+    (251, 30, 111),
+    (86, 7, 140),
+    (34, 31, 131),
+    (70, 22, 83),
+    (253, 111, 4),
+    (82, 16, 39),
+    (151, 71, 230),
+    (114, 15, 55),
+    (19, 78, 168),
+    (93, 13, 13),
+    (239, 74, 209),
+    (41, 102, 222),
+    (145, 90, 88),
+    (97, 51, 27),
+    (201, 50, 42),
+    (30, 120, 99),
+    (80, 72, 36),
+    (162, 14, 41),
+    (54, 28, 88),
+    (248, 200, 170),
+    (115, 246, 140),
+    (75, 126, 84),
+    (169, 37, 225),
+    (24, 86, 15),
 ]
 
 
@@ -431,6 +431,8 @@ if __name__ == '__main__':
 
     from tools.path import ADE20Kdataset_path
 
+    import copy
+
     import torchvision.transforms as transforms
     from tqdm import tqdm
 
@@ -448,11 +450,11 @@ if __name__ == '__main__':
                              cat_max_ratio=0.75,
                              ignore_index=255),
             RandomHorizontalFlip(prob=0.5),
-            PhotoMetricDistortion(brightness_delta=32,
-                                  contrast_range=(0.5, 1.5),
-                                  saturation_range=(0.5, 1.5),
-                                  hue_delta=18,
-                                  prob=0.5),
+            # PhotoMetricDistortion(brightness_delta=32,
+            #                       contrast_range=(0.5, 1.5),
+            #                       saturation_range=(0.5, 1.5),
+            #                       hue_delta=18,
+            #                       prob=0.5),
             # Normalize(),
         ]))
 
@@ -469,11 +471,12 @@ if __name__ == '__main__':
 
         image = np.ascontiguousarray(per_sample['image'], dtype=np.uint8)
         image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        image_not_draw = copy.deepcopy(image)
         mask = per_sample['mask']
-        mask_jpg = np.zeros((image.shape[0], image.shape[1], 3))
 
         all_classes = np.unique(mask)
-        print("1212", all_classes)
+        print('1212', all_classes)
+        all_colors = []
         for per_class in all_classes:
             per_class = int(per_class)
             if per_class < 0 or per_class > 255:
@@ -481,23 +484,48 @@ if __name__ == '__main__':
             if per_class != 255:
                 class_name, class_color = ADE20K_CLASSES[
                     per_class], ADK20K_CLASSES_COLOR[per_class]
-            else:
-                class_name, class_color = 'background', (255, 255, 255)
-            class_color = np.array(
-                (class_color[0], class_color[1], class_color[2]))
-            per_mask = (mask == per_class).astype(np.float32)
-            per_mask = np.expand_dims(per_mask, axis=-1)
-            per_mask = np.tile(per_mask, (1, 1, 3))
-            mask_color = np.expand_dims(np.expand_dims(class_color, axis=0),
-                                        axis=0)
+                all_colors.append(class_color)
+        all_classes = list(all_classes)
+        if 255 in all_classes:
+            all_classes.remove(255)
 
-            per_mask = per_mask * mask_color
-            image = 0.5 * per_mask + image
-            mask_jpg += per_mask
+        per_image_mask = np.zeros((image.shape[0], image.shape[1], 3))
+        per_image_contours = []
+        for idx, per_class in enumerate(all_classes):
+            if per_class < 0 or per_class > 255:
+                continue
+            # reduce_zero_label=True,label为255表示background
+            if per_class != 255:
+                per_class_mask = np.nonzero(mask == per_class)
+                per_image_mask[per_class_mask[0],
+                               per_class_mask[1]] = all_colors[idx]
+                # get contours
+                new_per_image_mask = np.zeros((image.shape[0], image.shape[1]))
+                new_per_image_mask[per_class_mask[0], per_class_mask[1]] = 255
+                contours, _ = cv2.findContours(
+                    new_per_image_mask.astype('uint8'), cv2.RETR_TREE,
+                    cv2.CHAIN_APPROX_SIMPLE)
+                per_image_contours.append(contours)
 
-        cv2.imencode('.jpg', image)[1].tofile(
+        per_image_mask = per_image_mask.astype('uint8')
+        per_image_mask = cv2.cvtColor(per_image_mask, cv2.COLOR_RGBA2BGR)
+
+        all_classes_mask = np.nonzero(per_image_mask != 0)
+        per_image_mask[all_classes_mask[0],
+                       all_classes_mask[1]] = cv2.addWeighted(
+                           image[all_classes_mask[0], all_classes_mask[1]],
+                           0.5, per_image_mask[all_classes_mask[0],
+                                               all_classes_mask[1]], 1, 0)
+        no_class_mask = np.nonzero(per_image_mask == 0)
+        per_image_mask[no_class_mask[0],
+                       no_class_mask[1]] = image[no_class_mask[0],
+                                                 no_class_mask[1]]
+        for contours in per_image_contours:
+            cv2.drawContours(per_image_mask, contours, -1, (255, 255, 255), 2)
+
+        cv2.imencode('.jpg', image_not_draw)[1].tofile(
             os.path.join(temp_dir, f'idx_{count}.jpg'))
-        cv2.imencode('.jpg', mask_jpg)[1].tofile(
+        cv2.imencode('.jpg', per_image_mask)[1].tofile(
             os.path.join(temp_dir, f'idx_{count}_mask.jpg'))
 
         if count < 10:
@@ -531,12 +559,11 @@ if __name__ == '__main__':
                 per_image_mask_targets) in enumerate(zip(images, masks)):
             per_image = np.ascontiguousarray(per_image, dtype=np.uint8)
             per_image = cv2.cvtColor(per_image, cv2.COLOR_RGB2BGR)
-
-            per_image_mask_jpg = np.zeros(
-                (per_image.shape[0], per_image.shape[1], 3))
+            per_image_not_draw = copy.deepcopy(per_image)
 
             all_classes = np.unique(per_image_mask_targets)
-            print("2323", all_classes)
+            print('1212', all_classes)
+            all_colors = []
             for per_class in all_classes:
                 per_class = int(per_class)
                 if per_class < 0 or per_class > 255:
@@ -544,31 +571,62 @@ if __name__ == '__main__':
                 if per_class != 255:
                     class_name, class_color = ADE20K_CLASSES[
                         per_class], ADK20K_CLASSES_COLOR[per_class]
-                else:
-                    class_name, class_color = 'background', (255, 255, 255)
-                class_color = np.array(
-                    (class_color[0], class_color[1], class_color[2]))
-                per_image_mask = (per_image_mask_targets == per_class).astype(
-                    np.float32)
-                per_image_mask = np.expand_dims(per_image_mask, axis=-1)
-                per_image_mask = np.tile(per_image_mask, (1, 1, 3))
-                mask_color = np.expand_dims(np.expand_dims(class_color,
-                                                           axis=0),
-                                            axis=0)
+                    all_colors.append(class_color)
+            all_classes = list(all_classes)
+            if 255 in all_classes:
+                all_classes.remove(255)
 
-                per_image_mask = per_image_mask * mask_color
-                per_image = 0.5 * per_image_mask + per_image
-                per_image_mask_jpg += per_image_mask
+            per_image_mask = np.zeros(
+                (per_image.shape[0], per_image.shape[1], 3))
+            per_image_contours = []
+            for idx, per_class in enumerate(all_classes):
+                if per_class < 0 or per_class > 255:
+                    continue
+                # reduce_zero_label=True,label为255表示background
+                if per_class != 255:
+                    per_class_mask = np.nonzero(
+                        per_image_mask_targets == per_class)
+                    per_image_mask[per_class_mask[0],
+                                   per_class_mask[1]] = all_colors[idx]
+                    # get contours
+                    new_per_image_mask = np.zeros(
+                        (per_image.shape[0], per_image.shape[1]))
+                    new_per_image_mask[per_class_mask[0],
+                                       per_class_mask[1]] = 255
+                    contours, _ = cv2.findContours(
+                        new_per_image_mask.astype('uint8'), cv2.RETR_TREE,
+                        cv2.CHAIN_APPROX_SIMPLE)
+                    per_image_contours.append(contours)
 
-            cv2.imencode('.jpg', per_image)[1].tofile(
+            per_image_mask = per_image_mask.astype('uint8')
+            per_image_mask = cv2.cvtColor(per_image_mask, cv2.COLOR_RGBA2BGR)
+
+            all_classes_mask = np.nonzero(per_image_mask != 0)
+            per_image_mask[all_classes_mask[0],
+                           all_classes_mask[1]] = cv2.addWeighted(
+                               per_image[all_classes_mask[0],
+                                         all_classes_mask[1]], 0.5,
+                               per_image_mask[all_classes_mask[0],
+                                              all_classes_mask[1]], 1, 0)
+            no_class_mask = np.nonzero(per_image_mask == 0)
+            per_image_mask[no_class_mask[0],
+                           no_class_mask[1]] = per_image[no_class_mask[0],
+                                                         no_class_mask[1]]
+            for contours in per_image_contours:
+                cv2.drawContours(per_image_mask, contours, -1, (255, 255, 255),
+                                 2)
+
+            cv2.imencode('.jpg', per_image_not_draw)[1].tofile(
                 os.path.join(temp_dir, f'idx_{count}_{i}.jpg'))
-            cv2.imencode('.jpg', per_image_mask_jpg)[1].tofile(
+            cv2.imencode('.jpg', per_image_mask)[1].tofile(
                 os.path.join(temp_dir, f'idx_{count}_{i}_mask.jpg'))
 
         if count < 5:
             count += 1
         else:
             break
+
+    ##############################################################################
 
     ade20kdataset = ADE20KSemanticSegmentation(
         ADE20Kdataset_path,
@@ -582,11 +640,11 @@ if __name__ == '__main__':
                              cat_max_ratio=0.75,
                              ignore_index=None),
             RandomHorizontalFlip(prob=0.5),
-            PhotoMetricDistortion(brightness_delta=32,
-                                  contrast_range=(0.5, 1.5),
-                                  saturation_range=(0.5, 1.5),
-                                  hue_delta=18,
-                                  prob=0.5),
+            # PhotoMetricDistortion(brightness_delta=32,
+            #                       contrast_range=(0.5, 1.5),
+            #                       saturation_range=(0.5, 1.5),
+            #                       hue_delta=18,
+            #                       prob=0.5),
             # Normalize(),
         ]))
 
@@ -603,37 +661,63 @@ if __name__ == '__main__':
 
         image = np.ascontiguousarray(per_sample['image'], dtype=np.uint8)
         image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        image_not_draw = copy.deepcopy(image)
         mask = per_sample['mask']
-        mask_jpg = np.zeros((image.shape[0], image.shape[1], 3))
 
         all_classes = np.unique(mask)
-        print("1212", all_classes)
+        print('1212', all_classes)
+        all_colors = []
         for per_class in all_classes:
+            per_class = int(per_class)
             if per_class == 0:
                 continue
-            per_class = int(per_class)
             if per_class < 0 or per_class > 150:
                 continue
             if per_class != 0:
                 class_name, class_color = ADE20K_CLASSES[
                     per_class - 1], ADK20K_CLASSES_COLOR[per_class - 1]
-            else:
-                class_name, class_color = 'background', (255, 255, 255)
-            class_color = np.array(
-                (class_color[0], class_color[1], class_color[2]))
-            per_mask = (mask == per_class).astype(np.float32)
-            per_mask = np.expand_dims(per_mask, axis=-1)
-            per_mask = np.tile(per_mask, (1, 1, 3))
-            mask_color = np.expand_dims(np.expand_dims(class_color, axis=0),
-                                        axis=0)
+                all_colors.append(class_color)
+        all_classes = list(all_classes)
+        if 0 in all_classes:
+            all_classes.remove(0)
 
-            per_mask = per_mask * mask_color
-            image = 0.5 * per_mask + image
-            mask_jpg += per_mask
+        per_image_mask = np.zeros((image.shape[0], image.shape[1], 3))
+        per_image_contours = []
+        for idx, per_class in enumerate(all_classes):
+            if per_class < 0 or per_class > 255:
+                continue
+            # reduce_zero_label=False,label为0表示background
+            if per_class != 0:
+                per_class_mask = np.nonzero(mask == per_class)
+                per_image_mask[per_class_mask[0],
+                               per_class_mask[1]] = all_colors[idx]
+                # get contours
+                new_per_image_mask = np.zeros((image.shape[0], image.shape[1]))
+                new_per_image_mask[per_class_mask[0], per_class_mask[1]] = 255
+                contours, _ = cv2.findContours(
+                    new_per_image_mask.astype('uint8'), cv2.RETR_TREE,
+                    cv2.CHAIN_APPROX_SIMPLE)
+                per_image_contours.append(contours)
 
-        cv2.imencode('.jpg', image)[1].tofile(
+        per_image_mask = per_image_mask.astype('uint8')
+        per_image_mask = cv2.cvtColor(per_image_mask, cv2.COLOR_RGBA2BGR)
+
+        all_classes_mask = np.nonzero(per_image_mask != 0)
+        per_image_mask[all_classes_mask[0],
+                       all_classes_mask[1]] = cv2.addWeighted(
+                           image[all_classes_mask[0], all_classes_mask[1]],
+                           0.5, per_image_mask[all_classes_mask[0],
+                                               all_classes_mask[1]], 1, 0)
+        no_class_mask = np.nonzero(per_image_mask == 0)
+        per_image_mask[no_class_mask[0],
+                       no_class_mask[1]] = image[no_class_mask[0],
+                                                 no_class_mask[1]]
+        for contours in per_image_contours:
+            cv2.drawContours(per_image_mask, contours, -1, (255, 255, 255), 2)
+
+        cv2.imencode('.jpg', image_not_draw)[1].tofile(
             os.path.join(temp_dir, f'idx_{count}.jpg'))
-        cv2.imencode('.jpg', mask_jpg)[1].tofile(
+        cv2.imencode('.jpg', per_image_mask)[1].tofile(
             os.path.join(temp_dir, f'idx_{count}_mask.jpg'))
 
         if count < 10:
@@ -667,40 +751,68 @@ if __name__ == '__main__':
                 per_image_mask_targets) in enumerate(zip(images, masks)):
             per_image = np.ascontiguousarray(per_image, dtype=np.uint8)
             per_image = cv2.cvtColor(per_image, cv2.COLOR_RGB2BGR)
-
-            per_image_mask_jpg = np.zeros(
-                (per_image.shape[0], per_image.shape[1], 3))
+            per_image_not_draw = copy.deepcopy(per_image)
 
             all_classes = np.unique(per_image_mask_targets)
-            print("2323", all_classes)
+            print('1212', all_classes)
+            all_colors = []
             for per_class in all_classes:
+                per_class = int(per_class)
                 if per_class == 0:
                     continue
-                per_class = int(per_class)
+                if per_class < 0 or per_class > 150:
+                    continue
+                if per_class != 0:
+                    class_name, class_color = ADE20K_CLASSES[
+                        per_class - 1], ADK20K_CLASSES_COLOR[per_class - 1]
+                    all_colors.append(class_color)
+            all_classes = list(all_classes)
+            if 0 in all_classes:
+                all_classes.remove(0)
+
+            per_image_mask = np.zeros(
+                (per_image.shape[0], per_image.shape[1], 3))
+            per_image_contours = []
+            for idx, per_class in enumerate(all_classes):
                 if per_class < 0 or per_class > 255:
                     continue
-                if per_class != 255:
-                    class_name, class_color = ADE20K_CLASSES[
-                        per_class], ADK20K_CLASSES_COLOR[per_class]
-                else:
-                    class_name, class_color = 'background', (255, 255, 255)
-                class_color = np.array(
-                    (class_color[0], class_color[1], class_color[2]))
-                per_image_mask = (per_image_mask_targets == per_class).astype(
-                    np.float32)
-                per_image_mask = np.expand_dims(per_image_mask, axis=-1)
-                per_image_mask = np.tile(per_image_mask, (1, 1, 3))
-                mask_color = np.expand_dims(np.expand_dims(class_color,
-                                                           axis=0),
-                                            axis=0)
+                # reduce_zero_label=False,label为0表示background
+                if per_class != 0:
+                    per_class_mask = np.nonzero(
+                        per_image_mask_targets == per_class)
+                    per_image_mask[per_class_mask[0],
+                                   per_class_mask[1]] = all_colors[idx]
+                    # get contours
+                    new_per_image_mask = np.zeros(
+                        (per_image.shape[0], per_image.shape[1]))
+                    new_per_image_mask[per_class_mask[0],
+                                       per_class_mask[1]] = 255
+                    contours, _ = cv2.findContours(
+                        new_per_image_mask.astype('uint8'), cv2.RETR_TREE,
+                        cv2.CHAIN_APPROX_SIMPLE)
+                    per_image_contours.append(contours)
 
-                per_image_mask = per_image_mask * mask_color
-                per_image = 0.5 * per_image_mask + per_image
-                per_image_mask_jpg += per_image_mask
+            per_image_mask = per_image_mask.astype('uint8')
+            per_image_mask = cv2.cvtColor(per_image_mask, cv2.COLOR_RGBA2BGR)
 
-            cv2.imencode('.jpg', per_image)[1].tofile(
+            all_classes_mask = np.nonzero(per_image_mask != 0)
+            per_image_mask[all_classes_mask[0],
+                           all_classes_mask[1]] = cv2.addWeighted(
+                               per_image[all_classes_mask[0],
+                                         all_classes_mask[1]], 0.5,
+                               per_image_mask[all_classes_mask[0],
+                                              all_classes_mask[1]], 1, 0)
+            no_class_mask = np.nonzero(per_image_mask == 0)
+            per_image_mask[no_class_mask[0],
+                           no_class_mask[1]] = per_image[no_class_mask[0],
+                                                         no_class_mask[1]]
+            for contours in per_image_contours:
+                cv2.drawContours(per_image_mask, contours, -1, (255, 255, 255),
+                                 2)
+
+            cv2.imencode('.jpg', per_image_not_draw)[1].tofile(
                 os.path.join(temp_dir, f'idx_{count}_{i}.jpg'))
-            cv2.imencode('.jpg', per_image_mask_jpg)[1].tofile(
+            cv2.imencode('.jpg', per_image_mask)[1].tofile(
                 os.path.join(temp_dir, f'idx_{count}_{i}_mask.jpg'))
 
         if count < 5:

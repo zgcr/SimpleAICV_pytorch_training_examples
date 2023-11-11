@@ -27,7 +27,7 @@ class config:
             'block_num': 8,
         })
     # load total pretrained model or not
-    trained_generator_model_path = '/root/code/SimpleAICV_pytorch_training_examples_on_ImageNet_COCO_ADE20K/pretrained_models/aot_gan_train_from_scratch_on_celebahq/aot_gan_total_loss0.226_generator_model.pth'
+    trained_generator_model_path = '/root/code/SimpleAICV_pytorch_training_examples_on_ImageNet_COCO_ADE20K/image_inpainting_training/celebahq/aot_gan_train/checkpoints/total_loss0.220_generator_model.pth'
     load_state_dict(trained_generator_model_path, generator_model)
 
     test_dataset_name_list = [
