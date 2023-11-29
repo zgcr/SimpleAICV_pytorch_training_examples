@@ -10,6 +10,7 @@
   - [ViT finetune from self-trained MAE pretrain weight(400epoch) on ImageNet1K(ILSVRC2012)](#vit-finetune-from-self-trained-mae-pretrain-weight400epoch-on-imagenet1kilsvrc2012)
   - [ViT finetune from offical MAE pretrain weight(800 epoch) on ImageNet1K(ILSVRC2012)](#vit-finetune-from-offical-mae-pretrain-weight800-epoch-on-imagenet1kilsvrc2012)
   - [ResNet train from ImageNet1K pretrain weight on ImageNet21K(Winter 2021 release)](#resnet-train-from-imagenet1k-pretrain-weight-on-imagenet21kwinter-2021-release)
+  - [ViT finetune from self-trained MAE pretrain weight(100epoch) on ACCV2022](#vit-finetune-from-self-trained-mae-pretrain-weight100epoch-on-accv2022)
 - [Object detection task results](#object-detection-task-results)
   - [All detection models training from scratch on COCO2017](#all-detection-models-training-from-scratch-on-coco2017)
   - [All detection models finetune from objects365 pretrain weight on COCO2017](#all-detection-models-finetune-from-objects365-pretrain-weight-on-coco2017)
@@ -28,8 +29,10 @@
   - [ResNet finetune from DINO pretrain weight on ImageNet1K(ILSVRC2012)](#resnet-finetune-from-dino-pretrain-weight-on-imagenet1kilsvrc2012-1)
 - [Masked image modeling task results](#masked-image-modeling-task-results)
   - [ViT MAE pretrain on ImageNet1K(ILSVRC2012)](#vit-mae-pretrain-on-imagenet1kilsvrc2012)
+  - [ViT MAE pretrain on ACCV2022 from ImageNet1K pretrain](#vit-mae-pretrain-on-accv2022-from-imagenet1k-pretrain)
   - [ViT finetune from self-trained MAE pretrain weight(400epoch) on ImageNet1K(ILSVRC2012)](#vit-finetune-from-self-trained-mae-pretrain-weight400epoch-on-imagenet1kilsvrc2012-1)
   - [ViT finetune from offical MAE pretrain weight(800 epoch) on ImageNet1K(ILSVRC2012)](#vit-finetune-from-offical-mae-pretrain-weight800-epoch-on-imagenet1kilsvrc2012-1)
+  - [ViT finetune from self-trained MAE pretrain weight(100epoch) on ACCV2022](#vit-finetune-from-self-trained-mae-pretrain-weight100epoch-on-accv2022-1)
 - [Image inpainting model task results](#image-inpainting-model-task-results)
   - [All image inpainting model training from scratch on CelebA-HQ](#all-image-inpainting-model-training-from-scratch-on-celeba-hq)
   - [All image inpainting model training from scratch on Places365-standard](#all-image-inpainting-model-training-from-scratch-on-places365-standard)
@@ -39,7 +42,6 @@
   - [All diffusion model with different sampling methods on CIFAR100](#all-diffusion-model-with-different-sampling-methods-on-cifar100)
   - [All diffusion model with different sampling methods on CelebA-HQ](#all-diffusion-model-with-different-sampling-methods-on-celeba-hq)
   - [All diffusion model with different sampling methods on FFHQ](#all-diffusion-model-with-different-sampling-methods-on-ffhq)
-
 
 
 
@@ -191,6 +193,14 @@ You can find more model training details in classification_training/imagenet/.
 | ResNet152 | 11.559G | 60.193M | 224x224    | 2 RTX A5000 | 4096  | 80     | 75.731               |
 
 You can find more model training details in classification_training/imagenet21k/.
+
+## ViT finetune from self-trained MAE pretrain weight(100epoch) on ACCV2022
+
+| Network           | macs    | params   | input size | gpu num     | batch | epochs | Top-1  |
+| ----------------- | ------- | -------- | ---------- | ----------- | ----- | ------ | ------ |
+| ViT-Large-Patch16 | 59.651G | 308.124M | 224x224    | 2 RTX 4090  | 4096  | 100    | 90.693 |
+
+You can find more model training details in classification_training/accv2022/.
 
 # Object detection task results
 
@@ -410,6 +420,14 @@ Paper:https://arxiv.org/abs/2111.06377
 
 You can find more model training details in masked_image_modeling_training/imagenet/.
 
+## ViT MAE pretrain on ACCV2022 from ImageNet1K pretrain
+
+| Network           | input size | gpu num     | batch | epochs | Loss  |
+| ----------------- | ---------- | ----------- | ----- | ------ | ----- |
+| ViT-Large-Patch16 | 224x224    | 2 RTX 4090  | 256   | 100    | 0.423 |
+
+You can find more model training details in masked_image_modeling_training/accv2022/.
+
 ## ViT finetune from self-trained MAE pretrain weight(400epoch) on ImageNet1K(ILSVRC2012)
 
 | Network           | macs    | params   | input size | gpu num     | batch | epochs | Top-1  |
@@ -429,6 +447,14 @@ You can find more model training details in classification_training/imagenet/.
 | ViT-Large-Patch16 | 59.647G | 304.024M | 224x224    | 2 RTX A5000 | 4096  | 100    | 85.876 |
 
 You can find more model training details in classification_training/imagenet/.
+
+## ViT finetune from self-trained MAE pretrain weight(100epoch) on ACCV2022
+
+| Network           | macs    | params   | input size | gpu num     | batch | epochs | Top-1  |
+| ----------------- | ------- | -------- | ---------- | ----------- | ----- | ------ | ------ |
+| ViT-Large-Patch16 | 59.651G | 308.124M | 224x224    | 2 RTX 4090  | 4096  | 100    | 90.693 |
+
+You can find more model training details in classification_training/accv2022/.
 
 # Image inpainting model task results
 

@@ -5,6 +5,12 @@ log
 .ipynb_checkpoints
 *.pth
 *.log
+*.csv
 flagged
 pretrained_models
 classification_training/imagenet/van*
+text_detection
+text_detection_training
+text_recognition
+text_recognition_training
+*text*

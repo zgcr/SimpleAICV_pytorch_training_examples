@@ -8,6 +8,7 @@
   - [CIFAR100](#cifar100)
   - [ImageNet 1K(ILSVRC2012)](#imagenet-1kilsvrc2012)
   - [ImageNet 21K(Winter 2021 release)](#imagenet-21kwinter-2021-release)
+  - [ACCV2022](#accv2022)
   - [VOC2007 and VOC2012](#voc2007-and-voc2012)
   - [COCO2017](#coco2017)
   - [Objects365(v2,2020)](#objects365v22020)
@@ -21,6 +22,7 @@
 
 
 
+
 # My column
 
 https://www.zhihu.com/column/c_1692623656205897728
@@ -31,13 +33,13 @@ https://www.zhihu.com/column/c_1692623656205897728
 
 | task                        | support dataset                                                        | support network                                               |
 | --------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------- |
-| Image classification task   | CIFAR100<br>ImageNet1K(ILSVRC2012)<br>ImageNet21K(Winter 2021 release) | ResNet<br>DarkNet<br>RepVGG<br>RegNetX<br>ViT                 |
+| Image classification task   | CIFAR100<br>ImageNet1K(ILSVRC2012)<br>ImageNet21K(Winter 2021 release)<br>ACCV2022 | ResNet<br>DarkNet<br>RepVGG<br>RegNetX<br>ViT                 |
 | Object detection task       | VOC2007 and VOC2012<br>COCO2017<br>Objects365(v2,2020)                 | RetinaNet<br>FCOS<br>CenterNet<br>TTFNet<br>DETR<br>DINO-DETR |
 | Semantic segmentation task  | ADE20K                                                                 | DeepLabv3+<br>U2Net                                           |
 | Instance segmentation task  | COCO2017                                                               | YOLACT<br>SOLOv2                                              |
 | Knowledge distillation task | ImageNet1K(ILSVRC2012)                                                 | KD loss(for ResNet)<br>DML loss(for ResNet)                   |
 | Contrastive learning task   | ImageNet1K(ILSVRC2012)                                                 | DINO(for ResNet)                                              |
-| Masked image modeling task  | ImageNet1K(ILSVRC2012)                                                 | MAE(for ViT)                                                  |
+| Masked image modeling task  | ImageNet1K(ILSVRC2012)<br>ACCV2022                                                 | MAE(for ViT)                                                  |
 | Image inpainting task       | CelebA-HQ<br>Places365-standard<br>Places365-challenge                 | AOT-GAN                                                       |
 | diffusion model task        | CIFAR10<br>CIFAR100<br>CelebA-HQ<br>FFHQ                               | DDPM<br>DDIM<br>PLMS                                          |
 
@@ -161,6 +163,17 @@ ImageNet21K
 |-----small_classes---10450 sub classes folders
 |-----imagenet21k_miil_tree.pth
 Please make sure the same class has same class folder name in train and val folders.
+```
+
+## ACCV2022
+
+Make sure the folder architecture as follows:
+```
+ACCV2022
+|
+|-----train-----------5000 sub classes folders
+|-----testa-------------60000 images
+|-----accv2022_broken_list.json
 ```
 
 ## VOC2007 and VOC2012
