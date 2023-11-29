@@ -171,7 +171,7 @@ Make sure the folder architecture as follows:
 ```
 ACCV2022
 |
-|-----train-----------5000 sub classes folders
+|-----train-------------5000 sub classes folders
 |-----testa-------------60000 images
 |-----accv2022_broken_list.json
 ```
