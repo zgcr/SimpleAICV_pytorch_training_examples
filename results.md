@@ -68,6 +68,10 @@ Paper:https://arxiv.org/abs/2003.13678
 
 Paper:https://arxiv.org/abs/2010.11929
 
+**VAN**
+
+Paper:https://arxiv.org/abs/2202.09741
+
 ## ResNetCifar training from scratch on CIFAR100 
 
 **ResNetCifar is different from ResNet in the first few layers.**
