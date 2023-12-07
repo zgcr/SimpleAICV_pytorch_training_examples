@@ -11,6 +11,7 @@
   - [ViT finetune from offical MAE pretrain weight(800 epoch) on ImageNet1K(ILSVRC2012)](#vit-finetune-from-offical-mae-pretrain-weight800-epoch-on-imagenet1kilsvrc2012)
   - [ResNet train from ImageNet1K pretrain weight on ImageNet21K(Winter 2021 release)](#resnet-train-from-imagenet1k-pretrain-weight-on-imagenet21kwinter-2021-release)
   - [ViT finetune from self-trained MAE pretrain weight(100epoch) on ACCV2022](#vit-finetune-from-self-trained-mae-pretrain-weight100epoch-on-accv2022)
+  - [VAN finetune from offical pretrain weight on ImageNet1K(ILSVRC2012)](#van-finetune-from-offical-pretrain-weight-on-imagenet1kilsvrc2012)
 - [Object detection task results](#object-detection-task-results)
   - [All detection models training from scratch on COCO2017](#all-detection-models-training-from-scratch-on-coco2017)
   - [All detection models finetune from objects365 pretrain weight on COCO2017](#all-detection-models-finetune-from-objects365-pretrain-weight-on-coco2017)
@@ -201,6 +202,17 @@ You can find more model training details in classification_training/imagenet21k/
 | ViT-Large-Patch16 | 59.651G | 308.124M | 224x224    | 2 RTX 4090  | 4096  | 100    | 90.693 |
 
 You can find more model training details in classification_training/accv2022/.
+
+## VAN finetune from offical pretrain weight on ImageNet1K(ILSVRC2012)
+
+| Network           | macs     | params   | input size | gpu num     | batch | epochs | Top-1  |
+| ----------------- | -------- | -------- | ---------- | ----------- | ----- | ------ | ------ |
+| VAN-B0            | 880.224M | 4.103M   | 224x224    | 2 RTX A5000 | 1024  | 300    | 75.618 |
+| VAN-B1            | 2.518G   | 13.856M  | 224x224    | 2 RTX 4090  | 1024  | 300    | 80.956 |
+| VAN-B2            | 5.033G   | 26.567M  | 224x224    | 4 RTX 4090  | 1024  | 300    | 82.322 |
+
+You can find more model training details in classification_training/imagenet/.
+
 
 # Object detection task results
 

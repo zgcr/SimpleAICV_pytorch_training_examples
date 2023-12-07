@@ -14,3 +14,4 @@ Places365_Standard_High_resolution_images_path = '/root/autodl-tmp/Places365-Sta
 Places365_Challenge_High_resolution_images_path = '/root/autodl-tmp/Places365-Challenge-2016/high_resolution_images/'
 accv2022_dataset_path = '/root/autodl-tmp/ACCV2022'
 accv2022_broken_list_path = '/root/autodl-tmp/ACCV2022/accv2022_broken_list.json'
+text_detection_dataset_path = '/root/autodl-tmp/text_detection_dataset'

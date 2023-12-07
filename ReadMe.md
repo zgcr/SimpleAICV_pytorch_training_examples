@@ -33,7 +33,7 @@ https://www.zhihu.com/column/c_1692623656205897728
 
 | task                        | support dataset                                                        | support network                                               |
 | --------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------- |
-| Image classification task   | CIFAR100<br>ImageNet1K(ILSVRC2012)<br>ImageNet21K(Winter 2021 release)<br>ACCV2022 | ResNet<br>DarkNet<br>RepVGG<br>RegNetX<br>ViT                 |
+| Image classification task   | CIFAR100<br>ImageNet1K(ILSVRC2012)<br>ImageNet21K(Winter 2021 release)<br>ACCV2022 | ResNet<br>DarkNet<br>RepVGG<br>RegNetX<br>ViT<br>VAN          |
 | Object detection task       | VOC2007 and VOC2012<br>COCO2017<br>Objects365(v2,2020)                 | RetinaNet<br>FCOS<br>CenterNet<br>TTFNet<br>DETR<br>DINO-DETR |
 | Semantic segmentation task  | ADE20K                                                                 | DeepLabv3+<br>U2Net                                           |
 | Instance segmentation task  | COCO2017                                                               | YOLACT<br>SOLOv2                                              |
@@ -73,6 +73,8 @@ opencv-python
 scipy
 eniops
 scikit-image
+pyclipper
+shapely
 tqdm
 onnx
 onnx-simplifier
