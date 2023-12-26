@@ -3,53 +3,45 @@ import numpy as np
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 __all__ = [
-    'van_b0',
-    'van_b1',
-    'van_b2',
-    'van_b3',
-    'van_b4',
-    'van_b5',
-    'van_b6',
+    'transxvan_b0',
+    'transxvan_b1',
+    'transxvan_b2',
 ]
 
 
-class DWConv(nn.Module):
+class ConvBnActBlock(nn.Module):
 
-    def __init__(self, inplanes=768):
-        super(DWConv, self).__init__()
-        self.dwconv = nn.Conv2d(inplanes,
-                                inplanes,
-                                kernel_size=3,
-                                stride=1,
-                                padding=1,
-                                groups=inplanes,
-                                bias=True)
+    def __init__(self,
+                 inplanes,
+                 planes,
+                 kernel_size,
+                 stride,
+                 padding,
+                 groups=1,
+                 dilation=1,
+                 has_bn=True,
+                 has_act=True):
+        super(ConvBnActBlock, self).__init__()
+        bias = False if has_bn else True
+
+        self.layer = nn.Sequential(
+            nn.Conv2d(inplanes,
+                      planes,
+                      kernel_size,
+                      stride=stride,
+                      padding=padding,
+                      groups=groups,
+                      dilation=dilation,
+                      bias=bias),
+            nn.BatchNorm2d(planes) if has_bn else nn.Sequential(),
+            nn.ReLU(inplace=True) if has_act else nn.Sequential(),
+        )
 
     def forward(self, x):
-        x = self.dwconv(x)
-
-        return x
-
-
-class Mlp(nn.Module):
-
-    def __init__(self, inplanes, hidden_planes, planes, dropout_prob=0.):
-        super(Mlp, self).__init__()
-        self.fc1 = nn.Conv2d(inplanes, hidden_planes, 1)
-        self.dwconv = DWConv(hidden_planes)
-        self.act = nn.ReLU(inplace=True)
-        self.fc2 = nn.Conv2d(hidden_planes, planes, 1)
-        self.drop = nn.Dropout(dropout_prob)
-
-    def forward(self, x):
-        x = self.fc1(x)
-        x = self.dwconv(x)
-        x = self.act(x)
-        x = self.drop(x)
-        x = self.fc2(x)
-        x = self.drop(x)
+        x = self.layer(x)
 
         return x
 
@@ -91,22 +83,175 @@ class LKA(nn.Module):
 
 class Attention(nn.Module):
 
-    def __init__(self, inplanes):
+    def __init__(self, inplanes, head_nums=1, sr_ratio=1):
         super(Attention, self).__init__()
+        assert inplanes % head_nums == 0
+        self.head_nums = head_nums
 
-        self.proj_1 = nn.Conv2d(inplanes, inplanes, 1)
-        self.activation = nn.ReLU(inplace=True)
-        self.spatial_gating_unit = LKA(inplanes)
-        self.proj_2 = nn.Conv2d(inplanes, inplanes, 1)
+        head_inplanes = inplanes // head_nums
+        self.scale = head_inplanes**-0.5
+
+        self.q = nn.Conv2d(inplanes, inplanes, kernel_size=1)
+        self.kv = nn.Conv2d(inplanes, inplanes * 2, kernel_size=1)
+
+        self.sr = nn.Sequential(
+            ConvBnActBlock(inplanes,
+                           inplanes,
+                           kernel_size=sr_ratio,
+                           stride=sr_ratio,
+                           padding=sr_ratio // 2,
+                           groups=inplanes,
+                           dilation=1,
+                           has_bn=True,
+                           has_act=True),
+            ConvBnActBlock(inplanes,
+                           inplanes,
+                           kernel_size=1,
+                           stride=1,
+                           padding=0,
+                           groups=inplanes,
+                           dilation=1,
+                           has_bn=True,
+                           has_act=False),
+        )
+
+        self.local_conv = nn.Conv2d(inplanes,
+                                    inplanes,
+                                    kernel_size=3,
+                                    padding=1,
+                                    groups=inplanes)
 
     def forward(self, x):
-        shorcut = x.clone()
+        B, C, H, W = x.shape
 
-        x = self.proj_1(x)
-        x = self.activation(x)
-        x = self.spatial_gating_unit(x)
-        x = self.proj_2(x)
-        x = x + shorcut
+        q = self.q(x)
+        q = q.reshape(B, self.head_nums, C // self.head_nums,
+                      -1).transpose(-1, -2)
+
+        kv = self.sr(x)
+        kv = self.local_conv(kv) + kv
+
+        k, v = torch.chunk(self.kv(kv), chunks=2, dim=1)
+        k = k.reshape(B, self.head_nums, C // self.head_nums, -1)
+        v = v.reshape(B, self.head_nums, C // self.head_nums,
+                      -1).transpose(-1, -2)
+
+        attn = (q @ k) * self.scale
+        attn = torch.softmax(attn, dim=-1)
+
+        x = (attn @ v).transpose(-1, -2)
+        x = x.reshape(B, C, H, W)
+
+        return x
+
+
+class HybridTokenMixer(nn.Module):
+    '''
+    D-Mixer
+    '''
+
+    def __init__(self, inplanes, head_nums=1, sr_ratio=1, reduction_ratio=8):
+        super(HybridTokenMixer, self).__init__()
+        assert inplanes % 2 == 0
+
+        self.local_unit = LKA(inplanes=inplanes // 2)
+        self.global_unit = Attention(inplanes=inplanes // 2,
+                                     head_nums=head_nums,
+                                     sr_ratio=sr_ratio)
+
+        inter_planes = max(16, inplanes // reduction_ratio)
+        self.proj = nn.Sequential(
+            ConvBnActBlock(inplanes,
+                           inplanes,
+                           kernel_size=3,
+                           stride=1,
+                           padding=1,
+                           groups=inplanes,
+                           dilation=1,
+                           has_bn=True,
+                           has_act=True),
+            ConvBnActBlock(inplanes,
+                           inter_planes,
+                           kernel_size=1,
+                           stride=1,
+                           padding=0,
+                           groups=1,
+                           dilation=1,
+                           has_bn=True,
+                           has_act=True),
+            ConvBnActBlock(inter_planes,
+                           inplanes,
+                           kernel_size=1,
+                           stride=1,
+                           padding=0,
+                           groups=1,
+                           dilation=1,
+                           has_bn=True,
+                           has_act=False),
+        )
+
+    def forward(self, x):
+        x1, x2 = torch.chunk(x, chunks=2, dim=1)
+
+        x1 = self.local_unit(x1)
+        x2 = self.global_unit(x2)
+
+        x = torch.cat([x1, x2], dim=1)
+        x = self.proj(x) + x
+
+        return x
+
+
+class MultiScaleDWConv(nn.Module):
+
+    def __init__(self, inplanes, scales=(1, 3, 5, 7)):
+        super(MultiScaleDWConv, self).__init__()
+        self.channels = []
+        self.proj = nn.ModuleList()
+        for i in range(len(scales)):
+            if i == 0:
+                channels = inplanes - inplanes // len(scales) * (len(scales) -
+                                                                 1)
+            else:
+                channels = inplanes // len(scales)
+
+            conv = nn.Conv2d(channels,
+                             channels,
+                             kernel_size=scales[i],
+                             padding=scales[i] // 2,
+                             groups=channels)
+            self.channels.append(channels)
+            self.proj.append(conv)
+
+    def forward(self, x):
+        x = torch.split(x, split_size_or_sections=self.channels, dim=1)
+
+        out = []
+        for i, feat in enumerate(x):
+            out.append(self.proj[i](feat))
+        x = torch.cat(out, dim=1)
+
+        return x
+
+
+class Mlp(nn.Module):
+
+    def __init__(self, inplanes, hidden_planes, planes, dropout_prob=0.):
+        super(Mlp, self).__init__()
+        self.fc1 = nn.Conv2d(inplanes, hidden_planes, 1)
+        self.dwconv = MultiScaleDWConv(inplanes=hidden_planes,
+                                       scales=(1, 3, 5, 7))
+        self.act = nn.ReLU(inplace=True)
+        self.fc2 = nn.Conv2d(hidden_planes, planes, 1)
+        self.drop = nn.Dropout(dropout_prob)
+
+    def forward(self, x):
+        x = self.fc1(x)
+        x = self.dwconv(x) + x
+        x = self.act(x)
+        x = self.drop(x)
+        x = self.fc2(x)
+        x = self.drop(x)
 
         return x
 
@@ -151,12 +296,16 @@ class Block(nn.Module):
 
     def __init__(self,
                  inplanes,
+                 head_nums=1,
+                 sr_ratio=1,
                  mlp_ratio=4.,
                  dropout_prob=0.,
                  drop_path_prob=0.):
         super(Block, self).__init__()
         self.norm1 = nn.BatchNorm2d(inplanes)
-        self.attn = Attention(inplanes)
+        self.attn = HybridTokenMixer(inplanes,
+                                     head_nums=head_nums,
+                                     sr_ratio=sr_ratio)
 
         self.norm2 = nn.BatchNorm2d(inplanes)
         self.mlp = Mlp(inplanes=inplanes,
@@ -203,17 +352,19 @@ class OverlapPatchEmbed(nn.Module):
         return x
 
 
-class VAN(nn.Module):
+class TransXVAN(nn.Module):
 
     def __init__(self,
                  inplanes=3,
                  embedding_planes=[64, 128, 256, 512],
                  mlp_ratios=[4, 4, 4, 4],
                  block_nums=[3, 4, 6, 3],
+                 head_nums=[1, 2, 4, 8],
+                 sr_ratio=[8, 4, 2, 1],
                  dropout_prob=0.,
                  drop_path_prob=0.,
                  num_classes=1000):
-        super(VAN, self).__init__()
+        super(TransXVAN, self).__init__()
         assert len(embedding_planes) == len(mlp_ratios) == len(block_nums)
 
         self.block_nums = block_nums
@@ -242,6 +393,8 @@ class VAN(nn.Module):
 
             block = nn.ModuleList([
                 Block(inplanes=embedding_planes[i],
+                      head_nums=head_nums[i],
+                      sr_ratio=sr_ratio[i],
                       mlp_ratio=mlp_ratios[i],
                       dropout_prob=dropout_prob,
                       drop_path_prob=drop_path_prob_list[currnet_stage_idx +
@@ -294,62 +447,40 @@ class VAN(nn.Module):
         return x
 
 
-def _van(embedding_planes, mlp_ratios, block_nums, **kwargs):
-    model = VAN(embedding_planes=embedding_planes,
-                mlp_ratios=mlp_ratios,
-                block_nums=block_nums,
-                **kwargs)
+def _transxvan(embedding_planes, mlp_ratios, block_nums, **kwargs):
+    model = TransXVAN(embedding_planes=embedding_planes,
+                      mlp_ratios=mlp_ratios,
+                      block_nums=block_nums,
+                      **kwargs)
 
     return model
 
 
-def van_b0(**kwargs):
-    return _van(embedding_planes=[32, 64, 160, 256],
-                mlp_ratios=[8, 8, 4, 4],
-                block_nums=[3, 3, 5, 2],
-                **kwargs)
+def transxvan_b0(**kwargs):
+    return _transxvan(embedding_planes=[32, 64, 160, 256],
+                      mlp_ratios=[8, 8, 4, 4],
+                      block_nums=[3, 3, 5, 2],
+                      head_nums=[1, 2, 4, 8],
+                      sr_ratio=[7, 5, 3, 1],
+                      **kwargs)
 
 
-def van_b1(**kwargs):
-    return _van(embedding_planes=[64, 128, 320, 512],
-                mlp_ratios=[8, 8, 4, 4],
-                block_nums=[2, 2, 4, 2],
-                **kwargs)
+def transxvan_b1(**kwargs):
+    return _transxvan(embedding_planes=[64, 128, 320, 512],
+                      mlp_ratios=[8, 8, 4, 4],
+                      block_nums=[2, 2, 4, 2],
+                      head_nums=[1, 2, 4, 8],
+                      sr_ratio=[7, 5, 3, 1],
+                      **kwargs)
 
 
-def van_b2(**kwargs):
-    return _van(embedding_planes=[64, 128, 320, 512],
-                mlp_ratios=[8, 8, 4, 4],
-                block_nums=[3, 3, 12, 3],
-                **kwargs)
-
-
-def van_b3(**kwargs):
-    return _van(embedding_planes=[64, 128, 320, 512],
-                mlp_ratios=[8, 8, 4, 4],
-                block_nums=[3, 5, 27, 3],
-                **kwargs)
-
-
-def van_b4(**kwargs):
-    return _van(embedding_planes=[64, 128, 320, 512],
-                mlp_ratios=[8, 8, 4, 4],
-                block_nums=[3, 6, 40, 3],
-                **kwargs)
-
-
-def van_b5(**kwargs):
-    return _van(embedding_planes=[96, 192, 480, 768],
-                mlp_ratios=[8, 8, 4, 4],
-                block_nums=[3, 3, 24, 3],
-                **kwargs)
-
-
-def van_b6(**kwargs):
-    return _van(embedding_planes=[96, 192, 384, 768],
-                mlp_ratios=[8, 8, 4, 4],
-                block_nums=[6, 6, 90, 6],
-                **kwargs)
+def transxvan_b2(**kwargs):
+    return _transxvan(embedding_planes=[64, 128, 320, 512],
+                      mlp_ratios=[8, 8, 4, 4],
+                      block_nums=[3, 3, 12, 3],
+                      head_nums=[2, 4, 8, 16],
+                      sr_ratio=[7, 5, 3, 1],
+                      **kwargs)
 
 
 if __name__ == '__main__':
@@ -368,7 +499,15 @@ if __name__ == '__main__':
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-    net = van_b0(num_classes=1000)
+    import os
+    import sys
+
+    BASE_DIR = os.path.dirname(
+        os.path.dirname(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+    sys.path.append(BASE_DIR)
+
+    net = transxvan_b0(num_classes=1000)
     image_h, image_w = 224, 224
     from thop import profile
     from thop import clever_format
@@ -379,7 +518,7 @@ if __name__ == '__main__':
     out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
     print(f'1111, macs: {macs}, params: {params},out_shape: {out.shape}')
 
-    net = van_b1(num_classes=1000)
+    net = transxvan_b1(num_classes=1000)
     image_h, image_w = 224, 224
     from thop import profile
     from thop import clever_format
@@ -390,18 +529,7 @@ if __name__ == '__main__':
     out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
     print(f'1111, macs: {macs}, params: {params},out_shape: {out.shape}')
 
-    net = van_b2(num_classes=1000)
-    image_h, image_w = 224, 224
-    from thop import profile
-    from thop import clever_format
-    macs, params = profile(net,
-                           inputs=(torch.randn(1, 3, image_h, image_w), ),
-                           verbose=False)
-    macs, params = clever_format([macs, params], '%.3f')
-    out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
-    print(f'1111, macs: {macs}, params: {params},out_shape: {out.shape}')
-
-    net = van_b3(num_classes=1000)
+    net = transxvan_b2(num_classes=1000)
     image_h, image_w = 224, 224
     from thop import profile
     from thop import clever_format

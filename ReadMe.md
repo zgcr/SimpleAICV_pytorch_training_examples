@@ -31,17 +31,17 @@ https://www.zhihu.com/column/c_1692623656205897728
 
 **This repository provides simple training and testing examples for the following tasks:**
 
-| task                        | support dataset                                                        | support network                                               |
-| --------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------- |
+| task                        | support dataset                                                                    | support network                                               |
+|-----------------------------|------------------------------------------------------------------------------------|---------------------------------------------------------------|
 | Image classification task   | CIFAR100<br>ImageNet1K(ILSVRC2012)<br>ImageNet21K(Winter 2021 release)<br>ACCV2022 | ResNet<br>DarkNet<br>RepVGG<br>RegNetX<br>ViT<br>VAN          |
-| Object detection task       | VOC2007 and VOC2012<br>COCO2017<br>Objects365(v2,2020)                 | RetinaNet<br>FCOS<br>CenterNet<br>TTFNet<br>DETR<br>DINO-DETR |
-| Semantic segmentation task  | ADE20K                                                                 | DeepLabv3+<br>U2Net                                           |
-| Instance segmentation task  | COCO2017                                                               | YOLACT<br>SOLOv2                                              |
-| Knowledge distillation task | ImageNet1K(ILSVRC2012)                                                 | KD loss(for ResNet)<br>DML loss(for ResNet)                   |
-| Contrastive learning task   | ImageNet1K(ILSVRC2012)                                                 | DINO(for ResNet)                                              |
+| Object detection task       | VOC2007 and VOC2012<br>COCO2017<br>Objects365(v2,2020)                             | RetinaNet<br>FCOS<br>CenterNet<br>TTFNet<br>DETR<br>DINO-DETR |
+| Semantic segmentation task  | ADE20K                                                                             | DeepLabv3+<br>U2Net                                           |
+| Instance segmentation task  | COCO2017                                                                           | YOLACT<br>SOLOv2                                              |
+| Knowledge distillation task | ImageNet1K(ILSVRC2012)                                                             | KD loss(for ResNet)<br>DML loss(for ResNet)                   |
+| Contrastive learning task   | ImageNet1K(ILSVRC2012)                                                             | DINO(for ResNet)                                              |
 | Masked image modeling task  | ImageNet1K(ILSVRC2012)<br>ACCV2022                                                 | MAE(for ViT)                                                  |
-| Image inpainting task       | CelebA-HQ<br>Places365-standard<br>Places365-challenge                 | AOT-GAN                                                       |
-| diffusion model task        | CIFAR10<br>CIFAR100<br>CelebA-HQ<br>FFHQ                               | DDPM<br>DDIM<br>PLMS                                          |
+| Image inpainting task       | CelebA-HQ<br>Places365-standard<br>Places365-challenge                             | AOT-GAN<br>TRANSX-LKA-AOT-GAN                                 |
+| diffusion model task        | CIFAR10<br>CIFAR100<br>CelebA-HQ<br>FFHQ                                           | DDPM<br>DDIM<br>PLMS                                          |
 
 
 # All task training results
@@ -75,6 +75,8 @@ eniops
 scikit-image
 pyclipper
 shapely
+imagesize
+nltk
 tqdm
 onnx
 onnx-simplifier

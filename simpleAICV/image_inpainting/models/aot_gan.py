@@ -188,7 +188,7 @@ if __name__ == '__main__':
     generator_net = AOTGANGeneratorModel(planes=[64, 96, 128],
                                          rates=[1, 2, 4, 8],
                                          block_num=8)
-    batch, channel, image_h, image_w = 1, 3, 512, 512
+    batch, channel, image_h, image_w = 1, 3, 832, 832
     images = torch.randn(batch, channel, image_h, image_w).float()
     masks = torch.randint(0, 2, size=(batch, 1, image_h, image_w)).float()
 

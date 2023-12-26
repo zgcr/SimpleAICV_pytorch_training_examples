@@ -13,3 +13,6 @@ text_detection_training
 text_recognition
 text_recognition_training
 *text*
+interactive_segmentation
+interactive_segmentation_training
+*interactive*
