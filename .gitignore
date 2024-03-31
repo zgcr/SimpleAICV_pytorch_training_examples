@@ -4,6 +4,8 @@ checkpoints
 log
 .ipynb_checkpoints
 *.pth
+*.onnx
+*.pt
 *.log
 *.csv
 flagged

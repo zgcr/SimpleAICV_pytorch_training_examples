@@ -344,6 +344,7 @@ class SOLOV2Decoder(nn.Module):
                  max_mask_num=100,
                  topn=500,
                  min_score_threshold=0.1,
+                 keep_score_threshold=0.1,
                  mask_threshold=0.5,
                  update_threshold=0.05):
         super(SOLOV2Decoder, self).__init__()
@@ -353,6 +354,7 @@ class SOLOV2Decoder(nn.Module):
         self.max_mask_num = max_mask_num
         self.topn = topn
         self.min_score_threshold = min_score_threshold
+        self.keep_score_threshold = keep_score_threshold
         self.mask_threshold = mask_threshold
         self.update_threshold = update_threshold
 
@@ -495,6 +497,18 @@ class SOLOV2Decoder(nn.Module):
                 per_image_scores = per_image_scores[keep_indexes]
                 per_image_labels = per_image_labels[keep_indexes]
 
+                keep_score_indexes = per_image_scores >= self.keep_score_threshold
+                per_image_mask_feat_pred = per_image_mask_feat_pred[
+                    keep_score_indexes]
+                per_image_labels = per_image_labels[keep_score_indexes]
+                per_image_scores = per_image_scores[keep_score_indexes]
+
+                if per_image_mask_feat_pred.shape[0] == 0:
+                    batch_masks.append(empty_per_image_masks)
+                    batch_labels.append(empty_per_image_labels)
+                    batch_scores.append(empty_per_image_scores)
+                    continue
+
                 # sort and keep top_k
                 sort_indexs = torch.argsort(per_image_scores, descending=True)
                 if sort_indexs.shape[0] > self.max_mask_num:
@@ -504,6 +518,12 @@ class SOLOV2Decoder(nn.Module):
                     sort_indexs]
                 per_image_scores = per_image_scores[sort_indexs]
                 per_image_labels = per_image_labels[sort_indexs]
+
+                if per_image_mask_feat_pred.shape[0] == 0:
+                    batch_masks.append(empty_per_image_masks)
+                    batch_labels.append(empty_per_image_labels)
+                    batch_scores.append(empty_per_image_scores)
+                    continue
 
                 upsampled_size_out = (mask_feat_pred_h *
                                       self.mask_feature_upsample_scale,

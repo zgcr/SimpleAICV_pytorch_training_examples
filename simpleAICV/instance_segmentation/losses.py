@@ -976,7 +976,7 @@ if __name__ == '__main__':
                                      num_workers=1,
                                      collate_fn=collater)
 
-    from z_yolact_main.yolact_new6 import resnet50_yolact
+    from simpleAICV.instance_segmentation.models import resnet50_yolact
     net = resnet50_yolact()
     loss = YOLACTLoss(resize=800,
                       resize_type='yolo_style',
@@ -1034,7 +1034,7 @@ if __name__ == '__main__':
                                      num_workers=1,
                                      collate_fn=collater)
 
-    from z_solov2_main.solov2_new7 import resnet50_solov2
+    from simpleAICV.instance_segmentation.models import resnet50_solov2
     net = resnet50_solov2()
     loss = SOLOV2Loss(scale_ranges=((1, 96), (48, 192), (96, 384), (192, 768),
                                     (384, 2048)),

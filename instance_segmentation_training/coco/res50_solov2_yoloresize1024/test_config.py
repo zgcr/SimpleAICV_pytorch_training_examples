@@ -62,6 +62,7 @@ class config:
             'max_mask_num': 100,
             'topn': 500,
             'min_score_threshold': 0.1,
+            'keep_score_threshold': 0.1,
             'mask_threshold': 0.5,
             'update_threshold': 0.05,
         }).cuda()

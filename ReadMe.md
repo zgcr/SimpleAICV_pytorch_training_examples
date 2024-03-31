@@ -22,7 +22,6 @@
 
 
 
-
 # My column
 
 https://www.zhihu.com/column/c_1692623656205897728
@@ -32,7 +31,7 @@ https://www.zhihu.com/column/c_1692623656205897728
 **This repository provides simple training and testing examples for the following tasks:**
 
 | task                        | support dataset                                                                    | support network                                               |
-|-----------------------------|------------------------------------------------------------------------------------|---------------------------------------------------------------|
+| --------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------- |
 | Image classification task   | CIFAR100<br>ImageNet1K(ILSVRC2012)<br>ImageNet21K(Winter 2021 release)<br>ACCV2022 | ResNet<br>DarkNet<br>RepVGG<br>RegNetX<br>ViT<br>VAN          |
 | Object detection task       | VOC2007 and VOC2012<br>COCO2017<br>Objects365(v2,2020)                             | RetinaNet<br>FCOS<br>CenterNet<br>TTFNet<br>DETR<br>DINO-DETR |
 | Semantic segmentation task  | ADE20K                                                                             | DeepLabv3+<br>U2Net                                           |
@@ -40,6 +39,8 @@ https://www.zhihu.com/column/c_1692623656205897728
 | Knowledge distillation task | ImageNet1K(ILSVRC2012)                                                             | KD loss(for ResNet)<br>DML loss(for ResNet)                   |
 | Contrastive learning task   | ImageNet1K(ILSVRC2012)                                                             | DINO(for ResNet)                                              |
 | Masked image modeling task  | ImageNet1K(ILSVRC2012)<br>ACCV2022                                                 | MAE(for ViT)                                                  |
+| OCR text detection task     | ICDAR                                                                              | DBNet                                                         |
+| OCR text recognition task   | /                                                                                  | CTC Model                                                     |
 | Image inpainting task       | CelebA-HQ<br>Places365-standard<br>Places365-challenge                             | AOT-GAN<br>TRANSX-LKA-AOT-GAN                                 |
 | diffusion model task        | CIFAR10<br>CIFAR100<br>CelebA-HQ<br>FFHQ                                           | DDPM<br>DDIM<br>PLMS                                          |
 
@@ -107,7 +108,10 @@ https://huggingface.co/zgcr654321/detection_training/tree/main
 https://huggingface.co/zgcr654321/image_inpainting_training/tree/main
 https://huggingface.co/zgcr654321/diffusion_model_training/tree/main
 https://huggingface.co/zgcr654321/distillation_training/tree/main
+https://huggingface.co/zgcr654321/instance_segmentation_training/tree/main
 https://huggingface.co/zgcr654321/masked_image_modeling_training/tree/main
+https://huggingface.co/zgcr654321/ocr_text_detection_training/tree/main
+https://huggingface.co/zgcr654321/ocr_text_recognition_training/tree/main
 https://huggingface.co/zgcr654321/semantic_segmentation_training/tree/main
 https://huggingface.co/zgcr654321/pretrained_models/tree/main
 
@@ -315,6 +319,6 @@ If you find my work useful in your research, please consider citing:
 @inproceedings{zgcr,
  title={SimpleAICV-pytorch-training-examples},
  author={zgcr},
- year={2023}
+ year={2020-2024}
 }
 ```

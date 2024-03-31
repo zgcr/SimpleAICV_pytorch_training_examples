@@ -6,4 +6,3 @@ from .resnetforcifar import *
 from .u2netbackbone import *
 from .vit import *
 from .van import *
-from .transxnet import *
