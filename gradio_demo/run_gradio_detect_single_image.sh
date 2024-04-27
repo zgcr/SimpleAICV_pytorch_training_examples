@@ -1,1 +1,0 @@
-python gradio_detect_single_image.py

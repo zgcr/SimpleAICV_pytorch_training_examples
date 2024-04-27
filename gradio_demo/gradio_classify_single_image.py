@@ -22,9 +22,8 @@ from simpleAICV.classification.common import load_state_dict
 seed = 0
 model_name = 'resnet50'
 model_num_classes = 1000
-trained_model_path = '/root/code/SimpleAICV_pytorch_training_examples_on_ImageNet_COCO_ADE20K/pretrained_models/resnet_train_from_scratch_on_imagenet1k/resnet50-acc76.300.pth'
+trained_model_path = '/root/code/SimpleAICV_pytorch_training_examples_on_ImageNet_COCO_ADE20K/pretrained_models/resnet_finetune_on_imagenet1k_from_imagenet21k_pretrain/resnet50-acc79.484.pth'
 input_image_size = 224
-scale = 256 / 224
 
 os.environ['PYTHONHASHSEED'] = str(seed)
 random.seed(seed)
@@ -44,7 +43,7 @@ model.eval()
 
 def predict(image):
     transform = transforms.Compose([
-        transforms.Resize(int(input_image_size * scale)),
+        transforms.Resize(int(input_image_size * (256 / 224))),
         transforms.CenterCrop(input_image_size),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406],
@@ -70,12 +69,13 @@ gradio_demo = gr.Interface(fn=predict,
                            inputs=inputs,
                            outputs=outputs,
                            examples=[
-                               'test_images/000000001551.jpg',
-                               'test_images/000000010869.jpg',
-                               'test_images/000000011379.jpg',
-                               'test_images/000000015108.jpg',
-                               'test_images/000000016656.jpg',
+                               'test_coco_images/000000001551.jpg',
+                               'test_coco_images/000000010869.jpg',
+                               'test_coco_images/000000011379.jpg',
+                               'test_coco_images/000000015108.jpg',
+                               'test_coco_images/000000016656.jpg',
                            ])
+# local website: http://127.0.0.1:6006/
 gradio_demo.launch(share=True,
                    server_name='0.0.0.0',
                    server_port=6006,

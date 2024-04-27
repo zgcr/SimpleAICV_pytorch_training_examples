@@ -36,6 +36,8 @@
   - [ViT finetune from self-trained MAE pretrain weight(100epoch) on ACCV2022](#vit-finetune-from-self-trained-mae-pretrain-weight100epoch-on-accv2022-1)
 - [OCR text detection task results](#ocr-text-detection-task-results)
 - [OCR text recognition task results](#ocr-text-recognition-task-results)
+- [Human matting task results](#human-matting-task-results)
+- [Salient object detection task results](#salient-object-detection-task-results)
 - [Image inpainting model task results](#image-inpainting-model-task-results)
   - [All image inpainting model training from scratch on CelebA-HQ](#all-image-inpainting-model-training-from-scratch-on-celeba-hq)
   - [All image inpainting model training from scratch on Places365-standard](#all-image-inpainting-model-training-from-scratch-on-places365-standard)
@@ -45,6 +47,7 @@
   - [All diffusion model with different sampling methods on CIFAR100](#all-diffusion-model-with-different-sampling-methods-on-cifar100)
   - [All diffusion model with different sampling methods on CelebA-HQ](#all-diffusion-model-with-different-sampling-methods-on-celeba-hq)
   - [All diffusion model with different sampling methods on FFHQ](#all-diffusion-model-with-different-sampling-methods-on-ffhq)
+
 
 
 # Image classification task results
@@ -502,6 +505,40 @@ Paper:https://arxiv.org/abs/1507.05717
 | van_b1_ctc_model   | 2.410G   | 27.954 M | 32x512     | 2 RTX A5000 | 1024  | 50     | 98.868        | 97.597     |
 
 You can find more model training details in ocr_text_recognition_training/.
+
+# Human matting task results
+
+**PFAN+Matting**
+
+Paper1:https://arxiv.org/abs/1903.00179
+
+Paper2:https://arxiv.org/abs/2104.14222
+
+Paper3:https://arxiv.org/abs/2202.09741
+
+
+| Network               | macs    | params  | input size | gpu num    | batch | epochs | iou    | precision | recall | sad    | mae    | mse    | grad   | conn   |
+| --------------------- | ------- | ------- | ---------- | ---------- | ----- | ------ | ------ | --------- | ------ | ------ | ------ | ------ | ------ | ------ |
+| resnet50_pfan_matting | 85.638G | 29.654M | 832x832    | 2 RTX 3090 | 32    | 50     | 0.9818 | 0.9879    | 0.9937 | 5.9215 | 0.0085 | 0.0048 | 7.5277 | 5.6842 |
+| van_b2_pfan_matting   | 85.926G | 27.854M | 832x832    | 2 RTX 3090 | 32    | 50     | 0.9850 | 0.9900    | 0.9948 | 5.0200 | 0.0072 | 0.0038 | 5.5563 | 4.7644 |
+
+You can find more model training details in human_matting_training/.
+
+# Salient object detection task results
+
+**PFAN+Segmentation**
+
+Paper1:https://arxiv.org/abs/1903.00179
+
+Paper2:https://arxiv.org/abs/2202.09741
+
+
+| Network                    | macs    | params  | input size | gpu num     | batch | epochs | iou    | precision | recall | f_squared_beta |
+| -------------------------- | ------- | ------- | ---------- | ----------- | ----- | ------ | ------ | --------- | ------ | -------------- |
+| resnet50_pfan_segmentation | 70.921G | 26.580M | 832x832    | 8 RTX 4090D | 64    | 100    | 0.8501 | 0.8977    | 0.9389 | 0.9068         |
+| van_b2_pfan_segmentation   | 77.433G | 26.953M | 832x832    | 8 RTX 4090D | 64    | 100    | 0.8904 | 0.9292    | 0.9527 | 0.9345         |
+
+You can find more model training details in salient_object_detection_training/.
 
 # Image inpainting model task results
 

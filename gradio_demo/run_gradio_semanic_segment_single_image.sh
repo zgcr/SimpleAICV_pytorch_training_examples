@@ -1,1 +1,0 @@
-python gradio_semanic_segment_single_image.py

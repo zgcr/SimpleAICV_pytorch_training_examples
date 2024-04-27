@@ -27,14 +27,15 @@ model_name = 'resnet50_solov2'
 decoder_name = 'SOLOV2Decoder'
 # coco class
 model_num_classes = 80
-trained_model_path = '/root/code/SimpleAICV_pytorch_training_examples_on_ImageNet_COCO_ADE20K/pretrained_models/solov2_train_from_scratch_on_coco/resnet50_solov2-yoloresize1024-metric36.726.pth'
+classes_name = COCO_CLASSES
+classes_color = COCO_CLASSES_COLOR
+
+trained_model_path = '/root/code/SimpleAICV_pytorch_training_examples_on_ImageNet_COCO_ADE20K/pretrained_models/solov2_train_from_scratch_on_coco/resnet50_solov2-yoloresize1024-metric36.559.pth'
 input_image_size = 1024
 # 'retina_style', 'yolo_style'
 image_resize_type = 'yolo_style'
-min_score_threshold = 0.5
+keep_score_threshold = 0.3
 mask_area_threshold = 100
-classes_name = COCO_CLASSES
-classes_color = COCO_CLASSES_COLOR
 
 os.environ['PYTHONHASHSEED'] = str(seed)
 random.seed(seed)
@@ -52,7 +53,10 @@ else:
 model.eval()
 
 assert decoder_name in decode.__dict__.keys(), 'Unsupported decoder!'
-decoder = decode.__dict__[decoder_name]()
+decoder = decode.__dict__[decoder_name](
+    **{
+        'keep_score_threshold': keep_score_threshold,
+    })
 
 
 def preprocess_image(image, resize, resize_type):
@@ -101,7 +105,9 @@ def predict(image):
     scaled_size = [scaled_size]
     origin_size = [origin_size]
 
-    outputs = model(resized_img)
+    with torch.no_grad():
+        outputs = model(resized_img)
+
     batch_masks, batch_labels, batch_scores = decoder(outputs, scaled_size,
                                                       origin_size)
     one_image_masks, one_image_labels, one_image_scores = batch_masks[
@@ -129,9 +135,6 @@ def predict(image):
         per_mask_score = one_image_scores[i]
 
         if np.sum(per_mask) < mask_area_threshold:
-            continue
-
-        if per_mask_score < min_score_threshold:
             continue
 
         per_mask_color = np.array(
@@ -179,12 +182,13 @@ gradio_demo = gr.Interface(fn=predict,
                            inputs=inputs,
                            outputs=outputs,
                            examples=[
-                               'test_images/000000001551.jpg',
-                               'test_images/000000010869.jpg',
-                               'test_images/000000011379.jpg',
-                               'test_images/000000015108.jpg',
-                               'test_images/000000016656.jpg',
+                               'test_coco_images/000000001551.jpg',
+                               'test_coco_images/000000010869.jpg',
+                               'test_coco_images/000000011379.jpg',
+                               'test_coco_images/000000015108.jpg',
+                               'test_coco_images/000000016656.jpg',
                            ])
+# local website: http://127.0.0.1:6006/
 gradio_demo.launch(share=True,
                    server_name='0.0.0.0',
                    server_port=6006,

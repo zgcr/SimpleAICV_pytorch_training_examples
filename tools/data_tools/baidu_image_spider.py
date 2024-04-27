@@ -86,8 +86,9 @@ class Crawler:
                 ]
                 urllib.request.install_opener(opener)
                 # 保存图片
-                filepath = os.path.join(save_image_folder_path,
-                                        str(self.counter) + str(suffix))
+                filepath = os.path.join(
+                    save_image_folder_path,
+                    f'{word}_' + str(self.counter) + str(suffix))
                 urllib.request.urlretrieve(url, filepath)
                 if os.path.getsize(filepath) < 5:
                     print("下载到了空文件，跳过!")

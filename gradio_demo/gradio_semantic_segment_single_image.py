@@ -19,16 +19,18 @@ import torch
 from simpleAICV.semantic_segmentation import models
 from simpleAICV.semantic_segmentation.common import load_state_dict
 
-from simpleAICV.semantic_segmentation.datasets.cocosemanticsegmentationdataset import COCO_CLASSES, COCO_CLASSES_COLOR
+from simpleAICV.semantic_segmentation.datasets.ade20kdataset import ADE20K_CLASSES, ADK20K_CLASSES_COLOR
 
 seed = 0
 model_name = 'u2net'
 # ade20k class
-model_num_classes = 80
-trained_model_path = '/root/code/SimpleAICV_pytorch_training_examples_on_ImageNet_COCO_ADE20K/pretrained_models/u2net_train_from_scratch_on_coco/u2net-metric66.529.pth'
+model_num_classes = 150
+classes_name = ADE20K_CLASSES
+classes_color = ADK20K_CLASSES_COLOR
+
+trained_model_path = '/root/code/SimpleAICV_pytorch_training_examples_on_ImageNet_COCO_ADE20K/pretrained_models/u2net_train_from_scratch_on_ade20k/u2net-metric39.046.pth'
 input_image_size = 512
 reduce_zero_label = True
-classify_threshold = 0.3
 
 os.environ['PYTHONHASHSEED'] = str(seed)
 random.seed(seed)
@@ -74,7 +76,9 @@ def predict(image):
         image, input_image_size)
     resized_img = torch.tensor(resized_img).permute(2, 0, 1).unsqueeze(0)
 
-    outputs = model(resized_img)
+    with torch.no_grad():
+        outputs = model(resized_img)
+
     # pred shape:[b,c,h,w] -> [b,h,w,c]
     outputs = outputs.permute(0, 2, 3, 1).squeeze(0).contiguous()
     outputs = torch.argmax(outputs, axis=-1)
@@ -88,6 +92,7 @@ def predict(image):
     origin_image = origin_image.astype('uint8')
 
     all_classes = np.unique(outputs)
+
     print('1212', all_classes)
 
     if reduce_zero_label:
@@ -97,8 +102,8 @@ def predict(image):
             if per_class < 0 or per_class > 255:
                 continue
             if per_class != 255:
-                class_name, class_color = COCO_CLASSES[
-                    per_class], COCO_CLASSES_COLOR[per_class]
+                class_name, class_color = classes_name[
+                    per_class], classes_color[per_class]
                 all_colors.append(class_color)
         all_classes = list(all_classes)
         if 255 in all_classes:
@@ -112,12 +117,13 @@ def predict(image):
             if per_class < 0 or per_class > 80:
                 continue
             if per_class != 0:
-                class_name, class_color = COCO_CLASSES[
-                    per_class - 1], COCO_CLASSES_COLOR[per_class - 1]
+                class_name, class_color = classes_name[
+                    per_class - 1], classes_color[per_class - 1]
                 all_colors.append(class_color)
         all_classes = list(all_classes)
         if 0 in all_classes:
             all_classes.remove(0)
+
     print('1313', len(all_classes), len(all_colors))
 
     if len(all_classes) == 0:
@@ -205,12 +211,13 @@ gradio_demo = gr.Interface(fn=predict,
                            inputs=inputs,
                            outputs=outputs,
                            examples=[
-                               'test_images/000000001551.jpg',
-                               'test_images/000000010869.jpg',
-                               'test_images/000000011379.jpg',
-                               'test_images/000000015108.jpg',
-                               'test_images/000000016656.jpg',
+                               'test_ade20k_images/ADE_val_00000002.jpg',
+                               'test_ade20k_images/ADE_val_00000013.jpg',
+                               'test_ade20k_images/ADE_val_00000023.jpg',
+                               'test_ade20k_images/ADE_val_00000031.jpg',
+                               'test_ade20k_images/ADE_val_00000039.jpg',
                            ])
+# local website: http://127.0.0.1:6006/
 gradio_demo.launch(share=True,
                    server_name='0.0.0.0',
                    server_port=6006,

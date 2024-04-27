@@ -27,13 +27,14 @@ model_name = 'resnet50_detr'
 decoder_name = 'DETRDecoder'
 # coco class
 model_num_classes = 80
+classes_name = COCO_CLASSES
+classes_color = COCO_CLASSES_COLOR
+
 trained_model_path = '/root/code/SimpleAICV_pytorch_training_examples_on_ImageNet_COCO_ADE20K/pretrained_models/detr_train_from_scratch_on_coco/resnet50_detr-yoloresize1024-metric36.941.pth'
 input_image_size = 1024
 # 'retina_style', 'yolo_style'
 image_resize_type = 'yolo_style'
 min_score_threshold = 0.5
-classes_name = COCO_CLASSES
-classes_color = COCO_CLASSES_COLOR
 
 os.environ['PYTHONHASHSEED'] = str(seed)
 random.seed(seed)
@@ -51,7 +52,10 @@ else:
 model.eval()
 
 assert decoder_name in decode.__dict__.keys(), 'Unsupported decoder!'
-decoder = decode.__dict__[decoder_name]()
+decoder = decode.__dict__[decoder_name](
+    **{
+        'min_score_threshold': min_score_threshold,
+    })
 
 
 def preprocess_image(image, resize, resize_type):
@@ -104,12 +108,13 @@ def predict(image):
         padded_mask = torch.tensor(padded_mask).unsqueeze(0)
         scaled_size = [scaled_size]
 
-    if 'detr' in model_name:
-        outputs = model(resized_img, padded_mask)
-        scores, classes, boxes = decoder(outputs, scaled_size)
-    else:
-        outputs = model(resized_img)
-        scores, classes, boxes = decoder(outputs)
+    with torch.no_grad():
+        if 'detr' in model_name:
+            outputs = model(resized_img, padded_mask)
+            scores, classes, boxes = decoder(outputs, scaled_size)
+        else:
+            outputs = model(resized_img)
+            scores, classes, boxes = decoder(outputs)
 
     boxes /= scale
 
@@ -120,10 +125,6 @@ def predict(image):
     scores = scores[classes > -1]
     boxes = boxes[classes > -1]
     classes = classes[classes > -1]
-
-    boxes = boxes[scores > min_score_threshold]
-    classes = classes[scores > min_score_threshold]
-    scores = scores[scores > min_score_threshold]
 
     # clip boxes
     origin_h, origin_w = origin_image.shape[0], origin_image.shape[1]
@@ -185,12 +186,13 @@ gradio_demo = gr.Interface(fn=predict,
                            inputs=inputs,
                            outputs=outputs,
                            examples=[
-                               'test_images/000000001551.jpg',
-                               'test_images/000000010869.jpg',
-                               'test_images/000000011379.jpg',
-                               'test_images/000000015108.jpg',
-                               'test_images/000000016656.jpg',
+                               'test_coco_images/000000001551.jpg',
+                               'test_coco_images/000000010869.jpg',
+                               'test_coco_images/000000011379.jpg',
+                               'test_coco_images/000000015108.jpg',
+                               'test_coco_images/000000016656.jpg',
                            ])
+# local website: http://127.0.0.1:6006/
 gradio_demo.launch(share=True,
                    server_name='0.0.0.0',
                    server_port=6006,

@@ -10,6 +10,7 @@
   - [ImageNet 21K(Winter 2021 release)](#imagenet-21kwinter-2021-release)
   - [ACCV2022](#accv2022)
   - [VOC2007 and VOC2012](#voc2007-and-voc2012)
+  - [SAMACOCO](#samacoco)
   - [COCO2017](#coco2017)
   - [Objects365(v2,2020)](#objects365v22020)
   - [ADE20K](#ade20k)
@@ -22,6 +23,7 @@
 
 
 
+
 # My column
 
 https://www.zhihu.com/column/c_1692623656205897728
@@ -30,19 +32,21 @@ https://www.zhihu.com/column/c_1692623656205897728
 
 **This repository provides simple training and testing examples for the following tasks:**
 
-| task                        | support dataset                                                                    | support network                                               |
-| --------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| Image classification task   | CIFAR100<br>ImageNet1K(ILSVRC2012)<br>ImageNet21K(Winter 2021 release)<br>ACCV2022 | ResNet<br>DarkNet<br>RepVGG<br>RegNetX<br>ViT<br>VAN          |
-| Object detection task       | VOC2007 and VOC2012<br>COCO2017<br>Objects365(v2,2020)                             | RetinaNet<br>FCOS<br>CenterNet<br>TTFNet<br>DETR<br>DINO-DETR |
-| Semantic segmentation task  | ADE20K                                                                             | DeepLabv3+<br>U2Net                                           |
-| Instance segmentation task  | COCO2017                                                                           | YOLACT<br>SOLOv2                                              |
-| Knowledge distillation task | ImageNet1K(ILSVRC2012)                                                             | KD loss(for ResNet)<br>DML loss(for ResNet)                   |
-| Contrastive learning task   | ImageNet1K(ILSVRC2012)                                                             | DINO(for ResNet)                                              |
-| Masked image modeling task  | ImageNet1K(ILSVRC2012)<br>ACCV2022                                                 | MAE(for ViT)                                                  |
-| OCR text detection task     | ICDAR                                                                              | DBNet                                                         |
-| OCR text recognition task   | /                                                                                  | CTC Model                                                     |
-| Image inpainting task       | CelebA-HQ<br>Places365-standard<br>Places365-challenge                             | AOT-GAN<br>TRANSX-LKA-AOT-GAN                                 |
-| diffusion model task        | CIFAR10<br>CIFAR100<br>CelebA-HQ<br>FFHQ                                           | DDPM<br>DDIM<br>PLMS                                          |
+| task                          | support dataset                                                                    | support network                                               |
+| ----------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Image classification task     | CIFAR100<br>ImageNet1K(ILSVRC2012)<br>ImageNet21K(Winter 2021 release)<br>ACCV2022 | ResNet<br>DarkNet<br>RepVGG<br>RegNetX<br>ViT<br>VAN          |
+| Object detection task         | VOC2007 and VOC2012<br>COCO2017<br>Objects365(v2,2020)                             | RetinaNet<br>FCOS<br>CenterNet<br>TTFNet<br>DETR<br>DINO-DETR |
+| Semantic segmentation task    | ADE20K                                                                             | DeepLabv3+<br>U2Net                                           |
+| Instance segmentation task    | COCO2017                                                                           | YOLACT<br>SOLOv2                                              |
+| Knowledge distillation task   | ImageNet1K(ILSVRC2012)                                                             | KD loss(for ResNet)<br>DML loss(for ResNet)                   |
+| Contrastive learning task     | ImageNet1K(ILSVRC2012)                                                             | DINO(for ResNet)                                              |
+| Masked image modeling task    | ImageNet1K(ILSVRC2012)<br>ACCV2022                                                 | MAE(for ViT)                                                  |
+| OCR text detection task       | /                                                                                  | DBNet                                                         |
+| OCR text recognition task     | /                                                                                  | CTC Model                                                     |
+| Human matting task            | /                                                                                  | PFAN Matting model                                            |
+| Salient object detection task | /                                                                                  | PFAN Segmentation model                                       |
+| Image inpainting task         | CelebA-HQ<br>Places365-standard<br>Places365-challenge                             | AOT-GAN<br>TRANSX-LKA-AOT-GAN                                 |
+| Diffusion model task          | CIFAR10<br>CIFAR100<br>CelebA-HQ<br>FFHQ                                           | DDPM<br>DDIM<br>PLMS                                          |
 
 
 # All task training results
@@ -59,7 +63,7 @@ https://www.zhihu.com/column/c_1692623656205897728
 
 **4、Please make sure your pytorch version>=1.10.**
 
-**5、If you want to use torch.complie() function,please make sure your pytorch version>=2.0.**
+**5、If you want to use torch.complie() function,please make sure your pytorch version>=2.0.Using pytorch2.0 or pytorch2.2,don't use pytorch2.1.**
 
 **Use pip or conda to install those Packages in your Python environment:**
 ```
@@ -82,7 +86,7 @@ tqdm
 onnx
 onnx-simplifier
 thop==0.0.31.post2005241907
-gradio==3.32.0
+gradio==4.26.0
 yapf
 ```
 
@@ -112,6 +116,8 @@ https://huggingface.co/zgcr654321/instance_segmentation_training/tree/main
 https://huggingface.co/zgcr654321/masked_image_modeling_training/tree/main
 https://huggingface.co/zgcr654321/ocr_text_detection_training/tree/main
 https://huggingface.co/zgcr654321/ocr_text_recognition_training/tree/main
+https://huggingface.co/zgcr654321/human_matting_training/tree/main
+https://huggingface.co/zgcr654321/salient_object_detection_training/tree/main
 https://huggingface.co/zgcr654321/semantic_segmentation_training/tree/main
 https://huggingface.co/zgcr654321/pretrained_models/tree/main
 
@@ -200,6 +206,23 @@ VOCdataset
 |----VOC2012------|----JPEGImages
 |                 |----SegmentationClass
 |                 |----SegmentationObject
+```
+
+## SAMACOCO
+
+Make sure the folder architecture as follows:
+```
+SAMA-COCO
+|                |----sama_coco_train.json
+|                |----sama_coco_validation.json
+|--annotations---|----train_labels.json
+|                |----validation_labels.json
+|                |----test_labels.json
+|                |----image_info_test2017.json
+|                |----image_info_test-dev2017.json
+|                 
+|                |----train
+|----images------|----validation
 ```
 
 ## COCO2017
@@ -308,8 +331,7 @@ cd to gradio_demo,we have classification/detection/semantic_segmentation/instanc
 
 For example,you can run detection gradio demo:
 ```
-chmod +x run_gradio_detect_single_image.sh
-./run_gradio_detect_single_image.sh
+python gradio_detect_single_image.py
 ```
 
 # Citation
