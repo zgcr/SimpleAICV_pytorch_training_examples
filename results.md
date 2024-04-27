@@ -482,6 +482,7 @@ You can find more model training details in classification_training/accv2022/.
 
 Paper:https://arxiv.org/abs/1911.08947
 
+Use combine dataset include ICDAR2017RCTW/ICDAR2019ART/ICDAR2019LSVT/ICDAR2019MLT to train and test.
 
 | Network        | macs     | params   | input size | gpu num     | batch | epochs | precision | recall | f1     |
 | -------------- | -------- | -------- | ---------- | ----------- | ----- | ------ | --------- | ------ | ------ |
@@ -497,6 +498,7 @@ You can find more model training details in ocr_text_detection_training/.
 
 Paper:https://arxiv.org/abs/1507.05717
 
+Use combine dataset aistudio_baidu_street/chinese_dataset/synthetic_chinese_string_dataset/meta_self_learning_dataset to train and test.
 
 | Network            | macs     | params   | input size | gpu num     | batch | epochs | lcs_precision | lcs_recall |
 | ------------------ | -------- | -------- | ---------- | ----------- | ----- | ------ | ------------- | ---------- |
@@ -516,6 +518,8 @@ Paper2:https://arxiv.org/abs/2104.14222
 
 Paper3:https://arxiv.org/abs/2202.09741
 
+Use combine dataset Deep_Automatic_Portrait_Matting/RealWorldPortrait636/P3M10K to train and test.
+
 
 | Network               | macs    | params  | input size | gpu num    | batch | epochs | iou    | precision | recall | sad    | mae    | mse    | grad   | conn   |
 | --------------------- | ------- | ------- | ---------- | ---------- | ----- | ------ | ------ | --------- | ------ | ------ | ------ | ------ | ------ | ------ |
@@ -531,6 +535,8 @@ You can find more model training details in human_matting_training/.
 Paper1:https://arxiv.org/abs/1903.00179
 
 Paper2:https://arxiv.org/abs/2202.09741
+
+Use combine dataset DIS5K/HRS10K/HRSOD/UHRSD to train and test.
 
 
 | Network                    | macs    | params  | input size | gpu num     | batch | epochs | iou    | precision | recall | f_squared_beta |
