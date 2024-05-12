@@ -10,8 +10,8 @@
   - [ImageNet 21K(Winter 2021 release)](#imagenet-21kwinter-2021-release)
   - [ACCV2022](#accv2022)
   - [VOC2007 and VOC2012](#voc2007-and-voc2012)
-  - [SAMACOCO](#samacoco)
   - [COCO2017](#coco2017)
+  - [SAMACOCO](#samacoco)
   - [Objects365(v2,2020)](#objects365v22020)
   - [ADE20K](#ade20k)
   - [CelebA-HQ](#celeba-hq)
@@ -45,6 +45,7 @@ https://www.zhihu.com/column/c_1692623656205897728
 | OCR text recognition task     | /                                                                                  | CTC Model                                                     |
 | Human matting task            | /                                                                                  | PFAN Matting model                                            |
 | Salient object detection task | /                                                                                  | PFAN Segmentation model                                       |
+| Interactive segmentation task | /                                                                                  | SAM(segment-anything)                                         |
 | Image inpainting task         | CelebA-HQ<br>Places365-standard<br>Places365-challenge                             | AOT-GAN<br>TRANSX-LKA-AOT-GAN                                 |
 | Diffusion model task          | CIFAR10<br>CIFAR100<br>CelebA-HQ<br>FFHQ                                           | DDPM<br>DDIM<br>PLMS                                          |
 
@@ -63,7 +64,7 @@ https://www.zhihu.com/column/c_1692623656205897728
 
 **4、Please make sure your pytorch version>=1.10.**
 
-**5、If you want to use torch.complie() function,please make sure your pytorch version>=2.0.Using pytorch2.0 or pytorch2.2,don't use pytorch2.1.**
+**5、If you want to use torch.complie() function,please make sure your pytorch version>=2.0.Using pytorch2.0/2.2/2.3,don't use pytorch2.1.**
 
 **Use pip or conda to install those Packages in your Python environment:**
 ```
@@ -76,7 +77,7 @@ colormath
 pycocotools
 opencv-python
 scipy
-eniops
+einops
 scikit-image
 pyclipper
 shapely
@@ -118,6 +119,7 @@ https://huggingface.co/zgcr654321/ocr_text_detection_training/tree/main
 https://huggingface.co/zgcr654321/ocr_text_recognition_training/tree/main
 https://huggingface.co/zgcr654321/human_matting_training/tree/main
 https://huggingface.co/zgcr654321/salient_object_detection_training/tree/main
+https://huggingface.co/zgcr654321/interactive_segmentation_training/tree/main
 https://huggingface.co/zgcr654321/semantic_segmentation_training/tree/main
 https://huggingface.co/zgcr654321/pretrained_models/tree/main
 
@@ -208,6 +210,22 @@ VOCdataset
 |                 |----SegmentationObject
 ```
 
+## COCO2017
+
+Make sure the folder architecture as follows:
+```
+COCO2017
+|                |----captions_train2017.json
+|                |----captions_val2017.json
+|--annotations---|----instances_train2017.json
+|                |----instances_val2017.json
+|                |----person_keypoints_train2017.json
+|                |----person_keypoints_val2017.json
+|                 
+|                |----train2017
+|----images------|----val2017
+```
+
 ## SAMACOCO
 
 Make sure the folder architecture as follows:
@@ -223,22 +241,6 @@ SAMA-COCO
 |                 
 |                |----train
 |----images------|----validation
-```
-
-## COCO2017
-
-Make sure the folder architecture as follows:
-```
-COCO2017
-|                |----captions_train2017.json
-|                |----captions_val2017.json
-|--annotations---|----instances_train2017.json
-|                |----instances_val2017.json
-|                |----person_keypoints_train2017.json
-|                |----person_keypoints_val2017.json
-|                 
-|                |----train2017
-|----images------|----val2017
 ```
 
 ## Objects365(v2,2020)
@@ -307,7 +309,7 @@ Places365-standard/challenge
 
 **If you want to train or test model,you need enter a training experiment folder directory,then run train.sh or test.sh.**
 
-For example,you can enter classification_training/imagenet/resnet50.
+For example,you can enter in folder classification_training/imagenet/resnet50.
 
 If you want to restart train this model,please delete checkpoints and log folders first,then run train.sh:
 ```
@@ -321,15 +323,15 @@ CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.run --nproc_per_node=2 --ma
 
 **CUDA_VISIBLE_DEVICES is used to specify the gpu ids for this training.Please make sure the number of nproc_per_node equal to the number of using gpu cards.Make sure master_addr/master_port are unique for each training.**
 
-**All checkpoints/log are saved in training/testing experiment folder directory.**
+**All checkpoints/log are saved in your executing training/testing experiment folder directory.**
 
 **Also, You can modify super parameters in train_config.py/test_config.py.**
 
 # How to use gradio demo
 
-cd to gradio_demo,we have classification/detection/semantic_segmentation/instance_segmentation demo.
+cd to gradio_demo,we have classification/detection/semantic_segmentation/instance_segmentation/text_detection/text_recognition/human_matting/salient_object_detection/segment_anything demo.
 
-For example,you can run detection gradio demo:
+For example,you can run detection gradio demo(please prepare trained model weight first):
 ```
 python gradio_detect_single_image.py
 ```

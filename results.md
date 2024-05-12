@@ -38,6 +38,7 @@
 - [OCR text recognition task results](#ocr-text-recognition-task-results)
 - [Human matting task results](#human-matting-task-results)
 - [Salient object detection task results](#salient-object-detection-task-results)
+- [Interactive segmentation task results](#interactive-segmentation-task-results)
 - [Image inpainting model task results](#image-inpainting-model-task-results)
   - [All image inpainting model training from scratch on CelebA-HQ](#all-image-inpainting-model-training-from-scratch-on-celeba-hq)
   - [All image inpainting model training from scratch on Places365-standard](#all-image-inpainting-model-training-from-scratch-on-places365-standard)
@@ -545,6 +546,21 @@ Use combine dataset DIS5K/HRS10K/HRSOD/UHRSD to train and test.
 | van_b2_pfan_segmentation   | 77.433G | 26.953M | 832x832    | 8 RTX 4090D | 64    | 100    | 0.8904 | 0.9292    | 0.9527 | 0.9345         |
 
 You can find more model training details in salient_object_detection_training/.
+
+# Interactive segmentation task results
+
+**SAM(segment-anything)**
+
+Paper:https://arxiv.org/pdf/2304.02643
+
+using random noise prompt box to test model.
+
+| Network | dataset                  | input size | gpu num     | batch | epochs | iou    | precision | recall |
+| ------- | ------------------------ | ---------- | ----------- | ----- | ------ | ------ | --------- | ------ |
+| sam_b   | salient_object_detection | 1024x1024  | 8 RTX 4090D | 16    | 500    | 0.9486 | 0.9676    | 0.9783 |
+| sam_b   | sobav2                   | 1024x1024  | 2 RTX 3090  | 4     | 500    | 0.9871 | 0.9935    | 0.9930 |
+
+You can find more model training details in interactive_segmentation_training/.
 
 # Image inpainting model task results
 
