@@ -1,4 +1,5 @@
 - [My column](#my-column)
+- [📢 News!](#-news)
 - [Introduction](#introduction)
 - [All task training results](#all-task-training-results)
 - [Environments](#environments)
@@ -23,10 +24,13 @@
 
 
 
-
 # My column
 
 https://www.zhihu.com/column/c_1692623656205897728
+
+# 📢 News!
+
+* 2024/04/15: support segment-anything model training/testing/jupyter demo/gradio demo.
 
 # Introduction
 
