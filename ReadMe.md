@@ -333,7 +333,18 @@ CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.run --nproc_per_node=2 --ma
 
 # How to use gradio demo
 
-cd to gradio_demo,we have classification/detection/semantic_segmentation/instance_segmentation/text_detection/text_recognition/human_matting/salient_object_detection/segment_anything demo.
+cd to gradio_demo,we have:
+```
+classification demo
+detection demo
+semantic_segmentation demo
+instance_segmentation demo
+text_detection demo
+text_recognition demo
+human_matting demo
+salient_object_detection demo
+segment_anything demo
+```
 
 For example,you can run detection gradio demo(please prepare trained model weight first):
 ```
