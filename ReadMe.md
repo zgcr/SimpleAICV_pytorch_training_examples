@@ -62,7 +62,7 @@ https://www.zhihu.com/column/c_1692623656205897728
 
 **1、This repository only supports running on ubuntu(verison>=18.04 LTS).**
 
-**2、This repository only support one machine one gpu/one machine multi gpus mode with pytorch DDP training.**
+**2、This repository only support one node one gpu/one node multi gpus mode with pytorch DDP training.**
 
 **3、Please make sure your Python environment version>=3.7.**
 

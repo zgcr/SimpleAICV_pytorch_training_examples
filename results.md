@@ -51,7 +51,6 @@
 
 
 
-
 # Image classification task results
 
 **ResNet**
