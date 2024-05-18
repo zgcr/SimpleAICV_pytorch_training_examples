@@ -30,7 +30,7 @@ https://www.zhihu.com/column/c_1692623656205897728
 
 # 📢 News!
 
-* 2024/04/15: support segment-anything model training/testing/jupyter demo/gradio demo.
+* 2024/04/15: support segment-anything model training/testing/jupyter example/gradio demo.
 
 # Introduction
 

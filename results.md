@@ -51,6 +51,7 @@
 
 
 
+
 # Image classification task results
 
 **ResNet**
@@ -559,6 +560,7 @@ using random noise prompt box to test model.
 | ------- | ------------------------ | ---------- | ----------- | ----- | ------ | ------ | --------- | ------ |
 | sam_b   | salient_object_detection | 1024x1024  | 8 RTX 4090D | 16    | 500    | 0.9486 | 0.9676    | 0.9783 |
 | sam_b   | sobav2                   | 1024x1024  | 2 RTX 3090  | 4     | 500    | 0.9871 | 0.9935    | 0.9930 |
+| sam_b   | desobav2                 | 1024x1024  | 8 RTX 4090D | 16    | 200    | 0.9862 | 0.9919    | 0.9941 |
 
 You can find more model training details in interactive_segmentation_training/.
 
