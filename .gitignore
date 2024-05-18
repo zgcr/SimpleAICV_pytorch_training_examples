@@ -10,8 +10,8 @@ log
 *.csv
 flagged
 pretrained_models
-ocr_text_detection_training
-ocr_text_recognition_training
-human_matting_training
-salient_object_detection_training
+ocr_text_detection_training/
+ocr_text_recognition_training/
+human_matting_training/
+salient_object_detection_training/
 large_diffusion_model
