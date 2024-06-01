@@ -277,7 +277,7 @@ def train_human_matting(train_loader, model, criterion, optimizer, scheduler,
     # switch to train mode
     model.train()
 
-    local_rank = torch.distributed.get_rank()
+    local_rank = config.local_rank
     iters = len(train_loader.dataset) // config.batch_size
     iter_index = 1
     assert config.accumulation_steps >= 1, 'illegal accumulation_steps!'

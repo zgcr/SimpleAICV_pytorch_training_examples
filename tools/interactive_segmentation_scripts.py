@@ -74,7 +74,7 @@ def train_sam(train_loader, model, criterion, optimizer, scheduler, epoch,
     if config.frozen_mask_decoder:
         model.module.mask_decoder.eval()
 
-    local_rank = torch.distributed.get_rank()
+    local_rank = config.local_rank
     iters = len(train_loader.dataset) // config.batch_size
     iter_index = 1
     assert config.accumulation_steps >= 1, 'illegal accumulation_steps!'

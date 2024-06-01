@@ -902,7 +902,7 @@ def train_text_recognition(train_loader, model, criterion, optimizer,
     # switch to train mode
     model.train()
 
-    local_rank = torch.distributed.get_rank()
+    local_rank = config.local_rank
     iters = len(train_loader.dataset) // config.batch_size
     iter_index = 1
     assert config.accumulation_steps >= 1, 'illegal accumulation_steps!'
@@ -1351,8 +1351,9 @@ def compute_text_detection_pr_per_batch(batch_boxes, batch_scores, shapes,
         # 2.经过1对1、1对多、多对1后，仍有N个gt_box未匹配，且在N个gt中有被标记为ignore的box
         # 3.经过1对1、1对多、多对1后，仍有pred_box未匹配
         if (gt_boxes_flag.shape[0] > gt_boxes_flag.sum()) and (
-                pred_boxes_flag.shape[0] > pred_boxes_flag.sum()) and (
-                    gt_ignore_remain_box_flag.sum() > 0):
+                pred_boxes_flag.shape[0]
+                > pred_boxes_flag.sum()) and (gt_ignore_remain_box_flag.sum()
+                                              > 0):
             for pred_idx in range(len(pred_boxes_flag)):
                 for gt_idx in range(len(gt_boxes_flag)):
                     if gt_ignore_remain_box_flag[gt_idx]:
@@ -1476,11 +1477,11 @@ def one_to_many_match_count(insection_pred_ious, insection_target_ious,
 
         if pred_iou_match_gt_pred_nums == 1:
             # 如果insection_pred_ious中一个gt只匹配一个pred,则看看insection_target_ious中同一个gt是否也只匹配一个pred,如果是,转为1对1关系
-            if (insection_pred_ious[gt_idx, pred_iou_match_gt_pred_idxs[0]] >
-                    precision_iou_threshold) and (
+            if (insection_pred_ious[gt_idx, pred_iou_match_gt_pred_idxs[0]]
+                    > precision_iou_threshold) and (
                         insection_target_ious[gt_idx,
-                                              pred_iou_match_gt_pred_idxs[0]] >
-                        recall_iou_threshold):
+                                              pred_iou_match_gt_pred_idxs[0]]
+                        > recall_iou_threshold):
                 if 'ignore' in per_image_shapes[gt_idx].keys():
                     if per_image_shapes[gt_idx]['ignore']:
                         per_image_gt_ignore_nums += 1
@@ -1502,8 +1503,8 @@ def one_to_many_match_count(insection_pred_ious, insection_target_ious,
         # 若 insection_pred_ious中一个gt匹配上多个pred
         # 将N个pred的insection_target_ious值相加看是否大于阈值,若是,则符合一对多关系
         elif (np.sum(insection_target_ious[gt_idx,
-                                           pred_iou_match_gt_pred_idxs]) >
-              recall_iou_threshold):
+                                           pred_iou_match_gt_pred_idxs])
+              > recall_iou_threshold):
             if 'ignore' in per_image_shapes[gt_idx].keys():
                 if per_image_shapes[gt_idx]['ignore']:
                     per_image_gt_ignore_nums += punish_factor
@@ -1652,7 +1653,7 @@ def train_text_detection(train_loader, model, criterion, optimizer, scheduler,
     # switch to train mode
     model.train()
 
-    local_rank = torch.distributed.get_rank()
+    local_rank = config.local_rank
     iters = len(train_loader.dataset) // config.batch_size
     iter_index = 1
     assert config.accumulation_steps >= 1, 'illegal accumulation_steps!'

@@ -26,7 +26,7 @@ def build_training_mode(config, model):
     if config.sync_bn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model).cuda()
 
-    local_rank = torch.distributed.get_rank()
+    local_rank = config.local_rank
     # sam model has unused parameters
     if hasattr(config, 'use_ema_model') and config.use_ema_model:
         ema_model = EmaModel(model, decay=config.ema_model_decay)
@@ -73,6 +73,7 @@ def main():
     set_seed(config.seed)
 
     local_rank = int(os.environ['LOCAL_RANK'])
+    config.local_rank = local_rank
     # start init process
     torch.distributed.init_process_group(backend='nccl', init_method='env://')
     torch.cuda.set_device(local_rank)

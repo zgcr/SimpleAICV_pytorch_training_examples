@@ -133,7 +133,7 @@ def train_classification(train_loader, model, criterion, optimizer, scheduler,
     # switch to train mode
     model.train()
 
-    local_rank = torch.distributed.get_rank()
+    local_rank = config.local_rank
     iters = len(train_loader.dataset) // config.batch_size
     iter_index = 1
     assert config.accumulation_steps >= 1, 'illegal accumulation_steps!'
@@ -271,6 +271,7 @@ def main():
     set_seed(config.seed)
 
     local_rank = int(os.environ['LOCAL_RANK'])
+    config.local_rank = local_rank
     # start init process
     torch.distributed.init_process_group(backend='nccl', init_method='env://')
     torch.cuda.set_device(local_rank)

@@ -473,6 +473,7 @@ def main():
     set_seed(config.seed)
 
     local_rank = int(os.environ['LOCAL_RANK'])
+    config.local_rank = local_rank
     # start init process
     torch.distributed.init_process_group(backend='nccl', init_method='env://')
     torch.cuda.set_device(local_rank)

@@ -133,7 +133,7 @@ def train_classification(train_loader, model, criterion, optimizer, scheduler,
     # switch to train mode
     model.train()
 
-    local_rank = torch.distributed.get_rank()
+    local_rank = config.local_rank
     iters = len(train_loader.dataset) // config.batch_size
     iter_index = 1
     assert config.accumulation_steps >= 1, 'illegal accumulation_steps!'
@@ -267,7 +267,7 @@ def train_distill_classification(train_loader, model, criterion, optimizer,
     if config.freeze_teacher:
         model.module.teacher.eval()
 
-    local_rank = torch.distributed.get_rank()
+    local_rank = config.local_rank
     iters = len(train_loader.dataset) // config.batch_size
     iter_index = 1
     assert config.accumulation_steps >= 1, 'illegal accumulation_steps!'
@@ -529,8 +529,8 @@ def evaluate_voc_detection(test_loader, model, criterion, decoder, config):
                     per_image_pred_scores
                 ])
 
-                per_image_gt_bboxes = per_image_gt_bboxes[
-                    per_image_gt_classes > -1]
+                per_image_gt_bboxes = per_image_gt_bboxes[per_image_gt_classes
+                                                          > -1]
                 per_image_gt_classes = per_image_gt_classes[
                     per_image_gt_classes > -1]
 
@@ -799,7 +799,7 @@ def train_detection(train_loader, model, criterion, optimizer, scheduler,
     # switch to train mode
     model.train()
 
-    local_rank = torch.distributed.get_rank()
+    local_rank = config.local_rank
     iters = len(train_loader.dataset) // config.batch_size
     iter_index = 1
     assert config.accumulation_steps >= 1, 'illegal accumulation_steps!'
@@ -1006,8 +1006,8 @@ def test_semantic_segmentation(test_loader, model, criterion, config):
                     -1), per_image_mask.reshape(-1)
 
                 if config.ignore_index:
-                    per_image_filter_mask = (per_image_mask !=
-                                             config.ignore_index)
+                    per_image_filter_mask = (per_image_mask
+                                             != config.ignore_index)
                     per_image_pred = per_image_pred[per_image_filter_mask]
                     per_image_mask = per_image_mask[per_image_filter_mask]
 
@@ -1134,7 +1134,7 @@ def train_semantic_segmentation(train_loader, model, criterion, optimizer,
     # switch to train mode
     model.train()
 
-    local_rank = torch.distributed.get_rank()
+    local_rank = config.local_rank
     iters = len(train_loader.dataset) // config.batch_size
     iter_index = 1
     assert config.accumulation_steps >= 1, 'illegal accumulation_steps!'
@@ -1430,7 +1430,7 @@ def train_instance_segmentation(train_loader, model, criterion, optimizer,
     # switch to train mode
     model.train()
 
-    local_rank = torch.distributed.get_rank()
+    local_rank = config.local_rank
     iters = len(train_loader.dataset) // config.batch_size
     iter_index = 1
     assert config.accumulation_steps >= 1, 'illegal accumulation_steps!'
@@ -1576,7 +1576,7 @@ def train_mae_self_supervised_learning(train_loader, model, criterion,
     # switch to train mode
     model.train()
 
-    local_rank = torch.distributed.get_rank()
+    local_rank = config.local_rank
     iters = len(train_loader.dataset) // config.batch_size
     iter_index = 1
     assert config.accumulation_steps >= 1, 'illegal accumulation_steps!'
@@ -1700,7 +1700,7 @@ def train_dino_self_supervised_learning(train_loader, teacher_model,
     student_model.train()
     teacher_model.train()
 
-    local_rank = torch.distributed.get_rank()
+    local_rank = config.local_rank
     iters = len(train_loader.dataset) // config.batch_size
     iter_index = 1
 
@@ -1792,7 +1792,7 @@ def generate_diffusion_model_images(test_loader, model, sampler, config):
     # switch to evaluate mode
     model.eval()
 
-    local_rank = torch.distributed.get_rank()
+    local_rank = config.local_rank
     with torch.no_grad():
         model_on_cuda = next(model.parameters()).is_cuda
         for batch_idx, data in tqdm(enumerate(test_loader)):
@@ -1955,7 +1955,7 @@ def train_diffusion_model(train_loader, model, criterion, trainer, optimizer,
     # switch to train mode
     model.train()
 
-    local_rank = torch.distributed.get_rank()
+    local_rank = config.local_rank
     iters = len(train_loader.dataset) // config.batch_size
     iter_index = 1
     assert config.accumulation_steps >= 1, 'illegal accumulation_steps!'
@@ -2113,7 +2113,7 @@ def generate_inpainting_images_for_all_dataset(generator_model, config):
 def generate_inpainting_images_for_per_sub_dataset(per_sub_dataset_name,
                                                    per_sub_dataset_loader,
                                                    generator_model, config):
-    local_rank = torch.distributed.get_rank()
+    local_rank = config.local_rank
 
     per_sub_save_image_dir = os.path.join(config.save_image_dir,
                                           per_sub_dataset_name)
@@ -2353,7 +2353,7 @@ def train_image_inpainting_aot_gan_model(
     generator_model.train()
     discriminator_model.train()
 
-    local_rank = torch.distributed.get_rank()
+    local_rank = config.local_rank
     iters = len(train_loader.dataset) // config.batch_size
     iter_index = 1
 

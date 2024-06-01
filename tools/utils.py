@@ -170,7 +170,7 @@ def build_training_mode(config, model):
     if config.sync_bn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model).cuda()
 
-    local_rank = torch.distributed.get_rank()
+    local_rank = config.local_rank
     if hasattr(config, 'use_ema_model') and config.use_ema_model:
         ema_model = EmaModel(model, decay=config.ema_model_decay)
         ema_model.ema_model = nn.parallel.DistributedDataParallel(
