@@ -20,8 +20,8 @@
   - [Places365-standard/challenge](#places365-standardchallenge)
 - [How to train and test model](#how-to-train-and-test-model)
 - [How to use gradio demo](#how-to-use-gradio-demo)
+- [Reference](#reference)
 - [Citation](#citation)
-
 
 
 # My column
@@ -88,11 +88,14 @@ shapely
 imagesize
 nltk
 tqdm
-onnx
-onnx-simplifier
-thop==0.0.31.post2005241907
-gradio==4.26.0
 yapf
+onnx
+onnxruntime
+onnxsim
+thop
+gradio==4.26.0
+transformers
+open_clip_torch
 ```
 
 **If you want to use dino-detr model,install MultiScaleDeformableAttention Packge in your Python environment:**
@@ -350,6 +353,11 @@ For example,you can run detection gradio demo(please prepare trained model weigh
 ```
 python gradio_detect_single_image.py
 ```
+
+# Reference
+
+https://github.com/facebookresearch/segment-anything
+
 
 # Citation
 
