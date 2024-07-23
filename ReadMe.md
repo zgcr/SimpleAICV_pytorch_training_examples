@@ -52,7 +52,7 @@ https://www.zhihu.com/column/c_1692623656205897728
 | Salient object detection task | /                                                                                  | PFAN Segmentation model                                       |
 | Interactive segmentation task | /                                                                                  | SAM(segment-anything)                                         |
 | Image inpainting task         | CelebA-HQ<br>Places365-standard<br>Places365-challenge                             | AOT-GAN<br>TRANSX-LKA-AOT-GAN                                 |
-| Diffusion model task          | CIFAR10<br>CIFAR100<br>CelebA-HQ<br>FFHQ                                           | DDPM<br>DDIM<br>PLMS                                          |
+| Diffusion model task          | CIFAR10<br>CIFAR100<br>CelebA-HQ<br>FFHQ                                           | DDPM<br>DDIM                                          |
 
 
 # All task training results
@@ -95,9 +95,15 @@ onnxruntime
 onnxsim
 thop
 gradio==4.26.0
-transformers
-open_clip_torch
+transformers==4.41.2
+open-clip-torch==2.24.0
 ```
+
+
+**If you want to use xformers,install xformers Packge from offical github repository:**
+
+https://github.com/facebookresearch/xformers
+
 
 **If you want to use dino-detr model,install MultiScaleDeformableAttention Packge in your Python environment:**
 

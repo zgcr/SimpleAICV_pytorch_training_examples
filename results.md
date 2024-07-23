@@ -672,7 +672,6 @@ Trained diffusion unet on CIFAR10 dataset(DDPM method).Test image num=50000.
 | --------------- | ---------- | ----- | --------------------------- | ----- | ------------------ |
 | DDPM            | 32x32      | 1000  | False/False                 | 5.394 | 8.684/0.169        |
 | DDIM            | 32x32      | 50    | False/False                 | 7.644 | 8.642/0.129        |
-| PLMS            | 32x32      | 20    | False/False                 | 7.027 | 8.834/0.200        |
 | DDPM            | 32x32      | 1000  | True/True                   | 3.949 | 8.985/0.139        |
 
 You can find more model training details in diffusion_model_training/cifar10/.
@@ -685,7 +684,6 @@ Trained diffusion unet on CIFAR100 dataset(DDPM method).Test image num=50000.
 | --------------- | ---------- | ----- | --------------------------- | ------ | ------------------ |
 | DDPM            | 32x32      | 1000  | False/False                 | 9.620  | 9.399/0.138        |
 | DDIM            | 32x32      | 50    | False/False                 | 13.250 | 8.946/0.150        |
-| PLMS            | 32x32      | 20    | False/False                 | 11.854 | 9.391/0.202        |
 | DDPM            | 32x32      | 1000  | True/True                   | 5.209  | 10.880/0.180       |
 
 You can find more model training details in diffusion_model_training/cifar100/.
@@ -698,7 +696,6 @@ Trained diffusion unet on CelebA-HQ dataset(DDPM method).Test image num=28000.
 | --------------- | ---------- | ----- | --------------------------- | ------ | ------------------ |
 | DDPM            | 64x64      | 1000  | False/False                 | 6.491  | 2.577/0.035        |
 | DDIM            | 64x64      | 50    | False/False                 | 15.195 | 2.625/0.028        |
-| PLMS            | 64x64      | 20    | False/False                 | 18.061 | 2.701/0.040        |
 
 You can find more model training details in diffusion_model_training/celebahq/.
 
@@ -710,6 +707,5 @@ Trained diffusion unet on FFHQ dataset(DDPM method).Test image num=60000.
 | --------------- | ---------- | ----- | --------------------------- | ------ | ------------------ |
 | DDPM            | 64x64      | 1000  | False/False                 | 6.671  | 3.399/0.055        |
 | DDIM            | 64x64      | 50    | False/False                 | 10.479 | 3.431/0.044        |
-| PLMS            | 64x64      | 20    | False/False                 | 12.387 | 3.462/0.034        |
 
 You can find more model training details in diffusion_model_training/ffhq/.
