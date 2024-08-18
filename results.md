@@ -38,6 +38,7 @@
 - [OCR text recognition task results](#ocr-text-recognition-task-results)
 - [Human matting task results](#human-matting-task-results)
 - [Salient object detection task results](#salient-object-detection-task-results)
+- [Face detection task results](#face-detection-task-results)
 - [Interactive segmentation task results](#interactive-segmentation-task-results)
 - [Image inpainting model task results](#image-inpainting-model-task-results)
   - [All image inpainting model training from scratch on CelebA-HQ](#all-image-inpainting-model-training-from-scratch-on-celeba-hq)
@@ -48,7 +49,6 @@
   - [All diffusion model with different sampling methods on CIFAR100](#all-diffusion-model-with-different-sampling-methods-on-cifar100)
   - [All diffusion model with different sampling methods on CelebA-HQ](#all-diffusion-model-with-different-sampling-methods-on-celeba-hq)
   - [All diffusion model with different sampling methods on FFHQ](#all-diffusion-model-with-different-sampling-methods-on-ffhq)
-
 
 
 
@@ -547,6 +547,22 @@ Use combine dataset DIS5K/HRS10K/HRSOD/UHRSD to train and test.
 | van_b2_pfan_segmentation   | 77.433G | 26.953M | 832x832    | 8 RTX 4090D | 64    | 100    | 0.8904 | 0.9292    | 0.9527 | 0.9345         |
 
 You can find more model training details in salient_object_detection_training/.
+
+# Face detection task results
+
+**RetinaFace**
+
+Paper:https://arxiv.org/pdf/1905.00641
+
+Use WiderFace train and UFDD val datasets to train, WiderFace val dataset to test.
+
+
+| Network             | macs     | params  | input size | gpu num     | batch | epochs | decode setting                                             | Easy AP | Medium AP | Hard AP |
+| ------------------- | -------- | ------- | ---------- | ----------- | ----- | ------ | ---------------------------------------------------------- | ------- | --------- | ------- |
+| resnet50_retinaface | 100.372G | 27.277M | 960x960    | 2 RTX A5000 | 16    | 100    | max_object_num:200<br>min_score_threshold:0.3<br>topn:1000 | 0.9311  | 0.9043    | 0.7357  |
+| resnet50_retinaface | 100.372G | 27.277M | 960x960    | 2 RTX A5000 | 16    | 100    | max_object_num:1000<br>min_score_threshold:0.1<br>topn:2000 | 0.9357  | 0.9158    | 0.8105  |
+
+You can find more model training details in face_detection_training/.
 
 # Interactive segmentation task results
 

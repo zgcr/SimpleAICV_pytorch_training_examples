@@ -23,3 +23,4 @@ salient_object_detection_dataset_path = '/root/autodl-tmp/salient_object_detecti
 open_images_v7_dataset_path = '/root/autodl-tmp/open_images_v7'
 soba_v2_dataset_path = '/root/autodl-tmp/SOBA_v2'
 desoba_v2_dataset_path = '/root/autodl-tmp/DESOBAv2'
+face_detection_dataset_path = '/root/autodl-tmp/face_detection_dataset'

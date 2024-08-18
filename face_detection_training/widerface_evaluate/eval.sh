@@ -1,0 +1,1 @@
+CUDA_VISIBLE_DEVICES=0 python eval_widerface.py --work-dir ./

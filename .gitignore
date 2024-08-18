@@ -10,6 +10,8 @@ log
 *.csv
 flagged
 pretrained_models
-human_matting_training/
-salient_object_detection_training/
+segment_anything2
+simpleAICV/interactive_segmentation/weight_convert
+z_segment-anything-2-main
 large_diffusion_model
+large_diffusion_model_inference

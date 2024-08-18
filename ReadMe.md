@@ -24,7 +24,6 @@
 - [Citation](#citation)
 
 
-
 # My column
 
 https://www.zhihu.com/column/c_1692623656205897728
@@ -50,9 +49,10 @@ https://www.zhihu.com/column/c_1692623656205897728
 | OCR text recognition task     | /                                                                                  | CTC Model                                                     |
 | Human matting task            | /                                                                                  | PFAN Matting model                                            |
 | Salient object detection task | /                                                                                  | PFAN Segmentation model                                       |
+| Face detection task           | /                                                                                  | RetinaFace                                                    |
 | Interactive segmentation task | /                                                                                  | SAM(segment-anything)                                         |
 | Image inpainting task         | CelebA-HQ<br>Places365-standard<br>Places365-challenge                             | AOT-GAN<br>TRANSX-LKA-AOT-GAN                                 |
-| Diffusion model task          | CIFAR10<br>CIFAR100<br>CelebA-HQ<br>FFHQ                                           | DDPM<br>DDIM                                          |
+| Diffusion model task          | CIFAR10<br>CIFAR100<br>CelebA-HQ<br>FFHQ                                           | DDPM<br>DDIM                                                  |
 
 
 # All task training results
@@ -133,6 +133,7 @@ https://huggingface.co/zgcr654321/ocr_text_detection_training/tree/main
 https://huggingface.co/zgcr654321/ocr_text_recognition_training/tree/main
 https://huggingface.co/zgcr654321/human_matting_training/tree/main
 https://huggingface.co/zgcr654321/salient_object_detection_training/tree/main
+https://huggingface.co/zgcr654321/face_detection_training/tree/main
 https://huggingface.co/zgcr654321/interactive_segmentation_training/tree/main
 https://huggingface.co/zgcr654321/semantic_segmentation_training/tree/main
 https://huggingface.co/zgcr654321/pretrained_models/tree/main
@@ -353,6 +354,7 @@ text_detection demo
 text_recognition demo
 human_matting demo
 salient_object_detection demo
+face_detection demo
 segment_anything demo
 ```
 
