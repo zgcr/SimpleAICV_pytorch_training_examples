@@ -69,7 +69,7 @@ Paper:https://arxiv.org/abs/2010.11929
 | ResNet101Cifar | 2.531G   | 42.697M | 32x32      | 128   | 200    | 77.180 |
 | ResNet152Cifar | 3.751G   | 58.341M | 32x32      | 128   | 200    | 77.340 |
 
-You can find more model training details in classification_training/cifar100/.
+You can find more model training details in 0.classification_training/cifar100/.
 
 ## Convformer finetune from offical pretrain weight on ImageNet1K(ILSVRC2012)
 
@@ -80,7 +80,7 @@ You can find more model training details in classification_training/cifar100/.
 | convformer-m36 | 12.876G | 53.994M | 224x224    | 1024  | 300    | 84.000 |
 | convformer-b36 | 22.673G | 95.216M | 224x224    | 1024  | 300    | 84.480 |
 
-You can find more model training details in classification_training/imagenet/.
+You can find more model training details in 0.classification_training/imagenet/.
 
 ## DarkNet training from scratch on ImageNet1K(ILSVRC2012)
 
@@ -90,7 +90,7 @@ You can find more model training details in classification_training/imagenet/.
 | DarkNet19   | 3.669G   | 20.842M | 256x256    | 256   | 100    | 74.364 |
 | DarkNet53   | 9.335G   | 41.610M | 256x256    | 256   | 100    | 76.250 |
 
-You can find more model training details in classification_training/imagenet/.
+You can find more model training details in 0.classification_training/imagenet/.
 
 ## ResNet training from scratch on ImageNet1K(ILSVRC2012)
 
@@ -102,7 +102,7 @@ You can find more model training details in classification_training/imagenet/.
 | ResNet101 | 7.866G  | 44.549M | 224x224    | 256   | 100    | 77.242 |
 | ResNet152 | 11.604G | 60.193M | 224x224    | 256   | 100    | 77.772 |
 
-You can find more model training details in classification_training/imagenet/.
+You can find more model training details in 0.classification_training/imagenet/.
 
 ## ResNet finetune from ImageNet21k pretrain weight on ImageNet1K(ILSVRC2012)
 
@@ -112,7 +112,7 @@ You can find more model training details in classification_training/imagenet/.
 | ResNet101 | 7.866G  | 44.549M | 224x224    | 1024  | 300    | 81.668 |
 | ResNet152 | 11.604G | 60.193M | 224x224    | 1024  | 300    | 81.934 |
 
-You can find more model training details in classification_training/imagenet/.
+You can find more model training details in 0.classification_training/imagenet/.
 
 ## VAN finetune from offical pretrain weight on ImageNet1K(ILSVRC2012)
 
@@ -123,7 +123,7 @@ You can find more model training details in classification_training/imagenet/.
 | van-b2  | 5.010G   | 26.567M | 224x224    | 1024  | 300    | 82.592 |
 | van-b3  | 8.951G   | 26.567M | 224x224    | 1024  | 300    | 83.202 |
 
-You can find more model training details in classification_training/imagenet/.
+You can find more model training details in 0.classification_training/imagenet/.
 
 ## ViT finetune from self-trained MAE pretrain weight(400epoch) on ImageNet1K(ILSVRC2012)
 
@@ -133,7 +133,7 @@ You can find more model training details in classification_training/imagenet/.
 | ViT-Large-Patch16 | 59.731G  | 304.124M | 224x224    | 128   | 50     | 84.978 |
 | ViT-Huge-Patch14  | 162.071G | 631.716M | 224x224    | 128   | 50     | 85.966 |
 
-You can find more model training details in classification_training/imagenet/.
+You can find more model training details in 0.classification_training/imagenet/.
 
 ## ViT finetune from offical MAE pretrain weight(800 epoch) on ImageNet1K(ILSVRC2012)
 
@@ -143,7 +143,7 @@ You can find more model training details in classification_training/imagenet/.
 | ViT-Large-Patch16 | 59.731G  | 304.124M | 224x224    | 128   | 50     | 85.672 |
 | ViT-Huge-Patch14  | 162.071G | 631.716M | 224x224    | 128   | 50     | 86.608 |
 
-You can find more model training details in classification_training/imagenet/.
+You can find more model training details in 0.classification_training/imagenet/.
 
 ## ResNet train from ImageNet1K pretrain weight on ImageNet21K(Winter 2021 release)
 
@@ -153,7 +153,7 @@ You can find more model training details in classification_training/imagenet/.
 | ResNet101 | 7.866G  | 44.549M | 224x224    | 2048  | 80     | 76.795               |
 | ResNet152 | 11.604G | 60.193M | 224x224    | 1024  | 80     | 77.345               |
 
-You can find more model training details in classification_training/imagenet21k/.
+You can find more model training details in 0.classification_training/imagenet21k/.
 
 # Knowledge distillation task results
 
@@ -175,7 +175,7 @@ Paper:https://arxiv.org/abs/1503.02531
 | ResNet152       | ResNet50        | CE+KD+Vit Aug  | True           | 224x224    | 2048  | 300    | 81.936        | 80.806        |
 
 
-You can find more model training details in distillation_training/imagenet/.
+You can find more model training details in 1.distillation_training/imagenet/.
 
 # Masked image modeling task results
 
@@ -191,7 +191,7 @@ Paper:https://arxiv.org/abs/2111.06377
 | ViT-Large-Patch16 | 224x224    | 1024  | 400    | 0.378 |
 | ViT-Huge-Patch14  | 224x224    | 1024  | 400    | 0.350 |
 
-You can find more model training details in masked_image_modeling_training/imagenet/.
+You can find more model training details in 2.masked_image_modeling_training/imagenet/.
 
 # Object detection task results
 
@@ -224,7 +224,7 @@ mAP is IoU=0.5:0.95,area=all,maxDets=100,mAP(COCOeval,stats[0]).
 | ResNet50-RetinaNet | RetinaStyle-800 | 800x1333   | 250.069G | 37.969M | 16    | 13     | 37.281 |
 | ResNet50-FCOS      | RetinaStyle-800 | 800x1333   | 214.406G | 32.291M | 16    | 13     | 41.071 |
 
-You can find more model training details in detection_training/coco/.
+You can find more model training details in 3.detection_training/coco/.
 
 ## All detection models finetune from objects365 pretrain weight on COCO2017
 
@@ -237,7 +237,7 @@ mAP is IoU=0.5:0.95,area=all,maxDets=100,mAP(COCOeval,stats[0]).
 | ResNet50-RetinaNet | RetinaStyle-800 | 800x1333   | 250.069G | 37.969M | 16    | 13     | 40.947 |
 | ResNet50-FCOS      | RetinaStyle-800 | 800x1333   | 214.406G | 32.291M | 16    | 13     | 46.511 |
 
-You can find more model training details in detection_training/coco/.
+You can find more model training details in 3.detection_training/coco/.
 
 ## All detection models train on Objects365(v2,2020) from COCO2017 pretrain weight
 
@@ -259,7 +259,7 @@ mAP is IoU=0.50,area=all,maxDets=100,mAP.
 | ResNet50-RetinaNet | YoloStyle-640 | 640x640    | 84.947G | 36.724M | 32    | 13     | 83.765 |
 | ResNet50-FCOS      | YoloStyle-640 | 640x640    | 80.764G | 32.153M | 32    | 13     | 83.250 |
 
-You can find more model training details in detection_training/voc/.
+You can find more model training details in 3.detection_training/voc/.
 
 ## All detection models finetune from objects365 pretrain weight on VOC2007 and VOC2012
 
@@ -272,7 +272,7 @@ mAP is IoU=0.50,area=all,maxDets=100,mAP.
 | ResNet50-RetinaNet | YoloStyle-640 | 640x640    | 84.947G | 36.724M | 32    | 13     | 90.082 |
 | ResNet50-FCOS      | YoloStyle-640 | 640x640    | 80.764G | 32.153M | 32    | 13     | 90.585 |
 
-You can find more model training details in detection_training/voc/.
+You can find more model training details in 3.detection_training/voc/.
 
 # Semantic Segmentation task results
 
@@ -287,7 +287,7 @@ Paper:https://arxiv.org/abs/1802.02611
 | resnet50_deeplabv3plus      | 512x512    | 43.500G | 30.254M | 32    | 100    | 40.462   |
 | convformerm36_deeplabv3plus | 512x512    | 83.898G | 56.760M | 32    | 100    | 47.826   |
 
-You can find more model training details in semantic_segmentation_training/ade20k/.
+You can find more model training details in 4.semantic_segmentation_training/ade20k/.
 
 ## All semantic segmentation models training from scratch on COCO2017
 
@@ -296,7 +296,7 @@ You can find more model training details in semantic_segmentation_training/ade20
 | resnet50_deeplabv3plus      | 512x512    | 43.500G | 30.254M | 64    | 100    | 68.975   |
 | convformerm36_deeplabv3plus | 512x512    | 83.898G | 56.760M | 64    | 100    | 74.214   |
 
-You can find more model training details in semantic_segmentation_training/coco/.
+You can find more model training details in 4.semantic_segmentation_training/coco/.
 
 # Instance Segmentation task results
 
@@ -321,7 +321,7 @@ mAP is IoU=0.5:0.95,area=all,maxDets=100,mAP(COCOeval,stats[0]).
 | resnet50_solov2      | YoloStyle-1024 | 1024x1024  | 248.965G | 46.582M | 32    | 39     | 37.807 |
 | convformerm36_solov2 | YoloStyle-1024 | 1024x1024  | 426.605G | 75.828M | 32    | 39     | 40.296 |
 
-You can find more model training details in instance_segmentation_training/coco/.
+You can find more model training details in 5.instance_segmentation_training/coco/.
 
 # Salient object detection task results
 
@@ -338,7 +338,7 @@ Use combine dataset DIS5K/HRS10K/HRSOD/UHRSD to train and test.
 | resnet50_pfan_segmentation      | 71.303G  | 26.580M | 832x832    | 96    | 100    | 0.8461 | 0.8970    | 0.9346 | 0.9053         |
 | convformerm36_pfan_segmentation | 186.496G | 54.459M | 832x832    | 96    | 100    | 0.8865 | 0.9263    | 0.9517 | 0.9319         |
 
-You can find more model training details in salient_object_detection_training/.
+You can find more model training details in 6.salient_object_detection_training/.
 
 # Human matting task results
 
@@ -357,7 +357,7 @@ Use combine dataset Deep_Automatic_Portrait_Matting/RealWorldPortrait636/P3M10K 
 | resnet50_pfan_matting      | 86.093G  | 29.654M | 832x832    | 96    | 100    | 0.9809 | 0.9873    | 0.9932 | 6.0597 | 0.0087 | 0.0051 | 7.9799 | 5.8297 |
 | convformerm36_pfan_matting | 195.854G | 55.503M | 832x832    | 96    | 100    | 0.9843 | 0.9901    | 0.9939 | 5.0884 | 0.0073 | 0.0038 | 6.4283 | 4.8397 |
 
-You can find more model training details in human_matting_training/.
+You can find more model training details in 7.human_matting_training/.
 
 # OCR text detection task results
 
@@ -372,7 +372,7 @@ Use combine dataset include ICDAR2017RCTW/ICDAR2019ART/ICDAR2019LSVT/ICDAR2019ML
 | resnet50_dbnet      | 158.914G | 24.784M | 1024x1024  | 128   | 100    | 92.072    | 86.595 | 89.249 |
 | convformerm36_dbnet | 340.367G | 54.528M | 1024x1024  | 64    | 100    | 92.748    | 89.947 | 91.326 |
 
-You can find more model training details in ocr_text_detection_training/.
+You can find more model training details in 8.ocr_text_detection_training/.
 
 # OCR text recognition task results
 
@@ -387,7 +387,7 @@ Use combine dataset aistudio_baidu_street/chinese_dataset/synthetic_chinese_stri
 | resnet50_ctc_model      | 12.509G | 179.870M | 32x512     | 1024  | 50     | 99.498        | 99.212     |
 | convformerm36_ctc_model | 8.051G  | 70.121M  | 32x512     | 1024  | 50     | 99.452        | 99.201     |
 
-You can find more model training details in ocr_text_recognition_training/.
+You can find more model training details in 9.ocr_text_recognition_training/.
 
 # Face detection task results
 
@@ -401,7 +401,7 @@ Use WiderFace train and UFDD val datasets to train, WiderFace val dataset to tes
 | ------------------- | -------- | ------- | ---------- | ----- | ------ | ------- | --------- | ------- |
 | resnet50_retinaface | 114.229G | 27.280M | 1024x1024  | 16    | 100    | 0.9369  | 0.9148    | 0.7801  |
 
-You can find more model training details in face_detection_training/.
+You can find more model training details in 10.face_detection_training/.
 
 # Diffusion model task results
 
@@ -422,7 +422,7 @@ Trained diffusion unet on CelebA-HQ dataset(DDPM method).Test image num=28000.
 | DDPM            | 64x64      | 1000  | False/False                 | 6.409  | 2.486/0.082        |
 | DDIM            | 64x64      | 50    | False/False                 | 14.623 | 2.622/0.073        |
 
-You can find more model training details in diffusion_model_training/celebahq/.
+You can find more model training details in 20.diffusion_model_training/celebahq/.
 
 ## All diffusion model with different sampling methods on CIFAR10
 
@@ -434,7 +434,7 @@ Trained diffusion unet on CIFAR10 dataset(DDPM method).Test image num=50000.
 | DDIM            | 32x32      | 50    | False/False                 | 12.440 | 8.318/0.408        |
 | DDPM            | 32x32      | 1000  | True/True                   | 5.049  | 8.654/0.112        |
 
-You can find more model training details in diffusion_model_training/cifar10/.
+You can find more model training details in 20.diffusion_model_training/cifar10/.
 
 ## All diffusion model with different sampling methods on CIFAR100
 
@@ -446,7 +446,7 @@ Trained diffusion unet on CIFAR100 dataset(DDPM method).Test image num=50000.
 | DDIM            | 32x32      | 50    | False/False                 | 21.402 | 8.344/0.192        |
 | DDPM            | 32x32      | 1000  | True/True                   | 6.953  | 10.344/0.150       |
 
-You can find more model training details in diffusion_model_training/cifar100/.
+You can find more model training details in 20.diffusion_model_training/cifar100/.
 
 ## All diffusion model with different sampling methods on FFHQ
 
@@ -457,4 +457,4 @@ Trained diffusion unet on FFHQ dataset(DDPM method).Test image num=60000.
 | DDPM            | 64x64      | 1000  | False/False                 | 7.758  | 3.283/0.124        |
 | DDIM            | 64x64      | 50    | False/False                 | 11.328 | 3.417/0.071        |
 
-You can find more model training details in diffusion_model_training/ffhq/.
+You can find more model training details in 20.diffusion_model_training/ffhq/.
