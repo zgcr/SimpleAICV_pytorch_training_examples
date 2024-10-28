@@ -334,10 +334,10 @@ classification demo
 detection demo
 semantic_segmentation demo
 instance_segmentation demo
-text_detection demo
-text_recognition demo
 salient_object_detection demo
 human_matting demo
+text_detection demo
+text_recognition demo
 face_detection demo
 segment_anything demo
 ```
