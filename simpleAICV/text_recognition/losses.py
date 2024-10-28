@@ -14,9 +14,7 @@ import torch.nn.functional as F
 
 __all__ = [
     'CTCLoss',
-    'L2Loss',
     'ACELoss',
-    'AttentionLoss',
 ]
 
 
@@ -32,6 +30,9 @@ class CTCLoss(nn.Module):
 
     def forward(self, preds, trans_targets, input_lengths, target_lengths):
         batch = preds.shape[1]
+        preds = preds.float()
+        trans_targets = trans_targets.float()
+
         preds = F.log_softmax(preds, dim=2)
         loss = self.loss(preds, trans_targets, input_lengths, target_lengths)
 
@@ -66,6 +67,9 @@ class ACELoss(nn.Module):
     def __call__(self, preds, trans_targets):
         t, b, num_classes = preds.shape
         device = preds.device
+
+        preds = preds.float()
+
         preds = F.softmax(preds, dim=2)
         preds = preds.mean(dim=0)
 
@@ -84,21 +88,6 @@ class ACELoss(nn.Module):
 
         batch_targets = batch_targets / t
         loss = (-torch.sum(torch.log(preds) * batch_targets)) / b
-
-        return loss
-
-
-class AttentionLoss(nn.Module):
-
-    def __init__(self):
-        super(AttentionLoss, self).__init__()
-        self.loss = nn.CrossEntropyLoss()
-
-    def forward(self, preds, trans_targets):
-        preds = preds.permute(1, 0, 2)
-        preds = preds.reshape(-1, preds.shape[-1])
-        trans_targets = trans_targets.reshape(-1)
-        loss = self.loss(preds, trans_targets)
 
         return loss
 
@@ -130,7 +119,7 @@ if __name__ == '__main__':
 
     preds = torch.randn(6, 127, 12113)
     input_lengths = torch.IntTensor([preds.shape[1]] * preds.shape[0])
-    preds = F.log_softmax(preds, dim=2).permute(1, 0, 2)
+    preds = preds.permute(1, 0, 2)
     targets = ["你好吗", "他好吗", "大家都好吗", "nihaoma", "tahaoma", "dajiadouhaoma"]
     converter = CTCTextLabelConverter(final_char_table,
                                       str_max_length=80,
@@ -140,18 +129,13 @@ if __name__ == '__main__':
           trans_targets.shape, target_lengths)
 
     loss1 = CTCLoss(blank_index=0, use_focal_weight=True, gamma=2.0)
-    outs = loss1(preds, trans_targets, input_lengths, target_lengths)
-    print("1111", outs)
+    outs1 = loss1(preds, trans_targets, input_lengths, target_lengths)
+    print("1111", outs1)
 
+    preds = F.log_softmax(preds, dim=2)
     loss2 = torch.nn.CTCLoss(blank=0, reduction='mean', zero_infinity=True)
     outs2 = loss2(preds, trans_targets, input_lengths, target_lengths)
     print("2222", outs2)
-
-    stu_preds = torch.randn(6, 127, 12113)
-    tea_preds = torch.randn(6, 127, 12113)
-    loss3 = L2Loss()
-    outs3 = loss3(stu_preds, tea_preds)
-    print("3333", outs3)
 
     preds = torch.randn(127, 6, 12113)
     targets = ["你好吗", "他好吗", "大家都好吗", "nihaoma", "tahaoma", "dajiadouhaoma"]
@@ -161,4 +145,4 @@ if __name__ == '__main__':
     trans_targets, target_lengths = converter.encode(targets)
     loss4 = ACELoss(blank_index=0)
     outs4 = loss4(preds, trans_targets)
-    print("4444", outs4)
+    print("3333", outs4)

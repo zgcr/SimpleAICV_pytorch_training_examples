@@ -336,13 +336,13 @@ if __name__ == '__main__':
 
     from tools.path import CIFAR100_path
 
-    import torchvision.transforms as transforms
-
     import cv2
     import matplotlib.pyplot as plt
 
-    from simpleAICV.diffusion_model.common import Opencv2PIL, TorchResize, TorchRandomHorizontalFlip, TorchMeanStdNormalize, ClassificationCollater
-    from simpleAICV.diffusion_model.datasets.cifar100dataset import CIFAR100Dataset
+    import torchvision.transforms as transforms
+
+    from simpleAICV.classification.datasets.cifar100dataset import CIFAR100Dataset
+    from simpleAICV.diffusion_model.common import Opencv2PIL, TorchResize, TorchRandomHorizontalFlip, TorchMeanStdNormalize, DiffusionWithLabelCollater
 
     cifar100traindataset = CIFAR100Dataset(
         root_dir=CIFAR100_path,
@@ -366,7 +366,7 @@ if __name__ == '__main__':
               per_sample['label'], type(per_sample['image']),
               type(per_sample['label']))
 
-        # temp_dir = './temp'
+        # temp_dir = './temp1'
         # if not os.path.exists(temp_dir):
         #     os.makedirs(temp_dir)
 
@@ -401,7 +401,7 @@ if __name__ == '__main__':
         #     output_image_name = f'idx_{count}_add_noise.png'
         #     plt.savefig(os.path.join(temp_dir, output_image_name))
 
-        if count < 5:
+        if count < 2:
             count += 1
         else:
             break
@@ -414,7 +414,7 @@ if __name__ == '__main__':
                         block_nums=2,
                         dropout_prob=0.,
                         num_groups=32,
-                        use_attention_planes_multi_idx=[1],
+                        use_attention_planes_multi_idx=[0, 1, 2, 3],
                         num_classes=None,
                         use_gradient_checkpoint=False)
     ddpm_trainer = DDPMTrainer(beta_schedule_mode='linear',
@@ -424,9 +424,9 @@ if __name__ == '__main__':
                                t=1000)
 
     from torch.utils.data import DataLoader
-    collater = ClassificationCollater()
+    collater = DiffusionWithLabelCollater()
     train_loader = DataLoader(cifar100traindataset,
-                              batch_size=16,
+                              batch_size=8,
                               shuffle=True,
                               num_workers=4,
                               collate_fn=collater)
@@ -440,7 +440,7 @@ if __name__ == '__main__':
         pred_noise, noise = ddpm_trainer(net, images, class_label=None)
         print('2222', pred_noise.shape, noise.shape)
 
-        if count < 5:
+        if count < 2:
             count += 1
         else:
             break
@@ -453,7 +453,7 @@ if __name__ == '__main__':
                         block_nums=2,
                         dropout_prob=0.,
                         num_groups=32,
-                        use_attention_planes_multi_idx=[1],
+                        use_attention_planes_multi_idx=[0, 1, 2, 3],
                         num_classes=100,
                         use_gradient_checkpoint=False)
     ddpm_trainer = DDPMTrainer(beta_schedule_mode='linear',
@@ -463,9 +463,9 @@ if __name__ == '__main__':
                                t=1000)
 
     from torch.utils.data import DataLoader
-    collater = ClassificationCollater()
+    collater = DiffusionWithLabelCollater()
     train_loader = DataLoader(cifar100traindataset,
-                              batch_size=16,
+                              batch_size=8,
                               shuffle=True,
                               num_workers=4,
                               collate_fn=collater)
@@ -479,7 +479,7 @@ if __name__ == '__main__':
         pred_noise, noise = ddpm_trainer(net, images, class_label=labels)
         print('4444', pred_noise.shape, noise.shape)
 
-        if count < 5:
+        if count < 2:
             count += 1
         else:
             break
@@ -492,7 +492,7 @@ if __name__ == '__main__':
                         block_nums=2,
                         dropout_prob=0.,
                         num_groups=32,
-                        use_attention_planes_multi_idx=[1],
+                        use_attention_planes_multi_idx=[0, 1, 2, 3],
                         num_classes=None,
                         use_gradient_checkpoint=False)
     net.eval()
@@ -504,7 +504,7 @@ if __name__ == '__main__':
                                mean_type='epsilon',
                                var_type='fixedsmall',
                                clip_denoised=True)
-    all_step_images, last_step_images = ddpm_sampler(net, [4, 3, 32, 32],
+    all_step_images, last_step_images = ddpm_sampler(net, [8, 3, 32, 32],
                                                      class_label=None,
                                                      return_intermediates=True)
     print('5555', len(all_step_images), last_step_images.shape)
@@ -520,9 +520,9 @@ if __name__ == '__main__':
         ]))
 
     from torch.utils.data import DataLoader
-    collater = ClassificationCollater()
+    collater = DiffusionWithLabelCollater()
     test_loader = DataLoader(cifar100testdataset,
-                             batch_size=4,
+                             batch_size=8,
                              shuffle=True,
                              num_workers=4,
                              collate_fn=collater)
@@ -530,7 +530,7 @@ if __name__ == '__main__':
     for data in tqdm(test_loader):
         images, labels = data['image'], data['label']
         all_step_images, last_step_images = ddpm_sampler(
-            net, [4, 3, 32, 32],
+            net, [8, 3, 32, 32],
             class_label=None,
             input_images=images,
             input_masks=None,
@@ -551,7 +551,7 @@ if __name__ == '__main__':
         print('6767', w_start, h_start, w_mask_length, h_mask_length,
               b * c * w_mask_length * h_mask_length, masks.sum())
         all_step_images, last_step_images = ddpm_sampler(
-            net, [4, 3, 32, 32],
+            net, [8, 3, 32, 32],
             class_label=None,
             input_images=images,
             input_masks=masks,
@@ -559,7 +559,7 @@ if __name__ == '__main__':
         print('6868', len(all_step_images), last_step_images.shape)
 
         all_step_images, last_step_images = ddpm_sampler(
-            net, [4, 3, 32, 32],
+            net, [8, 3, 32, 32],
             class_label=None,
             input_images=images,
             input_masks=masks,
@@ -577,7 +577,7 @@ if __name__ == '__main__':
                         block_nums=2,
                         dropout_prob=0.,
                         num_groups=32,
-                        use_attention_planes_multi_idx=[1],
+                        use_attention_planes_multi_idx=[0, 1, 2, 3],
                         num_classes=100,
                         use_gradient_checkpoint=False)
     net.eval()
@@ -590,9 +590,9 @@ if __name__ == '__main__':
                                var_type='fixedsmall',
                                clip_denoised=True)
 
-    labels = np.array([0., 1., 2., 3.]).astype(np.float32)
+    labels = np.array([0., 1., 2., 3., 4., 5., 6., 7.]).astype(np.float32)
     labels = torch.from_numpy(labels).long()
-    all_step_images, last_step_images = ddpm_sampler(net, [4, 3, 32, 32],
+    all_step_images, last_step_images = ddpm_sampler(net, [8, 3, 32, 32],
                                                      class_label=labels,
                                                      return_intermediates=True)
     print('7777', len(all_step_images), last_step_images.shape)
@@ -608,9 +608,9 @@ if __name__ == '__main__':
         ]))
 
     from torch.utils.data import DataLoader
-    collater = ClassificationCollater()
+    collater = DiffusionWithLabelCollater()
     test_loader = DataLoader(cifar100testdataset,
-                             batch_size=4,
+                             batch_size=8,
                              shuffle=True,
                              num_workers=4,
                              collate_fn=collater)
@@ -618,7 +618,7 @@ if __name__ == '__main__':
     for data in tqdm(test_loader):
         images, labels = data['image'], data['label']
         all_step_images, last_step_images = ddpm_sampler(
-            net, [4, 3, 32, 32],
+            net, [8, 3, 32, 32],
             class_label=labels,
             input_images=images,
             input_masks=None,
@@ -639,7 +639,7 @@ if __name__ == '__main__':
         print('7272', w_start, h_start, w_mask_length, h_mask_length,
               b * c * w_mask_length * h_mask_length, masks.sum())
         all_step_images, last_step_images = ddpm_sampler(
-            net, [4, 3, 32, 32],
+            net, [8, 3, 32, 32],
             class_label=labels,
             input_images=images,
             input_masks=masks,
@@ -647,7 +647,7 @@ if __name__ == '__main__':
         print('7373', len(all_step_images), last_step_images.shape)
 
         all_step_images, last_step_images = ddpm_sampler(
-            net, [4, 3, 32, 32],
+            net, [8, 3, 32, 32],
             class_label=labels,
             input_images=images,
             input_masks=masks,

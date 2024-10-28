@@ -6,50 +6,18 @@ import xml.etree.ElementTree as ET
 from torch.utils.data import Dataset
 
 VOC_CLASSES = [
-    'aeroplane',
-    'bicycle',
-    'bird',
-    'boat',
-    'bottle',
-    'bus',
-    'car',
-    'cat',
-    'chair',
-    'cow',
-    'diningtable',
-    'dog',
-    'horse',
-    'motorbike',
-    'person',
-    'pottedplant',
-    'sheep',
-    'sofa',
-    'train',
-    'tvmonitor',
+    'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car', 'cat',
+    'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike', 'person',
+    'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor'
 ]
 
-VOC_CLASSES_COLOR = [
-    (3, 49, 100),
-    (207, 114, 57),
-    (78, 11, 12),
-    (137, 254, 43),
-    (250, 0, 126),
-    (96, 70, 138),
-    (4, 92, 12),
-    (134, 11, 24),
-    (168, 242, 245),
-    (2, 245, 181),
-    (100, 228, 217),
-    (45, 220, 214),
-    (109, 58, 0),
-    (157, 94, 231),
-    (37, 3, 197),
-    (57, 43, 97),
-    (254, 154, 235),
-    (164, 1, 210),
-    (87, 20, 206),
-    (58, 198, 17),
-]
+VOC_CLASSES_COLOR = [(3, 49, 100), (207, 114, 57), (78, 11, 12),
+                     (137, 254, 43), (250, 0, 126), (96, 70, 138), (4, 92, 12),
+                     (134, 11, 24), (168, 242, 245), (2, 245, 181),
+                     (100, 228, 217), (45, 220, 214), (109, 58, 0),
+                     (157, 94, 231), (37, 3, 197), (57, 43, 97),
+                     (254, 154, 235), (164, 1, 210), (87, 20, 206),
+                     (58, 198, 17)]
 
 
 class VocDetection(Dataset):
@@ -88,6 +56,7 @@ class VocDetection(Dataset):
         return len(self.ids)
 
     def __getitem__(self, idx):
+        path = self.imagepath % self.ids[idx]
         image = self.load_image(idx)
         annots = self.load_annots(idx)
 
@@ -95,6 +64,7 @@ class VocDetection(Dataset):
         size = np.array([image.shape[0], image.shape[1]]).astype(np.float32)
 
         sample = {
+            'path': path,
             'image': image,
             'annots': annots,
             'scale': scale,
@@ -134,7 +104,7 @@ class VocDetection(Dataset):
                 cur_pt = float(bbox.find(pt).text)
                 target.append(cur_pt)
 
-            if target[2] - target[0] < 1 or target[3] - target[1] < 1:
+            if target[2] - target[0] <= 1 or target[3] - target[1] <= 1:
                 continue
 
             if target[0] < 0 or target[1] < 0 or target[2] > w or target[3] > h:
@@ -204,68 +174,66 @@ if __name__ == '__main__':
 
     count = 0
     for per_sample in tqdm(vocdataset):
+        print(per_sample['path'])
         print(per_sample['image'].shape, per_sample['annots'].shape,
               per_sample['scale'], per_sample['size'])
 
-        temp_dir = './temp'
-        if not os.path.exists(temp_dir):
-            os.makedirs(temp_dir)
+        # temp_dir = './temp1'
+        # if not os.path.exists(temp_dir):
+        #     os.makedirs(temp_dir)
 
-        image = np.ascontiguousarray(per_sample['image'], dtype=np.uint8)
-        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-        annots = per_sample['annots']
+        # image = np.ascontiguousarray(per_sample['image'], dtype=np.uint8)
+        # image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        # annots = per_sample['annots']
 
-        # draw all label boxes
-        for per_annot in annots:
-            per_box = (per_annot[0:4]).astype(np.int32)
-            per_box_class_index = per_annot[4].astype(np.int32)
-            class_name, class_color = VOC_CLASSES[
-                per_box_class_index], VOC_CLASSES_COLOR[per_box_class_index]
-            left_top, right_bottom = (per_box[0], per_box[1]), (per_box[2],
-                                                                per_box[3])
-            cv2.rectangle(image,
-                          left_top,
-                          right_bottom,
-                          color=class_color,
-                          thickness=2,
-                          lineType=cv2.LINE_AA)
+        # # draw all label boxes
+        # for per_annot in annots:
+        #     per_box = (per_annot[0:4]).astype(np.int32)
+        #     per_box_class_index = per_annot[4].astype(np.int32)
+        #     class_name, class_color = VOC_CLASSES[
+        #         per_box_class_index], VOC_CLASSES_COLOR[per_box_class_index]
+        #     left_top, right_bottom = (per_box[0], per_box[1]), (per_box[2],
+        #                                                         per_box[3])
+        #     cv2.rectangle(image,
+        #                   left_top,
+        #                   right_bottom,
+        #                   color=class_color,
+        #                   thickness=2,
+        #                   lineType=cv2.LINE_AA)
 
-            text = f'{class_name}'
-            text_size = cv2.getTextSize(text, 0, 0.5, thickness=1)[0]
-            fill_right_bottom = (max(left_top[0] + text_size[0],
-                                     right_bottom[0]),
-                                 left_top[1] - text_size[1] - 3)
-            cv2.rectangle(image,
-                          left_top,
-                          fill_right_bottom,
-                          color=class_color,
-                          thickness=-1,
-                          lineType=cv2.LINE_AA)
-            cv2.putText(image,
-                        text, (left_top[0], left_top[1] - 2),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        0.5,
-                        color=(0, 0, 0),
-                        thickness=1,
-                        lineType=cv2.LINE_AA)
+        #     text = f'{class_name}'
+        #     text_size = cv2.getTextSize(text, 0, 0.5, thickness=1)[0]
+        #     fill_right_bottom = (max(left_top[0] + text_size[0],
+        #                              right_bottom[0]),
+        #                          left_top[1] - text_size[1] - 3)
+        #     cv2.rectangle(image,
+        #                   left_top,
+        #                   fill_right_bottom,
+        #                   color=class_color,
+        #                   thickness=-1,
+        #                   lineType=cv2.LINE_AA)
+        #     cv2.putText(image,
+        #                 text, (left_top[0], left_top[1] - 2),
+        #                 cv2.FONT_HERSHEY_SIMPLEX,
+        #                 0.5,
+        #                 color=(0, 0, 0),
+        #                 thickness=1,
+        #                 lineType=cv2.LINE_AA)
 
-        cv2.imencode('.jpg', image)[1].tofile(
-            os.path.join(temp_dir, f'idx_{count}.jpg'))
+        # cv2.imencode('.jpg', image)[1].tofile(
+        #     os.path.join(temp_dir, f'idx_{count}.jpg'))
 
-        if count < 10:
+        if count < 5:
             count += 1
         else:
             break
 
     from torch.utils.data import DataLoader
-    # collater = DetectionCollater(resize=800,
-    #                              resize_type='retina_style',
-    #                              max_annots_num=100)
     collater = DetectionCollater(resize=640,
                                  resize_type='yolo_style',
                                  max_annots_num=100)
     train_loader = DataLoader(vocdataset,
-                              batch_size=8,
+                              batch_size=4,
                               shuffle=True,
                               num_workers=2,
                               collate_fn=collater)
@@ -277,58 +245,205 @@ if __name__ == '__main__':
         print('2222', images.shape, annots.shape, scales.shape, sizes.shape)
         print('2222', images.dtype, annots.dtype, scales.dtype, sizes.dtype)
 
-        temp_dir = './temp2'
-        if not os.path.exists(temp_dir):
-            os.makedirs(temp_dir)
+        # temp_dir = './temp2'
+        # if not os.path.exists(temp_dir):
+        #     os.makedirs(temp_dir)
 
-        images = images.permute(0, 2, 3, 1).cpu().numpy()
-        annots = annots.cpu().numpy()
+        # images = images.permute(0, 2, 3, 1).cpu().numpy()
+        # annots = annots.cpu().numpy()
 
-        for i, (per_image, per_image_annot) in enumerate(zip(images, annots)):
-            per_image = np.ascontiguousarray(per_image, dtype=np.uint8)
-            per_image = cv2.cvtColor(per_image, cv2.COLOR_RGB2BGR)
+        # for i, (per_image, per_image_annot) in enumerate(zip(images, annots)):
+        #     per_image = np.ascontiguousarray(per_image, dtype=np.uint8)
+        #     per_image = cv2.cvtColor(per_image, cv2.COLOR_RGB2BGR)
 
-            # draw all label boxes
-            for per_annot in per_image_annot:
-                per_box = (per_annot[0:4]).astype(np.int32)
-                per_box_class_index = per_annot[4].astype(np.int32)
+        #     # draw all label boxes
+        #     for per_annot in per_image_annot:
+        #         per_box = (per_annot[0:4]).astype(np.int32)
+        #         per_box_class_index = per_annot[4].astype(np.int32)
 
-                if per_box_class_index == -1:
-                    continue
+        #         if per_box_class_index == -1:
+        #             continue
 
-                class_name, class_color = VOC_CLASSES[
-                    per_box_class_index], VOC_CLASSES_COLOR[
-                        per_box_class_index]
-                left_top, right_bottom = (per_box[0], per_box[1]), (per_box[2],
-                                                                    per_box[3])
-                cv2.rectangle(per_image,
-                              left_top,
-                              right_bottom,
-                              color=class_color,
-                              thickness=2,
-                              lineType=cv2.LINE_AA)
+        #         class_name, class_color = VOC_CLASSES[
+        #             per_box_class_index], VOC_CLASSES_COLOR[
+        #                 per_box_class_index]
+        #         left_top, right_bottom = (per_box[0], per_box[1]), (per_box[2],
+        #                                                             per_box[3])
+        #         cv2.rectangle(per_image,
+        #                       left_top,
+        #                       right_bottom,
+        #                       color=class_color,
+        #                       thickness=2,
+        #                       lineType=cv2.LINE_AA)
 
-                text = f'{class_name}'
-                text_size = cv2.getTextSize(text, 0, 0.5, thickness=1)[0]
-                fill_right_bottom = (max(left_top[0] + text_size[0],
-                                         right_bottom[0]),
-                                     left_top[1] - text_size[1] - 3)
-                cv2.rectangle(per_image,
-                              left_top,
-                              fill_right_bottom,
-                              color=class_color,
-                              thickness=-1,
-                              lineType=cv2.LINE_AA)
-                cv2.putText(per_image,
-                            text, (left_top[0], left_top[1] - 2),
-                            cv2.FONT_HERSHEY_SIMPLEX,
-                            0.5,
-                            color=(0, 0, 0),
-                            thickness=1,
-                            lineType=cv2.LINE_AA)
+        #         text = f'{class_name}'
+        #         text_size = cv2.getTextSize(text, 0, 0.5, thickness=1)[0]
+        #         fill_right_bottom = (max(left_top[0] + text_size[0],
+        #                                  right_bottom[0]),
+        #                              left_top[1] - text_size[1] - 3)
+        #         cv2.rectangle(per_image,
+        #                       left_top,
+        #                       fill_right_bottom,
+        #                       color=class_color,
+        #                       thickness=-1,
+        #                       lineType=cv2.LINE_AA)
+        #         cv2.putText(per_image,
+        #                     text, (left_top[0], left_top[1] - 2),
+        #                     cv2.FONT_HERSHEY_SIMPLEX,
+        #                     0.5,
+        #                     color=(0, 0, 0),
+        #                     thickness=1,
+        #                     lineType=cv2.LINE_AA)
 
-            cv2.imencode('.jpg', per_image)[1].tofile(
-                os.path.join(temp_dir, f'idx_{count}_{i}.jpg'))
+        #     cv2.imencode('.jpg', per_image)[1].tofile(
+        #         os.path.join(temp_dir, f'idx_{count}_{i}.jpg'))
+
+        if count < 5:
+            count += 1
+        else:
+            break
+
+    vocdataset = VocDetection(
+        root_dir=VOCdataset_path,
+        image_sets=[('2007', 'trainval'), ('2012', 'trainval')],
+        transform=transforms.Compose([
+            RandomHorizontalFlip(prob=0.5),
+            RandomCrop(prob=0.5),
+            RandomTranslate(prob=0.5),
+            DetectionResize(resize=800,
+                            stride=32,
+                            resize_type='retina_style',
+                            multi_scale=False,
+                            multi_scale_range=[0.8, 1.0]),
+            # Normalize(),
+        ]),
+        keep_difficult=True)
+
+    count = 0
+    for per_sample in tqdm(vocdataset):
+        print(per_sample['path'])
+        print(per_sample['image'].shape, per_sample['annots'].shape,
+              per_sample['scale'], per_sample['size'])
+
+        # temp_dir = './temp1'
+        # if not os.path.exists(temp_dir):
+        #     os.makedirs(temp_dir)
+
+        # image = np.ascontiguousarray(per_sample['image'], dtype=np.uint8)
+        # image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        # annots = per_sample['annots']
+
+        # # draw all label boxes
+        # for per_annot in annots:
+        #     per_box = (per_annot[0:4]).astype(np.int32)
+        #     per_box_class_index = per_annot[4].astype(np.int32)
+        #     class_name, class_color = VOC_CLASSES[
+        #         per_box_class_index], VOC_CLASSES_COLOR[per_box_class_index]
+        #     left_top, right_bottom = (per_box[0], per_box[1]), (per_box[2],
+        #                                                         per_box[3])
+        #     cv2.rectangle(image,
+        #                   left_top,
+        #                   right_bottom,
+        #                   color=class_color,
+        #                   thickness=2,
+        #                   lineType=cv2.LINE_AA)
+
+        #     text = f'{class_name}'
+        #     text_size = cv2.getTextSize(text, 0, 0.5, thickness=1)[0]
+        #     fill_right_bottom = (max(left_top[0] + text_size[0],
+        #                              right_bottom[0]),
+        #                          left_top[1] - text_size[1] - 3)
+        #     cv2.rectangle(image,
+        #                   left_top,
+        #                   fill_right_bottom,
+        #                   color=class_color,
+        #                   thickness=-1,
+        #                   lineType=cv2.LINE_AA)
+        #     cv2.putText(image,
+        #                 text, (left_top[0], left_top[1] - 2),
+        #                 cv2.FONT_HERSHEY_SIMPLEX,
+        #                 0.5,
+        #                 color=(0, 0, 0),
+        #                 thickness=1,
+        #                 lineType=cv2.LINE_AA)
+
+        # cv2.imencode('.jpg', image)[1].tofile(
+        #     os.path.join(temp_dir, f'idx_{count}.jpg'))
+
+        if count < 5:
+            count += 1
+        else:
+            break
+
+    from torch.utils.data import DataLoader
+    collater = DetectionCollater(resize=800,
+                                 resize_type='retina_style',
+                                 max_annots_num=100)
+    train_loader = DataLoader(vocdataset,
+                              batch_size=4,
+                              shuffle=True,
+                              num_workers=2,
+                              collate_fn=collater)
+
+    count = 0
+    for data in tqdm(train_loader):
+        images, annots, scales, sizes = data['image'], data['annots'], data[
+            'scale'], data['size']
+        print('2222', images.shape, annots.shape, scales.shape, sizes.shape)
+        print('2222', images.dtype, annots.dtype, scales.dtype, sizes.dtype)
+
+        # temp_dir = './temp2'
+        # if not os.path.exists(temp_dir):
+        #     os.makedirs(temp_dir)
+
+        # images = images.permute(0, 2, 3, 1).cpu().numpy()
+        # annots = annots.cpu().numpy()
+
+        # for i, (per_image, per_image_annot) in enumerate(zip(images, annots)):
+        #     per_image = np.ascontiguousarray(per_image, dtype=np.uint8)
+        #     per_image = cv2.cvtColor(per_image, cv2.COLOR_RGB2BGR)
+
+        #     # draw all label boxes
+        #     for per_annot in per_image_annot:
+        #         per_box = (per_annot[0:4]).astype(np.int32)
+        #         per_box_class_index = per_annot[4].astype(np.int32)
+
+        #         if per_box_class_index == -1:
+        #             continue
+
+        #         class_name, class_color = VOC_CLASSES[
+        #             per_box_class_index], VOC_CLASSES_COLOR[
+        #                 per_box_class_index]
+        #         left_top, right_bottom = (per_box[0], per_box[1]), (per_box[2],
+        #                                                             per_box[3])
+        #         cv2.rectangle(per_image,
+        #                       left_top,
+        #                       right_bottom,
+        #                       color=class_color,
+        #                       thickness=2,
+        #                       lineType=cv2.LINE_AA)
+
+        #         text = f'{class_name}'
+        #         text_size = cv2.getTextSize(text, 0, 0.5, thickness=1)[0]
+        #         fill_right_bottom = (max(left_top[0] + text_size[0],
+        #                                  right_bottom[0]),
+        #                              left_top[1] - text_size[1] - 3)
+        #         cv2.rectangle(per_image,
+        #                       left_top,
+        #                       fill_right_bottom,
+        #                       color=class_color,
+        #                       thickness=-1,
+        #                       lineType=cv2.LINE_AA)
+        #         cv2.putText(per_image,
+        #                     text, (left_top[0], left_top[1] - 2),
+        #                     cv2.FONT_HERSHEY_SIMPLEX,
+        #                     0.5,
+        #                     color=(0, 0, 0),
+        #                     thickness=1,
+        #                     lineType=cv2.LINE_AA)
+
+        #     cv2.imencode('.jpg', per_image)[1].tofile(
+        #         os.path.join(temp_dir, f'idx_{count}_{i}.jpg'))
 
         if count < 5:
             count += 1

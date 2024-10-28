@@ -10,6 +10,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from torch.utils.checkpoint import checkpoint
+
 from simpleAICV.detection.models import backbones
 from simpleAICV.detection.models.backbones.detr_resnet import PositionEmbeddingBlock
 from simpleAICV.detection.models.head import DETRClsRegHead
@@ -272,15 +274,18 @@ class DETR(nn.Module):
                  backbone_pretrained_path='',
                  hidden_inplanes=256,
                  query_nums=100,
-                 num_classes=80):
+                 num_classes=80,
+                 use_gradient_checkpoint=False):
         super(DETR, self).__init__()
         self.hidden_inplanes = hidden_inplanes
         self.query_nums = query_nums
         self.num_classes = num_classes
+        self.use_gradient_checkpoint = use_gradient_checkpoint
 
         self.backbone = backbones.__dict__[backbone_type](
             **{
                 'pretrained_path': backbone_pretrained_path,
+                'use_gradient_checkpoint': use_gradient_checkpoint,
             })
 
         self.position_embedding = PositionEmbeddingBlock(
@@ -325,12 +330,28 @@ class DETR(nn.Module):
         # [b,256,25,25]
         features = self.proj_conv(features)
 
-        # [b,256,25,25],[b,25,25],[100,256],[b,256,25,25]
-        features, memory = self.transformer(features, masks.float(),
-                                            self.query_embed.weight, positions)
+        if self.use_gradient_checkpoint:
+            # [b,256,25,25],[b,25,25],[100,256],[b,256,25,25]
+            features, memory = checkpoint(self.transformer,
+                                          features,
+                                          masks.float(),
+                                          self.query_embed.weight,
+                                          positions,
+                                          use_reentrant=False)
+        else:
+            # [b,256,25,25],[b,25,25],[100,256],[b,256,25,25]
+            features, memory = self.transformer(features, masks.float(),
+                                                self.query_embed.weight,
+                                                positions)
 
-        # [6,b,100,256],[b,256,25,25]
-        cls_outputs, reg_outputs = self.head(features)
+        if self.use_gradient_checkpoint:
+            # [6,b,100,256],[b,256,25,25]
+            cls_outputs, reg_outputs = checkpoint(self.head,
+                                                  features,
+                                                  use_reentrant=False)
+        else:
+            # [6,b,100,256],[b,256,25,25]
+            cls_outputs, reg_outputs = self.head(features)
 
         del features
 
@@ -428,6 +449,29 @@ if __name__ == '__main__':
                               collate_fn=collater)
 
     net = resnet50_detr()
+
+    for data in tqdm(train_loader):
+        images, annots, masks, scales, sizes = data['image'], data[
+            'annots'], data['mask'], data['scale'], data['size']
+        print('0000', images.shape, annots.shape, masks.shape, scales.shape,
+              sizes.shape)
+        print('0000', images.dtype, annots.dtype, masks.dtype, scales.dtype,
+              sizes.dtype)
+
+        image_h, image_w = 1024, 1024
+        from thop import profile
+        from thop import clever_format
+        macs, params = profile(net, inputs=(images, masks), verbose=False)
+        macs, params = clever_format([macs, params], '%.3f')
+        print(f'1111, macs: {macs}, params: {params}')
+        outs = net(torch.autograd.Variable(images),
+                   torch.autograd.Variable(masks))
+        for out in outs:
+            print('2222', out.shape)
+
+        break
+
+    net = resnet50_detr(use_gradient_checkpoint=True)
 
     for data in tqdm(train_loader):
         images, annots, masks, scales, sizes = data['image'], data[

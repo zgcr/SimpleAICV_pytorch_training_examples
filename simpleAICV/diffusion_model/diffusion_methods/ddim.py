@@ -254,12 +254,12 @@ if __name__ == '__main__':
             os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
     sys.path.append(BASE_DIR)
 
-    from tools.path import CIFAR100_path
+    from tools.path import CIFAR10_path
 
     import torchvision.transforms as transforms
 
-    from simpleAICV.diffusion_model.common import Opencv2PIL, TorchResize, TorchRandomHorizontalFlip, TorchMeanStdNormalize, ClassificationCollater
-    from simpleAICV.diffusion_model.datasets.cifar100dataset import CIFAR100Dataset
+    from simpleAICV.classification.datasets.cifar10dataset import CIFAR10Dataset
+    from simpleAICV.diffusion_model.common import Opencv2PIL, TorchResize, TorchRandomHorizontalFlip, TorchMeanStdNormalize, DiffusionWithLabelCollater
 
     from simpleAICV.diffusion_model.models.diffusion_unet import DiffusionUNet
     net = DiffusionUNet(inplanes=3,
@@ -269,7 +269,7 @@ if __name__ == '__main__':
                         block_nums=2,
                         dropout_prob=0.,
                         num_groups=32,
-                        use_attention_planes_multi_idx=[1],
+                        use_attention_planes_multi_idx=[0, 1, 2, 3],
                         num_classes=None,
                         use_gradient_checkpoint=False)
     net.eval()
@@ -282,7 +282,7 @@ if __name__ == '__main__':
                                ddim_eta=0.0,
                                ddim_discr_method='uniform',
                                clip_denoised=True)
-    all_step_images, last_step_images = ddim_sampler(net, [4, 3, 32, 32],
+    all_step_images, last_step_images = ddim_sampler(net, [8, 3, 32, 32],
                                                      class_label=None,
                                                      return_intermediates=True)
     print('5555', len(all_step_images), last_step_images.shape)
@@ -295,7 +295,7 @@ if __name__ == '__main__':
                         block_nums=2,
                         dropout_prob=0.,
                         num_groups=32,
-                        use_attention_planes_multi_idx=[1],
+                        use_attention_planes_multi_idx=[0, 1, 2, 3],
                         num_classes=100,
                         use_gradient_checkpoint=False)
     net.eval()
@@ -309,15 +309,15 @@ if __name__ == '__main__':
                                ddim_discr_method='uniform',
                                clip_denoised=True)
 
-    labels = np.array([0., 1., 2., 3.]).astype(np.float32)
+    labels = np.array([0., 1., 2., 3., 4., 5., 6., 7.]).astype(np.float32)
     labels = torch.from_numpy(labels).long()
-    all_step_images, last_step_images = ddim_sampler(net, [4, 3, 32, 32],
+    all_step_images, last_step_images = ddim_sampler(net, [8, 3, 32, 32],
                                                      class_label=labels,
                                                      return_intermediates=True)
     print('6666', len(all_step_images), last_step_images.shape)
 
-    cifar100testdataset = CIFAR100Dataset(
-        root_dir=CIFAR100_path,
+    cifar100testdataset = CIFAR10Dataset(
+        root_dir=CIFAR10_path,
         set_name='test',
         transform=transforms.Compose([
             Opencv2PIL(),
@@ -327,9 +327,9 @@ if __name__ == '__main__':
         ]))
 
     from torch.utils.data import DataLoader
-    collater = ClassificationCollater()
+    collater = DiffusionWithLabelCollater()
     test_loader = DataLoader(cifar100testdataset,
-                             batch_size=4,
+                             batch_size=8,
                              shuffle=True,
                              num_workers=4,
                              collate_fn=collater)
@@ -337,7 +337,7 @@ if __name__ == '__main__':
     for data in tqdm(test_loader):
         images, labels = data['image'], data['label']
         all_step_images, last_step_images = ddim_sampler(
-            net, [4, 3, 32, 32],
+            net, [8, 3, 32, 32],
             class_label=labels,
             input_images=images,
             input_masks=None,
@@ -358,7 +358,7 @@ if __name__ == '__main__':
         print('7272', w_start, h_start, w_mask_length, h_mask_length,
               b * c * w_mask_length * h_mask_length, masks.sum())
         all_step_images, last_step_images = ddim_sampler(
-            net, [4, 3, 32, 32],
+            net, [8, 3, 32, 32],
             class_label=labels,
             input_images=images,
             input_masks=masks,
@@ -366,7 +366,7 @@ if __name__ == '__main__':
         print('7373', len(all_step_images), last_step_images.shape)
 
         all_step_images, last_step_images = ddim_sampler(
-            net, [4, 3, 32, 32],
+            net, [8, 3, 32, 32],
             class_label=labels,
             input_images=images,
             input_masks=masks,

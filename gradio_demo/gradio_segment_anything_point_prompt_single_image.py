@@ -22,7 +22,7 @@ from simpleAICV.interactive_segmentation.common import load_state_dict
 seed = 0
 model_name = 'sam_h'
 
-trained_model_path = '/root/code/SimpleAICV_pytorch_training_examples_on_ImageNet_COCO_ADE20K/pretrained_models/sam_official_pytorch_weights/sam_vit_h_4b8939.pth'
+trained_model_path = '/root/code/SimpleAICV_pytorch_training_examples/pretrained_models/sam_official_pytorch_weights/sam_vit_h_4b8939.pth'
 input_image_size = 1024
 clip_threshold = 0.5
 

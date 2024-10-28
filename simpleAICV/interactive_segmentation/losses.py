@@ -3,16 +3,14 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 __all__ = [
-    'SAMLoss',
     'SAMMultiLevelLoss',
+    'SAMMultiLevelIoUMaxLoss',
     'SAMMultiLevelAssignLoss',
-    'SAML1Loss',
-    'SAMAdvanceLoss',
-    'SAMMultiLevelAdvanceLoss',
+    'SAMMultiLevelMinimizeLoss',
 ]
 
 
-class SAMLoss(nn.Module):
+class SAMMultiLevelLoss(nn.Module):
 
     def __init__(self,
                  alpha=0.8,
@@ -22,7 +20,7 @@ class SAMLoss(nn.Module):
                  dice_loss_weight=1,
                  iou_predict_loss_weight=1,
                  mask_threshold=0.0):
-        super(SAMLoss, self).__init__()
+        super(SAMMultiLevelLoss, self).__init__()
         self.alpha = alpha
         self.gamma = gamma
         self.smooth = smooth
@@ -34,15 +32,142 @@ class SAMLoss(nn.Module):
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, inputs, targets):
-        pred_masks = []
-        for per_mask in inputs[0]:
-            pred_masks.append(per_mask)
-        pred_masks = torch.cat(pred_masks, dim=0)
+        pred_masks, pred_ious = inputs
 
-        pred_ious = []
-        for per_iou in inputs[1]:
-            pred_ious.append(per_iou)
-        pred_ious = torch.cat(pred_ious, dim=0)
+        focal_loss = self.focal_loss(pred_masks, targets)
+        dice_loss = self.dice_loss(pred_masks, targets)
+        iou_predict_loss = self.iou_predict_loss(pred_masks, targets,
+                                                 pred_ious)
+
+        focal_loss = self.focal_loss_weight * focal_loss
+        dice_loss = self.dice_loss_weight * dice_loss
+        iou_predict_loss = self.iou_predict_loss_weight * iou_predict_loss
+
+        loss_dict = {
+            'focal_loss': focal_loss,
+            'dice_loss': dice_loss,
+            'iou_predict_loss': iou_predict_loss,
+        }
+
+        return loss_dict
+
+    def focal_loss(self, inputs, targets):
+        idx_nums = inputs.shape[1]
+        targets = targets.reshape(-1)
+
+        total_focal_loss = 0.
+        for per_idx in range(inputs.shape[1]):
+            per_idx_inputs = inputs[:, per_idx:per_idx + 1, :, :]
+            per_idx_inputs = per_idx_inputs.reshape(-1)
+
+            assert per_idx_inputs.shape[0] == targets.shape[0]
+
+            bce_loss = F.binary_cross_entropy_with_logits(per_idx_inputs,
+                                                          targets,
+                                                          reduction='none')
+            focal_loss = self.alpha * (
+                1 - torch.exp(-bce_loss))**self.gamma * bce_loss
+            focal_loss = focal_loss.mean()
+            total_focal_loss += focal_loss
+
+        total_focal_loss = total_focal_loss / idx_nums
+
+        return total_focal_loss
+
+    def dice_loss(self, inputs, targets):
+        idx_nums = inputs.shape[1]
+
+        inputs = inputs.float()
+        inputs = self.sigmoid(inputs)
+        inputs = torch.clamp(inputs, min=1e-4, max=1. - 1e-4)
+
+        targets = targets.reshape(-1)
+
+        total_dice_loss = 0.
+        for per_idx in range(inputs.shape[1]):
+            per_idx_inputs = inputs[:, per_idx:per_idx + 1, :, :]
+            per_idx_inputs = per_idx_inputs.reshape(-1)
+
+            assert per_idx_inputs.shape[0] == targets.shape[0]
+
+            intersection = (per_idx_inputs * targets).sum()
+
+            dice_loss = 1. - (
+                (2. * intersection + self.smooth) /
+                (per_idx_inputs.sum() + targets.sum() + self.smooth))
+            total_dice_loss += dice_loss
+
+        total_dice_loss = total_dice_loss / idx_nums
+
+        return total_dice_loss
+
+    def iou_predict_loss(self, inputs, targets, iou_predictions):
+        inputs = (inputs >= self.mask_threshold).float()
+
+        batch_size = inputs.shape[0]
+        idx_nums = inputs.shape[1]
+
+        targets = targets.reshape(batch_size, -1)
+
+        total_iou_predict_loss = 0.
+        for per_idx in range(inputs.shape[1]):
+            per_idx_inputs = inputs[:, per_idx:per_idx + 1, :, :]
+            per_idx_inputs = per_idx_inputs.reshape(batch_size, -1)
+
+            intersection = per_idx_inputs * targets
+
+            per_idx_iou_gt = (torch.sum(intersection, dim=1) + self.smooth) / (
+                (torch.sum(per_idx_inputs, dim=1) + torch.sum(targets, dim=1) -
+                 torch.sum(intersection, dim=1)) + self.smooth)
+
+            per_idx_iou_predictions = iou_predictions[:, per_idx]
+            iou_predict_loss = F.mse_loss(per_idx_iou_predictions,
+                                          per_idx_iou_gt,
+                                          reduction='sum') / batch_size
+            total_iou_predict_loss += iou_predict_loss
+
+        total_iou_predict_loss = total_iou_predict_loss / idx_nums
+
+        return total_iou_predict_loss
+
+
+class SAMMultiLevelIoUMaxLoss(nn.Module):
+
+    def __init__(self,
+                 alpha=0.8,
+                 gamma=2,
+                 smooth=1e-4,
+                 focal_loss_weight=20,
+                 dice_loss_weight=1,
+                 iou_predict_loss_weight=1,
+                 mask_threshold=0.0):
+        super(SAMMultiLevelIoUMaxLoss, self).__init__()
+        self.alpha = alpha
+        self.gamma = gamma
+        self.smooth = smooth
+        self.focal_loss_weight = focal_loss_weight
+        self.dice_loss_weight = dice_loss_weight
+        self.iou_predict_loss_weight = iou_predict_loss_weight
+        self.mask_threshold = mask_threshold
+
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, inputs, targets):
+        pred_masks, pred_ious = inputs
+
+        pred_masks_0_1 = (pred_masks >= self.mask_threshold).float()
+        intersection = (pred_masks_0_1 * targets).sum(dim=(2, 3))
+        union = pred_masks_0_1.sum(dim=(2, 3)) + targets.sum(
+            dim=(2, 3)) - intersection + 1e-4
+        ious = intersection / union
+        max_iou_idx = ious.argmax(dim=1)
+
+        batch_range = torch.arange(pred_masks.shape[0],
+                                   device=pred_masks.device)
+        pred_masks = pred_masks[batch_range, max_iou_idx]
+        pred_masks = pred_masks.unsqueeze(1)
+        pred_ious = pred_ious[batch_range, max_iou_idx]
+        pred_ious = pred_ious.unsqueeze(1)
 
         focal_loss = self.focal_loss(pred_masks, targets)
         dice_loss = self.dice_loss(pred_masks, targets)
@@ -115,134 +240,6 @@ class SAMLoss(nn.Module):
         return iou_predict_loss
 
 
-class SAMMultiLevelLoss(nn.Module):
-
-    def __init__(self,
-                 alpha=0.8,
-                 gamma=2,
-                 smooth=1e-4,
-                 focal_loss_weight=20,
-                 dice_loss_weight=1,
-                 iou_predict_loss_weight=1,
-                 mask_threshold=0.0):
-        super(SAMMultiLevelLoss, self).__init__()
-        self.alpha = alpha
-        self.gamma = gamma
-        self.smooth = smooth
-        self.focal_loss_weight = focal_loss_weight
-        self.dice_loss_weight = dice_loss_weight
-        self.iou_predict_loss_weight = iou_predict_loss_weight
-        self.mask_threshold = mask_threshold
-
-        self.sigmoid = nn.Sigmoid()
-
-    def forward(self, inputs, targets):
-        pred_masks = []
-        for per_mask in inputs[0]:
-            pred_masks.append(per_mask)
-        pred_masks = torch.cat(pred_masks, dim=0)
-
-        pred_ious = []
-        for per_iou in inputs[1]:
-            pred_ious.append(per_iou)
-        pred_ious = torch.cat(pred_ious, dim=0)
-
-        focal_loss = self.focal_loss(pred_masks, targets)
-        dice_loss = self.dice_loss(pred_masks, targets)
-        iou_predict_loss = self.iou_predict_loss(pred_masks, targets,
-                                                 pred_ious)
-
-        focal_loss = self.focal_loss_weight * focal_loss
-        dice_loss = self.dice_loss_weight * dice_loss
-        iou_predict_loss = self.iou_predict_loss_weight * iou_predict_loss
-
-        loss_dict = {
-            'focal_loss': focal_loss,
-            'dice_loss': dice_loss,
-            'iou_predict_loss': iou_predict_loss,
-        }
-
-        return loss_dict
-
-    def focal_loss(self, inputs, targets):
-        idx_nums = inputs.shape[1]
-        targets = targets.reshape(-1)
-
-        total_focal_loss = 0.
-        for per_idx in range(inputs.shape[1]):
-            per_idx_inputs = inputs[:, per_idx:per_idx + 1, :, :]
-            per_idx_inputs = per_idx_inputs.reshape(-1)
-
-            assert per_idx_inputs.shape[0] == targets.shape[0]
-
-            bce_loss = F.binary_cross_entropy_with_logits(per_idx_inputs,
-                                                          targets,
-                                                          reduction='none')
-            focal_loss = self.alpha * (
-                1 - torch.exp(-bce_loss))**self.gamma * bce_loss
-            focal_loss = focal_loss.mean()
-            total_focal_loss += focal_loss
-
-        total_focal_loss = total_focal_loss / idx_nums
-
-        return focal_loss
-
-    def dice_loss(self, inputs, targets):
-        idx_nums = inputs.shape[1]
-
-        inputs = self.sigmoid(inputs)
-        inputs = torch.clamp(inputs, min=1e-4, max=1. - 1e-4)
-
-        targets = targets.reshape(-1)
-
-        total_dice_loss = 0.
-        for per_idx in range(inputs.shape[1]):
-            per_idx_inputs = inputs[:, per_idx:per_idx + 1, :, :]
-            per_idx_inputs = per_idx_inputs.reshape(-1)
-
-            assert per_idx_inputs.shape[0] == targets.shape[0]
-
-            intersection = (per_idx_inputs * targets).sum()
-
-            dice_loss = 1. - (
-                (2. * intersection + self.smooth) /
-                (per_idx_inputs.sum() + targets.sum() + self.smooth))
-            total_dice_loss += dice_loss
-
-        total_dice_loss = total_dice_loss / idx_nums
-
-        return total_dice_loss
-
-    def iou_predict_loss(self, inputs, targets, iou_predictions):
-        inputs = (inputs >= self.mask_threshold).float()
-
-        batch_size = inputs.shape[0]
-        idx_nums = inputs.shape[1]
-
-        targets = targets.reshape(batch_size, -1)
-
-        total_iou_predict_loss = 0.
-        for per_idx in range(inputs.shape[1]):
-            per_idx_inputs = inputs[:, per_idx:per_idx + 1, :, :]
-            per_idx_inputs = per_idx_inputs.reshape(batch_size, -1)
-
-            intersection = per_idx_inputs * targets
-
-            per_idx_iou_gt = (torch.sum(intersection, dim=1) + self.smooth) / (
-                (torch.sum(per_idx_inputs, dim=1) + torch.sum(targets, dim=1) -
-                 torch.sum(intersection, dim=1)) + self.smooth)
-
-            per_idx_iou_predictions = iou_predictions[:, per_idx]
-            iou_predict_loss = F.mse_loss(per_idx_iou_predictions,
-                                          per_idx_iou_gt,
-                                          reduction='sum') / batch_size
-            total_iou_predict_loss += iou_predict_loss
-
-        total_iou_predict_loss = total_iou_predict_loss / idx_nums
-
-        return total_iou_predict_loss
-
-
 class SAMMultiLevelAssignLoss(nn.Module):
 
     def __init__(self,
@@ -254,8 +251,8 @@ class SAMMultiLevelAssignLoss(nn.Module):
                  iou_predict_loss_weight=1,
                  mask_threshold=0.0,
                  idx_nums=4,
-                 area_ranges=[[0.0, 0.04], [0.01, 0.16], [0.09, 0.49],
-                              [0.25, 1.0]]):
+                 area_ranges=[[0.04, 0.64], [0.0, 0.04], [0.01, 0.25],
+                              [0.16, 1.0]]):
         super(SAMMultiLevelAssignLoss, self).__init__()
         self.alpha = alpha
         self.gamma = gamma
@@ -271,15 +268,7 @@ class SAMMultiLevelAssignLoss(nn.Module):
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, inputs, targets):
-        pred_masks = []
-        for per_mask in inputs[0]:
-            pred_masks.append(per_mask)
-        pred_masks = torch.cat(pred_masks, dim=0)
-
-        pred_ious = []
-        for per_iou in inputs[1]:
-            pred_ious.append(per_iou)
-        pred_ious = torch.cat(pred_ious, dim=0)
+        pred_masks, pred_ious = inputs
 
         assert self.idx_nums == pred_masks.shape[1] == pred_ious.shape[1]
 
@@ -301,6 +290,7 @@ class SAMMultiLevelAssignLoss(nn.Module):
         return loss_dict
 
     def focal_loss(self, inputs, targets):
+        # torch.Size([3, 4, 1024, 1024]) torch.Size([3, 1, 1024, 1024])
         batch_size = inputs.shape[0]
 
         total_focal_loss = 0.
@@ -353,6 +343,7 @@ class SAMMultiLevelAssignLoss(nn.Module):
     def dice_loss(self, inputs, targets):
         batch_size = inputs.shape[0]
 
+        inputs = inputs.float()
         inputs = self.sigmoid(inputs)
         inputs = torch.clamp(inputs, min=1e-4, max=1. - 1e-4)
 
@@ -465,7 +456,7 @@ class SAMMultiLevelAssignLoss(nn.Module):
         return total_iou_predict_loss
 
 
-class SAML1Loss(nn.Module):
+class SAMMultiLevelMinimizeLoss(nn.Module):
 
     def __init__(self,
                  alpha=0.8,
@@ -475,7 +466,7 @@ class SAML1Loss(nn.Module):
                  dice_loss_weight=1,
                  iou_predict_loss_weight=1,
                  mask_threshold=0.0):
-        super(SAML1Loss, self).__init__()
+        super(SAMMultiLevelMinimizeLoss, self).__init__()
         self.alpha = alpha
         self.gamma = gamma
         self.smooth = smooth
@@ -487,326 +478,75 @@ class SAML1Loss(nn.Module):
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, inputs, targets):
-        pred_masks = []
-        for per_mask in inputs[0]:
-            pred_masks.append(per_mask)
-        pred_masks = torch.cat(pred_masks, dim=0)
+        pred_masks, pred_ious = inputs
 
-        pred_ious = []
-        for per_iou in inputs[1]:
-            pred_ious.append(per_iou)
-        pred_ious = torch.cat(pred_ious, dim=0)
-
-        focal_loss = self.focal_loss(pred_masks, targets)
-        dice_loss = self.dice_loss(pred_masks, targets)
-        iou_predict_loss = self.iou_predict_loss(pred_masks, targets,
-                                                 pred_ious)
-
-        focal_loss = self.focal_loss_weight * focal_loss
-        dice_loss = self.dice_loss_weight * dice_loss
-        iou_predict_loss = self.iou_predict_loss_weight * iou_predict_loss
+        batch_loss = self.compute_each_level_loss(pred_masks, targets,
+                                                  pred_ious)
+        batch_loss, _ = torch.min(batch_loss, dim=1)
+        batch_loss = batch_loss.mean()
 
         loss_dict = {
-            'focal_loss': focal_loss,
-            'dice_loss': dice_loss,
-            'iou_predict_loss': iou_predict_loss,
+            'total_loss': batch_loss,
         }
 
         return loss_dict
 
-    def focal_loss(self, inputs, targets):
-        inputs = inputs.view(-1)
-        targets = targets.view(-1)
-
-        assert inputs.shape[0] == targets.shape[0]
-
-        bce_loss = F.binary_cross_entropy_with_logits(inputs,
-                                                      targets,
-                                                      reduction='none')
-        focal_loss = self.alpha * (1 -
-                                   torch.exp(-bce_loss))**self.gamma * bce_loss
-        focal_loss = focal_loss.mean()
-
-        return focal_loss
-
-    def dice_loss(self, inputs, targets):
-        inputs = self.sigmoid(inputs)
-        inputs = torch.clamp(inputs, min=1e-4, max=1. - 1e-4)
-
-        inputs = inputs.view(-1)
-        targets = targets.view(-1)
-
-        assert inputs.shape[0] == targets.shape[0]
-
-        intersection = (inputs * targets).sum()
-        dice_loss = 1. - ((2. * intersection + self.smooth) /
-                          (inputs.sum() + targets.sum() + self.smooth))
-
-        return dice_loss
-
-    def iou_predict_loss(self, inputs, targets, iou_predictions):
-        inputs = (inputs >= self.mask_threshold).float()
-
-        batch_size = inputs.shape[0]
-
-        inputs = inputs.view(batch_size, -1)
-        targets = targets.view(batch_size, -1)
-
-        iou_predictions = iou_predictions.view(-1)
-
-        assert inputs.shape[0] == targets.shape[0] == iou_predictions.shape[0]
-
-        intersection = inputs * targets
-
-        iou_gt = (torch.sum(intersection, dim=1) + self.smooth) / (
-            (torch.sum(inputs, dim=1) + torch.sum(targets, dim=1) -
-             torch.sum(intersection, dim=1)) + self.smooth)
-
-        iou_predict_loss = torch.abs(iou_predictions - iou_gt)
-        iou_predict_loss = torch.sum(iou_predict_loss) / batch_size
-
-        return iou_predict_loss
-
-
-class SAMAdvanceLoss(nn.Module):
-
-    def __init__(self,
-                 alpha=0.8,
-                 gamma=2,
-                 smooth=1e-4,
-                 bce_loss_weight=20,
-                 iou_loss_weight=1,
-                 iou_predict_loss_weight=1,
-                 mask_threshold=0.0):
-        super(SAMAdvanceLoss, self).__init__()
-        self.alpha = alpha
-        self.gamma = gamma
-        self.smooth = smooth
-        self.bce_loss_weight = bce_loss_weight
-        self.iou_loss_weight = iou_loss_weight
-        self.iou_predict_loss_weight = iou_predict_loss_weight
-        self.mask_threshold = mask_threshold
-
-        self.sigmoid = nn.Sigmoid()
-
-    def forward(self, inputs, targets):
-        pred_masks = []
-        for per_mask in inputs[0]:
-            pred_masks.append(per_mask)
-        pred_masks = torch.cat(pred_masks, dim=0)
-
-        pred_ious = []
-        for per_iou in inputs[1]:
-            pred_ious.append(per_iou)
-        pred_ious = torch.cat(pred_ious, dim=0)
-
-        bce_loss = self.bce_loss(pred_masks, targets)
-        iou_loss = self.iou_loss(pred_masks, targets)
-        iou_predict_loss = self.iou_predict_loss(pred_masks, targets,
-                                                 pred_ious)
-
-        bce_loss = self.bce_loss_weight * bce_loss
-        iou_loss = self.iou_loss_weight * iou_loss
-        iou_predict_loss = self.iou_predict_loss_weight * iou_predict_loss
-
-        loss_dict = {
-            'bce_loss': bce_loss,
-            'iou_loss': iou_loss,
-            'iou_predict_loss': iou_predict_loss,
-        }
-
-        return loss_dict
-
-    def bce_loss(self, inputs, targets):
-        inputs = self.sigmoid(inputs)
-        inputs = torch.clamp(inputs, min=1e-4, max=1. - 1e-4)
-
-        inputs = inputs.view(-1)
-        targets = targets.view(-1)
-
-        assert inputs.shape[0] == targets.shape[0]
-
-        loss = -(targets * torch.log(inputs) +
-                 (1. - targets) * torch.log(1. - inputs))
-        loss = loss.mean()
-
-        return loss
-
-    def iou_loss(self, inputs, targets):
-        inputs = self.sigmoid(inputs)
-        inputs = torch.clamp(inputs, min=1e-4, max=1. - 1e-4)
-
-        inputs = inputs.view(-1)
-        targets = targets.view(-1)
-
-        assert inputs.shape[0] == targets.shape[0]
-
-        intersection = (inputs * targets).sum()
-        iou_loss = 1. - (intersection + self.smooth) / (
-            inputs.sum() + targets.sum() - intersection + self.smooth)
-
-        return iou_loss
-
-    def iou_predict_loss(self, inputs, targets, iou_predictions):
-        inputs = (inputs >= self.mask_threshold).float()
-
-        batch_size = inputs.shape[0]
-
-        inputs = inputs.view(batch_size, -1)
-        targets = targets.view(batch_size, -1)
-
-        iou_predictions = iou_predictions.view(-1)
-
-        assert inputs.shape[0] == targets.shape[0] == iou_predictions.shape[0]
-
-        intersection = inputs * targets
-
-        iou_gt = (torch.sum(intersection, dim=1) + self.smooth) / (
-            (torch.sum(inputs, dim=1) + torch.sum(targets, dim=1) -
-             torch.sum(intersection, dim=1)) + self.smooth)
-
-        iou_predict_loss = torch.abs(iou_predictions - iou_gt)
-        iou_predict_loss = torch.sum(iou_predict_loss) / batch_size
-
-        return iou_predict_loss
-
-
-class SAMMultiLevelAdvanceLoss(nn.Module):
-
-    def __init__(self,
-                 alpha=0.8,
-                 gamma=2,
-                 smooth=1e-4,
-                 bce_loss_weight=20,
-                 iou_loss_weight=1,
-                 iou_predict_loss_weight=1,
-                 mask_threshold=0.0):
-        super(SAMMultiLevelAdvanceLoss, self).__init__()
-        self.alpha = alpha
-        self.gamma = gamma
-        self.smooth = smooth
-        self.bce_loss_weight = bce_loss_weight
-        self.iou_loss_weight = iou_loss_weight
-        self.iou_predict_loss_weight = iou_predict_loss_weight
-        self.mask_threshold = mask_threshold
-
-        self.sigmoid = nn.Sigmoid()
-
-    def forward(self, inputs, targets):
-        pred_masks = []
-        for per_mask in inputs[0]:
-            pred_masks.append(per_mask)
-        pred_masks = torch.cat(pred_masks, dim=0)
-
-        pred_ious = []
-        for per_iou in inputs[1]:
-            pred_ious.append(per_iou)
-        pred_ious = torch.cat(pred_ious, dim=0)
-
-        bce_loss = self.bce_loss(pred_masks, targets)
-        iou_loss = self.iou_loss(pred_masks, targets)
-        iou_predict_loss = self.iou_predict_loss(pred_masks, targets,
-                                                 pred_ious)
-
-        bce_loss = self.bce_loss_weight * bce_loss
-        iou_loss = self.iou_loss_weight * iou_loss
-        iou_predict_loss = self.iou_predict_loss_weight * iou_predict_loss
-
-        loss_dict = {
-            'bce_loss': bce_loss,
-            'iou_loss': iou_loss,
-            'iou_predict_loss': iou_predict_loss,
-        }
-
-        return loss_dict
-
-    def bce_loss(self, inputs, targets):
-        targets = targets.reshape(-1)
-        out_idx_nums = inputs.shape[1]
-
-        total_bce_loss = 0.
-        for idx in range(inputs.shape[1]):
-            per_idx_inputs = inputs[:, idx:idx + 1, :, :]
-            per_idx_inputs = per_idx_inputs.reshape(-1)
-
-            assert per_idx_inputs.shape[0] == targets.shape[0]
-
-            bce_loss = F.binary_cross_entropy_with_logits(per_idx_inputs,
-                                                          targets,
-                                                          reduction='none')
-            bce_loss = bce_loss.mean()
-            total_bce_loss += bce_loss
-
-        total_bce_loss = total_bce_loss / out_idx_nums
-
-        return total_bce_loss
-
-    def iou_loss(self, inputs, targets):
-        out_idx_nums = inputs.shape[1]
-
-        targets = targets.reshape(-1)
-
-        total_iou_loss = 0.
-        for idx in range(inputs.shape[1]):
-            per_idx_inputs = inputs[:, idx:idx + 1, :, :]
-
+    def compute_each_level_loss(self, inputs, targets, iou_predictions):
+        batch_focal_loss = []
+        for per_idx in range(inputs.shape[1]):
+            per_idx_inputs = inputs[:, per_idx:per_idx + 1, :, :]
+            focal_loss = F.binary_cross_entropy_with_logits(per_idx_inputs,
+                                                            targets,
+                                                            reduction='none')
+            focal_loss = self.alpha * (
+                1 - torch.exp(-focal_loss))**self.gamma * focal_loss
+            focal_loss = focal_loss.mean(dim=[2, 3])
+            batch_focal_loss.append(focal_loss)
+        batch_focal_loss = torch.cat(batch_focal_loss, dim=1)
+
+        batch_dice_loss = []
+        for per_idx in range(inputs.shape[1]):
+            per_idx_inputs = inputs[:, per_idx:per_idx + 1, :, :]
+            per_idx_inputs = per_idx_inputs.float()
             per_idx_inputs = self.sigmoid(per_idx_inputs)
             per_idx_inputs = torch.clamp(per_idx_inputs,
                                          min=1e-4,
                                          max=1. - 1e-4)
-
-            per_idx_inputs = per_idx_inputs.reshape(-1)
-
-            assert per_idx_inputs.shape[0] == targets.shape[0]
-
-            intersection = (per_idx_inputs * targets).sum()
-            iou_loss = 1. - (intersection + self.smooth) / (per_idx_inputs.sum(
-            ) + targets.sum() - intersection + self.smooth)
-
-            total_iou_loss += iou_loss
-
-        total_iou_loss = total_iou_loss / out_idx_nums
-
-        return total_iou_loss
-
-    def iou_predict_loss(self, inputs, targets, iou_predictions):
-        inputs = (inputs >= self.mask_threshold).float()
-
-        batch_size = inputs.shape[0]
-        out_idx_nums = inputs.shape[1]
-
-        targets = targets.reshape(batch_size, -1)
-
-        total_iou_predict_loss = 0.
-        for idx in range(out_idx_nums):
-            per_idx_inputs = inputs[:, idx:idx + 1, :, :]
-            per_idx_iou_predictions = iou_predictions[:, idx:idx + 1]
-
-            per_idx_inputs = per_idx_inputs.reshape(batch_size, -1)
-            per_idx_iou_predictions = per_idx_iou_predictions.reshape(-1)
-
-            assert per_idx_inputs.shape[0] == targets.shape[0]
-
             intersection = per_idx_inputs * targets
+            dice_loss = 1. - ((2. * intersection + self.smooth) /
+                              (per_idx_inputs + targets + self.smooth))
+            dice_loss = dice_loss.mean(dim=[2, 3])
+            batch_dice_loss.append(dice_loss)
+        batch_dice_loss = torch.cat(batch_dice_loss, dim=1)
 
-            iou_gt = (torch.sum(intersection, dim=1) + self.smooth) / (
-                (torch.sum(per_idx_inputs, dim=1) + torch.sum(targets, dim=1) -
-                 torch.sum(intersection, dim=1)) + self.smooth)
+        batch_iou_predict_loss = []
+        for per_idx in range(inputs.shape[1]):
+            per_idx_inputs = inputs[:, per_idx:per_idx + 1, :, :]
+            per_idx_inputs = (per_idx_inputs >= self.mask_threshold).float()
+            intersection = per_idx_inputs * targets
+            per_idx_iou_gt = (intersection + self.smooth) / (
+                (per_idx_inputs + targets - intersection) + self.smooth)
+            per_idx_iou_gt = per_idx_iou_gt.mean(dim=[2, 3])
+            per_idx_iou_predictions = iou_predictions[:, per_idx:per_idx + 1]
+            iou_predict_loss = F.mse_loss(per_idx_iou_predictions,
+                                          per_idx_iou_gt,
+                                          reduction='none')
+            batch_iou_predict_loss.append(iou_predict_loss)
+        batch_iou_predict_loss = torch.cat(batch_iou_predict_loss, dim=1)
 
-            assert per_idx_iou_predictions.shape[0] == iou_gt.shape[0]
+        batch_loss = batch_focal_loss * self.focal_loss_weight + batch_dice_loss * self.dice_loss_weight + batch_iou_predict_loss * self.iou_predict_loss_weight
 
-            iou_predict_loss = torch.abs(per_idx_iou_predictions - iou_gt)
-            iou_predict_loss = torch.sum(iou_predict_loss) / batch_size
-
-            total_iou_predict_loss += iou_predict_loss
-
-        total_iou_predict_loss = total_iou_predict_loss / out_idx_nums
-
-        return total_iou_predict_loss
+        return batch_loss
 
 
 if __name__ == '__main__':
     import os
+    import sys
+
+    BASE_DIR = os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    sys.path.append(BASE_DIR)
+
     import random
     import numpy as np
     import torch
@@ -821,49 +561,46 @@ if __name__ == '__main__':
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-    import os
-    import sys
-
-    BASE_DIR = os.path.dirname(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    sys.path.append(BASE_DIR)
-
-    from tools.path import COCO2017_path
-
     import torchvision.transforms as transforms
     from tqdm import tqdm
 
-    from simpleAICV.interactive_segmentation.datasets.coco2017dataset import COCO2017dataset
-    from simpleAICV.interactive_segmentation.common import SamResize, SamRandomHorizontalFlip, SamNormalize, SAMCollater, load_state_dict
+    from tools.path import interactive_segmentation_dataset_path
 
-    sam1bdataset = COCO2017dataset(COCO2017_path,
-                                   set_name='train2017',
-                                   positive_points_num=9,
-                                   negative_points_num=9,
-                                   area_filter_ratio=0.0025,
-                                   box_noise_pixel=50,
-                                   mask_noise_pixel=100,
-                                   transform=transforms.Compose([
-                                       SamResize(resize=1024),
-                                       SamRandomHorizontalFlip(prob=0.5),
-                                       SamNormalize(
-                                           mean=[123.675, 116.28, 103.53],
-                                           std=[58.395, 57.12, 57.375]),
-                                   ]))
+    from simpleAICV.interactive_segmentation.datasets.sam_segmentation_dataset import SAMSegmentationDataset
+    from simpleAICV.interactive_segmentation.common import SamResize, SamRandomHorizontalFlip, SamNormalize, SAMBatchCollater, load_state_dict
+
+    samdataset = SAMSegmentationDataset(interactive_segmentation_dataset_path,
+                                        set_name=[
+                                            'sa_000020',
+                                        ],
+                                        set_type='train',
+                                        per_set_image_choose_max_num={
+                                            'sa_000020': 1000000,
+                                        },
+                                        per_image_mask_chosse_max_num=16,
+                                        positive_points_num=9,
+                                        negative_points_num=9,
+                                        area_filter_ratio=0.0001,
+                                        box_noise_wh_ratio=0.1,
+                                        mask_noise_area_ratio=0.04,
+                                        transform=transforms.Compose([
+                                            SamResize(resize=1024),
+                                            SamRandomHorizontalFlip(prob=0.5),
+                                            SamNormalize(
+                                                mean=[123.675, 116.28, 103.53],
+                                                std=[58.395, 57.12, 57.375]),
+                                        ]))
 
     from torch.utils.data import DataLoader
-    collater = SAMCollater(resize=1024,
-                           positive_point_num_range=[1, 5],
-                           negative_point_num_range=0,
-                           batch_align_random_point_num=False,
-                           positive_negative_point_num_ratio=None)
-    train_loader = DataLoader(sam1bdataset,
-                              batch_size=5,
+
+    collater = SAMBatchCollater(resize=1024, positive_point_num_range=1)
+    train_loader = DataLoader(samdataset,
+                              batch_size=2,
                               shuffle=True,
-                              num_workers=2,
+                              num_workers=1,
                               collate_fn=collater)
 
-    from simpleAICV.interactive_segmentation.models.segment_anything import sam_b
+    from simpleAICV.interactive_segmentation.models.segment_anything.sam import sam_b
     net = sam_b(image_size=1024,
                 frozen_image_encoder=False,
                 frozen_prompt_encoder=False,
@@ -873,82 +610,92 @@ if __name__ == '__main__':
                 binary_mask_out=False,
                 mask_threshold=0.0)
     load_state_dict(
-        '/root/code/SimpleAICV_pytorch_training_examples_on_ImageNet_COCO_ADE20K/pretrained_models/sam_official_pytorch_weights/sam_vit_b_01ec64.pth',
+        '/root/autodl-tmp/pretrained_models/sam_official_pytorch_weights/sam_vit_b_01ec64.pth',
         net)
-
-    loss = SAMLoss(alpha=0.8,
-                   gamma=2,
-                   smooth=1e-4,
-                   focal_loss_weight=20,
-                   dice_loss_weight=1,
-                   iou_predict_loss_weight=1)
-
-    for data in tqdm(train_loader):
-        origin_images, origin_bboxs, origin_masks, origin_sizes = data[
-            'origin_image'], data['origin_bbox'], data['origin_mask'], data[
-                'origin_size']
-
-        input_images, input_boxs, input_masks, sizes = data['image'], data[
-            'box'], data['mask'], data['size']
-
-        input_positive_prompt_points, input_negative_prompt_points, input_prompt_points = data[
-            'positive_prompt_point'], data['negative_prompt_point'], data[
-                'prompt_point']
-
-        input_prompt_boxs, input_prompt_masks, batch_images, batch_masks, batch_prompts = data[
-            'prompt_box'], data['prompt_mask'], data['batch_image'], data[
-                'batch_mask'], data['batch_prompt']
-
-        net = net.cuda()
-        batch_images = batch_images.cuda()
-        batch_masks = batch_masks.cuda()
-        print('1111', batch_images.shape, batch_masks.shape)
-
-        preds = net(batch_images, batch_prompts, mask_out_idxs=[0])
-
-        for per_pred1, per_pred2 in zip(preds[0], preds[1]):
-            print('2222', per_pred1.shape, per_pred2.shape)
-
-        loss_dict = loss(preds, batch_masks)
-        print('3333', loss_dict)
-
-        break
 
     loss = SAMMultiLevelLoss(alpha=0.8,
                              gamma=2,
                              smooth=1e-4,
                              focal_loss_weight=20,
                              dice_loss_weight=1,
-                             iou_predict_loss_weight=1)
+                             iou_predict_loss_weight=1,
+                             mask_threshold=0.0)
 
     for data in tqdm(train_loader):
-        origin_images, origin_bboxs, origin_masks, origin_sizes = data[
-            'origin_image'], data['origin_bbox'], data['origin_mask'], data[
-                'origin_size']
-
         input_images, input_boxs, input_masks, sizes = data['image'], data[
             'box'], data['mask'], data['size']
 
-        input_positive_prompt_points, input_negative_prompt_points, input_prompt_points = data[
-            'positive_prompt_point'], data['negative_prompt_point'], data[
-                'prompt_point']
-
-        input_prompt_boxs, input_prompt_masks, batch_images, batch_masks, batch_prompts = data[
-            'prompt_box'], data['prompt_mask'], data['batch_image'], data[
-                'batch_mask'], data['batch_prompt']
+        input_prompt_points, input_prompt_boxs, input_prompt_masks = data[
+            'prompt_point'], data['prompt_box'], data['prompt_mask']
 
         net = net.cuda()
-        batch_images = batch_images.cuda()
-        batch_masks = batch_masks.cuda()
-        print('1111', batch_images.shape, batch_masks.shape)
+        input_images = input_images.cuda()
+        input_masks = input_masks.cuda()
+        print('1111', input_images.shape, input_masks.shape)
 
-        preds = net(batch_images, batch_prompts, mask_out_idxs=[0, 1, 2, 3])
+        input_prompt_points = input_prompt_points.cuda()
+        input_prompt_boxs = input_prompt_boxs.cuda()
+        input_prompt_masks = input_prompt_masks.cuda()
 
-        for per_pred1, per_pred2 in zip(preds[0], preds[1]):
-            print('2222', per_pred1.shape, per_pred2.shape)
+        print('2222', input_prompt_points.shape, input_prompt_boxs.shape,
+              input_prompt_masks.shape)
 
-        loss_dict = loss(preds, batch_masks)
-        print('3333', loss_dict)
+        input_prompts = {
+            'prompt_point': input_prompt_points,
+            'prompt_box': input_prompt_boxs,
+            'prompt_mask': input_prompt_masks,
+        }
+
+        preds = net(input_images, input_prompts, mask_out_idxs=[0, 1, 2, 3])
+
+        print('3333', preds[0].shape, preds[1].shape, preds[0].dtype,
+              preds[1].dtype)
+
+        loss_dict = loss(preds, input_masks)
+        print('4444', loss_dict)
+
+        break
+
+    loss = SAMMultiLevelIoUMaxLoss(alpha=0.8,
+                                   gamma=2,
+                                   smooth=1e-4,
+                                   focal_loss_weight=20,
+                                   dice_loss_weight=1,
+                                   iou_predict_loss_weight=1,
+                                   mask_threshold=0.0)
+
+    for data in tqdm(train_loader):
+        input_images, input_boxs, input_masks, sizes = data['image'], data[
+            'box'], data['mask'], data['size']
+
+        input_prompt_points, input_prompt_boxs, input_prompt_masks = data[
+            'prompt_point'], data['prompt_box'], data['prompt_mask']
+
+        net = net.cuda()
+        input_images = input_images.cuda()
+        input_masks = input_masks.cuda()
+        print('1111', input_images.shape, input_masks.shape)
+
+        input_prompt_points = input_prompt_points.cuda()
+        input_prompt_boxs = input_prompt_boxs.cuda()
+        input_prompt_masks = input_prompt_masks.cuda()
+
+        print('2222', input_prompt_points.shape, input_prompt_boxs.shape,
+              input_prompt_masks.shape)
+
+        input_prompts = {
+            'prompt_point': input_prompt_points,
+            'prompt_box': input_prompt_boxs,
+            'prompt_mask': input_prompt_masks,
+        }
+
+        preds = net(input_images, input_prompts, mask_out_idxs=[0, 1, 2, 3])
+
+        print('3333', preds[0].shape, preds[1].shape, preds[0].dtype,
+              preds[1].dtype)
+
+        loss_dict = loss(preds, input_masks)
+        print('4444', loss_dict)
 
         break
 
@@ -958,151 +705,85 @@ if __name__ == '__main__':
                                    focal_loss_weight=20,
                                    dice_loss_weight=1,
                                    iou_predict_loss_weight=1,
+                                   mask_threshold=0.0,
                                    idx_nums=4,
-                                   area_ranges=[[0.0, 0.04], [0.01, 0.16],
-                                                [0.09, 0.49], [0.25, 1.0]])
+                                   area_ranges=[[0.04, 0.64], [0.0, 0.04],
+                                                [0.01, 0.25], [0.16, 1.0]])
 
     for data in tqdm(train_loader):
-        origin_images, origin_bboxs, origin_masks, origin_sizes = data[
-            'origin_image'], data['origin_bbox'], data['origin_mask'], data[
-                'origin_size']
-
         input_images, input_boxs, input_masks, sizes = data['image'], data[
             'box'], data['mask'], data['size']
 
-        input_positive_prompt_points, input_negative_prompt_points, input_prompt_points = data[
-            'positive_prompt_point'], data['negative_prompt_point'], data[
-                'prompt_point']
-
-        input_prompt_boxs, input_prompt_masks, batch_images, batch_masks, batch_prompts = data[
-            'prompt_box'], data['prompt_mask'], data['batch_image'], data[
-                'batch_mask'], data['batch_prompt']
+        input_prompt_points, input_prompt_boxs, input_prompt_masks = data[
+            'prompt_point'], data['prompt_box'], data['prompt_mask']
 
         net = net.cuda()
-        batch_images = batch_images.cuda()
-        batch_masks = batch_masks.cuda()
-        print('1111', batch_images.shape, batch_masks.shape)
+        input_images = input_images.cuda()
+        input_masks = input_masks.cuda()
+        print('1111', input_images.shape, input_masks.shape)
 
-        preds = net(batch_images, batch_prompts, mask_out_idxs=[0, 1, 2, 3])
+        input_prompt_points = input_prompt_points.cuda()
+        input_prompt_boxs = input_prompt_boxs.cuda()
+        input_prompt_masks = input_prompt_masks.cuda()
 
-        for per_pred1, per_pred2 in zip(preds[0], preds[1]):
-            print('2222', per_pred1.shape, per_pred2.shape)
+        print('2222', input_prompt_points.shape, input_prompt_boxs.shape,
+              input_prompt_masks.shape)
 
-        loss_dict = loss(preds, batch_masks)
-        print('3333', loss_dict)
+        input_prompts = {
+            'prompt_point': input_prompt_points,
+            'prompt_box': input_prompt_boxs,
+            'prompt_mask': input_prompt_masks,
+        }
+
+        preds = net(input_images, input_prompts, mask_out_idxs=[0, 1, 2, 3])
+
+        print('3333', preds[0].shape, preds[1].shape, preds[0].dtype,
+              preds[1].dtype)
+
+        loss_dict = loss(preds, input_masks)
+        print('4444', loss_dict)
 
         break
 
-    loss = SAML1Loss(alpha=0.8,
-                     gamma=2,
-                     smooth=1e-4,
-                     focal_loss_weight=20,
-                     dice_loss_weight=1,
-                     iou_predict_loss_weight=1)
+    loss = SAMMultiLevelMinimizeLoss(alpha=0.8,
+                                     gamma=2,
+                                     smooth=1e-4,
+                                     focal_loss_weight=20,
+                                     dice_loss_weight=1,
+                                     iou_predict_loss_weight=1,
+                                     mask_threshold=0.0)
 
     for data in tqdm(train_loader):
-        origin_images, origin_bboxs, origin_masks, origin_sizes = data[
-            'origin_image'], data['origin_bbox'], data['origin_mask'], data[
-                'origin_size']
-
         input_images, input_boxs, input_masks, sizes = data['image'], data[
             'box'], data['mask'], data['size']
 
-        input_positive_prompt_points, input_negative_prompt_points, input_prompt_points = data[
-            'positive_prompt_point'], data['negative_prompt_point'], data[
-                'prompt_point']
-
-        input_prompt_boxs, input_prompt_masks, batch_images, batch_masks, batch_prompts = data[
-            'prompt_box'], data['prompt_mask'], data['batch_image'], data[
-                'batch_mask'], data['batch_prompt']
+        input_prompt_points, input_prompt_boxs, input_prompt_masks = data[
+            'prompt_point'], data['prompt_box'], data['prompt_mask']
 
         net = net.cuda()
-        batch_images = batch_images.cuda()
-        batch_masks = batch_masks.cuda()
-        print('1111', batch_images.shape, batch_masks.shape)
+        input_images = input_images.cuda()
+        input_masks = input_masks.cuda()
+        print('1111', input_images.shape, input_masks.shape)
 
-        preds = net(batch_images, batch_prompts, mask_out_idxs=[0])
+        input_prompt_points = input_prompt_points.cuda()
+        input_prompt_boxs = input_prompt_boxs.cuda()
+        input_prompt_masks = input_prompt_masks.cuda()
 
-        for per_pred1, per_pred2 in zip(preds[0], preds[1]):
-            print('2222', per_pred1.shape, per_pred2.shape)
+        print('2222', input_prompt_points.shape, input_prompt_boxs.shape,
+              input_prompt_masks.shape)
 
-        loss_dict = loss(preds, batch_masks)
-        print('3333', loss_dict)
+        input_prompts = {
+            'prompt_point': input_prompt_points,
+            'prompt_box': input_prompt_boxs,
+            'prompt_mask': input_prompt_masks,
+        }
 
-        break
+        preds = net(input_images, input_prompts, mask_out_idxs=[0, 1, 2, 3])
 
-    loss = SAMAdvanceLoss(alpha=0.8,
-                          gamma=2,
-                          smooth=1e-4,
-                          bce_loss_weight=20,
-                          iou_loss_weight=1,
-                          iou_predict_loss_weight=1)
+        print('3333', preds[0].shape, preds[1].shape, preds[0].dtype,
+              preds[1].dtype)
 
-    for data in tqdm(train_loader):
-        origin_images, origin_bboxs, origin_masks, origin_sizes = data[
-            'origin_image'], data['origin_bbox'], data['origin_mask'], data[
-                'origin_size']
-
-        input_images, input_boxs, input_masks, sizes = data['image'], data[
-            'box'], data['mask'], data['size']
-
-        input_positive_prompt_points, input_negative_prompt_points, input_prompt_points = data[
-            'positive_prompt_point'], data['negative_prompt_point'], data[
-                'prompt_point']
-
-        input_prompt_boxs, input_prompt_masks, batch_images, batch_masks, batch_prompts = data[
-            'prompt_box'], data['prompt_mask'], data['batch_image'], data[
-                'batch_mask'], data['batch_prompt']
-
-        net = net.cuda()
-        batch_images = batch_images.cuda()
-        batch_masks = batch_masks.cuda()
-        print('1111', batch_images.shape, batch_masks.shape)
-
-        preds = net(batch_images, batch_prompts, mask_out_idxs=[0])
-
-        for per_pred1, per_pred2 in zip(preds[0], preds[1]):
-            print('2222', per_pred1.shape, per_pred2.shape)
-
-        loss_dict = loss(preds, batch_masks)
-        print('3333', loss_dict)
-
-        break
-
-    loss = SAMMultiLevelAdvanceLoss(alpha=0.8,
-                                    gamma=2,
-                                    smooth=1e-4,
-                                    bce_loss_weight=20,
-                                    iou_loss_weight=1,
-                                    iou_predict_loss_weight=1)
-
-    for data in tqdm(train_loader):
-        origin_images, origin_bboxs, origin_masks, origin_sizes = data[
-            'origin_image'], data['origin_bbox'], data['origin_mask'], data[
-                'origin_size']
-
-        input_images, input_boxs, input_masks, sizes = data['image'], data[
-            'box'], data['mask'], data['size']
-
-        input_positive_prompt_points, input_negative_prompt_points, input_prompt_points = data[
-            'positive_prompt_point'], data['negative_prompt_point'], data[
-                'prompt_point']
-
-        input_prompt_boxs, input_prompt_masks, batch_images, batch_masks, batch_prompts = data[
-            'prompt_box'], data['prompt_mask'], data['batch_image'], data[
-                'batch_mask'], data['batch_prompt']
-
-        net = net.cuda()
-        batch_images = batch_images.cuda()
-        batch_masks = batch_masks.cuda()
-        print('1111', batch_images.shape, batch_masks.shape)
-
-        preds = net(batch_images, batch_prompts, mask_out_idxs=[0, 1, 2, 3])
-
-        for per_pred1, per_pred2 in zip(preds[0], preds[1]):
-            print('2222', per_pred1.shape, per_pred2.shape)
-
-        loss_dict = loss(preds, batch_masks)
-        print('3333', loss_dict)
+        loss_dict = loss(preds, input_masks)
+        print('4444', loss_dict)
 
         break

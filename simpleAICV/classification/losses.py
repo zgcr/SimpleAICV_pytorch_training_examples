@@ -3,32 +3,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 __all__ = [
-    'AMPCELoss',
     'CELoss',
     'FocalCELoss',
     'LabelSmoothCELoss',
-    'AMPOneHotLabelCELoss',
     'OneHotLabelCELoss',
     'SemanticSoftmaxLoss',
 ]
-
-
-class AMPCELoss(nn.Module):
-
-    def __init__(self):
-        super(AMPCELoss, self).__init__()
-        pass
-
-    def forward(self, preds, labels):
-        preds = F.softmax(preds, dim=1)
-        preds = torch.clamp(preds, min=1e-4, max=1. - 1e-4)
-        preds = torch.log(preds)
-
-        labels = F.one_hot(labels, preds.size(1)).float()
-
-        loss = F.kl_div(preds, labels, reduction='batchmean')
-
-        return loss
 
 
 class CELoss(nn.Module):
@@ -87,24 +67,6 @@ class LabelSmoothCELoss(nn.Module):
         loss = loss.mean()
 
         return loss
-
-
-class AMPOneHotLabelCELoss(nn.Module):
-    '''
-    Cross Entropy Loss,input label is one-hot format(include soft label)
-    '''
-
-    def __init__(self):
-        super(AMPOneHotLabelCELoss, self).__init__()
-
-    def forward(self, x, target):
-        x = F.softmax(x, dim=-1)
-        x = torch.clamp(x, min=1e-4, max=1. - 1e-4)
-        x = torch.log(x)
-
-        loss = torch.sum(-target * x, dim=-1)
-
-        return loss.mean()
 
 
 class OneHotLabelCELoss(nn.Module):
@@ -184,28 +146,28 @@ if __name__ == '__main__':
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-    # pred = torch.autograd.Variable(torch.randn(5, 5))
-    # label = torch.tensor(np.array([0, 1, 2, 3, 4]))
-    # print('1111', pred.shape, label.shape)
+    pred = torch.autograd.Variable(torch.randn(5, 5))
+    label = torch.tensor(np.array([0, 1, 2, 3, 4]))
+    print('1111', pred.shape, label.shape)
 
-    # loss1 = CELoss()
-    # out = loss1(pred, label)
-    # print('1111', out)
+    loss1 = CELoss()
+    out = loss1(pred, label)
+    print('1111', out)
 
-    # loss2 = FocalCELoss(gamma=2.0)
-    # out = loss2(pred, label)
-    # print('2222', out)
+    loss2 = FocalCELoss(gamma=2.0)
+    out = loss2(pred, label)
+    print('2222', out)
 
-    # loss3 = LabelSmoothCELoss(smoothing=0.1)
-    # out = loss3(pred, label)
-    # print('3333', out)
+    loss3 = LabelSmoothCELoss(smoothing=0.1)
+    out = loss3(pred, label)
+    print('3333', out)
 
-    # label = torch.tensor(
-    #     np.array([[1, 0, 0, 0, 0], [0, 1, 0, 0, 0], [0, 0, 1, 0, 0],
-    #               [0, 0, 0, 1, 0], [0, 0, 0, 0, 1]]))
-    # loss4 = OneHotLabelCELoss()
-    # out = loss4(pred, label)
-    # print('4444', out)
+    label = torch.tensor(
+        np.array([[1, 0, 0, 0, 0], [0, 1, 0, 0, 0], [0, 0, 1, 0, 0],
+                  [0, 0, 0, 1, 0], [0, 0, 0, 0, 1]]))
+    loss4 = OneHotLabelCELoss()
+    out = loss4(pred, label)
+    print('4444', out)
 
     pred = torch.autograd.Variable(torch.randn(5, 10450))
     label = torch.tensor(np.array([0, 1, 2, 3, 4]))
@@ -220,7 +182,6 @@ if __name__ == '__main__':
     from tools.path import ImageNet21K_path
 
     import torchvision.transforms as transforms
-    from tqdm import tqdm
 
     from simpleAICV.classification.datasets.imagenet21kdataset import ImageNet21KSemanticTreeLabelDataset
     from simpleAICV.classification.common import Opencv2PIL, PIL2Opencv, TorchRandomResizedCrop, TorchRandomHorizontalFlip, RandomErasing, TorchResize, TorchCenterCrop, Normalize, AutoAugment, RandAugment, ClassificationCollater

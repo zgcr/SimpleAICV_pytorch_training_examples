@@ -24,17 +24,20 @@ class KDModel(nn.Module):
                  teacher_pretrained_path='',
                  student_pretrained_path='',
                  freeze_teacher=True,
-                 num_classes=1000):
+                 num_classes=1000,
+                 use_gradient_checkpoint=False):
         super(KDModel, self).__init__()
         self.freeze_teacher = freeze_teacher
 
         self.teacher = backbones.__dict__[teacher_type](
             **{
                 'num_classes': num_classes,
+                'use_gradient_checkpoint': use_gradient_checkpoint,
             })
         self.student = backbones.__dict__[student_type](
             **{
                 'num_classes': num_classes,
+                'use_gradient_checkpoint': use_gradient_checkpoint,
             })
 
         load_state_dict(teacher_pretrained_path, self.teacher)
@@ -62,7 +65,19 @@ if __name__ == '__main__':
                   teacher_pretrained_path='',
                   student_pretrained_path='',
                   freeze_teacher=True,
-                  num_classes=1000)
+                  num_classes=1000,
+                  use_gradient_checkpoint=False)
     image_h, image_w = 224, 224
     out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
     print(f'1111, out1_shape: {out[0].shape}, out2_shape: {out[1].shape}')
+
+    net = KDModel(teacher_type='resnet152',
+                  student_type='resnet50',
+                  teacher_pretrained_path='',
+                  student_pretrained_path='',
+                  freeze_teacher=True,
+                  num_classes=1000,
+                  use_gradient_checkpoint=True)
+    image_h, image_w = 224, 224
+    out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    print(f'2222, out1_shape: {out[0].shape}, out2_shape: {out[1].shape}')

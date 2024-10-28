@@ -87,7 +87,6 @@ class BCEIouloss(nn.Module):
         # label shape:[b,h,w]
 
         pred = pred.permute(0, 2, 3, 1).contiguous()
-        # print(pred.shape)
         batch, num_classes = pred.shape[0], pred.shape[3]
         assert num_classes == 1
 
@@ -117,7 +116,6 @@ class BCEDiceLoss(nn.Module):
         # label shape:[b,h,w]
 
         pred = pred.permute(0, 2, 3, 1).contiguous()
-        # print(pred.shape)
         batch, num_classes = pred.shape[0], pred.shape[3]
         assert num_classes == 1
 
@@ -137,6 +135,12 @@ class BCEDiceLoss(nn.Module):
 
 if __name__ == '__main__':
     import os
+    import sys
+
+    BASE_DIR = os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    sys.path.append(BASE_DIR)
+
     import random
     import numpy as np
     import torch
@@ -151,20 +155,13 @@ if __name__ == '__main__':
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-    import os
-    import sys
-
-    BASE_DIR = os.path.dirname(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    sys.path.append(BASE_DIR)
-
     from tools.path import salient_object_detection_dataset_path
 
     import torchvision.transforms as transforms
     from tqdm import tqdm
 
     from simpleAICV.salient_object_detection.datasets.salient_object_detection_dataset import SalientObjectDetectionDataset
-    from simpleAICV.salient_object_detection.common import RandomHorizontalFlip, YoloStyleResize, Resize, Normalize, ResizeSegmentationCollater
+    from simpleAICV.salient_object_detection.common import RandomHorizontalFlip, YoloStyleResize, Resize, Normalize, SalientObjectDetectionSegmentationCollater
 
     salient_object_detection_dataset = SalientObjectDetectionDataset(
         salient_object_detection_dataset_path,
@@ -177,22 +174,22 @@ if __name__ == '__main__':
         ],
         set_type='train',
         transform=transforms.Compose([
-            RandomHorizontalFlip(prob=1.0),
-            YoloStyleResize(resize=832, divisor=64, stride=64),
+            YoloStyleResize(resize=832),
             # Resize(resize=832),
+            RandomHorizontalFlip(prob=0.5),
             Normalize(),
         ]))
 
     from torch.utils.data import DataLoader
-    collater = ResizeSegmentationCollater(resize=832, stride=64)
+    collater = SalientObjectDetectionSegmentationCollater(resize=832)
     train_loader = DataLoader(salient_object_detection_dataset,
                               batch_size=4,
                               shuffle=True,
                               num_workers=2,
                               collate_fn=collater)
 
-    from simpleAICV.salient_object_detection.models import van_b2_pfan_segmentation
-    net = van_b2_pfan_segmentation()
+    from simpleAICV.salient_object_detection.models import vanb3_pfan_segmentation
+    net = vanb3_pfan_segmentation()
 
     loss = BCELoss()
     for data in tqdm(train_loader):

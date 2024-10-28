@@ -248,7 +248,7 @@ class DiffusionUNet(nn.Module):
                  block_nums=2,
                  dropout_prob=0.,
                  num_groups=32,
-                 use_attention_planes_multi_idx=[1],
+                 use_attention_planes_multi_idx=[0, 1, 2, 3],
                  num_classes=None,
                  use_gradient_checkpoint=False):
         super(DiffusionUNet, self).__init__()
@@ -376,12 +376,16 @@ class DiffusionUNet(nn.Module):
         for per_layer in self.downsample_blocks:
             if isinstance(per_layer, ResBlock):
                 if self.use_gradient_checkpoint:
-                    x = checkpoint(per_layer, x, embedded_time, embedded_class)
+                    x = checkpoint(per_layer,
+                                   x,
+                                   embedded_time,
+                                   embedded_class,
+                                   use_reentrant=False)
                 else:
                     x = per_layer(x, embedded_time, embedded_class)
             else:
                 if self.use_gradient_checkpoint:
-                    x = checkpoint(per_layer, x)
+                    x = checkpoint(per_layer, x, use_reentrant=False)
                 else:
                     x = per_layer(x)
             downsample_features.append(x)
@@ -390,12 +394,16 @@ class DiffusionUNet(nn.Module):
         for per_layer in self.middle_blocks:
             if isinstance(per_layer, ResBlock):
                 if self.use_gradient_checkpoint:
-                    x = checkpoint(per_layer, x, embedded_time, embedded_class)
+                    x = checkpoint(per_layer,
+                                   x,
+                                   embedded_time,
+                                   embedded_class,
+                                   use_reentrant=False)
                 else:
                     x = per_layer(x, embedded_time, embedded_class)
             else:
                 if self.use_gradient_checkpoint:
-                    x = checkpoint(per_layer, x)
+                    x = checkpoint(per_layer, x, use_reentrant=False)
                 else:
                     x = per_layer(x)
 
@@ -404,12 +412,16 @@ class DiffusionUNet(nn.Module):
             if isinstance(per_layer, ResBlock):
                 x = torch.cat([x, downsample_features.pop()], dim=1)
                 if self.use_gradient_checkpoint:
-                    x = checkpoint(per_layer, x, embedded_time, embedded_class)
+                    x = checkpoint(per_layer,
+                                   x,
+                                   embedded_time,
+                                   embedded_class,
+                                   use_reentrant=False)
                 else:
                     x = per_layer(x, embedded_time, embedded_class)
             else:
                 if self.use_gradient_checkpoint:
-                    x = checkpoint(per_layer, x)
+                    x = checkpoint(per_layer, x, use_reentrant=False)
                 else:
                     x = per_layer(x)
 
@@ -444,7 +456,7 @@ if __name__ == '__main__':
                         block_nums=2,
                         dropout_prob=0.,
                         num_groups=32,
-                        use_attention_planes_multi_idx=[1],
+                        use_attention_planes_multi_idx=[0, 1, 2, 3],
                         num_classes=None,
                         use_gradient_checkpoint=False)
     batch, channel, image_h, image_w = 1, 3, 32, 32
@@ -468,7 +480,7 @@ if __name__ == '__main__':
                         block_nums=2,
                         dropout_prob=0.,
                         num_groups=32,
-                        use_attention_planes_multi_idx=[1],
+                        use_attention_planes_multi_idx=[0, 1, 2, 3],
                         num_classes=num_classes,
                         use_gradient_checkpoint=False)
     batch, channel, image_h, image_w = 1, 3, 32, 32
@@ -493,7 +505,7 @@ if __name__ == '__main__':
                         block_nums=2,
                         dropout_prob=0.,
                         num_groups=32,
-                        use_attention_planes_multi_idx=[1],
+                        use_attention_planes_multi_idx=[0, 1, 2, 3],
                         num_classes=None,
                         use_gradient_checkpoint=False)
     batch, channel, image_h, image_w = 1, 3, 64, 64
@@ -517,7 +529,7 @@ if __name__ == '__main__':
                         block_nums=2,
                         dropout_prob=0.,
                         num_groups=32,
-                        use_attention_planes_multi_idx=[1],
+                        use_attention_planes_multi_idx=[0, 1, 2, 3],
                         num_classes=num_classes,
                         use_gradient_checkpoint=False)
     batch, channel, image_h, image_w = 1, 3, 64, 64
@@ -544,7 +556,7 @@ if __name__ == '__main__':
                         block_nums=2,
                         dropout_prob=0.,
                         num_groups=32,
-                        use_attention_planes_multi_idx=[1],
+                        use_attention_planes_multi_idx=[0, 1, 2, 3],
                         num_classes=num_classes,
                         use_gradient_checkpoint=True)
     batch, channel, image_h, image_w = 1, 3, 64, 64

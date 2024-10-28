@@ -10,10 +10,11 @@ import argparse
 
 import torch
 import torch.nn as nn
+
 from torch.utils.data import DataLoader
 
 from tools.text_scripts import test_text_recognition_for_all_dataset
-from tools.utils import get_logger, set_seed, compute_macs_and_params
+from tools.utils import get_logger, set_seed
 
 
 def parse_args():

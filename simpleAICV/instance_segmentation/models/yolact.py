@@ -12,7 +12,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from simpleAICV.instance_segmentation.models import backbones
+from torch.utils.checkpoint import checkpoint
+
+from simpleAICV.detection.models import backbones
 
 __all__ = [
     'resnet18_yolact',
@@ -20,121 +22,15 @@ __all__ = [
     'resnet50_yolact',
     'resnet101_yolact',
     'resnet152_yolact',
+    'vanb0_yolact',
+    'vanb1_yolact',
+    'vanb2_yolact',
+    'vanb3_yolact',
+    'convformers18_yolact',
+    'convformers36_yolact',
+    'convformerm36_yolact',
+    'convformerb36_yolact',
 ]
-
-
-class YOLACTHead(nn.Module):
-
-    def __init__(self,
-                 ratios=[1, 1 / 2, 2],
-                 inplanes=256,
-                 proto_planes=32,
-                 num_classes=80):
-        super(YOLACTHead, self).__init__()
-        self.conv1 = nn.Sequential(
-            nn.Conv2d(inplanes,
-                      inplanes,
-                      kernel_size=3,
-                      stride=1,
-                      padding=1,
-                      bias=True),
-            nn.ReLU(inplace=True),
-        )
-
-        self.bbox_pred_conv = nn.Conv2d(inplanes,
-                                        len(ratios) * 4,
-                                        kernel_size=3,
-                                        stride=1,
-                                        padding=1,
-                                        bias=True)
-        self.conf_pred_conv = nn.Conv2d(inplanes,
-                                        len(ratios) * num_classes,
-                                        kernel_size=3,
-                                        stride=1,
-                                        padding=1,
-                                        bias=True)
-        self.coef_pred_conv = nn.Sequential(
-            nn.Conv2d(inplanes,
-                      len(ratios) * proto_planes,
-                      kernel_size=3,
-                      stride=1,
-                      padding=1,
-                      bias=True),
-            nn.Tanh(),
-        )
-
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                nn.init.xavier_uniform_(m.weight)
-                if m.bias is not None:
-                    nn.init.constant_(m.bias, val=0)
-
-    def forward(self, x):
-        x = self.conv1(x)
-
-        conf_pred = self.conf_pred_conv(x)
-        bbox_pred = self.bbox_pred_conv(x)
-        coef_pred = self.coef_pred_conv(x)
-
-        return conf_pred, bbox_pred, coef_pred
-
-
-class ProtoNet(nn.Module):
-
-    def __init__(self, inplanes, planes):
-        super(ProtoNet, self).__init__()
-        self.proto_layers1 = nn.Sequential(
-            nn.Conv2d(inplanes,
-                      inplanes,
-                      kernel_size=3,
-                      stride=1,
-                      padding=1,
-                      bias=True),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(inplanes,
-                      inplanes,
-                      kernel_size=3,
-                      stride=1,
-                      padding=1,
-                      bias=True),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(inplanes,
-                      inplanes,
-                      kernel_size=3,
-                      stride=1,
-                      padding=1,
-                      bias=True),
-            nn.ReLU(inplace=True),
-        )
-        self.proto_layers2 = nn.Sequential(
-            nn.Conv2d(inplanes,
-                      inplanes,
-                      kernel_size=3,
-                      stride=1,
-                      padding=1,
-                      bias=True),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(inplanes,
-                      planes,
-                      kernel_size=1,
-                      stride=1,
-                      padding=0,
-                      bias=True),
-            nn.ReLU(inplace=True),
-        )
-
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                nn.init.xavier_uniform_(m.weight)
-                if m.bias is not None:
-                    nn.init.constant_(m.bias, val=0)
-
-    def forward(self, x, size):
-        x = self.proto_layers1(x)
-        x = F.interpolate(x, size=size, mode='bilinear', align_corners=True)
-        x = self.proto_layers2(x)
-
-        return x
 
 
 class YOLACTFPN(nn.Module):
@@ -211,7 +107,7 @@ class YOLACTFPN(nn.Module):
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
-                nn.init.xavier_uniform_(m.weight)
+                nn.init.normal_(m.weight, std=0.01)
                 if m.bias is not None:
                     nn.init.constant_(m.bias, val=0)
 
@@ -243,6 +139,120 @@ class YOLACTFPN(nn.Module):
         return P3, P4, P5, P6, P7
 
 
+class YOLACTHead(nn.Module):
+
+    def __init__(self,
+                 ratios=[1, 1 / 2, 2],
+                 inplanes=256,
+                 proto_planes=32,
+                 num_classes=80):
+        super(YOLACTHead, self).__init__()
+        self.conv1 = nn.Sequential(
+            nn.Conv2d(inplanes,
+                      inplanes,
+                      kernel_size=3,
+                      stride=1,
+                      padding=1,
+                      bias=True),
+            nn.ReLU(inplace=True),
+        )
+
+        self.bbox_pred_conv = nn.Conv2d(inplanes,
+                                        len(ratios) * 4,
+                                        kernel_size=3,
+                                        stride=1,
+                                        padding=1,
+                                        bias=True)
+        self.conf_pred_conv = nn.Conv2d(inplanes,
+                                        len(ratios) * num_classes,
+                                        kernel_size=3,
+                                        stride=1,
+                                        padding=1,
+                                        bias=True)
+        self.coef_pred_conv = nn.Sequential(
+            nn.Conv2d(inplanes,
+                      len(ratios) * proto_planes,
+                      kernel_size=3,
+                      stride=1,
+                      padding=1,
+                      bias=True),
+            nn.Tanh(),
+        )
+
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.normal_(m.weight, std=0.01)
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, val=0)
+
+    def forward(self, x):
+        x = self.conv1(x)
+
+        conf_pred = self.conf_pred_conv(x)
+        bbox_pred = self.bbox_pred_conv(x)
+        coef_pred = self.coef_pred_conv(x)
+
+        return conf_pred, bbox_pred, coef_pred
+
+
+class ProtoNet(nn.Module):
+
+    def __init__(self, inplanes, planes):
+        super(ProtoNet, self).__init__()
+        self.proto_layers1 = nn.Sequential(
+            nn.Conv2d(inplanes,
+                      inplanes,
+                      kernel_size=3,
+                      stride=1,
+                      padding=1,
+                      bias=True),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(inplanes,
+                      inplanes,
+                      kernel_size=3,
+                      stride=1,
+                      padding=1,
+                      bias=True),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(inplanes,
+                      inplanes,
+                      kernel_size=3,
+                      stride=1,
+                      padding=1,
+                      bias=True),
+            nn.ReLU(inplace=True),
+        )
+        self.proto_layers2 = nn.Sequential(
+            nn.Conv2d(inplanes,
+                      inplanes,
+                      kernel_size=3,
+                      stride=1,
+                      padding=1,
+                      bias=True),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(inplanes,
+                      planes,
+                      kernel_size=1,
+                      stride=1,
+                      padding=0,
+                      bias=True),
+            nn.ReLU(inplace=True),
+        )
+
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.normal_(m.weight, std=0.01)
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, val=0)
+
+    def forward(self, x, size):
+        x = self.proto_layers1(x)
+        x = F.interpolate(x, size=size, mode='bilinear', align_corners=True)
+        x = self.proto_layers2(x)
+
+        return x
+
+
 class YOLACT(nn.Module):
 
     def __init__(self,
@@ -250,15 +260,18 @@ class YOLACT(nn.Module):
                  backbone_pretrained_path='',
                  fpn_planes=256,
                  proto_planes=32,
-                 num_classes=81):
+                 num_classes=81,
+                 use_gradient_checkpoint=False):
         super(YOLACT, self).__init__()
         self.fpn_planes = fpn_planes
         self.proto_planes = proto_planes
         self.num_classes = num_classes
+        self.use_gradient_checkpoint = use_gradient_checkpoint
 
         self.backbone = backbones.__dict__[backbone_type](
             **{
                 'pretrained_path': backbone_pretrained_path,
+                'use_gradient_checkpoint': use_gradient_checkpoint,
             })
         self.fpn = YOLACTFPN(self.backbone.out_channels[1:4], self.fpn_planes)
         self.proto_net = ProtoNet(self.fpn_planes, self.proto_planes)
@@ -274,7 +287,7 @@ class YOLACT(nn.Module):
                                            padding=0,
                                            bias=True)
 
-        nn.init.xavier_uniform_(self.semantic_seg_conv.weight)
+        nn.init.normal_(self.semantic_seg_conv.weight, std=0.01)
         nn.init.constant_(self.semantic_seg_conv.bias, val=0)
 
     def forward(self, inputs):
@@ -289,7 +302,10 @@ class YOLACT(nn.Module):
             per_level_features.shape[2], per_level_features.shape[3]
         ] for per_level_features in features]
 
-        features = self.fpn(features[1:4])
+        if self.use_gradient_checkpoint:
+            features = checkpoint(self.fpn, features[1:4], use_reentrant=False)
+        else:
+            features = self.fpn(features[1:4])
 
         # 2222 torch.Size([16, 256, 68, 68])
         # 2222 torch.Size([16, 256, 34, 34])
@@ -374,6 +390,54 @@ def resnet152_yolact(backbone_pretrained_path='', **kwargs):
                    **kwargs)
 
 
+def vanb0_yolact(backbone_pretrained_path='', **kwargs):
+    return _yolact('vanb0backbone',
+                   backbone_pretrained_path=backbone_pretrained_path,
+                   **kwargs)
+
+
+def vanb1_yolact(backbone_pretrained_path='', **kwargs):
+    return _yolact('vanb1backbone',
+                   backbone_pretrained_path=backbone_pretrained_path,
+                   **kwargs)
+
+
+def vanb2_yolact(backbone_pretrained_path='', **kwargs):
+    return _yolact('vanb2backbone',
+                   backbone_pretrained_path=backbone_pretrained_path,
+                   **kwargs)
+
+
+def vanb3_yolact(backbone_pretrained_path='', **kwargs):
+    return _yolact('vanb3backbone',
+                   backbone_pretrained_path=backbone_pretrained_path,
+                   **kwargs)
+
+
+def convformers18_yolact(backbone_pretrained_path='', **kwargs):
+    return _yolact('convformers18backbone',
+                   backbone_pretrained_path=backbone_pretrained_path,
+                   **kwargs)
+
+
+def convformers36_yolact(backbone_pretrained_path='', **kwargs):
+    return _yolact('convformers36backbone',
+                   backbone_pretrained_path=backbone_pretrained_path,
+                   **kwargs)
+
+
+def convformerm36_yolact(backbone_pretrained_path='', **kwargs):
+    return _yolact('convformerm36backbone',
+                   backbone_pretrained_path=backbone_pretrained_path,
+                   **kwargs)
+
+
+def convformerb36_yolact(backbone_pretrained_path='', **kwargs):
+    return _yolact('convformerb36backbone',
+                   backbone_pretrained_path=backbone_pretrained_path,
+                   **kwargs)
+
+
 if __name__ == '__main__':
     import os
     import random
@@ -390,8 +454,8 @@ if __name__ == '__main__':
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-    net = resnet50_yolact()
-    image_h, image_w = 800, 800
+    net = resnet18_yolact()
+    image_h, image_w = 1024, 1024
     from thop import profile
     from thop import clever_format
     macs, params = profile(net,
@@ -402,12 +466,249 @@ if __name__ == '__main__':
     preds = net(torch.autograd.Variable(torch.randn(4, 3, image_h, image_w)))
     for per_out in preds[0]:
         print('3333', per_out.shape)
-
     for per_out in preds[1]:
         print('4444', per_out.shape)
-
     for per_out in preds[2]:
         print('5555', per_out.shape)
+    print('6666', preds[3].shape)
+    print('7777', preds[4].shape)
 
+    net = resnet34_yolact()
+    image_h, image_w = 1024, 1024
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    preds = net(torch.autograd.Variable(torch.randn(4, 3, image_h, image_w)))
+    for per_out in preds[0]:
+        print('3333', per_out.shape)
+    for per_out in preds[1]:
+        print('4444', per_out.shape)
+    for per_out in preds[2]:
+        print('5555', per_out.shape)
+    print('6666', preds[3].shape)
+    print('7777', preds[4].shape)
+
+    net = resnet50_yolact()
+    image_h, image_w = 1024, 1024
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    preds = net(torch.autograd.Variable(torch.randn(4, 3, image_h, image_w)))
+    for per_out in preds[0]:
+        print('3333', per_out.shape)
+    for per_out in preds[1]:
+        print('4444', per_out.shape)
+    for per_out in preds[2]:
+        print('5555', per_out.shape)
+    print('6666', preds[3].shape)
+    print('7777', preds[4].shape)
+
+    net = resnet101_yolact()
+    image_h, image_w = 1024, 1024
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    preds = net(torch.autograd.Variable(torch.randn(4, 3, image_h, image_w)))
+    for per_out in preds[0]:
+        print('3333', per_out.shape)
+    for per_out in preds[1]:
+        print('4444', per_out.shape)
+    for per_out in preds[2]:
+        print('5555', per_out.shape)
+    print('6666', preds[3].shape)
+    print('7777', preds[4].shape)
+
+    net = resnet152_yolact()
+    image_h, image_w = 1024, 1024
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    preds = net(torch.autograd.Variable(torch.randn(4, 3, image_h, image_w)))
+    for per_out in preds[0]:
+        print('3333', per_out.shape)
+    for per_out in preds[1]:
+        print('4444', per_out.shape)
+    for per_out in preds[2]:
+        print('5555', per_out.shape)
+    print('6666', preds[3].shape)
+    print('7777', preds[4].shape)
+
+    net = resnet152_yolact(use_gradient_checkpoint=True)
+    image_h, image_w = 1024, 1024
+    preds = net(torch.autograd.Variable(torch.randn(4, 3, image_h, image_w)))
+    for per_out in preds[0]:
+        print('3333', per_out.shape)
+    for per_out in preds[1]:
+        print('4444', per_out.shape)
+    for per_out in preds[2]:
+        print('5555', per_out.shape)
+    print('6666', preds[3].shape)
+    print('7777', preds[4].shape)
+
+    net = vanb0_yolact()
+    image_h, image_w = 1024, 1024
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    preds = net(torch.autograd.Variable(torch.randn(4, 3, image_h, image_w)))
+    for per_out in preds[0]:
+        print('3333', per_out.shape)
+    for per_out in preds[1]:
+        print('4444', per_out.shape)
+    for per_out in preds[2]:
+        print('5555', per_out.shape)
+    print('6666', preds[3].shape)
+    print('7777', preds[4].shape)
+
+    net = vanb1_yolact()
+    image_h, image_w = 1024, 1024
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    preds = net(torch.autograd.Variable(torch.randn(4, 3, image_h, image_w)))
+    for per_out in preds[0]:
+        print('3333', per_out.shape)
+    for per_out in preds[1]:
+        print('4444', per_out.shape)
+    for per_out in preds[2]:
+        print('5555', per_out.shape)
+    print('6666', preds[3].shape)
+    print('7777', preds[4].shape)
+
+    net = vanb2_yolact()
+    image_h, image_w = 1024, 1024
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    preds = net(torch.autograd.Variable(torch.randn(4, 3, image_h, image_w)))
+    for per_out in preds[0]:
+        print('3333', per_out.shape)
+    for per_out in preds[1]:
+        print('4444', per_out.shape)
+    for per_out in preds[2]:
+        print('5555', per_out.shape)
+    print('6666', preds[3].shape)
+    print('7777', preds[4].shape)
+
+    net = vanb3_yolact()
+    image_h, image_w = 1024, 1024
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    preds = net(torch.autograd.Variable(torch.randn(4, 3, image_h, image_w)))
+    for per_out in preds[0]:
+        print('3333', per_out.shape)
+    for per_out in preds[1]:
+        print('4444', per_out.shape)
+    for per_out in preds[2]:
+        print('5555', per_out.shape)
+    print('6666', preds[3].shape)
+    print('7777', preds[4].shape)
+
+    net = convformers18_yolact()
+    image_h, image_w = 1024, 1024
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    preds = net(torch.autograd.Variable(torch.randn(4, 3, image_h, image_w)))
+    for per_out in preds[0]:
+        print('3333', per_out.shape)
+    for per_out in preds[1]:
+        print('4444', per_out.shape)
+    for per_out in preds[2]:
+        print('5555', per_out.shape)
+    print('6666', preds[3].shape)
+    print('7777', preds[4].shape)
+
+    net = convformers36_yolact()
+    image_h, image_w = 1024, 1024
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    preds = net(torch.autograd.Variable(torch.randn(4, 3, image_h, image_w)))
+    for per_out in preds[0]:
+        print('3333', per_out.shape)
+    for per_out in preds[1]:
+        print('4444', per_out.shape)
+    for per_out in preds[2]:
+        print('5555', per_out.shape)
+    print('6666', preds[3].shape)
+    print('7777', preds[4].shape)
+
+    net = convformerm36_yolact()
+    image_h, image_w = 1024, 1024
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    preds = net(torch.autograd.Variable(torch.randn(4, 3, image_h, image_w)))
+    for per_out in preds[0]:
+        print('3333', per_out.shape)
+    for per_out in preds[1]:
+        print('4444', per_out.shape)
+    for per_out in preds[2]:
+        print('5555', per_out.shape)
+    print('6666', preds[3].shape)
+    print('7777', preds[4].shape)
+
+    net = convformerb36_yolact()
+    image_h, image_w = 1024, 1024
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    preds = net(torch.autograd.Variable(torch.randn(4, 3, image_h, image_w)))
+    for per_out in preds[0]:
+        print('3333', per_out.shape)
+    for per_out in preds[1]:
+        print('4444', per_out.shape)
+    for per_out in preds[2]:
+        print('5555', per_out.shape)
     print('6666', preds[3].shape)
     print('7777', preds[4].shape)

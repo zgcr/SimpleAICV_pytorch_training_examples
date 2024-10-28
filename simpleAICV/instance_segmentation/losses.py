@@ -37,10 +37,11 @@ class YOLACTLoss(nn.Module):
         if self.resize_type == 'retina_style':
             self.resize = int(round(self.resize * 1333. / 800))
 
-        self.scales = self.resize / 544. * np.array(scales, dtype=np.float32)
+        self.scales = np.array(scales, dtype=np.float32)
         self.ratios = np.array(ratios, dtype=np.float32)
         self.strides = np.array(strides, dtype=np.float32)
-        self.anchors = YOLACTAnchors(scales=scales,
+        self.anchors = YOLACTAnchors(resize=resize,
+                                     scales=scales,
                                      ratios=ratios,
                                      strides=strides)
 
@@ -69,6 +70,7 @@ class YOLACTLoss(nn.Module):
             per_level_cls_pred.shape[2], per_level_cls_pred.shape[1]
         ] for per_level_cls_pred in class_preds]
         one_image_anchors = self.anchors(feature_size)
+
         one_image_anchors = torch.cat([
             torch.tensor(per_level_anchor).view(-1, per_level_anchor.shape[-1])
             for per_level_anchor in one_image_anchors
@@ -272,6 +274,7 @@ class YOLACTLoss(nn.Module):
             # @ means dot product
             per_image_mask_preds = proto_outs[
                 batch_idx] @ positive_coef_preds.t()
+            per_image_mask_preds = per_image_mask_preds.float()
             per_image_mask_preds = torch.sigmoid(per_image_mask_preds)
             # pos_anchor_box.shape: (num_pos, 4)
             per_image_mask_preds = self.crop_predict_mask(
@@ -334,6 +337,7 @@ class YOLACTLoss(nn.Module):
                     segment_gt[cur_class_gt[gt_idx]],
                     downsampled_masks[gt_idx])
 
+            cur_segment = cur_segment.float()
             cur_segment = torch.sigmoid(cur_segment)
             cur_segment = torch.clamp(cur_segment, min=1e-4, max=1. - 1e-4)
 
@@ -361,9 +365,7 @@ class YOLACTLoss(nn.Module):
                 batch_anchors, gt_bboxes):
             if one_image_gt_bboxes.shape[0] == 0:
                 one_image_anchor_cls_labels = torch.zeros(
-                    [one_image_anchor_nums],
-                    dtype=torch.float32,
-                    device=device)
+                    [one_image_anchor_nums], dtype=torch.int64, device=device)
                 one_image_anchor_box_labels = torch.zeros(
                     [one_image_anchor_nums, 4],
                     dtype=torch.float32,
@@ -373,9 +375,7 @@ class YOLACTLoss(nn.Module):
                     dtype=torch.float32,
                     device=device)
                 one_image_anchor_max_gt_indexes = torch.zeros(
-                    [one_image_anchor_nums],
-                    dtype=torch.float32,
-                    device=device)
+                    [one_image_anchor_nums], dtype=torch.int64, device=device)
             else:
                 one_image_gt_box_coords = one_image_gt_bboxes[:, 0:4]
                 one_image_gt_box_classes = one_image_gt_bboxes[:, 4]
@@ -384,14 +384,14 @@ class YOLACTLoss(nn.Module):
                     one_image_gt_box_coords, one_image_anchors,
                     one_image_gt_box_classes)
 
-                one_image_anchor_cls_labels = one_image_anchor_cls_labels.unsqueeze(
-                    0)
-                one_image_anchor_box_labels = one_image_anchor_box_labels.unsqueeze(
-                    0)
-                one_image_anchor_max_gt_boxes = one_image_anchor_max_gt_boxes.unsqueeze(
-                    0)
-                one_image_anchor_max_gt_indexes = one_image_anchor_max_gt_indexes.unsqueeze(
-                    0)
+            one_image_anchor_cls_labels = one_image_anchor_cls_labels.unsqueeze(
+                0)
+            one_image_anchor_box_labels = one_image_anchor_box_labels.unsqueeze(
+                0)
+            one_image_anchor_max_gt_boxes = one_image_anchor_max_gt_boxes.unsqueeze(
+                0)
+            one_image_anchor_max_gt_indexes = one_image_anchor_max_gt_indexes.unsqueeze(
+                0)
 
             batch_anchor_cls_labels.append(one_image_anchor_cls_labels)
             batch_anchor_box_labels.append(one_image_anchor_box_labels)
@@ -639,6 +639,7 @@ class SOLOV2Loss(nn.Module):
                 per_level_cate_preds.permute(0, 2, 3,
                                              1).reshape(-1, num_classes))
         batch_cate_preds = torch.cat(batch_cate_preds, dim=0)
+        batch_cate_preds = batch_cate_preds.float()
         batch_cate_preds = torch.sigmoid(batch_cate_preds)
         batch_cate_preds = torch.clamp(batch_cate_preds,
                                        min=1e-4,
@@ -718,6 +719,7 @@ class SOLOV2Loss(nn.Module):
 
             if len(per_level_mask_preds) != 0:
                 per_level_mask_preds = torch.cat(per_level_mask_preds, dim=0)
+                per_level_mask_preds = per_level_mask_preds.float()
                 per_level_mask_preds = torch.sigmoid(per_level_mask_preds)
                 per_level_mask_preds = torch.clamp(per_level_mask_preds,
                                                    min=1e-4,
@@ -952,33 +954,34 @@ if __name__ == '__main__':
     from tqdm import tqdm
 
     from simpleAICV.instance_segmentation.datasets.cocodataset import CocoInstanceSegmentation
-    from simpleAICV.instance_segmentation.common import InstanceSegmentationResize, RandomHorizontalFlip, Normalize, InstanceSegmentationCollater, YOLACTInstanceSegmentationCollater
+    from simpleAICV.instance_segmentation.common import InstanceSegmentationResize, RandomHorizontalFlip, Normalize, YOLACTInstanceSegmentationCollater, SOLOV2InstanceSegmentationCollater
 
     cocodataset = CocoInstanceSegmentation(
         COCO2017_path,
-        set_name='val2017',
+        set_name='train2017',
+        filter_no_object_image=False,
         transform=transforms.Compose([
-            InstanceSegmentationResize(resize=800,
+            InstanceSegmentationResize(resize=1024,
                                        stride=32,
                                        resize_type='yolo_style',
-                                       multi_scale=False,
+                                       multi_scale=True,
                                        multi_scale_range=[0.8, 1.0]),
             RandomHorizontalFlip(prob=0.5),
             Normalize(),
         ]))
 
     from torch.utils.data import DataLoader
-    collater = YOLACTInstanceSegmentationCollater(resize=800,
+    collater = YOLACTInstanceSegmentationCollater(resize=1024,
                                                   resize_type='yolo_style')
-    solov2_train_loader = DataLoader(cocodataset,
-                                     batch_size=16,
-                                     shuffle=True,
-                                     num_workers=1,
-                                     collate_fn=collater)
+    train_loader = DataLoader(cocodataset,
+                              batch_size=4,
+                              shuffle=True,
+                              num_workers=2,
+                              collate_fn=collater)
 
     from simpleAICV.instance_segmentation.models import resnet50_yolact
     net = resnet50_yolact()
-    loss = YOLACTLoss(resize=800,
+    loss = YOLACTLoss(resize=1024,
                       resize_type='yolo_style',
                       scales=[24, 48, 96, 192, 384],
                       ratios=[1, 1 / 2, 2],
@@ -988,7 +991,7 @@ if __name__ == '__main__':
                       mask_loss_weight=6.125,
                       semantic_seg_loss_weight=1.)
 
-    for data in tqdm(solov2_train_loader):
+    for data in tqdm(train_loader):
         images = data['image']
         gt_bboxes = data['box']
         gt_masks = data['mask']
@@ -1012,27 +1015,14 @@ if __name__ == '__main__':
         print('8888', loss_dict)
         break
 
-    cocodataset = CocoInstanceSegmentation(
-        COCO2017_path,
-        set_name='val2017',
-        transform=transforms.Compose([
-            InstanceSegmentationResize(resize=800,
-                                       stride=32,
-                                       resize_type='yolo_style',
-                                       multi_scale=False,
-                                       multi_scale_range=[0.8, 1.0]),
-            RandomHorizontalFlip(prob=0.5),
-            Normalize(),
-        ]))
-
     from torch.utils.data import DataLoader
-    collater = InstanceSegmentationCollater(resize=800,
-                                            resize_type='yolo_style')
-    solov2_train_loader = DataLoader(cocodataset,
-                                     batch_size=16,
-                                     shuffle=True,
-                                     num_workers=1,
-                                     collate_fn=collater)
+    collater = SOLOV2InstanceSegmentationCollater(resize=1024,
+                                                  resize_type='yolo_style')
+    train_loader = DataLoader(cocodataset,
+                              batch_size=4,
+                              shuffle=True,
+                              num_workers=2,
+                              collate_fn=collater)
 
     from simpleAICV.instance_segmentation.models import resnet50_solov2
     net = resnet50_solov2()
@@ -1045,7 +1035,8 @@ if __name__ == '__main__':
                       gamma=2.0,
                       cls_loss_weight=1.0,
                       dice_loss_weight=3.0)
-    for data in tqdm(solov2_train_loader):
+
+    for data in tqdm(train_loader):
         images = data['image']
         gt_bboxes = data['box']
         gt_masks = data['mask']

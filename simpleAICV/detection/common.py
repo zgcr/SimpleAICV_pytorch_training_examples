@@ -41,6 +41,7 @@ class DetectionResize:
         '''
         image, annots, scale, size = sample['image'], sample['annots'], sample[
             'scale'], sample['size']
+
         h, w, _ = image.shape
 
         if self.resize_type == 'retina_style':
@@ -90,13 +91,12 @@ class DetectionResize:
         factor = np.float32(factor)
         annots[:, :4] *= factor
         scale *= factor
+        size = np.array([image.shape[0], image.shape[1]]).astype(np.float32)
 
-        return {
-            'image': image,
-            'annots': annots,
-            'scale': scale,
-            'size': size,
-        }
+        sample['image'], sample['annots'], sample['scale'], sample[
+            'size'] = image, annots, scale, size
+
+        return sample
 
 
 class RandomHorizontalFlip:
@@ -124,12 +124,13 @@ class RandomHorizontalFlip:
             annots[:, 0] = w - x2
             annots[:, 2] = w - x1
 
-        return {
-            'image': image,
-            'annots': annots,
-            'scale': scale,
-            'size': size,
-        }
+            size = np.array([image.shape[0],
+                             image.shape[1]]).astype(np.float32)
+
+        sample['image'], sample['annots'], sample['scale'], sample[
+            'size'] = image, annots, scale, size
+
+        return sample
 
 
 class RandomCrop:
@@ -169,12 +170,13 @@ class RandomCrop:
             annots[:, [0, 2]] = annots[:, [0, 2]] - crop_xmin
             annots[:, [1, 3]] = annots[:, [1, 3]] - crop_ymin
 
-        return {
-            'image': image,
-            'annots': annots,
-            'scale': scale,
-            'size': size,
-        }
+            size = np.array([image.shape[0],
+                             image.shape[1]]).astype(np.float32)
+
+        sample['image'], sample['annots'], sample['scale'], sample[
+            'size'] = image, annots, scale, size
+
+        return sample
 
 
 class RandomTranslate:
@@ -209,12 +211,13 @@ class RandomTranslate:
             annots[:, [0, 2]] = annots[:, [0, 2]] + tx
             annots[:, [1, 3]] = annots[:, [1, 3]] + ty
 
-        return {
-            'image': image,
-            'annots': annots,
-            'scale': scale,
-            'size': size,
-        }
+            size = np.array([image.shape[0],
+                             image.shape[1]]).astype(np.float32)
+
+        sample['image'], sample['annots'], sample['scale'], sample[
+            'size'] = image, annots, scale, size
+
+        return sample
 
 
 class Normalize:
@@ -231,12 +234,10 @@ class Normalize:
 
         image = image / 255.
 
-        return {
-            'image': image,
-            'annots': annots,
-            'scale': scale,
-            'size': size,
-        }
+        sample['image'], sample['annots'], sample['scale'], sample[
+            'size'] = image, annots, scale, size
+
+        return sample
 
 
 class DetectionCollater:
@@ -285,51 +286,6 @@ class DetectionCollater:
         }
 
 
-class BatchAlignDetectionCollater:
-
-    def __init__(self, divisor=32, max_annots_num=100):
-        self.divisor = divisor
-        self.max_annots_num = max_annots_num
-
-    def __call__(self, data):
-        images = [s['image'] for s in data]
-        annots = [s['annots'] for s in data]
-        scales = [s['scale'] for s in data]
-        sizes = [s['size'] for s in data]
-
-        max_h = max(image.shape[0] for image in images)
-        max_w = max(image.shape[1] for image in images)
-
-        pad_h = 0 if max_h % self.divisor == 0 else self.divisor - max_h % self.divisor
-        pad_w = 0 if max_w % self.divisor == 0 else self.divisor - max_w % self.divisor
-
-        input_images = np.zeros((len(images), max_h + pad_h, max_w + pad_w, 3),
-                                dtype=np.float32)
-        for i, image in enumerate(images):
-            input_images[i, 0:image.shape[0], 0:image.shape[1], :] = image
-        input_images = torch.from_numpy(input_images)
-        # B H W 3 ->B 3 H W
-        input_images = input_images.permute(0, 3, 1, 2)
-
-        input_annots = np.ones(
-            (len(annots), self.max_annots_num, 5), dtype=np.float32) * (-1)
-        for i, annot in enumerate(annots):
-            if annot.shape[0] > 0:
-                input_annots[i, :annot.shape[0], :] = annot
-
-        input_annots = torch.from_numpy(input_annots)
-
-        scales = np.array(scales, dtype=np.float32)
-        sizes = np.array(sizes, dtype=np.float32)
-
-        return {
-            'image': input_images,
-            'annots': input_annots,
-            'scale': scales,
-            'size': sizes,
-        }
-
-
 class DETRDetectionCollater:
 
     def __init__(self,
@@ -351,79 +307,6 @@ class DETRDetectionCollater:
         input_images = np.zeros((len(images), self.resize, self.resize, 3),
                                 dtype=np.float32)
         masks = torch.ones((len(images), self.resize, self.resize),
-                           dtype=torch.bool)
-        scaled_sizes = []
-        for i, image in enumerate(images):
-            scaled_sizes.append([image.shape[0], image.shape[1]])
-            input_images[i, 0:image.shape[0], 0:image.shape[1], :] = image
-            masks[i, 0:image.shape[0], 0:image.shape[1]] = False
-        input_images = torch.from_numpy(input_images)
-        # B H W 3 ->B 3 H W
-        input_images = input_images.permute(0, 3, 1, 2)
-
-        # x_min,y_min,x_max,y_max
-        input_annots = np.ones(
-            (len(annots), self.max_annots_num, 5), dtype=np.float32) * (-1)
-        for i, annot in enumerate(annots):
-            if annot.shape[0] > 0:
-                input_annots[i, :annot.shape[0], :] = annot
-
-        input_annots = torch.from_numpy(input_annots)
-
-        # x_center,y_center,w,h
-        scaled_annots = np.ones(
-            (len(annots), self.max_annots_num, 5), dtype=np.float32) * (-1)
-        for i, annot in enumerate(annots):
-            h, w = scaled_sizes[i][0], scaled_sizes[i][1]
-            per_image_size = np.array([w, h, w, h], dtype=np.float32)
-            if annot.shape[0] > 0:
-                annot_center = (annot[:, 0:2] + annot[:, 2:4]) / 2
-                annot_wh = annot[:, 2:4] - annot[:, 0:2]
-                annot_label = annot[:, 4:5]
-                annot_cxcywh = np.concatenate([annot_center, annot_wh], axis=1)
-                annot_cxcywh = annot_cxcywh / per_image_size
-                annot_cxcywh = np.concatenate([annot_cxcywh, annot_label],
-                                              axis=1)
-                scaled_annots[i, :annot_cxcywh.shape[0], :] = annot_cxcywh
-
-        scaled_annots = torch.from_numpy(scaled_annots)
-
-        scales = np.array(scales, dtype=np.float32)
-        sizes = np.array(sizes, dtype=np.float32)
-        scaled_sizes = np.array(scaled_sizes, dtype=np.float32)
-
-        return {
-            'image': input_images,
-            'annots': input_annots,
-            'mask': masks,
-            'scale': scales,
-            'size': sizes,
-            'scaled_annots': scaled_annots,
-            'scaled_size': scaled_sizes,
-        }
-
-
-class BatchAlignDETRDetectionCollater:
-
-    def __init__(self, divisor=32, max_annots_num=100):
-        self.divisor = divisor
-        self.max_annots_num = max_annots_num
-
-    def __call__(self, data):
-        images = [s['image'] for s in data]
-        annots = [s['annots'] for s in data]
-        scales = [s['scale'] for s in data]
-        sizes = [s['size'] for s in data]
-
-        max_h = max(image.shape[0] for image in images)
-        max_w = max(image.shape[1] for image in images)
-
-        pad_h = 0 if max_h % self.divisor == 0 else self.divisor - max_h % self.divisor
-        pad_w = 0 if max_w % self.divisor == 0 else self.divisor - max_w % self.divisor
-
-        input_images = np.zeros((len(images), max_h + pad_h, max_w + pad_w, 3),
-                                dtype=np.float32)
-        masks = torch.ones((len(images), max_h + pad_h, max_w + pad_w),
                            dtype=torch.bool)
         scaled_sizes = []
         for i, image in enumerate(images):

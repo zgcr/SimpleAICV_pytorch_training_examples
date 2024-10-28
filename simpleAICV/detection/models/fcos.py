@@ -9,8 +9,10 @@ sys.path.append(BASE_DIR)
 import torch
 import torch.nn as nn
 
+from torch.utils.checkpoint import checkpoint
+
 from simpleAICV.detection.models import backbones
-from simpleAICV.detection.models.fpn import RetinaFPN, VitDetFPN
+from simpleAICV.detection.models.fpn import RetinaFPN
 from simpleAICV.detection.models.head import FCOSClsRegCntHead
 
 __all__ = [
@@ -28,16 +30,19 @@ class FCOS(nn.Module):
                  backbone_type,
                  backbone_pretrained_path='',
                  planes=256,
-                 num_classes=80):
+                 num_classes=80,
+                 use_gradient_checkpoint=False):
         super(FCOS, self).__init__()
         self.planes = planes
         self.num_classes = num_classes
+        self.use_gradient_checkpoint = use_gradient_checkpoint
 
         self.backbone = backbones.__dict__[backbone_type](
             **{
                 'pretrained_path': backbone_pretrained_path,
+                'use_gradient_checkpoint': use_gradient_checkpoint,
             })
-        self.fpn = RetinaFPN(self.backbone.out_channels,
+        self.fpn = RetinaFPN(self.backbone.out_channels[1:4],
                              self.planes,
                              use_p5=True)
         self.clsregcnt_head = FCOSClsRegCntHead(self.planes,
@@ -50,10 +55,14 @@ class FCOS(nn.Module):
 
     def forward(self, inputs):
         features = self.backbone(inputs)
+        features = features[1:4]
 
         del inputs
 
-        features = self.fpn(features)
+        if self.use_gradient_checkpoint:
+            features = checkpoint(self.fpn, features, use_reentrant=False)
+        else:
+            features = self.fpn(features)
 
         cls_heads, reg_heads, center_heads = [], [], []
         for feature, scale in zip(features, self.scales):
@@ -134,7 +143,21 @@ if __name__ == '__main__':
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-    net = resnet50_fcos()
+    net = resnet18_fcos()
+    image_h, image_w = 640, 640
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    outs = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    for out in outs:
+        for per_level_out in out:
+            print('2222', per_level_out.shape)
+
+    net = resnet34_fcos()
     image_h, image_w = 640, 640
     from thop import profile
     from thop import clever_format
@@ -149,7 +172,7 @@ if __name__ == '__main__':
             print('2222', per_level_out.shape)
 
     net = resnet50_fcos()
-    image_h, image_w = 800, 800
+    image_h, image_w = 640, 640
     from thop import profile
     from thop import clever_format
     macs, params = profile(net,
@@ -162,8 +185,8 @@ if __name__ == '__main__':
         for per_level_out in out:
             print('2222', per_level_out.shape)
 
-    net = resnet50_fcos()
-    image_h, image_w = 800, 1333
+    net = resnet101_fcos()
+    image_h, image_w = 640, 640
     from thop import profile
     from thop import clever_format
     macs, params = profile(net,
@@ -171,6 +194,27 @@ if __name__ == '__main__':
                            verbose=False)
     macs, params = clever_format([macs, params], '%.3f')
     print(f'1111, macs: {macs}, params: {params}')
+    outs = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    for out in outs:
+        for per_level_out in out:
+            print('2222', per_level_out.shape)
+
+    net = resnet152_fcos()
+    image_h, image_w = 640, 640
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    outs = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    for out in outs:
+        for per_level_out in out:
+            print('2222', per_level_out.shape)
+
+    net = resnet152_fcos(use_gradient_checkpoint=True)
+    image_h, image_w = 640, 640
     outs = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
     for out in outs:
         for per_level_out in out:

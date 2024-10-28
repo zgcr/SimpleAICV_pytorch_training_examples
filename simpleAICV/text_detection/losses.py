@@ -7,6 +7,7 @@ sys.path.append(BASE_DIR)
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 __all__ = [
     'DBNetLoss',
@@ -171,36 +172,37 @@ if __name__ == '__main__':
                                              MainDirectionRandomRotate(
                                                  angle=[0, 90, 180, 270],
                                                  prob=[0.7, 0.1, 0.1, 0.1]),
-                                             Resize(resize=960),
+                                             Resize(resize=1024),
                                              Normalize(),
                                          ]))
 
     count = 0
     for per_sample in tqdm(textdetectiondataset):
-        print(per_sample['image'].shape, len(per_sample['annots']),
+        print('1111', per_sample['path'])
+        print('1111', per_sample['image'].shape, len(per_sample['annots']),
               per_sample['annots'][0]['points'].shape, per_sample['scale'],
               per_sample['size'])
 
-        if count < 10:
+        if count < 2:
             count += 1
         else:
             break
 
     from torch.utils.data import DataLoader
-    collater = DBNetTextDetectionCollater(resize=960,
+    collater = DBNetTextDetectionCollater(resize=1024,
                                           min_box_size=3,
                                           min_max_threshold=[0.3, 0.7],
                                           shrink_ratio=0.6)
     train_loader = DataLoader(textdetectiondataset,
-                              batch_size=16,
+                              batch_size=4,
                               shuffle=True,
                               num_workers=2,
                               collate_fn=collater)
 
-    from simpleAICV.text_detection.models.dbnet import ResnetDBNet
-    net = ResnetDBNet(backbone_type='resnet50backbone', inter_planes=256, k=50)
+    from simpleAICV.text_detection.models.dbnet import resnet50_dbnet
+    net = resnet50_dbnet()
     loss = DBNetLoss(probability_weight=1,
-                     threshold_weight=1,
+                     threshold_weight=5,
                      binary_weight=1,
                      negative_ratio=3,
                      k=50)
@@ -211,5 +213,5 @@ if __name__ == '__main__':
             'scale'], data['size']
         out = net(images)
         loss_dict = loss(out, annots)
-        print("1111", loss_dict)
+        print("2222", loss_dict)
         break

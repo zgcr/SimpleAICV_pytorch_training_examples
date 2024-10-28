@@ -223,3 +223,14 @@ if __name__ == '__main__':
     outs = net([C3, C4, C5])
     for out in outs:
         print('2222', out.shape)
+
+    net = RetinaFaceSSH(inplanes=256, planes=256)
+    x = torch.randn(3, 256, 120, 120)
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net, inputs=(x, ), verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    outs = net(x)
+    for out in outs:
+        print('2222', out.shape)

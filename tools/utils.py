@@ -24,8 +24,6 @@ import torch.backends.cudnn as cudnn
 
 from torch.cuda.amp import GradScaler
 
-from tools.optimizers import Lion
-
 
 def parse_args_example():
     '''
@@ -277,7 +275,7 @@ class Scheduler:
 def build_optimizer(config, model):
     optimizer_name = config.optimizer[0]
     optimizer_parameters = config.optimizer[1]
-    assert optimizer_name in ['SGD', 'AdamW', 'Lion'], 'Unsupported optimizer!'
+    assert optimizer_name in ['SGD', 'AdamW'], 'Unsupported optimizer!'
 
     lr = optimizer_parameters['lr']
     weight_decay = optimizer_parameters['weight_decay']
@@ -576,15 +574,9 @@ def build_optimizer(config, model):
         ) else optimizer_parameters['beta1']
         beta2 = 0.999 if 'beta2' not in optimizer_parameters.keys(
         ) else optimizer_parameters['beta2']
+        eps = 1e-08 if 'eps' not in optimizer_parameters.keys(
+        ) else optimizer_parameters['eps']
         return torch.optim.AdamW(model_params_weight_decay_list,
                                  lr=lr,
-                                 betas=(beta1,
-                                        beta2)), model_layer_weight_decay_list
-    elif optimizer_name == 'Lion':
-        beta1 = 0.9 if 'beta1' not in optimizer_parameters.keys(
-        ) else optimizer_parameters['beta1']
-        beta2 = 0.99 if 'beta2' not in optimizer_parameters.keys(
-        ) else optimizer_parameters['beta2']
-        return Lion(model_params_weight_decay_list,
-                    lr=lr,
-                    betas=(beta1, beta2)), model_layer_weight_decay_list
+                                 betas=(beta1, beta2),
+                                 eps=eps), model_layer_weight_decay_list

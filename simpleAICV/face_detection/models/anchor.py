@@ -100,9 +100,9 @@ if __name__ == '__main__':
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-    anchor_sizes = [[16, 32], [64, 128], [256, 512]]
+    anchor_sizes = [[8, 16, 32], [32, 64, 128], [128, 256, 512]]
     strides = [8, 16, 32]
-    image_w, image_h = 960, 960
+    image_w, image_h = 1024, 1024
     fpn_feature_sizes = [[
         math.ceil(image_w / stride),
         math.ceil(image_h / stride)

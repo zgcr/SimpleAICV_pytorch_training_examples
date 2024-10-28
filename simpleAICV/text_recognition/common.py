@@ -46,13 +46,10 @@ class RandomScale:
                                flags=cv2.INTER_CUBIC,
                                borderMode=cv2.BORDER_CONSTANT,
                                borderValue=0)
+        size = np.array([image.shape[0], image.shape[1]]).astype(np.float32)
 
-        sample = {
-            'image': image,
-            'label': label,
-            'scale': scale,
-            'size': size,
-        }
+        sample['image'], sample['label'], sample['scale'], sample[
+            'size'] = image, label, scale, size
 
         return sample
 
@@ -77,12 +74,8 @@ class RandomGaussianBlur:
 
         image = cv2.GaussianBlur(image, (ksize, ksize), sigma)
 
-        sample = {
-            'image': image,
-            'label': label,
-            'scale': scale,
-            'size': size,
-        }
+        sample['image'], sample['label'], sample['scale'], sample[
+            'size'] = image, label, scale, size
 
         return sample
 
@@ -100,7 +93,6 @@ class RandomBrightness:
         image, label, scale, size = sample['image'], sample['label'], sample[
             'scale'], sample['size']
 
-        image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
         hsv_image = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
         brightness = np.random.uniform(self.brightness[0], self.brightness[1])
 
@@ -108,14 +100,9 @@ class RandomBrightness:
         hsv_channel = np.where(mask, 255, hsv_image[:, :, 2] * brightness)
         hsv_image[:, :, 2] = hsv_channel
         image = cv2.cvtColor(hsv_image, cv2.COLOR_HSV2RGB)
-        image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 
-        sample = {
-            'image': image,
-            'label': label,
-            'scale': scale,
-            'size': size,
-        }
+        sample['image'], sample['label'], sample['scale'], sample[
+            'size'] = image, label, scale, size
 
         return sample
 
@@ -174,12 +161,10 @@ class RandomRotate:
                                borderMode=cv2.BORDER_CONSTANT,
                                borderValue=0)
 
-        sample = {
-            'image': image,
-            'label': label,
-            'scale': scale,
-            'size': size,
-        }
+        size = np.array([image.shape[0], image.shape[1]]).astype(np.float32)
+
+        sample['image'], sample['label'], sample['scale'], sample[
+            'size'] = image, label, scale, size
 
         return sample
 
@@ -413,12 +398,10 @@ class Distort:
         trans = WarpMLS(image, src_pts, dst_pts, img_w, img_h)
         image = trans.generate()
 
-        sample = {
-            'image': image,
-            'label': label,
-            'scale': scale,
-            'size': size,
-        }
+        size = np.array([image.shape[0], image.shape[1]]).astype(np.float32)
+
+        sample['image'], sample['label'], sample['scale'], sample[
+            'size'] = image, label, scale, size
 
         return sample
 
@@ -483,12 +466,10 @@ class Stretch:
         trans = WarpMLS(image, src_pts, dst_pts, img_w, img_h)
         image = trans.generate()
 
-        sample = {
-            'image': image,
-            'label': label,
-            'scale': scale,
-            'size': size,
-        }
+        size = np.array([image.shape[0], image.shape[1]]).astype(np.float32)
+
+        sample['image'], sample['label'], sample['scale'], sample[
+            'size'] = image, label, scale, size
 
         return sample
 
@@ -534,12 +515,10 @@ class Perspective:
         trans = WarpMLS(image, src_pts, dst_pts, img_w, img_h)
         image = trans.generate()
 
-        sample = {
-            'image': image,
-            'label': label,
-            'scale': scale,
-            'size': size,
-        }
+        size = np.array([image.shape[0], image.shape[1]]).astype(np.float32)
+
+        sample['image'], sample['label'], sample['scale'], sample[
+            'size'] = image, label, scale, size
 
         return sample
 
@@ -556,12 +535,8 @@ class Normalize:
         image = image / 255.
         image = image.astype(np.float32)
 
-        sample = {
-            'image': image,
-            'label': label,
-            'scale': scale,
-            'size': size,
-        }
+        sample['image'], sample['label'], sample['scale'], sample[
+            'size'] = image, label, scale, size
 
         return sample
 
@@ -581,13 +556,12 @@ class KeepRatioResizeTextRecognitionCollater:
         max_w = int(math.floor(max(ratios) * self.resize_h))
         max_w = int(((max_w // 32) + 1) * 32)
 
-        input_images = np.zeros((len(images), self.resize_h, max_w, 1),
+        input_images = np.zeros((len(images), self.resize_h, max_w, 3),
                                 dtype=np.float32)
 
         for i, image in enumerate(images):
             image = cv2.resize(image, (max(
                 1, int(math.floor(self.resize_h * ratios[i]))), self.resize_h))
-            image = np.expand_dims(image, 2)
             input_images[i, 0:image.shape[0], 0:image.shape[1], :] = image
         input_images = torch.from_numpy(input_images)
         # B H W 3 ->B 3 H W
@@ -676,83 +650,6 @@ class CTCTextLabelConverter:
         return texts
 
 
-class AttenTextLabelConverter:
-    """
-    Convert between text label and text index
-    """
-
-    def __init__(self, chars_set_list, str_max_length=80, garbage_char='㍿'):
-        """
-        chars_set: set of the possible characters
-        str_max_length: max length of text label in the batch
-        """
-
-        print(f"Char Num:{len(chars_set_list)}")
-
-        # [GO] for the start token of the attention decoder. [s] for end-of-sentence token.
-        self.atten_chars_set = ['[GO]', '[s]'] + chars_set_list
-        self.atten_chars_dict = {
-            char: i
-            for i, char in enumerate(self.atten_chars_set)
-        }
-
-        self.go_index = self.atten_chars_dict['[GO]']
-        self.str_max_length = str_max_length
-        self.num_classes = len(self.atten_chars_set)
-        self.garbage_char = garbage_char
-
-    def encode(self, text):
-        """ 
-        convert text-label into text-index.
-        input:
-            text: text labels of each image. [batch_size]
-        output:
-            text : the input of attention decoder. [batch_size x (max_length+2)] +1 for [GO] token and +1 for [s] token. text[:, 0] is [GO] token and text is padded with [GO] token after [s] token.
-            length : the length of output of attention decoder, which count [s] token also. [3, 7, ....] [batch_size]
-        """
-        # +1 for [s] at end of sentence.
-        length = [len(s) + 1 for s in text]
-        str_max_length = self.str_max_length + 1
-        # additional +1 for [GO] at first step. batch_text is padded with [GO] token after [s] token.
-        batch_text = torch.LongTensor(len(text),
-                                      str_max_length + 1).fill_(self.go_index)
-        for i, t in enumerate(text):
-            text = list(t)
-            text = ['[GO]'] + text + ['[s]']
-
-            tmp = []
-            for char in text:
-                if char not in self.atten_chars_dict:
-                    # garbage class index = self.num_classes
-                    tmp.append(self.num_classes)
-                else:
-                    tmp.append(self.atten_chars_dict[char])
-            batch_text[i][0:len(tmp)] = torch.LongTensor(tmp)
-
-        return batch_text, torch.IntTensor(length)
-
-    def decode(self, text_index, length):
-        """
-        convert text-index into text-label.
-        """
-        texts = []
-        for index, l in enumerate(length):
-            t = text_index[index, :]
-
-            char_list = []
-            for i in range(l):
-                if self.atten_chars_set[t[i]] == '[s]':
-                    break
-                if t[i] == self.num_classes:
-                    char_list.append(self.garbage_char)
-                if self.atten_chars_set[t[i]] != '[GO]':
-                    char_list.append(self.atten_chars_set[t[i]])
-            text = ''.join(char_list)
-            texts.append(text)
-
-        return texts
-
-
 if __name__ == '__main__':
     from simpleAICV.text_recognition.char_sets.final_char_table import final_char_table
 
@@ -760,8 +657,3 @@ if __name__ == '__main__':
                                       str_max_length=80,
                                       garbage_char='㍿')
     print("1111", converter.num_classes)
-
-    converter = AttenTextLabelConverter(final_char_table,
-                                        str_max_length=80,
-                                        garbage_char='㍿')
-    print("2222", converter.num_classes)

@@ -1,3 +1,11 @@
+import os
+import sys
+import warnings
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(BASE_DIR)
+warnings.filterwarnings('ignore')
+
 import numpy as np
 
 import torch
@@ -5,35 +13,7 @@ import onnx
 import onnxsim
 import onnxruntime
 
-
-def load_state_dict(saved_model_path, model, excluded_layer_name=()):
-    '''
-    saved_model_path: a saved model.state_dict() .pth file path
-    model: a new defined model
-    excluded_layer_name: layer names that doesn't want to load parameters
-    only load layer parameters which has same layer name and same layer weight shape
-    '''
-    if not saved_model_path:
-        print('No pretrained model file!')
-        return
-
-    saved_state_dict = torch.load(saved_model_path,
-                                  map_location=torch.device('cpu'))
-
-    filtered_state_dict = {
-        name: weight
-        for name, weight in saved_state_dict.items()
-        if name in model.state_dict() and not any(
-            excluded_name in name for excluded_name in excluded_layer_name)
-        and weight.shape == model.state_dict()[name].shape
-    }
-
-    if len(filtered_state_dict) == 0:
-        print('No pretrained parameters to load!')
-    else:
-        model.load_state_dict(filtered_state_dict, strict=False)
-
-    return
+from simpleAICV.classification.common import load_state_dict
 
 
 def convert_pytorch_model_to_onnx_model(model,
@@ -76,13 +56,14 @@ def convert_pytorch_model_to_onnx_model(model,
         )
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     import os
     import sys
 
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     sys.path.append(BASE_DIR)
 
+    import os
     import random
     import numpy as np
     import torch
@@ -102,7 +83,7 @@ if __name__ == "__main__":
     model = backbones.__dict__['resnet50'](**{
         'num_classes': 1000,
     })
-    trained_model_path = '/root/code/SimpleAICV_pytorch_training_examples_on_ImageNet_COCO_ADE20K/pretrained_models/resnet_train_from_scratch_on_imagenet1k/resnet50-acc76.300.pth'
+    trained_model_path = ''
     load_state_dict(trained_model_path, model)
     model.eval()
 

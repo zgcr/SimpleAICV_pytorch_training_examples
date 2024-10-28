@@ -93,6 +93,7 @@ class CNENTextRecognition(Dataset):
                         list_label = list(per_image_label)
                         for per_char in list_label:
                             self.chars_set.add(per_char)
+        self.image_path_list = sorted(self.image_path_list)
 
         self.chars_set = list(sorted(self.chars_set, reverse=False))
 
@@ -105,6 +106,8 @@ class CNENTextRecognition(Dataset):
         return len(self.image_path_list)
 
     def __getitem__(self, idx):
+        path = self.image_path_list[idx]
+
         image = self.load_image(idx)
         label = self.load_label(idx)
 
@@ -112,6 +115,7 @@ class CNENTextRecognition(Dataset):
         size = np.array([image.shape[0], image.shape[1]]).astype(np.float32)
 
         sample = {
+            'path': path,
             'image': image,
             'label': label,
             'scale': scale,
@@ -124,15 +128,11 @@ class CNENTextRecognition(Dataset):
         return sample
 
     def load_image(self, idx):
-        """
-        convert RGB image to gray image
-        """
         image = cv2.imdecode(
             np.fromfile(self.image_path_list[idx], dtype=np.uint8),
             cv2.IMREAD_COLOR)
 
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        image = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
 
         return image.astype(np.float32)
 
@@ -204,20 +204,21 @@ if __name__ == '__main__':
 
     count = 0
     for per_sample in tqdm(textrecognitiondataset):
-        print(per_sample['image'].shape, per_sample['image'].dtype,
+        print('1111', per_sample['path'])
+        print('1111', per_sample['image'].shape, per_sample['image'].dtype,
               per_sample['label'])
 
-        # temp_dir = './temp'
+        # temp_dir = './temp1'
         # if not os.path.exists(temp_dir):
         #     os.makedirs(temp_dir)
 
         # image = np.ascontiguousarray(per_sample['image'], dtype=np.uint8)
-        # image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+        # image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
         # cv2.imencode('.jpg', image)[1].tofile(
         #     os.path.join(temp_dir, f'idx_{count}.jpg'))
 
-        if count < 10:
+        if count < 2:
             count += 1
         else:
             break
@@ -225,7 +226,7 @@ if __name__ == '__main__':
     from torch.utils.data import DataLoader
     collater = KeepRatioResizeTextRecognitionCollater(resize_h=32)
     train_loader = DataLoader(textrecognitiondataset,
-                              batch_size=256,
+                              batch_size=4,
                               shuffle=True,
                               num_workers=2,
                               collate_fn=collater)
@@ -235,7 +236,7 @@ if __name__ == '__main__':
         images, labels = data['image'], data['label']
         print(images.shape, images.dtype, len(labels))
 
-        if count < 5:
+        if count < 2:
             count += 1
         else:
             break
@@ -244,13 +245,13 @@ if __name__ == '__main__':
         text_recognition_dataset_path,
         set_name=[
             'aistudio_baidu_street',
-            'chinese_dataset',
-            'synthetic_chinese_string_dataset_testsubset',
-            'meta_self_learning_car',
-            'meta_self_learning_document_testsubset',
-            'meta_self_learning_hand',
-            'meta_self_learning_street',
-            'meta_self_learning_syn',
+            # 'chinese_dataset',
+            # 'synthetic_chinese_string_dataset_testsubset',
+            # 'meta_self_learning_car',
+            # 'meta_self_learning_document_testsubset',
+            # 'meta_self_learning_hand',
+            # 'meta_self_learning_street',
+            # 'meta_self_learning_syn',
         ],
         set_type='test',
         str_max_length=80,
@@ -260,20 +261,20 @@ if __name__ == '__main__':
 
     count = 0
     for per_sample in tqdm(textrecognitiondataset):
-        print(per_sample['image'].shape, per_sample['image'].dtype,
+        print('2222', per_sample['image'].shape, per_sample['image'].dtype,
               per_sample['label'])
 
-        # temp_dir = './temp'
+        # temp_dir = './temp2'
         # if not os.path.exists(temp_dir):
         #     os.makedirs(temp_dir)
 
         # image = np.ascontiguousarray(per_sample['image'], dtype=np.uint8)
-        # image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+        # image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
         # cv2.imencode('.jpg', image)[1].tofile(
         #     os.path.join(temp_dir, f'idx_{count}.jpg'))
 
-        if count < 10:
+        if count < 2:
             count += 1
         else:
             break

@@ -4,68 +4,13 @@ import time
 from tqdm import tqdm
 
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 
 from torch.cuda.amp import autocast
 
 from simpleAICV.face_detection.common import AverageMeter
-from tools.scripts import all_reduce_operation_in_group_for_variables
-
-
-def compute_voc_ap(recall, precision, use_07_metric=False):
-    if use_07_metric:
-        # use voc 2007 11 point metric
-        ap = 0.
-        for t in np.arange(0., 1.1, 0.1):
-            if np.sum(recall >= t) == 0:
-                p = 0
-            else:
-                # get max precision  for recall >= t
-                p = np.max(precision[recall >= t])
-            # average 11 recall point precision
-            ap = ap + p / 11.
-    else:
-        # use voc>=2010 metric,average all different recall precision as ap
-        # recall add first value 0. and last value 1.
-        mrecall = np.concatenate(([0.], recall, [1.]))
-        # precision add first value 0. and last value 0.
-        mprecision = np.concatenate(([0.], precision, [0.]))
-
-        # compute the precision envelope
-        for i in range(mprecision.size - 1, 0, -1):
-            mprecision[i - 1] = np.maximum(mprecision[i - 1], mprecision[i])
-
-        # to calculate area under PR curve, look for points where X axis (recall) changes value
-        i = np.where(mrecall[1:] != mrecall[:-1])[0]
-
-        # sum (\Delta recall) * prec
-        ap = np.sum((mrecall[i + 1] - mrecall[i]) * mprecision[i + 1])
-
-    return ap
-
-
-def compute_ious(a, b):
-    '''
-    :param a: [N,(x1,y1,x2,y2)]
-    :param b: [M,(x1,y1,x2,y2)]
-    :return:  IoU [N,M]
-    '''
-
-    a = np.expand_dims(a, axis=1)  # [N,1,4]
-    b = np.expand_dims(b, axis=0)  # [1,M,4]
-
-    overlap = np.maximum(0.0,
-                         np.minimum(a[..., 2:], b[..., 2:]) -
-                         np.maximum(a[..., :2], b[..., :2]))  # [N,M,(w,h)]
-
-    overlap = np.prod(overlap, axis=-1)  # [N,M]
-
-    area_a = np.prod(a[..., 2:] - a[..., :2], axis=-1)
-    area_b = np.prod(b[..., 2:] - b[..., :2], axis=-1)
-
-    iou = overlap / (area_a + area_b - overlap)
-
-    return iou
+from tools.scripts import all_reduce_operation_in_group_for_variables, compute_voc_ap, compute_ious
 
 
 def cal_precision_recall(gts, preds, image_size, per_iou_threshold):
@@ -184,8 +129,8 @@ def evaluate_voc_detection(val_loader, model, criterion, decoder, config):
         model_on_cuda = next(model.parameters()).is_cuda
         end = time.time()
         for _, data in tqdm(enumerate(val_loader)):
-            paths, images, annots, scales, sizes = data['path'], data[
-                'image'], data['annots'], data['scale'], data['size']
+            images, annots, scales, sizes = data['image'], data[
+                'annots'], data['scale'], data['size']
             if model_on_cuda:
                 images, annots = images.cuda(), annots.cuda()
             torch.cuda.synchronize()
@@ -465,14 +410,13 @@ def train_face_detection(train_loader, model, criterion, optimizer, scheduler,
         images, targets = data['image'], data['annots']
         images, targets = images.cuda(), targets.cuda()
 
+        skip_batch_flag = False
+
         if torch.any(torch.isinf(images)) or torch.any(torch.isinf(targets)):
-            continue
+            skip_batch_flag = True
 
         if torch.any(torch.isnan(images)) or torch.any(torch.isnan(targets)):
-            continue
-
-        if torch.sum(images) == 0:
-            continue
+            skip_batch_flag = True
 
         if config.use_amp:
             with autocast():
@@ -505,10 +449,8 @@ def train_face_detection(train_loader, model, criterion, optimizer, scheduler,
             inf_nan_flag = True
 
         if loss == 0. or inf_nan_flag:
-            log_info = f'zero loss or nan loss or inf loss!'
-            logger.info(log_info) if local_rank == 0 else None
-            optimizer.zero_grad()
-            continue
+            print(f'GPU id:{local_rank},zero loss or nan loss or inf loss!')
+            skip_batch_flag = True
 
         loss = loss / config.accumulation_steps
         for key, value in loss_value.items():
@@ -529,22 +471,65 @@ def train_face_detection(train_loader, model, criterion, optimizer, scheduler,
                 with model.no_sync():
                     loss.backward()
 
+        if hasattr(config, 'skip_inf_nan_grad') and config.skip_inf_nan_grad:
+            grad_inf_nan_flag = False
+            for _, param in model.named_parameters():
+                per_weight_grad = param.grad
+                if per_weight_grad is not None:
+                    if torch.any(torch.isnan(per_weight_grad)) or torch.any(
+                            torch.isnan(per_weight_grad)):
+                        grad_inf_nan_flag = True
+            if grad_inf_nan_flag:
+                print(f'GPU id:{local_rank},nan grad or inf grad!')
+                skip_batch_flag = True
+
+        [skip_batch_flag] = all_reduce_operation_in_group_for_variables(
+            variables=[skip_batch_flag],
+            operator=torch.distributed.ReduceOp.SUM,
+            group=config.group)
+
+        if skip_batch_flag:
+            log_info = f'skip this batch!'
+            logger.info(log_info) if local_rank == 0 else None
+            optimizer.zero_grad()
+            continue
+
+        torch.distributed.barrier()
+
         if config.use_amp:
             if iter_index % config.accumulation_steps == 0:
-                if hasattr(config,
-                           'clip_max_norm') and config.clip_max_norm > 0:
+                if (hasattr(config, 'clip_grad_value')
+                        and config.clip_grad_value
+                        > 0) or (hasattr(config, 'clip_max_norm')
+                                 and config.clip_max_norm > 0):
                     config.scaler.unscale_(optimizer)
-                    torch.nn.utils.clip_grad_norm_(model.parameters(),
-                                                   config.clip_max_norm)
+
+                    if hasattr(config, 'clip_grad_value'):
+                        torch.nn.utils.clip_grad_value_(
+                            model.parameters(), config.clip_grad_value)
+
+                    if hasattr(config, 'clip_max_norm'):
+                        torch.nn.utils.clip_grad_norm_(model.parameters(),
+                                                       config.clip_max_norm)
+
                 config.scaler.step(optimizer)
                 config.scaler.update()
                 optimizer.zero_grad()
         else:
             if iter_index % config.accumulation_steps == 0:
-                if hasattr(config,
-                           'clip_max_norm') and config.clip_max_norm > 0:
-                    torch.nn.utils.clip_grad_norm_(model.parameters(),
-                                                   config.clip_max_norm)
+                if (hasattr(config, 'clip_grad_value')
+                        and config.clip_grad_value
+                        > 0) or (hasattr(config, 'clip_max_norm')
+                                 and config.clip_max_norm > 0):
+
+                    if hasattr(config, 'clip_grad_value'):
+                        torch.nn.utils.clip_grad_value_(
+                            model.parameters(), config.clip_grad_value)
+
+                    if hasattr(config, 'clip_max_norm'):
+                        torch.nn.utils.clip_grad_norm_(model.parameters(),
+                                                       config.clip_max_norm)
+
                 optimizer.step()
                 optimizer.zero_grad()
 

@@ -10,6 +10,7 @@ import argparse
 
 import torch
 import torch.nn as nn
+
 from torch.utils.data import DataLoader
 
 from tools.scripts import test_instance_segmentation
@@ -17,7 +18,8 @@ from tools.utils import get_logger, set_seed, compute_macs_and_params
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='PyTorch Detection Testing')
+    parser = argparse.ArgumentParser(
+        description='PyTorch Instance Segmentation Testing')
     parser.add_argument('--work-dir',
                         type=str,
                         help='path for get testing config')

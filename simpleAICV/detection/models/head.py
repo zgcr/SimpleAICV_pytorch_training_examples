@@ -11,8 +11,6 @@ import math
 import torch
 import torch.nn as nn
 
-from simpleAICV.detection.models.dcnv2 import DeformableConv2d
-
 
 class RetinaClsHead(nn.Module):
 
@@ -48,6 +46,7 @@ class RetinaClsHead(nn.Module):
     def forward(self, x):
         x = self.cls_head(x)
         x = self.cls_out(x)
+        x = x.float()
         x = self.sigmoid(x)
 
         return x
@@ -174,250 +173,12 @@ class FCOSClsRegCntHead(nn.Module):
         else:
             center_output = self.center_out(cls_x)
 
+        cls_output = cls_output.float()
+        center_output = center_output.float()
         cls_output = self.sigmoid(cls_output)
         center_output = self.sigmoid(center_output)
 
         return cls_output, reg_output, center_output
-
-
-class CenterNetHetRegWhHead(nn.Module):
-
-    def __init__(self,
-                 inplanes,
-                 num_classes,
-                 planes=[256, 128, 64],
-                 num_layers=3):
-        super(CenterNetHetRegWhHead, self).__init__()
-        self.inplanes = inplanes
-        layers = []
-        for i in range(num_layers):
-            layers.append(
-                DeformableConv2d(self.inplanes,
-                                 planes[i],
-                                 kernel_size=3,
-                                 stride=1,
-                                 padding=1,
-                                 dilation=1,
-                                 groups=1,
-                                 bias=False))
-            layers.append(nn.BatchNorm2d(planes[i]))
-            layers.append(nn.ReLU(inplace=True))
-            layers.append(
-                nn.ConvTranspose2d(planes[i],
-                                   planes[i],
-                                   kernel_size=4,
-                                   stride=2,
-                                   padding=1,
-                                   output_padding=0,
-                                   bias=False))
-            layers.append(nn.BatchNorm2d(planes[i]))
-            layers.append(nn.ReLU(inplace=True))
-            self.inplanes = planes[i]
-
-        self.public_deconv_head = nn.Sequential(*layers)
-
-        self.heatmap_head = nn.Sequential(
-            nn.Conv2d(planes[-1],
-                      planes[-1],
-                      kernel_size=3,
-                      stride=1,
-                      padding=1,
-                      bias=True),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(planes[-1],
-                      num_classes,
-                      kernel_size=1,
-                      stride=1,
-                      padding=0,
-                      bias=True),
-        )
-        self.offset_head = nn.Sequential(
-            nn.Conv2d(planes[-1],
-                      planes[-1],
-                      kernel_size=3,
-                      stride=1,
-                      padding=1,
-                      bias=True),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(planes[-1],
-                      2,
-                      kernel_size=1,
-                      stride=1,
-                      padding=0,
-                      bias=True),
-        )
-        self.wh_head = nn.Sequential(
-            nn.Conv2d(planes[-1],
-                      planes[-1],
-                      kernel_size=3,
-                      stride=1,
-                      padding=1,
-                      bias=True),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(planes[-1],
-                      2,
-                      kernel_size=1,
-                      stride=1,
-                      padding=0,
-                      bias=True),
-        )
-        self.sigmoid = nn.Sigmoid()
-
-        for m in self.public_deconv_head.modules():
-            if isinstance(m, nn.ConvTranspose2d):
-                w = m.weight.data
-                f = math.ceil(w.size(2) / 2)
-                c = (2 * f - 1 - f % 2) / (2. * f)
-                for i in range(w.size(2)):
-                    for j in range(w.size(3)):
-                        w[0, 0, i, j] = (1 - math.fabs(i / f - c)) * (
-                            1 - math.fabs(j / f - c))
-                for c in range(1, w.size(0)):
-                    w[c, 0, :, :] = w[0, 0, :, :]
-
-        self.heatmap_head[-1].bias.data.fill_(-2.19)
-
-        for m in self.offset_head.modules():
-            if isinstance(m, nn.Conv2d):
-                nn.init.normal_(m.weight, std=0.001)
-                nn.init.constant_(m.bias, 0)
-
-        for m in self.wh_head.modules():
-            if isinstance(m, nn.Conv2d):
-                nn.init.normal_(m.weight, std=0.001)
-                nn.init.constant_(m.bias, 0)
-
-    def forward(self, x):
-        x = self.public_deconv_head(x)
-
-        heatmap_output = self.heatmap_head(x)
-        offset_output = self.offset_head(x)
-        wh_output = self.wh_head(x)
-
-        heatmap_output = self.sigmoid(heatmap_output)
-
-        return heatmap_output, offset_output, wh_output
-
-
-class TTFHetWhHead(nn.Module):
-
-    def __init__(self,
-                 inplanes,
-                 num_classes,
-                 planes=[256, 128, 64],
-                 short_cut_layers_num=[1, 2],
-                 num_layers=3):
-        super(TTFHetWhHead, self).__init__()
-
-        self.deconv_layers = nn.ModuleList()
-        inter_planes = inplanes[-1]
-        for i in range(num_layers):
-            self.deconv_layers.append(
-                nn.Sequential(
-                    DeformableConv2d(inter_planes,
-                                     planes[i],
-                                     kernel_size=3,
-                                     stride=1,
-                                     padding=1,
-                                     dilation=1,
-                                     groups=1,
-                                     bias=False), nn.BatchNorm2d(planes[i]),
-                    nn.ReLU(inplace=True),
-                    nn.ConvTranspose2d(planes[i],
-                                       planes[i],
-                                       kernel_size=4,
-                                       stride=2,
-                                       padding=1,
-                                       output_padding=0,
-                                       bias=False), nn.BatchNorm2d(planes[i]),
-                    nn.ReLU(inplace=True)))
-            inter_planes = planes[i]
-
-        self.shortcut_layers = nn.ModuleList()
-        for i in range(num_layers - 1):
-            single_shortcut_layer = []
-            inter_planes = inplanes[len(inplanes) - i - 2]
-            for j in range(short_cut_layers_num[i]):
-                single_shortcut_layer.append(
-                    nn.Conv2d(inter_planes,
-                              planes[i],
-                              kernel_size=3,
-                              stride=1,
-                              padding=1,
-                              bias=True))
-                inter_planes = planes[i]
-                if j < short_cut_layers_num[i] - 1:
-                    single_shortcut_layer.append(nn.ReLU(inplace=True))
-            single_shortcut_layer = nn.Sequential(*single_shortcut_layer)
-            self.shortcut_layers.append(single_shortcut_layer)
-
-        self.heatmap_head = nn.Sequential(
-            nn.Conv2d(planes[-1],
-                      planes[-1],
-                      kernel_size=3,
-                      stride=1,
-                      padding=1,
-                      bias=True),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(planes[-1],
-                      num_classes,
-                      kernel_size=1,
-                      stride=1,
-                      padding=0,
-                      bias=True),
-        )
-        self.wh_head = nn.Sequential(
-            nn.Conv2d(planes[-1],
-                      planes[-1],
-                      kernel_size=3,
-                      stride=1,
-                      padding=1,
-                      bias=True),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(planes[-1],
-                      4,
-                      kernel_size=1,
-                      stride=1,
-                      padding=0,
-                      bias=True),
-        )
-        self.sigmoid = nn.Sigmoid()
-        self.relu = nn.ReLU(inplace=True)
-
-        for m in self.modules():
-            if isinstance(m, nn.ConvTranspose2d):
-                w = m.weight.data
-                f = math.ceil(w.size(2) / 2)
-                c = (2 * f - 1 - f % 2) / (2. * f)
-                for i in range(w.size(2)):
-                    for j in range(w.size(3)):
-                        w[0, 0, i, j] = (1 - math.fabs(i / f - c)) * (
-                            1 - math.fabs(j / f - c))
-                for c in range(1, w.size(0)):
-                    w[c, 0, :, :] = w[0, 0, :, :]
-            elif isinstance(m, nn.Conv2d):
-                nn.init.normal_(m.weight, std=0.01)
-                if m.bias is not None:
-                    nn.init.constant_(m.bias, val=0)
-
-        prior = 0.01
-        b = -math.log((1 - prior) / prior)
-        self.heatmap_head[-1].bias.data.fill_(b)
-
-    def forward(self, inputs):
-        x = inputs[-1]
-        for i, upsample_layer in enumerate(self.deconv_layers):
-            x = upsample_layer(x)
-            if i < len(self.shortcut_layers):
-                shortcut = self.shortcut_layers[i](inputs[-i - 2])
-                x = x + shortcut
-
-        heatmap_output = self.heatmap_head(x)
-        wh_output = self.relu(self.wh_head(x))
-
-        heatmap_output = self.sigmoid(heatmap_output)
-
-        return heatmap_output, wh_output
 
 
 class DETRClsRegHead(nn.Module):
@@ -446,6 +207,7 @@ class DETRClsRegHead(nn.Module):
 
         del x
 
+        reg_output = reg_output.float()
         reg_output = self.sigmoid(reg_output)
 
         return cls_output, reg_output
@@ -501,33 +263,10 @@ if __name__ == '__main__':
         macs, params = clever_format([macs, params], '%.3f')
         print(f'3333, macs: {macs}, params: {params}')
 
-    inputs = torch.randn(3, 2048, 20, 20)
-    net = CenterNetHetRegWhHead(2048, 80, planes=[256, 128, 64], num_layers=3)
-    from thop import profile
-    from thop import clever_format
-    macs, params = profile(net, inputs=(inputs, ), verbose=False)
-    macs, params = clever_format([macs, params], '%.3f')
-    print(f'4444, macs: {macs}, params: {params}')
-
-    inputs = [
-        torch.randn(3, 256, 80, 80),
-        torch.randn(3, 512, 40, 40),
-        torch.randn(3, 1024, 20, 20)
-    ]
-    net = TTFHetWhHead([256, 512, 1024],
-                       80,
-                       planes=[256, 128, 64],
-                       num_layers=3)
-    from thop import profile
-    from thop import clever_format
-    macs, params = profile(net, inputs=(inputs, ), verbose=False)
-    macs, params = clever_format([macs, params], '%.3f')
-    print(f'5555, macs: {macs}, params: {params}')
-
     inputs = torch.randn(6, 3, 100, 256)
     net = DETRClsRegHead(hidden_inplanes=256, num_classes=80, num_layers=3)
     from thop import profile
     from thop import clever_format
     macs, params = profile(net, inputs=(inputs, ), verbose=False)
     macs, params = clever_format([macs, params], '%.3f')
-    print(f'6666, macs: {macs}, params: {params}')
+    print(f'4444, macs: {macs}, params: {params}')

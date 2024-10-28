@@ -27,6 +27,7 @@ class ILSVRC2012Dataset(Dataset):
                 per_image_path = os.path.join(per_sub_class_dir,
                                               per_image_name)
                 self.image_path_list.append(per_image_path)
+        self.image_path_list = sorted(self.image_path_list)
 
         self.class_name_to_label = {
             sub_class_name: i
@@ -47,10 +48,12 @@ class ILSVRC2012Dataset(Dataset):
         return len(self.image_path_list)
 
     def __getitem__(self, idx):
+        path = self.image_path_list[idx]
         image = self.load_image(idx)
         label = self.load_label(idx)
 
         sample = {
+            'path': path,
             'image': image,
             'label': label,
         }
@@ -120,11 +123,11 @@ if __name__ == '__main__':
 
     count = 0
     for per_sample in tqdm(ilsvrc2012traindataset):
-        print(per_sample['image'].shape, per_sample['label'].shape,
-              per_sample['label'], type(per_sample['image']),
-              type(per_sample['label']))
+        print(per_sample['path'], per_sample['image'].shape,
+              per_sample['label'].shape, per_sample['label'],
+              type(per_sample['image']), type(per_sample['label']))
 
-        # temp_dir = './temp'
+        # temp_dir = './temp1'
         # if not os.path.exists(temp_dir):
         #     os.makedirs(temp_dir)
 
@@ -143,7 +146,7 @@ if __name__ == '__main__':
         # cv2.imencode('.jpg', image)[1].tofile(
         #     os.path.join(temp_dir, f'idx_{count}.jpg'))
 
-        if count < 10:
+        if count < 2:
             count += 1
         else:
             break
@@ -161,7 +164,7 @@ if __name__ == '__main__':
         images, labels = data['image'], data['label']
         print(images.shape, labels.shape)
         print(images.dtype, labels.dtype)
-        if count < 10:
+        if count < 2:
             count += 1
         else:
             break
@@ -178,11 +181,11 @@ if __name__ == '__main__':
 
     count = 0
     for per_sample in tqdm(ilsvrc2012valdataset):
-        print(per_sample['image'].shape, per_sample['label'].shape,
-              per_sample['label'], type(per_sample['image']),
-              type(per_sample['label']))
+        print(per_sample['path'], per_sample['image'].shape,
+              per_sample['label'].shape, per_sample['label'],
+              type(per_sample['image']), type(per_sample['label']))
 
-        if count < 10:
+        if count < 2:
             count += 1
         else:
             break
@@ -200,7 +203,7 @@ if __name__ == '__main__':
         images, labels = data['image'], data['label']
         print(images.shape, labels.shape)
         print(images.dtype, labels.dtype)
-        if count < 10:
+        if count < 2:
             count += 1
         else:
             break
@@ -226,11 +229,11 @@ if __name__ == '__main__':
 
     count = 0
     for per_sample in tqdm(ilsvrc2012traindataset):
-        print(per_sample['image'].shape, per_sample['label'].shape,
-              per_sample['label'], type(per_sample['image']),
-              type(per_sample['label']))
+        print(per_sample['path'], per_sample['image'].shape,
+              per_sample['label'].shape, per_sample['label'],
+              type(per_sample['image']), type(per_sample['label']))
 
-        if count < 10:
+        if count < 2:
             count += 1
         else:
             break
@@ -248,7 +251,7 @@ if __name__ == '__main__':
         images, labels = data['image'], data['label']
         print(images.shape, labels.shape)
         print(images.dtype, labels.dtype)
-        if count < 10:
+        if count < 2:
             count += 1
         else:
             break
@@ -267,11 +270,11 @@ if __name__ == '__main__':
 
     count = 0
     for per_sample in tqdm(ilsvrc2012traindataset):
-        print(per_sample['image'].shape, per_sample['label'].shape,
-              per_sample['label'], type(per_sample['image']),
-              type(per_sample['label']))
+        print(per_sample['path'], per_sample['image'].shape,
+              per_sample['label'].shape, per_sample['label'],
+              type(per_sample['image']), type(per_sample['label']))
 
-        # temp_dir = './temp'
+        # temp_dir = './temp1'
         # if not os.path.exists(temp_dir):
         #     os.makedirs(temp_dir)
 
@@ -290,7 +293,7 @@ if __name__ == '__main__':
         # cv2.imencode('.jpg', image)[1].tofile(
         #     os.path.join(temp_dir, f'idx_{count}.jpg'))
 
-        if count < 10:
+        if count < 2:
             count += 1
         else:
             break
@@ -308,9 +311,9 @@ if __name__ == '__main__':
                                                  label_smoothing=0.1,
                                                  num_classes=1000)
     train_loader = DataLoader(ilsvrc2012traindataset,
-                              batch_size=8,
+                              batch_size=4,
                               shuffle=True,
-                              num_workers=4,
+                              num_workers=2,
                               collate_fn=collater)
 
     for i, data in enumerate(tqdm(train_loader)):
@@ -318,7 +321,7 @@ if __name__ == '__main__':
         print(images.shape, labels.shape)
         print(images.dtype, labels.dtype, torch.unique(labels))
 
-        # temp_dir = './temp'
+        # temp_dir = './temp2'
         # if not os.path.exists(temp_dir):
         #     os.makedirs(temp_dir)
 
@@ -335,7 +338,7 @@ if __name__ == '__main__':
         #         os.path.join(temp_dir, f'idx_{i}_count_{count}.jpg'))
         #     count += 1
 
-        if i < 1:
+        if i < 2:
             i += 1
         else:
             break

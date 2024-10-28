@@ -7,11 +7,12 @@ BASE_DIR = os.path.dirname(
 sys.path.append(BASE_DIR)
 
 import numpy as np
-import scipy
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+from torch.utils.checkpoint import checkpoint
 
 from simpleAICV.detection.models import backbones
 from simpleAICV.detection.models.backbones.detr_resnet import DINOPositionEmbeddingBlock
@@ -39,11 +40,13 @@ class DINODETR(nn.Module):
                  dn_number=100,
                  dn_box_noise_scale=0.4,
                  dn_label_noise_ratio=0.5,
-                 dn_labelbook_size=80):
+                 dn_labelbook_size=80,
+                 use_gradient_checkpoint=False):
         super(DINODETR, self).__init__()
         self.hidden_inplanes = hidden_inplanes
         self.query_nums = query_nums
         self.num_classes = num_classes
+        self.use_gradient_checkpoint = use_gradient_checkpoint
 
         assert num_classes == dn_labelbook_size
         self.label_encoder = nn.Embedding(dn_labelbook_size + 1,
@@ -58,6 +61,7 @@ class DINODETR(nn.Module):
         self.backbone = backbones.__dict__[backbone_type](
             **{
                 'pretrained_path': backbone_pretrained_path,
+                'use_gradient_checkpoint': use_gradient_checkpoint,
             })
         self.position_embedding = DINOPositionEmbeddingBlock(
             inplanes=hidden_inplanes // 2,
@@ -368,6 +372,7 @@ class DINODETR(nn.Module):
             layer_delta_unsig = layer_bbox_embed(layer_hs)
             layer_outputs_unsig = layer_delta_unsig + self.inverse_sigmoid(
                 layer_ref_sig)
+            layer_outputs_unsig = layer_outputs_unsig.float()
             layer_outputs_unsig = layer_outputs_unsig.sigmoid()
             outputs_coord_list.append(layer_outputs_unsig)
         outputs_coord_list = torch.stack(outputs_coord_list)
@@ -487,7 +492,7 @@ if __name__ == '__main__':
     train_loader = DataLoader(cocodataset,
                               batch_size=1,
                               shuffle=True,
-                              num_workers=2,
+                              num_workers=1,
                               collate_fn=collater)
 
     net = resnet50_dinodetr()
@@ -504,14 +509,32 @@ if __name__ == '__main__':
         images = images.cuda()
         masks = masks.cuda()
 
-        from thop import profile
-        from thop import clever_format
-        macs, params = profile(net, inputs=(images, masks), verbose=False)
-        macs, params = clever_format([macs, params], '%.3f')
-        print(f'1111, macs: {macs}, params: {params}')
+        outs = net(torch.autograd.Variable(images),
+                   torch.autograd.Variable(masks))
+        print('1111', outs.keys())
+        print('2222', outs['pred_logits'].shape)
+        print('2222', outs['pred_boxes'].shape)
 
-        # outs = net(torch.autograd.Variable(images),
-        #            torch.autograd.Variable(masks))
-        # print('2222', outs.keys())
+        break
+
+    net = resnet50_dinodetr(use_gradient_checkpoint=True)
+
+    for data in tqdm(train_loader):
+        images, annots, masks, scales, sizes = data['image'], data[
+            'annots'], data['mask'], data['scale'], data['size']
+        print('0000', images.shape, annots.shape, masks.shape, scales.shape,
+              sizes.shape)
+        print('0000', images.dtype, annots.dtype, masks.dtype, scales.dtype,
+              sizes.dtype)
+
+        net = net.cuda()
+        images = images.cuda()
+        masks = masks.cuda()
+
+        outs = net(torch.autograd.Variable(images),
+                   torch.autograd.Variable(masks))
+        print('1111', outs.keys())
+        print('2222', outs['pred_logits'].shape)
+        print('2222', outs['pred_boxes'].shape)
 
         break

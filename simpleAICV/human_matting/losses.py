@@ -311,7 +311,7 @@ if __name__ == '__main__':
     from tqdm import tqdm
 
     from simpleAICV.human_matting.datasets.human_matting_dataset import HumanMattingDataset
-    from simpleAICV.human_matting.common import RandomHorizontalFlip, YoloStyleResize, Resize, Normalize, ResizeHumanMattingCollater
+    from simpleAICV.human_matting.common import RandomHorizontalFlip, YoloStyleResize, Resize, Normalize, HumanMattingCollater
 
     human_matting_dataset = HumanMattingDataset(
         human_matting_dataset_path,
@@ -321,24 +321,25 @@ if __name__ == '__main__':
             'P3M10K',
         ],
         set_type='train',
-        kernel_size_range=15,
+        max_side=2048,
+        kernel_size_range=[10, 15],
         transform=transforms.Compose([
-            RandomHorizontalFlip(prob=1.0),
-            # YoloStyleResize(resize=832, divisor=64, stride=64),
+            # YoloStyleResize(resize=832),
             Resize(resize=832),
+            RandomHorizontalFlip(prob=1.0),
             Normalize(),
         ]))
 
     from torch.utils.data import DataLoader
-    collater = ResizeHumanMattingCollater(resize=832, stride=64)
+    collater = HumanMattingCollater(resize=832)
     train_loader = DataLoader(human_matting_dataset,
                               batch_size=4,
                               shuffle=True,
                               num_workers=2,
                               collate_fn=collater)
 
-    from simpleAICV.human_matting.models import van_b2_pfan_matting
-    net = van_b2_pfan_matting()
+    from simpleAICV.human_matting.models import vanb3_pfan_matting
+    net = vanb3_pfan_matting()
 
     loss = GlobalTrimapCELoss()
     for data in tqdm(train_loader):

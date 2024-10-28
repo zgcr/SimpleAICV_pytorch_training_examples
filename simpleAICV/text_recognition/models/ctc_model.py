@@ -9,6 +9,8 @@ sys.path.append(BASE_DIR)
 import torch
 import torch.nn as nn
 
+from torch.utils.checkpoint import checkpoint
+
 from simpleAICV.text_recognition.models import backbones
 from simpleAICV.text_recognition.models import encoder
 from simpleAICV.text_recognition.models import predictor
@@ -20,13 +22,18 @@ __all__ = [
 
 class CTCModel(nn.Module):
 
-    def __init__(self, model_config):
+    def __init__(self, model_config, use_gradient_checkpoint=False):
         super(CTCModel, self).__init__()
+        self.use_gradient_checkpoint = use_gradient_checkpoint
+
+        model_config['backbone']['param'][
+            'use_gradient_checkpoint'] = use_gradient_checkpoint
+
         self.backbone = backbones.__dict__[model_config['backbone']['name']](
             **model_config['backbone']['param'])
 
         model_config['encoder']['param'][
-            'inplanes'] = self.backbone.out_channels
+            'inplanes'] = self.backbone.out_channels[-1]
 
         self.encoder = encoder.__dict__[model_config['encoder']['name']](
             **model_config['encoder']['param'])
@@ -40,14 +47,24 @@ class CTCModel(nn.Module):
     def forward(self, x):
         # [B,C,H,W]
         x = self.backbone(x)
+        x = x[-1]
+
         # [B,C,W]
         x = torch.mean(x, dim=2)
         # [B,C,W]->[B,W,C]
         x = x.permute(0, 2, 1)
-        # [B,W,C]
-        x = self.encoder(x)
-        # [B,W,C]->[B,W,num_classes]
-        x = self.predictor(x)
+
+        if self.use_gradient_checkpoint:
+            x = checkpoint(self.encoder, x, use_reentrant=False)
+        else:
+            # [B,W,C]
+            x = self.encoder(x)
+
+        if self.use_gradient_checkpoint:
+            x = checkpoint(self.predictor, x, use_reentrant=False)
+        else:
+            # [B,W,C]->[B,W,num_classes]
+            x = self.predictor(x)
 
         return x
 
@@ -70,45 +87,8 @@ if __name__ == '__main__':
 
     model_config = {
         'backbone': {
-            'name': 'RepVGGEnhanceNetBackbone',
-            'param': {
-                'inplanes': 1,
-                'planes': [32, 64, 128, 256],
-                'k': 4,
-                'deploy': True,
-                'pretrained_path': '',
-            }
-        },
-        'encoder': {
-            'name': 'BiLSTMEncoder',
-            'param': {},
-        },
-        'predictor': {
-            'name': 'CTCEnhancePredictor',
-            'param': {
-                'hidden_planes': 192,
-                'num_classes': 12114,
-            }
-        },
-    }
-
-    net = CTCModel(model_config)
-    image_h, image_w = 32, 512
-    from thop import profile
-    from thop import clever_format
-    macs, params = profile(net,
-                           inputs=(torch.randn(1, 1, image_h, image_w), ),
-                           verbose=False)
-    macs, params = clever_format([macs, params], '%.3f')
-    print(f'1111, macs: {macs}, params: {params}')
-    outs = net(torch.autograd.Variable(torch.randn(3, 1, image_h, image_w)))
-    print('2222', outs.shape)
-
-    model_config = {
-        'backbone': {
             'name': 'resnet50backbone',
             'param': {
-                'inplanes': 1,
                 'pretrained_path': '',
             }
         },
@@ -117,7 +97,7 @@ if __name__ == '__main__':
             'param': {},
         },
         'predictor': {
-            'name': 'CTCEnhancePredictor',
+            'name': 'CTCPredictor',
             'param': {
                 'hidden_planes': 512,
                 'num_classes': 12114,
@@ -130,33 +110,28 @@ if __name__ == '__main__':
     from thop import profile
     from thop import clever_format
     macs, params = profile(net,
-                           inputs=(torch.randn(1, 1, image_h, image_w), ),
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
                            verbose=False)
     macs, params = clever_format([macs, params], '%.3f')
     print(f'1111, macs: {macs}, params: {params}')
-    outs = net(torch.autograd.Variable(torch.randn(3, 1, image_h, image_w)))
+    outs = net(torch.autograd.Variable(torch.randn(4, 3, image_h, image_w)))
     print('2222', outs.shape)
 
     model_config = {
         'backbone': {
-            'name': 'van_b1_backbone',
+            'name': 'convformerm36backbone',
             'param': {
-                'inplanes': 1,
+                'pretrained_path': '',
             }
         },
         'encoder': {
-            'name': 'TransformerEncoder',
-            'param': {
-                'encoder_layer_nums': 4,
-                'head_nums': 4,
-                'feedforward_ratio': 4,
-                'encoding_width': 200,
-            },
+            'name': 'BiLSTMEncoder',
+            'param': {},
         },
         'predictor': {
-            'name': 'CTCEnhancePredictor',
+            'name': 'CTCPredictor',
             'param': {
-                'hidden_planes': 256,
+                'hidden_planes': 512,
                 'num_classes': 12114,
             }
         },
@@ -167,9 +142,14 @@ if __name__ == '__main__':
     from thop import profile
     from thop import clever_format
     macs, params = profile(net,
-                           inputs=(torch.randn(1, 1, image_h, image_w), ),
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
                            verbose=False)
     macs, params = clever_format([macs, params], '%.3f')
     print(f'1111, macs: {macs}, params: {params}')
-    outs = net(torch.autograd.Variable(torch.randn(3, 1, image_h, image_w)))
+    outs = net(torch.autograd.Variable(torch.randn(4, 3, image_h, image_w)))
+    print('2222', outs.shape)
+
+    net = CTCModel(model_config, use_gradient_checkpoint=True)
+    image_h, image_w = 32, 512
+    outs = net(torch.autograd.Variable(torch.randn(1, 3, image_h, image_w)))
     print('2222', outs.shape)

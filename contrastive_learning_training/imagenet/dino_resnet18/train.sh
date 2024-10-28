@@ -1,1 +1,0 @@
-OMP_NUM_THREADS=1 CUDA_VISIBLE_DEVICES=0,1,2,3 python -m torch.distributed.run --nproc_per_node=4 --master_addr 127.0.1.0 --master_port 10000 ../../../tools/train_dino_self_supervised_model.py --work-dir ./

@@ -4,6 +4,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 
+from torch.utils.checkpoint import checkpoint
+
 __all__ = [
     'van_b0',
     'van_b1',
@@ -24,8 +26,8 @@ class DWConv(nn.Module):
                                 kernel_size=3,
                                 stride=1,
                                 padding=1,
-                                groups=inplanes,
-                                bias=True)
+                                bias=True,
+                                groups=inplanes)
 
     def forward(self, x):
         x = self.dwconv(x)
@@ -70,8 +72,8 @@ class LKA(nn.Module):
                                       kernel_size=7,
                                       stride=1,
                                       padding=9,
-                                      dilation=3,
                                       groups=inplanes,
+                                      dilation=3,
                                       bias=True)
         self.conv1 = nn.Conv2d(inplanes,
                                inplanes,
@@ -81,12 +83,14 @@ class LKA(nn.Module):
                                bias=True)
 
     def forward(self, x):
-        u = x.clone()
+        u = x
+
         attn = self.conv0(x)
         attn = self.conv_spatial(attn)
         attn = self.conv1(attn)
+        attn = u * attn
 
-        return u * attn
+        return attn
 
 
 class Attention(nn.Module):
@@ -100,7 +104,7 @@ class Attention(nn.Module):
         self.proj_2 = nn.Conv2d(inplanes, inplanes, 1)
 
     def forward(self, x):
-        shorcut = x.clone()
+        shorcut = x
 
         x = self.proj_1(x)
         x = self.activation(x)
@@ -163,10 +167,11 @@ class Block(nn.Module):
                        hidden_planes=int(inplanes * mlp_ratio),
                        planes=inplanes,
                        dropout_prob=dropout_prob)
-        self.layer_scale_1 = nn.Parameter(0.01 * torch.ones(
+
+        self.layer_scale_1 = nn.Parameter(1e-5 * torch.ones(
             (1, inplanes, 1, 1)),
                                           requires_grad=True)
-        self.layer_scale_2 = nn.Parameter(0.01 * torch.ones(
+        self.layer_scale_2 = nn.Parameter(1e-5 * torch.ones(
             (1, inplanes, 1, 1)),
                                           requires_grad=True)
 
@@ -212,12 +217,14 @@ class VAN(nn.Module):
                  block_nums=[3, 4, 6, 3],
                  dropout_prob=0.,
                  drop_path_prob=0.,
-                 num_classes=1000):
+                 num_classes=1000,
+                 use_gradient_checkpoint=False):
         super(VAN, self).__init__()
         assert len(embedding_planes) == len(mlp_ratios) == len(block_nums)
 
         self.block_nums = block_nums
         self.num_classes = num_classes
+        self.use_gradient_checkpoint = use_gradient_checkpoint
 
         drop_path_prob_list = [
             x for x in np.linspace(0, drop_path_prob, sum(block_nums))
@@ -263,9 +270,9 @@ class VAN(nn.Module):
                 nn.init.trunc_normal_(m.weight, std=.02)
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0)
-            elif isinstance(m, nn.LayerNorm):
+            elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
+                nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
-                nn.init.constant_(m.weight, 1.0)
             elif isinstance(m, nn.Conv2d):
                 fan_out = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
                 fan_out //= m.groups
@@ -279,12 +286,21 @@ class VAN(nn.Module):
             block = getattr(self, f"block{i + 1}")
             norm = getattr(self, f"norm{i + 1}")
 
-            x = patch_embed(x)
+            if self.use_gradient_checkpoint:
+                x = checkpoint(patch_embed, x, use_reentrant=False)
+            else:
+                x = patch_embed(x)
 
             for blk in block:
-                x = blk(x)
+                if self.use_gradient_checkpoint:
+                    x = checkpoint(blk, x, use_reentrant=False)
+                else:
+                    x = blk(x)
 
-            x = norm(x)
+            if self.use_gradient_checkpoint:
+                x = checkpoint(norm, x, use_reentrant=False)
+            else:
+                x = norm(x)
 
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
@@ -411,3 +427,41 @@ if __name__ == '__main__':
     macs, params = clever_format([macs, params], '%.3f')
     out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
     print(f'1111, macs: {macs}, params: {params},out_shape: {out.shape}')
+
+    net = van_b4(num_classes=1000)
+    image_h, image_w = 224, 224
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    print(f'1111, macs: {macs}, params: {params},out_shape: {out.shape}')
+
+    net = van_b5(num_classes=1000)
+    image_h, image_w = 224, 224
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    print(f'1111, macs: {macs}, params: {params},out_shape: {out.shape}')
+
+    net = van_b6(num_classes=1000)
+    image_h, image_w = 224, 224
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    print(f'1111, macs: {macs}, params: {params},out_shape: {out.shape}')
+
+    net = van_b6(num_classes=1000, use_gradient_checkpoint=True)
+    image_h, image_w = 224, 224
+    out = net(torch.autograd.Variable(torch.randn(4, 3, image_h, image_w)))
+    print(f'2222, out_shape: {out.shape}')

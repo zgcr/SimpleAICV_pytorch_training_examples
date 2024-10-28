@@ -1,1 +1,0 @@
-python visualize.py --work-dir ./

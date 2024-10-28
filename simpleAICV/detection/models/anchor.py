@@ -1,8 +1,6 @@
 import math
 import numpy as np
 
-import torch.nn as nn
-
 
 class RetinaAnchors:
 
@@ -132,46 +130,6 @@ class FCOSPositions:
         return feature_map_positions
 
 
-class TTFNetPositions:
-
-    def __init__(self):
-        pass
-
-    def __call__(self, feature_map_size):
-        '''
-        generate one image positions
-        '''
-
-        one_image_positions = self.generate_positions_on_feature_map(
-            feature_map_size)
-
-        # if input size:[640,640]
-        # one_image_positions shape:[160, 160, 2]
-        # per position format:[x_center,y_center]
-        return one_image_positions
-
-    def generate_positions_on_feature_map(self, feature_map_size):
-        '''
-        generate one feature map positions
-        '''
-        # shifts_x shape:[w],shifts_x shape:[h]
-        shifts_x = (np.arange(0, feature_map_size[0]) + 0.5)
-        shifts_y = (np.arange(0, feature_map_size[1]) + 0.5)
-
-        # feature_map_positions shape:[w,h,2] -> [h,w,2]
-        feature_map_positions = np.array([[[shift_x, shift_y]
-                                           for shift_y in shifts_y]
-                                          for shift_x in shifts_x],
-                                         dtype=np.float32)
-        feature_map_positions = np.transpose(feature_map_positions,
-                                             axes=(1, 0, 2))
-        feature_map_positions = np.ascontiguousarray(feature_map_positions,
-                                                     dtype=np.float32)
-
-        # feature_map_positions format: [point_nums,2],2:[x_center,y_center]
-        return feature_map_positions
-
-
 if __name__ == '__main__':
     import os
     import random
@@ -219,23 +177,3 @@ if __name__ == '__main__':
 
     for per_level_positions in one_image_positions:
         print('2222', per_level_positions.shape)
-
-    image_w, image_h = 640, 640
-    feature_map_size = [160, 160]
-
-    positions = TTFNetPositions()
-    one_image_positions = positions(feature_map_size)
-    print('3333', one_image_positions.shape)
-
-    strides = [8, 16, 32]
-    image_w, image_h = 640, 640
-    fpn_feature_sizes = [[
-        math.ceil(image_w / stride),
-        math.ceil(image_h / stride)
-    ] for stride in strides]
-
-    grid_strides = YoloxAnchors(strides)
-    one_image_grid_center_strides = grid_strides(fpn_feature_sizes)
-
-    for per_level_grid_center_strides in one_image_grid_center_strides:
-        print('4444', per_level_grid_center_strides.shape)

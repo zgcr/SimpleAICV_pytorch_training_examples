@@ -26,11 +26,12 @@ class HumanMattingDataset(Dataset):
                  root_dir,
                  set_name_list=[],
                  set_type='train',
-                 kernel_size_range=[15, 25],
+                 max_side=2048,
+                 kernel_size_range=[10, 15],
                  transform=None):
         assert set_type in ['train', 'val'], 'Wrong set name!'
-        assert isinstance(kernel_size_range, (list, int))
 
+        self.max_side = max_side
         self.kernel_size_range = kernel_size_range
         self.transform = transform
 
@@ -54,7 +55,7 @@ class HumanMattingDataset(Dataset):
                         self.all_image_path_dict[
                             per_image_name] = per_image_path
                         self.all_mask_path_dict[per_image_name] = per_mask_path
-        self.all_image_name_list = list(self.all_image_name_list)
+        self.all_image_name_list = sorted(list(self.all_image_name_list))
 
         assert len(self.all_image_name_list) == len(
             self.all_image_path_dict) == len(self.all_mask_path_dict)
@@ -65,18 +66,23 @@ class HumanMattingDataset(Dataset):
         return len(self.all_image_name_list)
 
     def __getitem__(self, idx):
+        image_path = self.all_image_path_dict[self.all_image_name_list[idx]]
+        mask_path = self.all_mask_path_dict[self.all_image_name_list[idx]]
+
         image = self.load_image(idx)
         mask = self.load_mask(idx)
 
-        origin_image = copy.deepcopy(image)
-        origin_mask = copy.deepcopy(mask)
+        image_h, image_w = image.shape[0], image.shape[1]
 
-        size = np.array([origin_image.shape[0],
-                         origin_image.shape[1]]).astype(np.float32)
-        origin_size = copy.deepcopy(size)
+        if max(image_h, image_w) > self.max_side:
+            factor = self.max_side / max(image_h, image_w)
+            resize_w, resize_h = int(image_w * float(factor) +
+                                     0.5), int(image_h * float(factor) + 0.5)
+            image = cv2.resize(image, (resize_w, resize_h))
+            mask = cv2.resize(mask, (resize_w, resize_h),
+                              interpolation=cv2.INTER_NEAREST)
 
-        image_path = self.all_image_path_dict[self.all_image_name_list[idx]]
-        mask_path = self.all_mask_path_dict[self.all_image_name_list[idx]]
+        size = np.array([image.shape[0], image.shape[1]]).astype(np.float32)
 
         trimap = self.generate_trimap_from_mask(mask)
         fg_map, bg_map = self.generate_fg_bg_map_from_mask(image, mask)
@@ -84,9 +90,6 @@ class HumanMattingDataset(Dataset):
         sample = {
             'image_path': image_path,
             'mask_path': mask_path,
-            'origin_image': origin_image,
-            'origin_mask': origin_mask,
-            'origin_size': origin_size,
             'image': image,
             'mask': mask,
             'trimap': trimap,
@@ -119,11 +122,18 @@ class HumanMattingDataset(Dataset):
         return mask.astype(np.float32)
 
     def generate_trimap_from_mask(self, alpha):
-        if isinstance(self.kernel_size_range, int):
-            kernel_size = self.kernel_size_range
+        alpha_h, alpha_w = alpha.shape[0], alpha.shape[1]
+        long_size_length = max(alpha_h, alpha_w)
+        side_scale = long_size_length / self.max_side
+
+        if self.kernel_size_range[0] == self.kernel_size_range[1]:
+            kernel_size = int(self.kernel_size_range[0] * side_scale)
         else:
-            kernel_size = np.random.randint(self.kernel_size_range[0],
-                                            self.kernel_size_range[1])
+            kernel_size = int(
+                np.random.randint(self.kernel_size_range[0],
+                                  self.kernel_size_range[1]) * side_scale)
+        kernel_size = max(3, kernel_size)
+
         alpha_clone = alpha.copy() * 255.
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,
                                            (kernel_size, kernel_size))
@@ -174,7 +184,7 @@ if __name__ == '__main__':
     import torchvision.transforms as transforms
     from tqdm import tqdm
 
-    from simpleAICV.human_matting.common import RandomHorizontalFlip, YoloStyleResize, Resize, Normalize, ResizeHumanMattingCollater
+    from simpleAICV.human_matting.common import RandomHorizontalFlip, YoloStyleResize, Resize, Normalize, HumanMattingCollater
 
     human_matting_dataset = HumanMattingDataset(
         human_matting_dataset_path,
@@ -184,25 +194,23 @@ if __name__ == '__main__':
             'P3M10K',
         ],
         set_type='train',
-        kernel_size_range=15,
+        max_side=2048,
+        kernel_size_range=[10, 15],
         transform=transforms.Compose([
-            RandomHorizontalFlip(prob=1.0),
-            # YoloStyleResize(resize=832, divisor=64, stride=64),
+            # YoloStyleResize(resize=832),
             Resize(resize=832),
+            RandomHorizontalFlip(prob=0.5),
             # Normalize(),
         ]))
 
     count = 0
     for per_sample in tqdm(human_matting_dataset):
-        print('1111', per_sample['origin_image'].shape,
-              per_sample['origin_mask'].shape, per_sample['origin_size'],
-              per_sample['image'].shape, per_sample['mask'].shape,
+        print('1111', per_sample['image_path'])
+        print('1111', per_sample['mask_path'])
+        print('1111', per_sample['image'].shape, per_sample['mask'].shape,
               per_sample['trimap'].shape, per_sample['fg_map'].shape,
-              per_sample['bg_map'].shape, per_sample['size'],
-              per_sample['image_path'], per_sample['mask_path'])
-        print('1111', per_sample['origin_image'].dtype,
-              per_sample['origin_mask'].dtype, per_sample['origin_size'].dtype,
-              per_sample['image'].dtype, per_sample['mask'].dtype,
+              per_sample['bg_map'].shape, per_sample['size'])
+        print('1111', per_sample['image'].dtype, per_sample['mask'].dtype,
               per_sample['trimap'].dtype, per_sample['fg_map'].dtype,
               per_sample['bg_map'].dtype, per_sample['size'].dtype)
 
@@ -212,11 +220,6 @@ if __name__ == '__main__':
         # temp_dir = './temp1'
         # if not os.path.exists(temp_dir):
         #     os.makedirs(temp_dir)
-
-        # origin_image = np.ascontiguousarray(per_sample['origin_image'],
-        #                                     dtype=np.uint8)
-        # origin_image = cv2.cvtColor(origin_image, cv2.COLOR_RGB2BGR)
-        # origin_mask = per_sample['origin_mask'] * 255.
 
         # image = np.ascontiguousarray(per_sample['image'], dtype=np.uint8)
         # image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
@@ -229,10 +232,6 @@ if __name__ == '__main__':
         # bg_map = per_sample['bg_map']
         # bg_map = cv2.cvtColor(bg_map, cv2.COLOR_RGB2BGR)
 
-        # cv2.imencode('.jpg', origin_image)[1].tofile(
-        #     os.path.join(temp_dir, f'idx_{count}_image_origin.jpg'))
-        # cv2.imencode('.jpg', origin_mask)[1].tofile(
-        #     os.path.join(temp_dir, f'idx_{count}_mask_origin.jpg'))
         # cv2.imencode('.jpg', image)[1].tofile(
         #     os.path.join(temp_dir, f'idx_{count}_image.jpg'))
         # cv2.imencode('.jpg', mask)[1].tofile(
@@ -250,7 +249,7 @@ if __name__ == '__main__':
             break
 
     from torch.utils.data import DataLoader
-    collater = ResizeHumanMattingCollater(resize=832, stride=64)
+    collater = HumanMattingCollater(resize=832)
     train_loader = DataLoader(human_matting_dataset,
                               batch_size=4,
                               shuffle=True,
@@ -259,15 +258,13 @@ if __name__ == '__main__':
 
     count = 0
     for data in tqdm(train_loader):
-        images, masks, trimaps, fg_maps, bg_maps, sizes, origin_images, origin_masks, origin_sizes = data[
-            'image'], data['mask'], data['trimap'], data['fg_map'], data[
-                'bg_map'], data['size'], data['origin_image'], data[
-                    'origin_mask'], data['origin_size']
+        images, masks, trimaps, fg_maps, bg_maps, sizes = data['image'], data[
+            'mask'], data['trimap'], data['fg_map'], data['bg_map'], data[
+                'size']
         print('2222', images.shape, masks.shape, trimaps.shape, fg_maps.shape,
-              bg_maps.shape, sizes.shape, origin_sizes.shape, sizes,
-              origin_sizes)
+              bg_maps.shape, sizes.shape)
         print('2222', images.dtype, masks.dtype, trimaps.dtype, fg_maps.dtype,
-              bg_maps.dtype, sizes.dtype, origin_sizes.dtype)
+              bg_maps.dtype, sizes.dtype)
 
         # temp_dir = './temp2'
         # if not os.path.exists(temp_dir):
@@ -278,20 +275,13 @@ if __name__ == '__main__':
         # bg_maps = bg_maps.permute(0, 2, 3, 1).cpu().numpy()
         # masks = masks.cpu().numpy()
 
-        # for i, (per_image, per_mask, per_trimap, per_fg_map, per_bg_map,
-        #         per_origin_image, per_origin_mask) in enumerate(
-        #             zip(images, masks, trimaps, fg_maps, bg_maps,
-        #                 origin_images, origin_masks)):
+        # for i, (per_image, per_mask, per_trimap, per_fg_map,
+        #         per_bg_map) in enumerate(
+        #             zip(images, masks, trimaps, fg_maps, bg_maps)):
         #     per_image = np.ascontiguousarray(per_image, dtype=np.uint8)
         #     per_image = cv2.cvtColor(per_image, cv2.COLOR_RGB2BGR)
 
         #     per_mask = per_mask * 255.
-
-        #     per_origin_image = np.ascontiguousarray(per_origin_image,
-        #                                             dtype=np.uint8)
-        #     per_origin_image = cv2.cvtColor(per_origin_image,
-        #                                     cv2.COLOR_RGB2BGR)
-        #     per_origin_mask = per_origin_mask * 255.
 
         #     per_trimap = np.ascontiguousarray(per_trimap, dtype=np.uint8)
 
@@ -304,10 +294,6 @@ if __name__ == '__main__':
         #         os.path.join(temp_dir, f'idx_{count}_{i}_image.jpg'))
         #     cv2.imencode('.jpg', per_mask)[1].tofile(
         #         os.path.join(temp_dir, f'idx_{count}_{i}_mask.jpg'))
-        #     cv2.imencode('.jpg', per_origin_image)[1].tofile(
-        #         os.path.join(temp_dir, f'idx_{count}_{i}_image_origin.jpg'))
-        #     cv2.imencode('.jpg', per_origin_mask)[1].tofile(
-        #         os.path.join(temp_dir, f'idx_{count}_{i}_mask_origin.jpg'))
 
         #     cv2.imencode('.jpg', per_trimap)[1].tofile(
         #         os.path.join(temp_dir, f'idx_{count}_{i}_trimap.jpg'))

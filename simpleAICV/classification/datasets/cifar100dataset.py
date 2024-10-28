@@ -114,7 +114,7 @@ if __name__ == '__main__':
               per_sample['label'], type(per_sample['image']),
               type(per_sample['label']))
 
-        # temp_dir = './temp'
+        # temp_dir = './temp1'
         # if not os.path.exists(temp_dir):
         #     os.makedirs(temp_dir)
 
@@ -133,7 +133,7 @@ if __name__ == '__main__':
         # cv2.imencode('.jpg', image)[1].tofile(
         #     os.path.join(temp_dir, f'idx_{count}.jpg'))
 
-        if count < 10:
+        if count < 2:
             count += 1
         else:
             break
@@ -151,7 +151,7 @@ if __name__ == '__main__':
         images, labels = data['image'], data['label']
         print(images.shape, labels.shape)
         print(images.dtype, labels.dtype)
-        if count < 10:
+        if count < 2:
             count += 1
         else:
             break
@@ -167,7 +167,7 @@ if __name__ == '__main__':
         print(per_sample['image'].shape, per_sample['label'].shape,
               per_sample['label'], type(per_sample['image']),
               type(per_sample['label']))
-        if count < 10:
+        if count < 2:
             count += 1
         else:
             break
@@ -185,7 +185,7 @@ if __name__ == '__main__':
         images, labels = data['image'], data['label']
         print(images.shape, labels.shape)
         print(images.dtype, labels.dtype)
-        if count < 10:
+        if count < 2:
             count += 1
         else:
             break

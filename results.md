@@ -1,21 +1,21 @@
 - [Image classification task results](#image-classification-task-results)
   - [ResNetCifar training from scratch on CIFAR100](#resnetcifar-training-from-scratch-on-cifar100)
-  - [ResNet training from scratch on ImageNet1K(ILSVRC2012)](#resnet-training-from-scratch-on-imagenet1kilsvrc2012)
+  - [Convformer finetune from offical pretrain weight on ImageNet1K(ILSVRC2012)](#convformer-finetune-from-offical-pretrain-weight-on-imagenet1kilsvrc2012)
   - [DarkNet training from scratch on ImageNet1K(ILSVRC2012)](#darknet-training-from-scratch-on-imagenet1kilsvrc2012)
-  - [RepVGG training from scratch on ImageNet1K(ILSVRC2012)](#repvgg-training-from-scratch-on-imagenet1kilsvrc2012)
-  - [RegNet training from scratch on ImageNet1K(ILSVRC2012)](#regnet-training-from-scratch-on-imagenet1kilsvrc2012)
-  - [U2NetBackbone training from scratch on ImageNet1K(ILSVRC2012)](#u2netbackbone-training-from-scratch-on-imagenet1kilsvrc2012)
+  - [ResNet training from scratch on ImageNet1K(ILSVRC2012)](#resnet-training-from-scratch-on-imagenet1kilsvrc2012)
   - [ResNet finetune from ImageNet21k pretrain weight on ImageNet1K(ILSVRC2012)](#resnet-finetune-from-imagenet21k-pretrain-weight-on-imagenet1kilsvrc2012)
-  - [ResNet finetune from DINO pretrain weight on ImageNet1K(ILSVRC2012)](#resnet-finetune-from-dino-pretrain-weight-on-imagenet1kilsvrc2012)
+  - [VAN finetune from offical pretrain weight on ImageNet1K(ILSVRC2012)](#van-finetune-from-offical-pretrain-weight-on-imagenet1kilsvrc2012)
   - [ViT finetune from self-trained MAE pretrain weight(400epoch) on ImageNet1K(ILSVRC2012)](#vit-finetune-from-self-trained-mae-pretrain-weight400epoch-on-imagenet1kilsvrc2012)
   - [ViT finetune from offical MAE pretrain weight(800 epoch) on ImageNet1K(ILSVRC2012)](#vit-finetune-from-offical-mae-pretrain-weight800-epoch-on-imagenet1kilsvrc2012)
   - [ResNet train from ImageNet1K pretrain weight on ImageNet21K(Winter 2021 release)](#resnet-train-from-imagenet1k-pretrain-weight-on-imagenet21kwinter-2021-release)
-  - [ViT finetune from self-trained MAE pretrain weight(100epoch) on ACCV2022](#vit-finetune-from-self-trained-mae-pretrain-weight100epoch-on-accv2022)
-  - [VAN finetune from offical pretrain weight on ImageNet1K(ILSVRC2012)](#van-finetune-from-offical-pretrain-weight-on-imagenet1kilsvrc2012)
+- [Knowledge distillation task results](#knowledge-distillation-task-results)
+  - [ResNet distill from pretrain weight on ImageNet1K(ILSVRC2012)](#resnet-distill-from-pretrain-weight-on-imagenet1kilsvrc2012)
+- [Masked image modeling task results](#masked-image-modeling-task-results)
+  - [ViT MAE pretrain on ImageNet1K(ILSVRC2012)](#vit-mae-pretrain-on-imagenet1kilsvrc2012)
 - [Object detection task results](#object-detection-task-results)
   - [All detection models training from scratch on COCO2017](#all-detection-models-training-from-scratch-on-coco2017)
   - [All detection models finetune from objects365 pretrain weight on COCO2017](#all-detection-models-finetune-from-objects365-pretrain-weight-on-coco2017)
-  - [All detection models train from COCO2017 pretrain weight on Objects365(v2,2020)](#all-detection-models-train-from-coco2017-pretrain-weight-on-objects365v22020)
+  - [All detection models train on Objects365(v2,2020) from COCO2017 pretrain weight](#all-detection-models-train-on-objects365v22020-from-coco2017-pretrain-weight)
   - [All detection models training from scratch on VOC2007 and VOC2012](#all-detection-models-training-from-scratch-on-voc2007-and-voc2012)
   - [All detection models finetune from objects365 pretrain weight on VOC2007 and VOC2012](#all-detection-models-finetune-from-objects365-pretrain-weight-on-voc2007-and-voc2012)
 - [Semantic Segmentation task results](#semantic-segmentation-task-results)
@@ -23,224 +23,177 @@
   - [All semantic segmentation models training from scratch on COCO2017](#all-semantic-segmentation-models-training-from-scratch-on-coco2017)
 - [Instance Segmentation task results](#instance-segmentation-task-results)
   - [All instance segmentation models training from scratch on COCO2017](#all-instance-segmentation-models-training-from-scratch-on-coco2017)
-- [Knowledge distillation task results](#knowledge-distillation-task-results)
-  - [ResNet training from pretrain weight on ImageNet1K(ILSVRC2012)](#resnet-training-from-pretrain-weight-on-imagenet1kilsvrc2012)
-- [Contrastive learning task results](#contrastive-learning-task-results)
-  - [ResNet DINO pretrain on ImageNet1K(ILSVRC2012)](#resnet-dino-pretrain-on-imagenet1kilsvrc2012)
-  - [ResNet finetune from DINO pretrain weight on ImageNet1K(ILSVRC2012)](#resnet-finetune-from-dino-pretrain-weight-on-imagenet1kilsvrc2012-1)
-- [Masked image modeling task results](#masked-image-modeling-task-results)
-  - [ViT MAE pretrain on ImageNet1K(ILSVRC2012)](#vit-mae-pretrain-on-imagenet1kilsvrc2012)
-  - [ViT MAE pretrain on ACCV2022 from ImageNet1K pretrain](#vit-mae-pretrain-on-accv2022-from-imagenet1k-pretrain)
-  - [ViT finetune from self-trained MAE pretrain weight(400epoch) on ImageNet1K(ILSVRC2012)](#vit-finetune-from-self-trained-mae-pretrain-weight400epoch-on-imagenet1kilsvrc2012-1)
-  - [ViT finetune from offical MAE pretrain weight(800 epoch) on ImageNet1K(ILSVRC2012)](#vit-finetune-from-offical-mae-pretrain-weight800-epoch-on-imagenet1kilsvrc2012-1)
-  - [ViT finetune from self-trained MAE pretrain weight(100epoch) on ACCV2022](#vit-finetune-from-self-trained-mae-pretrain-weight100epoch-on-accv2022-1)
+- [Salient object detection task results](#salient-object-detection-task-results)
+- [Human matting task results](#human-matting-task-results)
 - [OCR text detection task results](#ocr-text-detection-task-results)
 - [OCR text recognition task results](#ocr-text-recognition-task-results)
-- [Human matting task results](#human-matting-task-results)
-- [Salient object detection task results](#salient-object-detection-task-results)
 - [Face detection task results](#face-detection-task-results)
-- [Interactive segmentation task results](#interactive-segmentation-task-results)
-- [Image inpainting model task results](#image-inpainting-model-task-results)
-  - [All image inpainting model training from scratch on CelebA-HQ](#all-image-inpainting-model-training-from-scratch-on-celeba-hq)
-  - [All image inpainting model training from scratch on Places365-standard](#all-image-inpainting-model-training-from-scratch-on-places365-standard)
-  - [All image inpainting model training from scratch on Places365-challenge](#all-image-inpainting-model-training-from-scratch-on-places365-challenge)
 - [Diffusion model task results](#diffusion-model-task-results)
+  - [All diffusion model with different sampling methods on CelebA-HQ](#all-diffusion-model-with-different-sampling-methods-on-celeba-hq)
   - [All diffusion model with different sampling methods on CIFAR10](#all-diffusion-model-with-different-sampling-methods-on-cifar10)
   - [All diffusion model with different sampling methods on CIFAR100](#all-diffusion-model-with-different-sampling-methods-on-cifar100)
-  - [All diffusion model with different sampling methods on CelebA-HQ](#all-diffusion-model-with-different-sampling-methods-on-celeba-hq)
   - [All diffusion model with different sampling methods on FFHQ](#all-diffusion-model-with-different-sampling-methods-on-ffhq)
-
 
 
 # Image classification task results
 
-**ResNet**
+**Convformer**
 
-Paper:https://arxiv.org/abs/1512.03385
+Paper:https://arxiv.org/pdf/2210.13452
 
 **DarkNet**
 
 Paper:https://arxiv.org/abs/1804.02767?e05802c1_page=1
 
-**RepVGG**
+**ResNet**
 
-Paper:https://arxiv.org/abs/2101.03697
-
-**RegNet**
-
-Paper:https://arxiv.org/abs/2003.13678
-
-**ViT**
-
-Paper:https://arxiv.org/abs/2010.11929
+Paper:https://arxiv.org/abs/1512.03385
 
 **VAN**
 
 Paper:https://arxiv.org/abs/2202.09741
 
+**ViT**
+
+Paper:https://arxiv.org/abs/2010.11929
+
 ## ResNetCifar training from scratch on CIFAR100 
 
 **ResNetCifar is different from ResNet in the first few layers.**
 
-| Network        | macs     | params  | input size | gpu num     | batch | epochs | Top-1  |
-| -------------- | -------- | ------- | ---------- | ----------- | ----- | ------ | ------ |
-| ResNet18Cifar  | 557.935M | 11.220M | 32x32      | 1 RTX A5000 | 128   | 200    | 77.110 |
-| ResNet34Cifar  | 1.164G   | 21.328M | 32x32      | 1 RTX A5000 | 128   | 200    | 78.140 |
-| ResNet50Cifar  | 1.312G   | 23.705M | 32x32      | 1 RTX A5000 | 128   | 200    | 75.610 |
-| ResNet101Cifar | 2.531G   | 42.697M | 32x32      | 1 RTX A5000 | 128   | 200    | 76.970 |
-| ResNet152Cifar | 3.751G   | 58.341M | 32x32      | 1 RTX A5000 | 128   | 200    | 77.710 |
+| Network        | macs     | params  | input size | batch | epochs | Top-1  |
+| -------------- | -------- | ------- | ---------- | ----- | ------ | ------ |
+| ResNet18Cifar  | 557.935M | 11.220M | 32x32      | 128   | 200    | 76.890 |
+| ResNet34Cifar  | 1.164G   | 21.328M | 32x32      | 128   | 200    | 78.010 |
+| ResNet50Cifar  | 1.312G   | 23.705M | 32x32      | 128   | 200    | 75.360 |
+| ResNet101Cifar | 2.531G   | 42.697M | 32x32      | 128   | 200    | 77.180 |
+| ResNet152Cifar | 3.751G   | 58.341M | 32x32      | 128   | 200    | 77.340 |
 
 You can find more model training details in classification_training/cifar100/.
 
-## ResNet training from scratch on ImageNet1K(ILSVRC2012)
+## Convformer finetune from offical pretrain weight on ImageNet1K(ILSVRC2012)
 
-| Network   | macs    | params  | input size | gpu num     | batch | epochs | Top-1  |
-| --------- | ------- | ------- | ---------- | ----------- | ----- | ------ | ------ |
-| ResNet18  | 1.819G  | 11.690M | 224x224    | 2 RTX A5000 | 256   | 100    | 70.512 |
-| ResNet34  | 3.671G  | 21.798M | 224x224    | 2 RTX A5000 | 256   | 100    | 73.680 |
-| ResNet50  | 4.112G  | 25.557M | 224x224    | 2 RTX A5000 | 256   | 100    | 76.300 |
-| ResNet101 | 7.834G  | 44.549M | 224x224    | 2 RTX A5000 | 256   | 100    | 77.380 |
-| ResNet152 | 11.559G | 60.193M | 224x224    | 2 RTX A5000 | 256   | 100    | 77.542 |
+| Network        | macs    | params  | input size | batch | epochs | Top-1  |
+| -------------- | ------- | ------- | ---------- | ----- | ------ | ------ |
+| convformer-s18 | 3.953G  | 24.184M | 224x224    | 2048  | 300    | 82.018 |
+| convformer-s36 | 7.663G  | 37.424M | 224x224    | 1024  | 300    | 83.290 |
+| convformer-m36 | 12.876G | 53.994M | 224x224    | 1024  | 300    | 84.000 |
+| convformer-b36 | 22.673G | 95.216M | 224x224    | 1024  | 300    | 84.480 |
 
 You can find more model training details in classification_training/imagenet/.
 
 ## DarkNet training from scratch on ImageNet1K(ILSVRC2012)
 
-| Network     | macs     | params  | input size | gpu num     | batch | epochs | Top-1  |
-| ----------- | -------- | ------- | ---------- | ----------- | ----- | ------ | ------ |
-| DarkNetTiny | 412.537M | 2.087M  | 256x256    | 2 RTX A5000 | 256   | 100    | 57.786 |
-| DarkNet19   | 3.663G   | 20.842M | 256x256    | 2 RTX A5000 | 256   | 100    | 74.248 |
-| DarkNet53   | 9.322G   | 41.610M | 256x256    | 2 RTX A5000 | 256   | 100    | 76.352 |
+| Network     | macs     | params  | input size | batch | epochs | Top-1  |
+| ----------- | -------- | ------- | ---------- | ----- | ------ | ------ |
+| DarkNetTiny | 414.602M | 2.087M  | 256x256    | 256   | 100    | 57.858 |
+| DarkNet19   | 3.669G   | 20.842M | 256x256    | 256   | 100    | 74.364 |
+| DarkNet53   | 9.335G   | 41.610M | 256x256    | 256   | 100    | 76.250 |
 
 You can find more model training details in classification_training/imagenet/.
 
-## RepVGG training from scratch on ImageNet1K(ILSVRC2012)
+## ResNet training from scratch on ImageNet1K(ILSVRC2012)
 
-| Network          | macs    | params  | input size | gpu num     | batch | epochs | Top-1  |
-| ---------------- | ------- | ------- | ---------- | ----------- | ----- | ------ | ------ |
-| RepVGG_A0_deploy | 1.362G  | 8.309M  | 224x224    | 2 RTX A5000 | 256   | 120    | 72.010 |
-| RepVGG_A1_deploy | 2.364G  | 12.790M | 224x224    | 2 RTX A5000 | 256   | 120    | 74.032 |
-| RepVGG_A2_deploy | 5.117G  | 25.500M | 224x224    | 2 RTX A5000 | 256   | 120    | 76.078 |
-| RepVGG_B0_deploy | 3.058G  | 14.339M | 224x224    | 2 RTX A5000 | 256   | 120    | 74.880 |
-| RepVGG_B1_deploy | 11.816G | 51.829M | 224x224    | 2 RTX A5000 | 256   | 120    | 77.790 |
-| RepVGG_B2_deploy | 18.377G | 80.315M | 224x224    | 2 RTX A5000 | 256   | 120    | 78.120 |
-
-You can find more model training details in classification_training/imagenet/.
-
-## RegNet training from scratch on ImageNet1K(ILSVRC2012)
-
-| Network       | macs     | params  | input size | gpu num     | batch | epochs | Top-1  |
-| ------------- | -------- | ------- | ---------- | ----------- | ----- | ------ | ------ |
-| RegNetX_400MF | 410.266M | 5.158M  | 224x224    | 2 RTX A5000 | 4096  | 300    | 69.466 |
-| RegNetX_600MF | 616.813M | 6.196M  | 224x224    | 2 RTX A5000 | 4096  | 300    | 71.754 |
-| RegNetX_800MF | 820.324M | 7.260M  | 224x224    | 2 RTX A5000 | 4096  | 300    | 73.148 |
-| RegNetX_1_6GF | 1.635G   | 9.190M  | 224x224    | 2 RTX A5000 | 4096  | 300    | 76.142 |
-| RegNetX_3_2GF | 3.222G   | 15.297M | 224x224    | 2 RTX A5000 | 4096  | 300    | 78.244 |
-| RegNetX_4_0GF | 4.013G   | 22.118M | 224x224    | 2 RTX A5000 | 4096  | 300    | 78.916 |
-
-You can find more model training details in classification_training/imagenet/.
-
-## U2NetBackbone training from scratch on ImageNet1K(ILSVRC2012)
-
-| Network       | macs    | params  | input size | gpu num     | batch | epochs | Top-1  |
-| ------------- | ------- | ------- | ---------- | ----------- | ----- | ------ | ------ |
-| U2NetBackbone | 13.097G | 26.181M | 224x224    | 2 RTX A5000 | 256   | 100    | 76.038 |
+| Network   | macs    | params  | input size | batch | epochs | Top-1  |
+| --------- | ------- | ------- | ---------- | ----- | ------ | ------ |
+| ResNet18  | 1.824G  | 11.690M | 224x224    | 256   | 100    | 70.594 |
+| ResNet34  | 3.679G  | 21.798M | 224x224    | 256   | 100    | 73.622 |
+| ResNet50  | 4.134G  | 25.557M | 224x224    | 256   | 100    | 76.182 |
+| ResNet101 | 7.866G  | 44.549M | 224x224    | 256   | 100    | 77.242 |
+| ResNet152 | 11.604G | 60.193M | 224x224    | 256   | 100    | 77.772 |
 
 You can find more model training details in classification_training/imagenet/.
 
 ## ResNet finetune from ImageNet21k pretrain weight on ImageNet1K(ILSVRC2012)
 
-| Network   | macs    | params  | input size | gpu num     | batch | epochs | Top-1  |
-| --------- | ------- | ------- | ---------- | ----------- | ----- | ------ | ------ |
-| ResNet18  | 1.819G  | 11.690M | 224x224    | 2 RTX A5000 | 4096  | 300    | 71.580 |
-| ResNet34  | 3.671G  | 21.798M | 224x224    | 2 RTX A5000 | 4096  | 300    | 76.316 |
-| ResNet50  | 4.112G  | 25.557M | 224x224    | 2 RTX A5000 | 4096  | 300    | 79.484 |
-| ResNet101 | 7.834G  | 44.549M | 224x224    | 2 RTX A5000 | 4096  | 300    | 80.940 |
-| ResNet152 | 11.559G | 60.193M | 224x224    | 2 RTX A5000 | 4096  | 300    | 81.236 |
+| Network   | macs    | params  | input size | batch | epochs | Top-1  |
+| --------- | ------- | ------- | ---------- | ----- | ------ | ------ |
+| ResNet50  | 4.134G  | 25.557M | 224x224    | 2048  | 300    | 80.258 |
+| ResNet101 | 7.866G  | 44.549M | 224x224    | 1024  | 300    | 81.668 |
+| ResNet152 | 11.604G | 60.193M | 224x224    | 1024  | 300    | 81.934 |
 
 You can find more model training details in classification_training/imagenet/.
 
-## ResNet finetune from DINO pretrain weight on ImageNet1K(ILSVRC2012)
+## VAN finetune from offical pretrain weight on ImageNet1K(ILSVRC2012)
 
-| Network  | macs   | params  | input size | gpu num     | batch | epochs | Top-1  |
-| -------- | ------ | ------- | ---------- | ----------- | ----- | ------ | ------ |
-| ResNet18 | 1.819G | 11.690M | 224x224    | 1 RTX A5000 | 256   | 100    | 70.754 |
-| ResNet18 | 1.819G | 11.690M | 224x224    | 1 RTX A5000 | 4096  | 300    | 71.362 |
-| ResNet34 | 3.671G | 21.798M | 224x224    | 2 RTX A5000 | 256   | 100    | 74.218 |
-| ResNet34 | 3.671G | 21.798M | 224x224    | 2 RTX A5000 | 4096  | 300    | 75.916 |
-| ResNet50 | 4.112G | 25.557M | 224x224    | 2 RTX A5000 | 256   | 100    | 77.114 |
-| ResNet50 | 4.112G | 25.557M | 224x224    | 2 RTX A5000 | 4096  | 300    | 79.418 |
+| Network | macs     | params  | input size | batch | epochs | Top-1  |
+| ------- | -------- | ------- | ---------- | ----- | ------ | ------ |
+| van-b0  | 870.860M | 4.103M  | 224x224    | 2048  | 300    | 75.424 |
+| van-b1  | 2.506G   | 13.856M | 224x224    | 2048  | 300    | 80.740 |
+| van-b2  | 5.010G   | 26.567M | 224x224    | 1024  | 300    | 82.592 |
+| van-b3  | 8.951G   | 26.567M | 224x224    | 1024  | 300    | 83.202 |
 
 You can find more model training details in classification_training/imagenet/.
 
 ## ViT finetune from self-trained MAE pretrain weight(400epoch) on ImageNet1K(ILSVRC2012)
 
-| Network           | macs    | params   | input size | gpu num     | batch | epochs | Top-1  |
-| ----------------- | ------- | -------- | ---------- | ----------- | ----- | ------ | ------ |
-| ViT-Tiny-Patch16  | 1.075G  | 5.670M   | 224x224    | 1 RTX A5000 | 4096  | 100    | 68.614 |
-| ViT-Small-Patch16 | 4.241G  | 21.955M  | 224x224    | 2 RTX A5000 | 4096  | 100    | 79.006 |
-| ViT-Base-Patch16  | 16.849G | 86.377M  | 224x224    | 2 RTX A5000 | 4096  | 100    | 83.204 |
-| ViT-Large-Patch16 | 59.647G | 304.024M | 224x224    | 2 RTX A5000 | 4096  | 100    | 85.020 |
+| Network           | macs     | params   | input size | batch | epochs | Top-1  |
+| ----------------- | -------- | -------- | ---------- | ----- | ------ | ------ |
+| ViT-Base-Patch16  | 16.880G  | 86.416M  | 224x224    | 256   | 100    | 82.676 |
+| ViT-Large-Patch16 | 59.731G  | 304.124M | 224x224    | 128   | 50     | 84.978 |
+| ViT-Huge-Patch14  | 162.071G | 631.716M | 224x224    | 128   | 50     | 85.966 |
 
 You can find more model training details in classification_training/imagenet/.
 
 ## ViT finetune from offical MAE pretrain weight(800 epoch) on ImageNet1K(ILSVRC2012)
 
-| Network           | macs    | params   | input size | gpu num     | batch | epochs | Top-1  |
-| ----------------- | ------- | -------- | ---------- | ----------- | ----- | ------ | ------ |
-| ViT-Base-Patch16  | 16.849G | 86.377M  | 224x224    | 2 RTX A5000 | 4096  | 100    | 83.290 |
-| ViT-Large-Patch16 | 59.647G | 304.024M | 224x224    | 2 RTX A5000 | 4096  | 100    | 85.876 |
+| Network           | macs     | params   | input size | batch | epochs | Top-1  |
+| ----------------- | -------- | -------- | ---------- | ----- | ------ | ------ |
+| ViT-Base-Patch16  | 16.880G  | 86.416M  | 224x224    | 256   | 100    | 83.404 |
+| ViT-Large-Patch16 | 59.731G  | 304.124M | 224x224    | 128   | 50     | 85.672 |
+| ViT-Huge-Patch14  | 162.071G | 631.716M | 224x224    | 128   | 50     | 86.608 |
 
 You can find more model training details in classification_training/imagenet/.
 
 ## ResNet train from ImageNet1K pretrain weight on ImageNet21K(Winter 2021 release)
 
-| Network   | macs    | params  | input size | gpu num     | batch | epochs | Semantic Softmax Acc |
-| --------- | ------- | ------- | ---------- | ----------- | ----- | ------ | -------------------- |
-| ResNet18  | 1.819G  | 11.690M | 224x224    | 2 RTX A5000 | 4096  | 80     | 68.639               |
-| ResNet34  | 3.671G  | 21.798M | 224x224    | 2 RTX A5000 | 4096  | 80     | 71.873               |
-| ResNet50  | 4.112G  | 25.557M | 224x224    | 2 RTX A5000 | 4096  | 80     | 74.664               |
-| ResNet101 | 7.834G  | 44.549M | 224x224    | 2 RTX A5000 | 4096  | 80     | 76.136               |
-| ResNet152 | 11.559G | 60.193M | 224x224    | 2 RTX A5000 | 4096  | 80     | 75.731               |
+| Network   | macs    | params  | input size | batch | epochs | Semantic Softmax Acc |
+| --------- | ------- | ------- | ---------- | ----- | ------ | -------------------- |
+| ResNet50  | 4.134G  | 25.557M | 224x224    | 2048  | 80     | 75.319               |
+| ResNet101 | 7.866G  | 44.549M | 224x224    | 2048  | 80     | 76.795               |
+| ResNet152 | 11.604G | 60.193M | 224x224    | 1024  | 80     | 77.345               |
 
 You can find more model training details in classification_training/imagenet21k/.
 
-## ViT finetune from self-trained MAE pretrain weight(100epoch) on ACCV2022
+# Knowledge distillation task results
 
-| Network           | macs    | params   | input size | gpu num    | batch | epochs | Top-1  |
-| ----------------- | ------- | -------- | ---------- | ---------- | ----- | ------ | ------ |
-| ViT-Large-Patch16 | 59.651G | 308.124M | 224x224    | 2 RTX 4090 | 4096  | 100    | 90.693 |
+**DML loss**
 
-You can find more model training details in classification_training/accv2022/.
+Paper:https://arxiv.org/abs/1706.00384
 
-## VAN finetune from offical pretrain weight on ImageNet1K(ILSVRC2012)
+**KD loss**
 
-| Network | macs     | params  | input size | gpu num     | batch | epochs | Top-1  |
-| ------- | -------- | ------- | ---------- | ----------- | ----- | ------ | ------ |
-| VAN-B0  | 880.224M | 4.103M  | 224x224    | 2 RTX A5000 | 1024  | 300    | 75.618 |
-| VAN-B1  | 2.518G   | 13.856M | 224x224    | 2 RTX 4090  | 1024  | 300    | 80.956 |
-| VAN-B2  | 5.033G   | 26.567M | 224x224    | 4 RTX 4090  | 1024  | 300    | 82.322 |
+Paper:https://arxiv.org/abs/1503.02531
 
-You can find more model training details in classification_training/imagenet/.
+## ResNet distill from pretrain weight on ImageNet1K(ILSVRC2012)
 
+| Teacher Network | Student Network | method         | Freeze Teacher | input size | batch | epochs | Teacher Top-1 | Student Top-1 |
+| --------------- | --------------- | -------------- | -------------- | ---------- | ----- | ------ | ------------- | ------------- |
+| ResNet152       | ResNet50        | CE+DML         | False          | 224x224    | 256   | 100    | 79.246        | 78.168        |
+| ResNet152       | ResNet50        | CE+DML+Vit Aug | False          | 224x224    | 1024  | 300    | 82.760        | 80.798        |
+| ResNet152       | ResNet50        | CE+KD          | True           | 224x224    | 256   | 100    | 77.764        | 77.566        |
+| ResNet152       | ResNet50        | CE+KD+Vit Aug  | True           | 224x224    | 2048  | 300    | 81.936        | 80.806        |
+
+
+You can find more model training details in distillation_training/imagenet/.
+
+# Masked image modeling task results
+
+**MAE:Masked Autoencoders Are Scalable Vision Learners**
+
+Paper:https://arxiv.org/abs/2111.06377
+
+## ViT MAE pretrain on ImageNet1K(ILSVRC2012)
+
+| Network           | input size | batch | epochs | Loss  |
+| ----------------- | ---------- | ----- | ------ | ----- |
+| ViT-Base-Patch16  | 224x224    | 1024  | 400    | 0.388 |
+| ViT-Large-Patch16 | 224x224    | 1024  | 400    | 0.378 |
+| ViT-Huge-Patch14  | 224x224    | 1024  | 400    | 0.350 |
+
+You can find more model training details in masked_image_modeling_training/imagenet/.
 
 # Object detection task results
-
-**RetinaNet**
-
-Paper:https://arxiv.org/abs/1708.02002
-
-**FCOS**
-
-Paper:https://arxiv.org/abs/1904.01355
-
-**CenterNet**
-
-Paper:https://arxiv.org/abs/1904.07850
-
-**TTFNet**
-
-Paper:https://arxiv.org/abs/1909.00700
 
 **DETR**
 
@@ -250,25 +203,26 @@ Paper:https://arxiv.org/abs/2005.12872
 
 Paper:https://arxiv.org/abs/2203.03605
 
+**RetinaNet**
+
+Paper:https://arxiv.org/abs/1708.02002
+
+**FCOS**
+
+Paper:https://arxiv.org/abs/1904.01355
+
 ## All detection models training from scratch on COCO2017
 
 Trained on COCO2017 train dataset, tested on COCO2017 val dataset.
 
 mAP is IoU=0.5:0.95,area=all,maxDets=100,mAP(COCOeval,stats[0]).
 
-| Network               | resize-style    | input size | macs     | params  | gpu num     | batch | epochs | mAP    |
-| --------------------- | --------------- | ---------- | -------- | ------- | ----------- | ----- | ------ | ------ |
-| ResNet50-RetinaNet    | YoloStyle-640   | 640x640    | 95.558G  | 37.969M | 2 RTX A5000 | 32    | 13     | 34.459 |
-| ResNet50-RetinaNet    | YoloStyle-800   | 800x800    | 149.522G | 37.969M | 2 RTX A5000 | 32    | 13     | 36.023 |
-| ResNet50-RetinaNet    | RetinaStyle-800 | 800x1333   | 250.069G | 37.969M | 2 RTX A5000 | 8     | 13     | 35.434 |
-| ResNet50-FCOS         | YoloStyle-640   | 640x640    | 81.943G  | 32.291M | 2 RTX A5000 | 32    | 13     | 37.176 |
-| ResNet50-FCOS         | YoloStyle-800   | 800x800    | 128.160G | 32.291M | 2 RTX A5000 | 32    | 13     | 38.745 |
-| ResNet50-FCOS         | RetinaStyle-800 | 800x1333   | 214.406G | 32.291M | 2 RTX A5000 | 8     | 13     | 39.649 |
-| ResNet18DCN-CenterNet | YoloStyle-512   | 512x512    | 14.854G  | 12.889M | 2 RTX A5000 | 64    | 140    | 26.209 |
-| ResNet18DCN-TTFNet-3x | YoloStyle-512   | 512x512    | 16.063G  | 13.737M | 2 RTX A5000 | 64    | 39     | 27.054 |
-| ResNet50-DETR         | YoloStyle-1024  | 1024x1024  | 89.577G  | 30.440M | 8 RTX A5000 | 64    | 500    | 36.941 |
-| ResNet50-DINO-DETR    | YoloStyle-1024  | 1024x1024  | 844.204G | 47.082M | 8 RTX A5000 | 16    | 13     | 42.870 |
-| ResNet50-DINO-DETR    | YoloStyle-1024  | 1024x1024  | 844.204G | 47.082M | 8 RTX A5000 | 16    | 39     | 45.445 |
+| Network            | resize-style    | input size | macs     | params  | batch | epochs | mAP    |
+| ------------------ | --------------- | ---------- | -------- | ------- | ----- | ------ | ------ |
+| ResNet50-DETR      | YoloStyle-1024  | 1024x1024  | 89.577G  | 30.440M | 64    | 500    | 38.609 |
+| ResNet50-DINO-DETR | YoloStyle-1024  | 1024x1024  | 844.204G | 47.082M | 16    | 39     | 47.396 |
+| ResNet50-RetinaNet | RetinaStyle-800 | 800x1333   | 250.069G | 37.969M | 16    | 13     | 37.281 |
+| ResNet50-FCOS      | RetinaStyle-800 | 800x1333   | 214.406G | 32.291M | 16    | 13     | 41.071 |
 
 You can find more model training details in detection_training/coco/.
 
@@ -278,27 +232,21 @@ Trained on COCO2017 train dataset, tested on COCO2017 val dataset.
 
 mAP is IoU=0.5:0.95,area=all,maxDets=100,mAP(COCOeval,stats[0]).
 
-| Network            | resize-style    | input size | macs     | params  | gpu num     | batch | epochs | mAP    |
-| ------------------ | --------------- | ---------- | -------- | ------- | ----------- | ----- | ------ | ------ |
-| ResNet50-RetinaNet | YoloStyle-640   | 640x640    | 95.558G  | 37.969M | 2 RTX A5000 | 32    | 13     | 38.930 |
-| ResNet50-RetinaNet | YoloStyle-800   | 800x800    | 149.522G | 37.969M | 2 RTX A5000 | 32    | 13     | 40.483 |
-| ResNet50-RetinaNet | RetinaStyle-800 | 800x1333   | 250.069G | 37.969M | 2 RTX A5000 | 8     | 13     | 40.424 |
-| ResNet50-FCOS      | YoloStyle-640   | 640x640    | 81.943G  | 32.291M | 2 RTX A5000 | 32    | 13     | 42.871 |
-| ResNet50-FCOS      | YoloStyle-800   | 800x800    | 128.160G | 32.291M | 2 RTX A5000 | 32    | 13     | 44.526 |
-| ResNet50-FCOS      | RetinaStyle-800 | 800x1333   | 214.406G | 32.291M | 2 RTX A5000 | 8     | 13     | 42.848 |
+| Network            | resize-style    | input size | macs     | params  | batch | epochs | mAP    |
+| ------------------ | --------------- | ---------- | -------- | ------- | ----- | ------ | ------ |
+| ResNet50-RetinaNet | RetinaStyle-800 | 800x1333   | 250.069G | 37.969M | 16    | 13     | 40.947 |
+| ResNet50-FCOS      | RetinaStyle-800 | 800x1333   | 214.406G | 32.291M | 16    | 13     | 46.511 |
 
 You can find more model training details in detection_training/coco/.
 
-## All detection models train from COCO2017 pretrain weight on Objects365(v2,2020)
+## All detection models train on Objects365(v2,2020) from COCO2017 pretrain weight
 
-Trained on objects365 train dataset, tested on objects365 val dataset.
+Trained on objects365(v2,2020) train dataset, tested on objects365(v2,2020) val dataset.
 
-mAP is IoU=0.5:0.95,area=all,maxDets=100,mAP(COCOeval,stats[0]).
-
-| Network            | resize-style    | input size | macs     | params  | gpu num     | batch | epochs | mAP    |
-| ------------------ | --------------- | ---------- | -------- | ------- | ----------- | ----- | ------ | ------ |
-| ResNet50-RetinaNet | YoloStyle-800   | 800x800    | 149.522G | 37.969M | 8 RTX A5000 | 32    | 13     | 16.360 |
-| ResNet50-FCOS      | RetinaStyle-800 | 800x1333   | 214.406G | 32.291M | 8 RTX A5000 | 32    | 13     | 17.068 |
+| Network            | resize-style   | input size | batch | epochs | loss  |
+| ------------------ | -------------- | ---------- | ----- | ------ | ----- |
+| ResNet50-RetinaNet | YoloStyle-1024 | 1024x1024  | 32    | 13     | 0.355 |
+| ResNet50-FCOS      | YoloStyle-1024 | 1024x1024  | 64    | 13     | 0.968 |
 
 ## All detection models training from scratch on VOC2007 and VOC2012
 
@@ -306,10 +254,10 @@ Trained on VOC2007 trainval dataset + VOC2012 trainval dataset, tested on VOC200
 
 mAP is IoU=0.50,area=all,maxDets=100,mAP.
 
-| Network            | resize-style  | input size | macs    | params  | gpu num     | batch | epochs | mAP    |
-| ------------------ | ------------- | ---------- | ------- | ------- | ----------- | ----- | ------ | ------ |
-| ResNet50-RetinaNet | YoloStyle-640 | 640x640    | 84.947G | 36.724M | 2 RTX A5000 | 32    | 13     | 81.948 |
-| ResNet50-FCOS      | YoloStyle-640 | 640x640    | 80.764G | 32.153M | 2 RTX A5000 | 32    | 13     | 81.624 |
+| Network            | resize-style  | input size | macs    | params  | batch | epochs | mAP    |
+| ------------------ | ------------- | ---------- | ------- | ------- | ----- | ------ | ------ |
+| ResNet50-RetinaNet | YoloStyle-640 | 640x640    | 84.947G | 36.724M | 32    | 13     | 83.765 |
+| ResNet50-FCOS      | YoloStyle-640 | 640x640    | 80.764G | 32.153M | 32    | 13     | 83.250 |
 
 You can find more model training details in detection_training/voc/.
 
@@ -319,10 +267,10 @@ Trained on VOC2007 trainval dataset + VOC2012 trainval dataset, tested on VOC200
 
 mAP is IoU=0.50,area=all,maxDets=100,mAP.
 
-| Network            | resize-style  | input size | macs    | params  | gpu num     | batch | epochs | mAP    |
-| ------------------ | ------------- | ---------- | ------- | ------- | ----------- | ----- | ------ | ------ |
-| ResNet50-RetinaNet | YoloStyle-640 | 640x640    | 84.947G | 36.724M | 2 RTX A5000 | 32    | 13     | 90.220 |
-| ResNet50-FCOS      | YoloStyle-640 | 640x640    | 80.764G | 32.153M | 2 RTX A5000 | 32    | 13     | 90.371 |
+| Network            | resize-style  | input size | macs    | params  | batch | epochs | mAP    |
+| ------------------ | ------------- | ---------- | ------- | ------- | ----- | ------ | ------ |
+| ResNet50-RetinaNet | YoloStyle-640 | 640x640    | 84.947G | 36.724M | 32    | 13     | 90.082 |
+| ResNet50-FCOS      | YoloStyle-640 | 640x640    | 80.764G | 32.153M | 32    | 13     | 90.585 |
 
 You can find more model training details in detection_training/voc/.
 
@@ -332,25 +280,21 @@ You can find more model training details in detection_training/voc/.
 
 Paper:https://arxiv.org/abs/1802.02611
 
-**U2Net**
-
-Paper:https://arxiv.org/abs/2005.09007
-
 ## All semantic segmentation models training from scratch on ADE20K
 
-| Network             | input size | macs     | params  | gpu num     | batch | epochs | miou   |
-| ------------------- | ---------- | -------- | ------- | ----------- | ----- | ------ | ------ |
-| ResNet50-DeepLabv3+ | 512x512    | 25.548G  | 26.738M | 2 RTX A5000 | 8     | 128    | 34.659 |
-| U2Net               | 512x512    | 219.012G | 46.191M | 2 RTX A5000 | 8     | 128    | 39.046 |
+| Network                     | input size | macs    | params  | batch | epochs | mean_iou |
+| --------------------------- | ---------- | ------- | ------- | ----- | ------ | -------- |
+| resnet50_deeplabv3plus      | 512x512    | 43.500G | 30.254M | 32    | 100    | 40.462   |
+| convformerm36_deeplabv3plus | 512x512    | 83.898G | 56.760M | 32    | 100    | 47.826   |
 
 You can find more model training details in semantic_segmentation_training/ade20k/.
 
 ## All semantic segmentation models training from scratch on COCO2017
 
-| Network             | input size | macs     | params  | gpu num     | batch | epochs | miou   |
-| ------------------- | ---------- | -------- | ------- | ----------- | ----- | ------ | ------ |
-| ResNet50-DeepLabv3+ | 512x512    | 25.548G  | 26.738M | 2 RTX A5000 | 32    | 64     | 64.176 |
-| U2Net               | 512x512    | 219.012G | 46.191M | 4 RTX A5000 | 32    | 64     | 66.529 |
+| Network                     | input size | macs    | params  | batch | epochs | mean_iou |
+| --------------------------- | ---------- | ------- | ------- | ----- | ------ | -------- |
+| resnet50_deeplabv3plus      | 512x512    | 43.500G | 30.254M | 64    | 100    | 68.975   |
+| convformerm36_deeplabv3plus | 512x512    | 83.898G | 56.760M | 64    | 100    | 74.214   |
 
 You can find more model training details in semantic_segmentation_training/coco/.
 
@@ -366,149 +310,35 @@ Paper:https://arxiv.org/abs/2003.10152
 
 ## All instance segmentation models training from scratch on COCO2017
 
-
 Trained on COCO2017 train dataset, tested on COCO2017 val dataset.
 
 mAP is IoU=0.5:0.95,area=all,maxDets=100,mAP(COCOeval,stats[0]).
 
-| Network         | resize-style   | input size | macs     | params  | gpu num     | batch | epochs | mAP    |
-| --------------- | -------------- | ---------- | -------- | ------- | ----------- | ----- | ------ | ------ |
-| ResNet50-YOLACT | YoloStyle-800  | 800x800    | 123.095G | 31.165M | 4 RTX A5000 | 64    | 39     | 28.061 |
-| ResNet50-SOLOv2 | YoloStyle-1024 | 1024x1024  | 248.546G | 46.582M | 4 RTX A5000 | 32    | 39     | 36.559 |
+| Network              | resize-style   | input size | macs     | params  | batch | epochs | mAP    |
+| -------------------- | -------------- | ---------- | -------- | ------- | ----- | ------ | ------ |
+| resnet50_yolact      | YoloStyle-1024 | 1024x1024  | 202.012G | 31.165M | 64    | 39     | 26.342 |
+| convformerm36_yolact | YoloStyle-1024 | 1024x1024  | 382.336G | 60.452M | 64    | 39     | 34.047 |
+| resnet50_solov2      | YoloStyle-1024 | 1024x1024  | 248.965G | 46.582M | 32    | 39     | 37.807 |
+| convformerm36_solov2 | YoloStyle-1024 | 1024x1024  | 426.605G | 75.828M | 32    | 39     | 40.296 |
 
 You can find more model training details in instance_segmentation_training/coco/.
 
+# Salient object detection task results
 
-# Knowledge distillation task results
+**PFAN+Segmentation**
 
-**KD loss**
+Paper1:https://arxiv.org/abs/1903.00179
 
-Paper:https://arxiv.org/abs/1503.02531
+Paper2:https://arxiv.org/abs/2202.09741
 
-**DML loss**
+Use combine dataset DIS5K/HRS10K/HRSOD/UHRSD to train and test.
 
-Paper:https://arxiv.org/abs/1706.00384
+| Network                         | macs     | params  | input size | batch | epochs | iou    | precision | recall | f_squared_beta |
+| ------------------------------- | -------- | ------- | ---------- | ----- | ------ | ------ | --------- | ------ | -------------- |
+| resnet50_pfan_segmentation      | 71.303G  | 26.580M | 832x832    | 96    | 100    | 0.8461 | 0.8970    | 0.9346 | 0.9053         |
+| convformerm36_pfan_segmentation | 186.496G | 54.459M | 832x832    | 96    | 100    | 0.8865 | 0.9263    | 0.9517 | 0.9319         |
 
-## ResNet training from pretrain weight on ImageNet1K(ILSVRC2012)
-
-| Teacher Network | Student Network | method         | Freeze Teacher | input size | gpu num     | batch | epochs | Teacher Top-1 | Student Top-1 |
-| --------------- | --------------- | -------------- | -------------- | ---------- | ----------- | ----- | ------ | ------------- | ------------- |
-| ResNet152       | ResNet50        | CE+KD          | True           | 224x224    | 2 RTX A5000 | 256   | 100    | /             | 77.352        |
-| ResNet152       | ResNet50        | CE+DML         | False          | 224x224    | 2 RTX A5000 | 256   | 100    | 79.274        | 78.122        |
-| ResNet152       | ResNet50        | CE+KD+Vit Aug  | True           | 224x224    | 2 RTX A5000 | 4096  | 300    | /             | 80.168        |
-| ResNet152       | ResNet50        | CE+DML+Vit Aug | False          | 224x224    | 2 RTX A5000 | 4096  | 300    | 81.508        | 79.810        |
-
-You can find more model training details in distillation_training/imagenet/.
-
-# Contrastive learning task results
-
-**DINO:Emerging Properties in Self-Supervised Vision Transformers**
-
-Paper:https://arxiv.org/abs/2104.14294
-
-## ResNet DINO pretrain on ImageNet1K(ILSVRC2012)
-
-| Network       | input size | gpu num     | batch | epochs | Loss  |
-| ------------- | ---------- | ----------- | ----- | ------ | ----- |
-| ResNet18-DINO | 224x224    | 4 RTX A5000 | 256   | 400    | 3.081 |
-| ResNet34-DINO | 224x224    | 4 RTX A5000 | 256   | 400    | 2.425 |
-| ResNet50-DINO | 224x224    | 4 RTX A5000 | 256   | 400    | 1.997 |
-
-You can find more model training details in contrastive_learning_training/imagenet/.
-
-## ResNet finetune from DINO pretrain weight on ImageNet1K(ILSVRC2012)
-
-| Network  | macs   | params  | input size | gpu num     | batch | epochs | Top-1  |
-| -------- | ------ | ------- | ---------- | ----------- | ----- | ------ | ------ |
-| ResNet50 | 4.112G | 25.557M | 224x224    | 2 RTX A5000 | 256   | 100    | 77.114 |
-| ResNet50 | 4.112G | 25.557M | 224x224    | 2 RTX A5000 | 4096  | 300    | 79.418 |
-
-You can find more model training details in classification_training/imagenet/.
-
-# Masked image modeling task results
-
-**MAE:Masked Autoencoders Are Scalable Vision Learners**
-
-Paper:https://arxiv.org/abs/2111.06377
-
-## ViT MAE pretrain on ImageNet1K(ILSVRC2012)
-
-| Network           | input size | gpu num     | batch | epochs | Loss  |
-| ----------------- | ---------- | ----------- | ----- | ------ | ----- |
-| ViT-Tiny-Patch16  | 224x224    | 1 RTX A5000 | 256   | 400    | 0.427 |
-| ViT-Small-Patch16 | 224x224    | 2 RTX A5000 | 256   | 400    | 0.414 |
-| ViT-Base-Patch16  | 224x224    | 2 RTX A5000 | 256   | 400    | 0.388 |
-| ViT-Large-Patch16 | 224x224    | 2 RTX A5000 | 256   | 400    | 0.378 |
-
-You can find more model training details in masked_image_modeling_training/imagenet/.
-
-## ViT MAE pretrain on ACCV2022 from ImageNet1K pretrain
-
-| Network           | input size | gpu num    | batch | epochs | Loss  |
-| ----------------- | ---------- | ---------- | ----- | ------ | ----- |
-| ViT-Large-Patch16 | 224x224    | 2 RTX 4090 | 256   | 100    | 0.423 |
-
-You can find more model training details in masked_image_modeling_training/accv2022/.
-
-## ViT finetune from self-trained MAE pretrain weight(400epoch) on ImageNet1K(ILSVRC2012)
-
-| Network           | macs    | params   | input size | gpu num     | batch | epochs | Top-1  |
-| ----------------- | ------- | -------- | ---------- | ----------- | ----- | ------ | ------ |
-| ViT-Tiny-Patch16  | 1.075G  | 5.670M   | 224x224    | 1 RTX A5000 | 4096  | 100    | 68.614 |
-| ViT-Small-Patch16 | 4.241G  | 21.955M  | 224x224    | 2 RTX A5000 | 4096  | 100    | 79.006 |
-| ViT-Base-Patch16  | 16.849G | 86.377M  | 224x224    | 2 RTX A5000 | 4096  | 100    | 83.204 |
-| ViT-Large-Patch16 | 59.647G | 304.024M | 224x224    | 2 RTX A5000 | 4096  | 100    | 85.020 |
-
-You can find more model training details in classification_training/imagenet/.
-
-## ViT finetune from offical MAE pretrain weight(800 epoch) on ImageNet1K(ILSVRC2012)
-
-| Network           | macs    | params   | input size | gpu num     | batch | epochs | Top-1  |
-| ----------------- | ------- | -------- | ---------- | ----------- | ----- | ------ | ------ |
-| ViT-Base-Patch16  | 16.849G | 86.377M  | 224x224    | 2 RTX A5000 | 4096  | 100    | 83.290 |
-| ViT-Large-Patch16 | 59.647G | 304.024M | 224x224    | 2 RTX A5000 | 4096  | 100    | 85.876 |
-
-You can find more model training details in classification_training/imagenet/.
-
-## ViT finetune from self-trained MAE pretrain weight(100epoch) on ACCV2022
-
-| Network           | macs    | params   | input size | gpu num    | batch | epochs | Top-1  |
-| ----------------- | ------- | -------- | ---------- | ---------- | ----- | ------ | ------ |
-| ViT-Large-Patch16 | 59.651G | 308.124M | 224x224    | 2 RTX 4090 | 4096  | 100    | 90.693 |
-
-You can find more model training details in classification_training/accv2022/.
-
-# OCR text detection task results
-
-**DBNet**
-
-Paper:https://arxiv.org/abs/1911.08947
-
-Use combine dataset include ICDAR2017RCTW/ICDAR2019ART/ICDAR2019LSVT/ICDAR2019MLT to train and test.
-
-| Network        | macs     | params   | input size | gpu num     | batch | epochs | precision | recall | f1     |
-| -------------- | -------- | -------- | ---------- | ----------- | ----- | ------ | --------- | ------ | ------ |
-| repvgg_dbnet   | 11.806G  | 726.338K | 960x960    | 2 RTX A5000 | 128   | 200    | 88.756    | 74.205 | 80.831 |
-| resnet50_dbnet | 139.141G | 24.784M  | 960x960    | 2 RTX A5000 | 64    | 100    | 92.973    | 86.316 | 89.521 |
-| vanb1_dbnet    | 108.596G | 14.439M  | 960x960    | 2 RTX A5000 | 64    | 100    | 93.049    | 86.881 | 89.859 |
-
-You can find more model training details in ocr_text_detection_training/.
-
-# OCR text recognition task results
-
-**CRNN+LSTM+CTC**
-
-Paper:https://arxiv.org/abs/1507.05717
-
-Use combine dataset aistudio_baidu_street/chinese_dataset/synthetic_chinese_string_dataset/meta_self_learning_dataset to train and test.
-
-| Network            | macs     | params   | input size | gpu num     | batch | epochs | lcs_precision | lcs_recall |
-| ------------------ | -------- | -------- | ---------- | ----------- | ----- | ------ | ------------- | ---------- |
-| repvgg_ctc_model   | 951.804M | 6.865M   | 32x512     | 2 RTX A5000 | 512   | 50     | 98.079        | 97.564     |
-| resnet50_ctc_model | 12.474G  | 179.864M | 32x512     | 2 RTX A5000 | 1024  | 50     | 99.368        | 99.135     |
-| van_b1_ctc_model   | 2.410G   | 27.954 M | 32x512     | 2 RTX A5000 | 1024  | 50     | 98.868        | 97.597     |
-
-You can find more model training details in ocr_text_recognition_training/.
+You can find more model training details in salient_object_detection_training/.
 
 # Human matting task results
 
@@ -522,31 +352,42 @@ Paper3:https://arxiv.org/abs/2202.09741
 
 Use combine dataset Deep_Automatic_Portrait_Matting/RealWorldPortrait636/P3M10K to train and test.
 
-
-| Network               | macs    | params  | input size | gpu num    | batch | epochs | iou    | precision | recall | sad    | mae    | mse    | grad   | conn   |
-| --------------------- | ------- | ------- | ---------- | ---------- | ----- | ------ | ------ | --------- | ------ | ------ | ------ | ------ | ------ | ------ |
-| resnet50_pfan_matting | 85.638G | 29.654M | 832x832    | 2 RTX 3090 | 32    | 50     | 0.9818 | 0.9879    | 0.9937 | 5.9215 | 0.0085 | 0.0048 | 7.5277 | 5.6842 |
-| van_b2_pfan_matting   | 85.926G | 27.854M | 832x832    | 2 RTX 3090 | 32    | 50     | 0.9850 | 0.9900    | 0.9948 | 5.0200 | 0.0072 | 0.0038 | 5.5563 | 4.7644 |
+| Network                    | macs     | params  | input size | batch | epochs | iou    | precision | recall | sad    | mae    | mse    | grad   | conn   |
+| -------------------------- | -------- | ------- | ---------- | ----- | ------ | ------ | --------- | ------ | ------ | ------ | ------ | ------ | ------ |
+| resnet50_pfan_matting      | 86.093G  | 29.654M | 832x832    | 96    | 100    | 0.9809 | 0.9873    | 0.9932 | 6.0597 | 0.0087 | 0.0051 | 7.9799 | 5.8297 |
+| convformerm36_pfan_matting | 195.854G | 55.503M | 832x832    | 96    | 100    | 0.9843 | 0.9901    | 0.9939 | 5.0884 | 0.0073 | 0.0038 | 6.4283 | 4.8397 |
 
 You can find more model training details in human_matting_training/.
 
-# Salient object detection task results
+# OCR text detection task results
 
-**PFAN+Segmentation**
+**DBNet**
 
-Paper1:https://arxiv.org/abs/1903.00179
+Paper:https://arxiv.org/abs/1911.08947
 
-Paper2:https://arxiv.org/abs/2202.09741
+Use combine dataset include ICDAR2017RCTW/ICDAR2019ART/ICDAR2019LSVT/ICDAR2019MLT to train and test.
 
-Use combine dataset DIS5K/HRS10K/HRSOD/UHRSD to train and test.
+| Network             | macs     | params  | input size | batch | epochs | precision | recall | f1     |
+| ------------------- | -------- | ------- | ---------- | ----- | ------ | --------- | ------ | ------ |
+| resnet50_dbnet      | 158.914G | 24.784M | 1024x1024  | 128   | 100    | 92.072    | 86.595 | 89.249 |
+| convformerm36_dbnet | 340.367G | 54.528M | 1024x1024  | 64    | 100    | 92.748    | 89.947 | 91.326 |
 
+You can find more model training details in ocr_text_detection_training/.
 
-| Network                    | macs    | params  | input size | gpu num     | batch | epochs | iou    | precision | recall | f_squared_beta |
-| -------------------------- | ------- | ------- | ---------- | ----------- | ----- | ------ | ------ | --------- | ------ | -------------- |
-| resnet50_pfan_segmentation | 70.921G | 26.580M | 832x832    | 8 RTX 4090D | 64    | 100    | 0.8501 | 0.8977    | 0.9389 | 0.9068         |
-| van_b2_pfan_segmentation   | 77.433G | 26.953M | 832x832    | 8 RTX 4090D | 64    | 100    | 0.8904 | 0.9292    | 0.9527 | 0.9345         |
+# OCR text recognition task results
 
-You can find more model training details in salient_object_detection_training/.
+**CRNN+LSTM+CTC**
+
+Paper:https://arxiv.org/abs/1507.05717
+
+Use combine dataset aistudio_baidu_street/chinese_dataset/synthetic_chinese_string_dataset/meta_self_learning_dataset to train and test.
+
+| Network                 | macs    | params   | input size | batch | epochs | lcs_precision | lcs_recall |
+| ----------------------- | ------- | -------- | ---------- | ----- | ------ | ------------- | ---------- |
+| resnet50_ctc_model      | 12.509G | 179.870M | 32x512     | 1024  | 50     | 99.498        | 99.212     |
+| convformerm36_ctc_model | 8.051G  | 70.121M  | 32x512     | 1024  | 50     | 99.452        | 99.201     |
+
+You can find more model training details in ocr_text_recognition_training/.
 
 # Face detection task results
 
@@ -556,115 +397,11 @@ Paper:https://arxiv.org/pdf/1905.00641
 
 Use WiderFace train and UFDD val datasets to train, WiderFace val dataset to test.
 
-
-| Network             | macs     | params  | input size | gpu num     | batch | epochs | decode setting                                             | Easy AP | Medium AP | Hard AP |
-| ------------------- | -------- | ------- | ---------- | ----------- | ----- | ------ | ---------------------------------------------------------- | ------- | --------- | ------- |
-| resnet50_retinaface | 100.372G | 27.277M | 960x960    | 2 RTX A5000 | 16    | 100    | max_object_num:200<br>min_score_threshold:0.3<br>topn:1000 | 0.9311  | 0.9043    | 0.7357  |
-| resnet50_retinaface | 100.372G | 27.277M | 960x960    | 2 RTX A5000 | 16    | 100    | max_object_num:1000<br>min_score_threshold:0.1<br>topn:2000 | 0.9357  | 0.9158    | 0.8105  |
+| Network             | macs     | params  | input size | batch | epochs | Easy AP | Medium AP | Hard AP |
+| ------------------- | -------- | ------- | ---------- | ----- | ------ | ------- | --------- | ------- |
+| resnet50_retinaface | 114.229G | 27.280M | 1024x1024  | 16    | 100    | 0.9369  | 0.9148    | 0.7801  |
 
 You can find more model training details in face_detection_training/.
-
-# Interactive segmentation task results
-
-**SAM(segment-anything)**
-
-Paper:https://arxiv.org/pdf/2304.02643
-
-using random noise prompt box to test model.
-
-| Network | dataset                  | input size | gpu num     | batch | epochs | iou    | precision | recall |
-| ------- | ------------------------ | ---------- | ----------- | ----- | ------ | ------ | --------- | ------ |
-| sam_b   | salient_object_detection | 1024x1024  | 8 RTX 4090D | 16    | 500    | 0.9486 | 0.9676    | 0.9783 |
-| sam_b   | sobav2                   | 1024x1024  | 2 RTX 3090  | 4     | 500    | 0.9871 | 0.9935    | 0.9930 |
-| sam_b   | desobav2                 | 1024x1024  | 8 RTX 4090D | 16    | 200    | 0.9862 | 0.9919    | 0.9941 |
-
-You can find more model training details in interactive_segmentation_training/.
-
-# Image inpainting model task results
-
-**Aggregated Contextual Transformations for High-Resolution Image Inpainting**
-
-Paper:https://arxiv.org/abs/2104.01431
-
-## All image inpainting model training from scratch on CelebA-HQ
-
-Trained image inpainting model on CelebA-HQ dataset.Test image num=2000.
-
-| Network | input size | epochs | Mask     | mae    | psnr   | ssim   | fid    |
-| ------- | ---------- | ------ | -------- | ------ | ------ | ------ | ------ |
-| AOT-GAN | 512x512    | 100    | 0.01-0.1 | 0.0023 | 40.368 | 0.9853 | 0.8003 |
-| AOT-GAN | 512x512    | 100    | 0.1-0.2  | 0.0064 | 33.724 | 0.9592 | 2.1704 |
-| AOT-GAN | 512x512    | 100    | 0.2-0.3  | 0.0122 | 29.996 | 0.9245 | 3.8093 |
-| AOT-GAN | 512x512    | 100    | 0.3-0.4  | 0.0192 | 27.343 | 0.8860 | 5.4981 |
-| AOT-GAN | 512x512    | 100    | 0.4-0.5  | 0.0279 | 25.154 | 0.8426 | 8.3303 |
-| AOT-GAN | 512x512    | 100    | 0.5-0.6  | 0.0486 | 21.576 | 0.7704 | 14.553 |
-
-You can find more model training details in image_inpainting_training/celebahq/.
-
-## All image inpainting model training from scratch on Places365-standard
-
-Trained image inpainting model on Places365-standard dataset.Test image num=36500.
-
-| Network | input size | epochs | Mask     | mae    | psnr   | ssim   | fid    |
-| ------- | ---------- | ------ | -------- | ------ | ------ | ------ | ------ |
-| AOT-GAN | 512x512    | 5      | 0.01-0.1 | 0.0041 | 35.505 | 0.9772 | 0.1412 |
-| AOT-GAN | 512x512    | 5      | 0.1-0.2  | 0.0114 | 29.250 | 0.9374 | 0.4833 |
-| AOT-GAN | 512x512    | 5      | 0.2-0.3  | 0.0214 | 25.802 | 0.8855 | 1.1973 |
-| AOT-GAN | 512x512    | 5      | 0.3-0.4  | 0.0331 | 23.391 | 0.8291 | 2.5272 |
-| AOT-GAN | 512x512    | 5      | 0.4-0.5  | 0.0469 | 21.504 | 0.7677 | 5.0670 |
-| AOT-GAN | 512x512    | 5      | 0.5-0.6  | 0.0737 | 18.904 | 0.6795 | 14.951 |
-
-
-| Network                  | input size | epochs | Mask     | mae    | psnr   | ssim   | fid    |
-| ------------------------ | ---------- | ------ | -------- | ------ | ------ | ------ | ------ |
-| AOT-GAN-light            | 512x512    | 5      | 0.01-0.1 | 0.0043 | 35.023 | 0.9757 | 0.1680 |
-| AOT-GAN-light            | 512x512    | 5      | 0.1-0.2  | 0.0121 | 28.824 | 0.9338 | 0.6524 |
-| AOT-GAN-light            | 512x512    | 5      | 0.2-0.3  | 0.0227 | 25.423 | 0.8798 | 1.7831 |
-| AOT-GAN-light            | 512x512    | 5      | 0.3-0.4  | 0.0350 | 23.052 | 0.8218 | 4.0379 |
-| AOT-GAN-light            | 512x512    | 5      | 0.4-0.5  | 0.0494 | 21.199 | 0.7590 | 8.2494 |
-| AOT-GAN-light            | 512x512    | 5      | 0.5-0.6  | 0.0768 | 18.690 | 0.6719 | 22.745 |
-| TRANSX-LKA-AOT-GAN-light | 512x512    | 1      | 0.01-0.1 | 0.0042 | 35.287 | 0.9763 | 0.1611 |
-| TRANSX-LKA-AOT-GAN-light | 512x512    | 1      | 0.1-0.2  | 0.0117 | 29.148 | 0.9356 | 0.5648 |
-| TRANSX-LKA-AOT-GAN-light | 512x512    | 1      | 0.2-0.3  | 0.0217 | 25.790 | 0.8835 | 1.3744 |
-| TRANSX-LKA-AOT-GAN-light | 512x512    | 1      | 0.3-0.4  | 0.0331 | 23.451 | 0.8281 | 2.7966 |
-| TRANSX-LKA-AOT-GAN-light | 512x512    | 1      | 0.4-0.5  | 0.0464 | 21.599 | 0.7681 | 5.1937 |
-| TRANSX-LKA-AOT-GAN-light | 512x512    | 1      | 0.5-0.6  | 0.0718 | 19.034 | 0.6838 | 12.825 |
-
-
-You can find more model training details in image_inpainting_training/places365_standard.
-
-
-## All image inpainting model training from scratch on Places365-challenge
-
-Trained image inpainting model on Places365-challenge dataset.Test image num=36500.
-
-| Network | input size | epochs | Mask     | mae    | psnr   | ssim   | fid    |
-| ------- | ---------- | ------ | -------- | ------ | ------ | ------ | ------ |
-| AOT-GAN | 512x512    | 1      | 0.01-0.1 | 0.0039 | 35.807 | 0.9781 | 0.1318 |
-| AOT-GAN | 512x512    | 1      | 0.1-0.2  | 0.0110 | 29.499 | 0.9395 | 0.4493 |
-| AOT-GAN | 512x512    | 1      | 0.2-0.3  | 0.0207 | 26.021 | 0.8890 | 1.0881 |
-| AOT-GAN | 512x512    | 1      | 0.3-0.4  | 0.0320 | 23.586 | 0.8338 | 2.2785 |
-| AOT-GAN | 512x512    | 1      | 0.4-0.5  | 0.0454 | 21.674 | 0.7734 | 4.4948 |
-| AOT-GAN | 512x512    | 1      | 0.5-0.6  | 0.0715 | 19.039 | 0.6848 | 13.475 |
-
-
-| Network                  | input size | epochs | Mask     | mae    | psnr   | ssim   | fid    |
-| ------------------------ | ---------- | ------ | -------- | ------ | ------ | ------ | ------ |
-| AOT-GAN-light            | 512x512    | 1      | 0.01-0.1 | 0.0042 | 35.263 | 0.9762 | 0.1609 |
-| AOT-GAN-light            | 512x512    | 1      | 0.1-0.2  | 0.0118 | 29.043 | 0.9349 | 0.6028 |
-| AOT-GAN-light            | 512x512    | 1      | 0.2-0.3  | 0.0221 | 25.609 | 0.8814 | 1.6013 |
-| AOT-GAN-light            | 512x512    | 1      | 0.3-0.4  | 0.0340 | 23.209 | 0.8235 | 3.5484 |
-| AOT-GAN-light            | 512x512    | 1      | 0.4-0.5  | 0.0480 | 21.332 | 0.7606 | 7.2095 |
-| AOT-GAN-light            | 512x512    | 1      | 0.5-0.6  | 0.0745 | 18.778 | 0.6714 | 20.031 |
-| TRANSX-LKA-AOT-GAN-light | 512x512    | 1      | 0.01-0.1 | 0.0041 | 35.466 | 0.9769 | 0.1392 |
-| TRANSX-LKA-AOT-GAN-light | 512x512    | 1      | 0.1-0.2  | 0.0114 | 29.275 | 0.9369 | 0.4566 |
-| TRANSX-LKA-AOT-GAN-light | 512x512    | 1      | 0.2-0.3  | 0.0212 | 25.888 | 0.8854 | 1.0463 |
-| TRANSX-LKA-AOT-GAN-light | 512x512    | 1      | 0.3-0.4  | 0.0325 | 23.530 | 0.8300 | 2.0431 |
-| TRANSX-LKA-AOT-GAN-light | 512x512    | 1      | 0.4-0.5  | 0.0457 | 21.667 | 0.7699 | 3.8222 |
-| TRANSX-LKA-AOT-GAN-light | 512x512    | 1      | 0.5-0.6  | 0.0711 | 19.104 | 0.6836 | 9.9868 |
-
-
-You can find more model training details in image_inpainting_training/places365_challenge.
 
 # Diffusion model task results
 
@@ -676,19 +413,26 @@ Paper:https://arxiv.org/abs/2006.11239
 
 Paper:https://arxiv.org/abs/2010.02502
 
-**High-Resolution Image Synthesis with Latent Diffusion Models**
+## All diffusion model with different sampling methods on CelebA-HQ
 
-Paper:https://arxiv.org/abs/2112.10752
+Trained diffusion unet on CelebA-HQ dataset(DDPM method).Test image num=28000.
+
+| sampling method | input size | steps | condition label(train/test) | FID    | IS score(mean/std) |
+| --------------- | ---------- | ----- | --------------------------- | ------ | ------------------ |
+| DDPM            | 64x64      | 1000  | False/False                 | 6.409  | 2.486/0.082        |
+| DDIM            | 64x64      | 50    | False/False                 | 14.623 | 2.622/0.073        |
+
+You can find more model training details in diffusion_model_training/celebahq/.
 
 ## All diffusion model with different sampling methods on CIFAR10
 
 Trained diffusion unet on CIFAR10 dataset(DDPM method).Test image num=50000.
 
-| sampling method | input size | steps | condition label(train/test) | FID   | IS score(mean/std) |
-| --------------- | ---------- | ----- | --------------------------- | ----- | ------------------ |
-| DDPM            | 32x32      | 1000  | False/False                 | 5.394 | 8.684/0.169        |
-| DDIM            | 32x32      | 50    | False/False                 | 7.644 | 8.642/0.129        |
-| DDPM            | 32x32      | 1000  | True/True                   | 3.949 | 8.985/0.139        |
+| sampling method | input size | steps | condition label(train/test) | FID    | IS score(mean/std) |
+| --------------- | ---------- | ----- | --------------------------- | ------ | ------------------ |
+| DDPM            | 32x32      | 1000  | False/False                 | 10.302 | 8.213/0.257        |
+| DDIM            | 32x32      | 50    | False/False                 | 12.440 | 8.318/0.408        |
+| DDPM            | 32x32      | 1000  | True/True                   | 5.049  | 8.654/0.112        |
 
 You can find more model training details in diffusion_model_training/cifar10/.
 
@@ -698,22 +442,11 @@ Trained diffusion unet on CIFAR100 dataset(DDPM method).Test image num=50000.
 
 | sampling method | input size | steps | condition label(train/test) | FID    | IS score(mean/std) |
 | --------------- | ---------- | ----- | --------------------------- | ------ | ------------------ |
-| DDPM            | 32x32      | 1000  | False/False                 | 9.620  | 9.399/0.138        |
-| DDIM            | 32x32      | 50    | False/False                 | 13.250 | 8.946/0.150        |
-| DDPM            | 32x32      | 1000  | True/True                   | 5.209  | 10.880/0.180       |
+| DDPM            | 32x32      | 1000  | False/False                 | 16.298 | 8.398/0.281        |
+| DDIM            | 32x32      | 50    | False/False                 | 21.402 | 8.344/0.192        |
+| DDPM            | 32x32      | 1000  | True/True                   | 6.953  | 10.344/0.150       |
 
 You can find more model training details in diffusion_model_training/cifar100/.
-
-## All diffusion model with different sampling methods on CelebA-HQ
-
-Trained diffusion unet on CelebA-HQ dataset(DDPM method).Test image num=28000.
-
-| sampling method | input size | steps | condition label(train/test) | FID    | IS score(mean/std) |
-| --------------- | ---------- | ----- | --------------------------- | ------ | ------------------ |
-| DDPM            | 64x64      | 1000  | False/False                 | 6.491  | 2.577/0.035        |
-| DDIM            | 64x64      | 50    | False/False                 | 15.195 | 2.625/0.028        |
-
-You can find more model training details in diffusion_model_training/celebahq/.
 
 ## All diffusion model with different sampling methods on FFHQ
 
@@ -721,7 +454,7 @@ Trained diffusion unet on FFHQ dataset(DDPM method).Test image num=60000.
 
 | sampling method | input size | steps | condition label(train/test) | FID    | IS score(mean/std) |
 | --------------- | ---------- | ----- | --------------------------- | ------ | ------------------ |
-| DDPM            | 64x64      | 1000  | False/False                 | 6.671  | 3.399/0.055        |
-| DDIM            | 64x64      | 50    | False/False                 | 10.479 | 3.431/0.044        |
+| DDPM            | 64x64      | 1000  | False/False                 | 7.758  | 3.283/0.124        |
+| DDIM            | 64x64      | 50    | False/False                 | 11.328 | 3.417/0.071        |
 
 You can find more model training details in diffusion_model_training/ffhq/.

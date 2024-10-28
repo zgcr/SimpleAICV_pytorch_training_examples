@@ -561,10 +561,9 @@ class AutoAugment:
         for op in sub_policy:
             image = op(image)
 
-        return {
-            'image': image,
-            'label': label,
-        }
+        sample['image'], sample['label'] = image, label
+
+        return sample
 
 
 _RAND_TRANSFORMS = [
@@ -686,7 +685,6 @@ class RandAugment:
         for op in ops:
             image = op(image)
 
-        return {
-            'image': image,
-            'label': label,
-        }
+        sample['image'], sample['label'] = image, label
+
+        return sample

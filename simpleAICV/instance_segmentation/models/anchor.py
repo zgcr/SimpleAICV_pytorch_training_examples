@@ -1,4 +1,6 @@
+import math
 import numpy as np
+
 from itertools import product
 
 
@@ -10,8 +12,8 @@ class YOLACTAnchors:
                  ratios=[1, 1 / 2, 2],
                  strides=[8, 16, 32, 64, 128]):
         self.resize = resize
+        self.scales = resize / 544. * np.array(scales, dtype=np.float32)
         self.ratios = np.array(ratios, dtype=np.float32)
-        self.scales = np.array(scales, dtype=np.float32)
         self.strides = np.array(strides, dtype=np.float32)
 
     def __call__(self, fpn_feature_sizes):
@@ -48,3 +50,40 @@ class YOLACTAnchors:
         feature_anchors = np.array(feature_anchors, dtype=np.float32)
 
         return feature_anchors
+
+
+if __name__ == '__main__':
+    import os
+    import random
+    import numpy as np
+    import torch
+    seed = 0
+    # for hash
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    # for python and numpy
+    random.seed(seed)
+    np.random.seed(seed)
+    # for cpu gpu
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+
+    resize = 1024
+    scales = np.array([24, 48, 96, 192, 384], dtype=np.float32)
+    ratios = np.array([1, 1 / 2, 2], dtype=np.float32)
+    strides = np.array([8, 16, 32, 64, 128], dtype=np.float32)
+    image_w, image_h = 1024, 1024
+    fpn_feature_sizes = [[
+        math.ceil(image_w / stride),
+        math.ceil(image_h / stride)
+    ] for stride in strides]
+    print('1111', fpn_feature_sizes)
+
+    anchors = YOLACTAnchors(resize=resize,
+                            scales=scales,
+                            ratios=ratios,
+                            strides=strides)
+    one_image_anchors = anchors(fpn_feature_sizes)
+
+    for per_level_anchors in one_image_anchors:
+        print('2222', per_level_anchors.shape, per_level_anchors[0])

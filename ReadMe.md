@@ -1,5 +1,5 @@
-- [My column](#my-column)
 - [📢 News!](#-news)
+- [My column](#my-column)
 - [Introduction](#introduction)
 - [All task training results](#all-task-training-results)
 - [Environments](#environments)
@@ -17,61 +17,60 @@
   - [ADE20K](#ade20k)
   - [CelebA-HQ](#celeba-hq)
   - [FFHQ](#ffhq)
-  - [Places365-standard/challenge](#places365-standardchallenge)
-- [How to train and test model](#how-to-train-and-test-model)
+- [How to train or test a model](#how-to-train-or-test-a-model)
 - [How to use gradio demo](#how-to-use-gradio-demo)
 - [Reference](#reference)
 - [Citation](#citation)
 
 
-# My column
-
-https://www.zhihu.com/column/c_1692623656205897728
-
 # 📢 News!
 
 * 2024/04/15: support segment-anything model training/testing/jupyter example/gradio demo.
+
+# My column
+
+https://www.zhihu.com/column/c_1692623656205897728
 
 # Introduction
 
 **This repository provides simple training and testing examples for the following tasks:**
 
-| task                          | support dataset                                                                    | support network                                               |
-| ----------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| Image classification task     | CIFAR100<br>ImageNet1K(ILSVRC2012)<br>ImageNet21K(Winter 2021 release)<br>ACCV2022 | ResNet<br>DarkNet<br>RepVGG<br>RegNetX<br>ViT<br>VAN          |
-| Object detection task         | VOC2007 and VOC2012<br>COCO2017<br>Objects365(v2,2020)                             | RetinaNet<br>FCOS<br>CenterNet<br>TTFNet<br>DETR<br>DINO-DETR |
-| Semantic segmentation task    | ADE20K                                                                             | DeepLabv3+<br>U2Net                                           |
-| Instance segmentation task    | COCO2017                                                                           | YOLACT<br>SOLOv2                                              |
-| Knowledge distillation task   | ImageNet1K(ILSVRC2012)                                                             | KD loss(for ResNet)<br>DML loss(for ResNet)                   |
-| Contrastive learning task     | ImageNet1K(ILSVRC2012)                                                             | DINO(for ResNet)                                              |
-| Masked image modeling task    | ImageNet1K(ILSVRC2012)<br>ACCV2022                                                 | MAE(for ViT)                                                  |
-| OCR text detection task       | /                                                                                  | DBNet                                                         |
-| OCR text recognition task     | /                                                                                  | CTC Model                                                     |
-| Human matting task            | /                                                                                  | PFAN Matting model                                            |
-| Salient object detection task | /                                                                                  | PFAN Segmentation model                                       |
-| Face detection task           | /                                                                                  | RetinaFace                                                    |
-| Interactive segmentation task | /                                                                                  | SAM(segment-anything)                                         |
-| Image inpainting task         | CelebA-HQ<br>Places365-standard<br>Places365-challenge                             | AOT-GAN<br>TRANSX-LKA-AOT-GAN                                 |
-| Diffusion model task          | CIFAR10<br>CIFAR100<br>CelebA-HQ<br>FFHQ                                           | DDPM<br>DDIM                                                  |
-
+| task                          | support dataset                                                        | support network                               |
+| ----------------------------- | ---------------------------------------------------------------------- | --------------------------------------------- |
+| Image classification task     | CIFAR100<br>ImageNet1K(ILSVRC2012)<br>ImageNet21K(Winter 2021 release) | Convformer<br>DarkNet<br>ResNet<br>VAN<br>ViT |
+| Knowledge distillation task   | ImageNet1K(ILSVRC2012)                                                 | DML loss(ResNet)<br>KD loss(ResNet)           |
+| Masked image modeling task    | ImageNet1K(ILSVRC2012)                                                 | MAE(ViT)                                      |
+| Object detection task         | COCO2017<br>Objects365(v2,2020)<br>VOC2007 and VOC2012                 | DETR<br>DINO-DETR<br>RetinaNet<br>FCOS        |
+| Semantic segmentation task    | ADE20K<br>COCO2017                                                     | DeepLabv3+                                    |
+| Instance segmentation task    | COCO2017                                                               | SOLOv2<br>YOLACT                              |
+| Salient object detection task | combine dataset                                                        | pfan-segmentation                             |
+| Human matting task            | combine dataset                                                        | pfan-matting                                  |
+| OCR text detection task       | combine dataset                                                        | DBNet                                         |
+| OCR text recognition task     | combine dataset                                                        | CTC Model                                     |
+| Face detection task           | combine dataset                                                        | RetinaFace                                    |
+| Interactive segmentation task | combine dataset                                                        | SAM(segment-anything)                         |
+| Diffusion model task          | CelebA-HQ<br>CIFAR10<br>CIFAR100<br>FFHQ                               | DDPM<br>DDIM                                  |
 
 # All task training results
+
+**Most experiments were trained on 2-8 RTX4090D GPU, pytorch2.3, ubuntu22.04.**
 
 **See all task training results in [results.md](results.md).**
 
 # Environments
 
-**1、This repository only supports running on ubuntu(verison>=18.04 LTS).**
+**1、This repository only supports running on ubuntu(verison>=22.04 LTS).**
 
 **2、This repository only support one node one gpu/one node multi gpus mode with pytorch DDP training.**
 
-**3、Please make sure your Python environment version>=3.7.**
+**3、Please make sure your Python environment version>=3.9.**
 
-**4、Please make sure your pytorch version>=1.10.**
+**4、Please make sure your pytorch version>=2.0.**
 
 **5、If you want to use torch.complie() function,please make sure your pytorch version>=2.0.Using pytorch2.0/2.2/2.3,don't use pytorch2.1.**
 
 **Use pip or conda to install those Packages in your Python environment:**
+
 ```
 torch
 torchvision
@@ -93,12 +92,11 @@ yapf
 onnx
 onnxruntime
 onnxsim
-thop
+thop==0.1.1.post2209072238
 gradio==4.26.0
 transformers==4.41.2
 open-clip-torch==2.24.0
 ```
-
 
 **If you want to use xformers,install xformers Packge from offical github repository:**
 
@@ -121,21 +119,18 @@ If you only want to download all my pretrained models(model.state_dict()),you ca
 
 ```
 # huggingface
-https://huggingface.co/zgcr654321/classification_training/tree/main
-https://huggingface.co/zgcr654321/contrastive_learning_training/tree/main
-https://huggingface.co/zgcr654321/detection_training/tree/main
-https://huggingface.co/zgcr654321/image_inpainting_training/tree/main
-https://huggingface.co/zgcr654321/diffusion_model_training/tree/main
-https://huggingface.co/zgcr654321/distillation_training/tree/main
-https://huggingface.co/zgcr654321/instance_segmentation_training/tree/main
-https://huggingface.co/zgcr654321/masked_image_modeling_training/tree/main
-https://huggingface.co/zgcr654321/ocr_text_detection_training/tree/main
-https://huggingface.co/zgcr654321/ocr_text_recognition_training/tree/main
-https://huggingface.co/zgcr654321/human_matting_training/tree/main
-https://huggingface.co/zgcr654321/salient_object_detection_training/tree/main
-https://huggingface.co/zgcr654321/face_detection_training/tree/main
-https://huggingface.co/zgcr654321/interactive_segmentation_training/tree/main
-https://huggingface.co/zgcr654321/semantic_segmentation_training/tree/main
+https://huggingface.co/zgcr654321/0.classification_training/tree/main
+https://huggingface.co/zgcr654321/1.distillation_training/tree/main
+https://huggingface.co/zgcr654321/2.masked_image_modeling_training/tree/main
+https://huggingface.co/zgcr654321/3.detection_training/tree/main
+https://huggingface.co/zgcr654321/4.semantic_segmentation_training/tree/main
+https://huggingface.co/zgcr654321/5.instance_segmentation_training/tree/main
+https://huggingface.co/zgcr654321/6.salient_object_detection_training/tree/main
+https://huggingface.co/zgcr654321/7.human_matting_training/tree/main
+https://huggingface.co/zgcr654321/8.ocr_text_detection_training/tree/main
+https://huggingface.co/zgcr654321/9.ocr_text_recognition_training/tree/main
+https://huggingface.co/zgcr654321/10.face_detection_training/tree/main
+https://huggingface.co/zgcr654321/20.diffusion_model_training/tree/main
 https://huggingface.co/zgcr654321/pretrained_models/tree/main
 
 # Baidu-Netdisk
@@ -309,20 +304,9 @@ FFHQ
 |---ffhq-dataset-v2.json
 ```
 
-## Places365-standard/challenge
+# How to train or test a model
 
-Make sure the folder architecture as follows:
-```
-Places365-standard/challenge
-|
-|                            |---train_large all sub folders
-|---high_resolution_images---|---val_large   all images
-|                            |---test_large  all images
-```
-
-# How to train and test model
-
-**If you want to train or test model,you need enter a training experiment folder directory,then run train.sh or test.sh.**
+**If you want to train or test a model,you need enter a training experiment folder directory,then run train.sh or test.sh.**
 
 For example,you can enter in folder classification_training/imagenet/resnet50.
 
@@ -333,12 +317,12 @@ CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.run --nproc_per_node=2 --ma
 
 if you want to test this model,you need have a pretrained model first,modify trained_model_path in test_config.py,then run test.sh:
 ```
-CUDA_VISIBLE_DEVICES=0,1 python -m torch.distributed.run --nproc_per_node=2 --master_addr 127.0.1.0 --master_port 10000 ../../../tools/test_classification_model.py --work-dir ./
+CUDA_VISIBLE_DEVICES=0 python -m torch.distributed.run --nproc_per_node=1 --master_addr 127.0.1.0 --master_port 10000 ../../../tools/test_classification_model.py --work-dir ./
 ```
 
 **CUDA_VISIBLE_DEVICES is used to specify the gpu ids for this training.Please make sure the number of nproc_per_node equal to the number of using gpu cards.Make sure master_addr/master_port are unique for each training.**
 
-**All checkpoints/log are saved in your executing training/testing experiment folder directory.**
+**Checkpoints/log folders are saved in your executing training/testing experiment folder directory.**
 
 **Also, You can modify super parameters in train_config.py/test_config.py.**
 
@@ -352,21 +336,23 @@ semantic_segmentation demo
 instance_segmentation demo
 text_detection demo
 text_recognition demo
-human_matting demo
 salient_object_detection demo
+human_matting demo
 face_detection demo
 segment_anything demo
 ```
 
-For example,you can run detection gradio demo(please prepare trained model weight first):
+For example,you can run detection gradio demo(please prepare trained model weight first and modify model weight path):
 ```
 python gradio_detect_single_image.py
 ```
 
 # Reference
 
+```
 https://github.com/facebookresearch/segment-anything
-
+https://github.com/facebookresearch/sam2
+```
 
 # Citation
 

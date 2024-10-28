@@ -26,6 +26,7 @@ class CelebAHQDataset(Dataset):
                 per_image_path = os.path.join(per_sub_class_dir,
                                               per_image_name)
                 self.image_path_list.append(per_image_path)
+        self.image_path_list = sorted(self.image_path_list)
 
         self.class_name_to_label = {
             sub_class_name: i
@@ -46,10 +47,13 @@ class CelebAHQDataset(Dataset):
         return len(self.image_path_list)
 
     def __getitem__(self, idx):
+        path = self.image_path_list[idx]
+
         image = self.load_image(idx)
         label = self.load_label(idx)
 
         sample = {
+            'path': path,
             'image': image,
             'label': label,
         }
@@ -104,27 +108,27 @@ if __name__ == '__main__':
     import torchvision.transforms as transforms
     from tqdm import tqdm
 
-    from simpleAICV.diffusion_model.common import Resize, RandomHorizontalFlip, Normalize, ClassificationCollater
+    from simpleAICV.diffusion_model.common import Resize, RandomHorizontalFlip, Normalize, DiffusionWithLabelCollater
 
-    celebahqtraindataset = CelebAHQDataset(root_dir=CelebAHQ_path,
-                                           set_name='train',
-                                           transform=transforms.Compose([
-                                               Resize(resize=256),
-                                               RandomHorizontalFlip(prob=0.5),
-                                               Normalize(),
-                                           ]))
+    celebahqtraindataset = CelebAHQDataset(
+        root_dir=CelebAHQ_path,
+        set_name='train',
+        transform=transforms.Compose([
+            Resize(resize=256),
+            RandomHorizontalFlip(prob=0.5),
+            #    Normalize(),
+        ]))
 
     count = 0
     for per_sample in tqdm(celebahqtraindataset):
-        print(per_sample['image'].shape, per_sample['label'].shape,
-              per_sample['label'], type(per_sample['image']),
-              type(per_sample['label']))
+        print(per_sample['path'], per_sample['image'].shape,
+              per_sample['label'].shape, per_sample['label'],
+              type(per_sample['image']), type(per_sample['label']))
 
-        # temp_dir = './temp'
+        # temp_dir = './temp1'
         # if not os.path.exists(temp_dir):
         #     os.makedirs(temp_dir)
 
-        # per_sample['image'] = per_sample['image'] * 255.
         # color = [random.randint(0, 255) for _ in range(3)]
         # image = np.ascontiguousarray(per_sample['image'], dtype=np.uint8)
         # image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
@@ -140,13 +144,13 @@ if __name__ == '__main__':
         # cv2.imencode('.jpg', image)[1].tofile(
         #     os.path.join(temp_dir, f'idx_{count}.jpg'))
 
-        if count < 10:
+        if count < 2:
             count += 1
         else:
             break
 
     from torch.utils.data import DataLoader
-    collater = ClassificationCollater()
+    collater = DiffusionWithLabelCollater()
     train_loader = DataLoader(celebahqtraindataset,
                               batch_size=128,
                               shuffle=True,
@@ -158,43 +162,7 @@ if __name__ == '__main__':
         images, labels = data['image'], data['label']
         print(images.shape, labels.shape)
         print(images.dtype, labels.dtype)
-        if count < 10:
-            count += 1
-        else:
-            break
-
-    ilsvrc2012valdataset = CelebAHQDataset(root_dir=CelebAHQ_path,
-                                           set_name='val',
-                                           transform=transforms.Compose([
-                                               Resize(resize=256),
-                                               Normalize(),
-                                           ]))
-
-    count = 0
-    for per_sample in tqdm(ilsvrc2012valdataset):
-        print(per_sample['image'].shape, per_sample['label'].shape,
-              per_sample['label'], type(per_sample['image']),
-              type(per_sample['label']))
-
-        if count < 10:
-            count += 1
-        else:
-            break
-
-    from torch.utils.data import DataLoader
-    collater = ClassificationCollater()
-    val_loader = DataLoader(ilsvrc2012valdataset,
-                            batch_size=128,
-                            shuffle=False,
-                            num_workers=4,
-                            collate_fn=collater)
-
-    count = 0
-    for data in tqdm(val_loader):
-        images, labels = data['image'], data['label']
-        print(images.shape, labels.shape)
-        print(images.dtype, labels.dtype)
-        if count < 10:
+        if count < 2:
             count += 1
         else:
             break

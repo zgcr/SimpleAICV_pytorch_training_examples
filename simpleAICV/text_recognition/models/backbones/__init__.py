@@ -1,3 +1,3 @@
-from .resnetbackbone import *
-from .vanbackbone import *
-from .vggnetbackbone import *
+from .convformer import *
+from .resnet import *
+from .van import *

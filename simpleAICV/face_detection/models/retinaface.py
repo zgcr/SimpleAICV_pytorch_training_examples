@@ -9,7 +9,9 @@ sys.path.append(BASE_DIR)
 import torch
 import torch.nn as nn
 
-from simpleAICV.face_detection.models import backbones
+from torch.utils.checkpoint import checkpoint
+
+from simpleAICV.detection.models import backbones
 from simpleAICV.face_detection.models.fpn import RetinaFaceFPN, RetinaFaceSSH
 from simpleAICV.face_detection.models.head import RetinaFaceClassHead, RetinaFaceBoxHead
 
@@ -29,11 +31,15 @@ class RetinaFace(nn.Module):
                  backbone_pretrained_path='',
                  fpn_feature_num=3,
                  planes=256,
-                 anchor_num=2):
+                 anchor_num=3,
+                 use_gradient_checkpoint=False):
         super(RetinaFace, self).__init__()
+        self.use_gradient_checkpoint = use_gradient_checkpoint
+
         self.backbone = backbones.__dict__[backbone_type](
             **{
                 'pretrained_path': backbone_pretrained_path,
+                'use_gradient_checkpoint': use_gradient_checkpoint,
             })
         self.fpn = RetinaFaceFPN(inplanes=self.backbone.out_channels[1:4],
                                  planes=planes)
@@ -52,15 +58,22 @@ class RetinaFace(nn.Module):
                 RetinaFaceBoxHead(inplanes=planes, anchor_num=anchor_num))
 
     def forward(self, inputs):
-        _, x2, x3, x4 = self.backbone(inputs)
+        features = self.backbone(inputs)
+        features = features[1:4]
 
         del inputs
 
-        features = self.fpn([x2, x3, x4])
+        if self.use_gradient_checkpoint:
+            features = checkpoint(self.fpn, features, use_reentrant=False)
+            feature1 = checkpoint(self.ssh1, features[0], use_reentrant=False)
+            feature2 = checkpoint(self.ssh2, features[1], use_reentrant=False)
+            feature3 = checkpoint(self.ssh3, features[2], use_reentrant=False)
+        else:
+            features = self.fpn(features)
+            feature1 = self.ssh1(features[0])
+            feature2 = self.ssh2(features[1])
+            feature3 = self.ssh3(features[2])
 
-        feature1 = self.ssh1(features[0])
-        feature2 = self.ssh2(features[1])
-        feature3 = self.ssh3(features[2])
         features = [feature1, feature2, feature3]
 
         cls_heads, box_heads = [], []
@@ -83,8 +96,8 @@ class RetinaFace(nn.Module):
 
         # if input size:[B,3,640,640]
         # features shape:[[B, 256, 80, 80],[B, 256, 40, 40],[B, 256, 20, 20]]
-        # cls_heads shape:[[B, 80, 80, 2, 1],[B, 40, 40, 2, 1],[B, 20, 20, 2, 1]]
-        # box_heads shape:[[B, 80, 80, 2, 4],[B, 40, 40, 2, 4],[B, 20, 20, 2, 4]]
+        # cls_heads shape:[[B, 80, 80, 3, 1],[B, 40, 40, 3, 1],[B, 20, 20, 3, 1]]
+        # box_heads shape:[[B, 80, 80, 3, 4],[B, 40, 40, 3, 4],[B, 20, 20, 3, 4]]
         return cls_heads, box_heads
 
 
@@ -142,8 +155,8 @@ if __name__ == '__main__':
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-    net = resnet50_retinaface()
-    image_h, image_w = 960, 960
+    net = resnet18_retinaface()
+    image_h, image_w = 1024, 1024
     from thop import profile
     from thop import clever_format
     macs, params = profile(net,
@@ -151,6 +164,69 @@ if __name__ == '__main__':
                            verbose=False)
     macs, params = clever_format([macs, params], '%.3f')
     print(f'1111, macs: {macs}, params: {params}')
+    outs = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    for out in outs:
+        for per_level_out in out:
+            print('2222', per_level_out.shape)
+
+    net = resnet34_retinaface()
+    image_h, image_w = 1024, 1024
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    outs = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    for out in outs:
+        for per_level_out in out:
+            print('2222', per_level_out.shape)
+
+    net = resnet50_retinaface()
+    image_h, image_w = 1024, 1024
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    outs = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    for out in outs:
+        for per_level_out in out:
+            print('2222', per_level_out.shape)
+
+    net = resnet101_retinaface()
+    image_h, image_w = 1024, 1024
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    outs = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    for out in outs:
+        for per_level_out in out:
+            print('2222', per_level_out.shape)
+
+    net = resnet152_retinaface()
+    image_h, image_w = 1024, 1024
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    outs = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
+    for out in outs:
+        for per_level_out in out:
+            print('2222', per_level_out.shape)
+
+    net = resnet152_retinaface(use_gradient_checkpoint=True)
+    image_h, image_w = 1024, 1024
     outs = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
     for out in outs:
         for per_level_out in out:

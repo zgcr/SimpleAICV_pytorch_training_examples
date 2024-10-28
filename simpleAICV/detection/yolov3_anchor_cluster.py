@@ -107,20 +107,28 @@ if __name__ == '__main__':
     from simpleAICV.detection.datasets.vocdataset import VocDetection
     from simpleAICV.detection.common import RandomHorizontalFlip, RandomCrop, RandomTranslate, Normalize, DetectionResize, DetectionCollater
 
-    coco = CocoDetection(
-        COCO2017_path,
-        set_name='train2017',
-        transform=transforms.Compose([
-            # RandomHorizontalFlip(prob=0.5),
-            # RandomCrop(prob=0.5),
-            # RandomTranslate(prob=0.5),
-            DetectionResize(resize=640,
-                            stride=32,
-                            resize_type='yolo_style',
-                            multi_scale=False,
-                            multi_scale_range=[0.8, 1.0]),
-            Normalize(),
-        ]))
+    # coco = CocoDetection(
+    #     COCO2017_path,
+    #     set_name='train2017',
+    #     transform=transforms.Compose([
+    #         # RandomHorizontalFlip(prob=0.5),
+    #         # RandomCrop(prob=0.5),
+    #         # RandomTranslate(prob=0.5),
+    #         DetectionResize(resize=640,
+    #                         stride=32,
+    #                         resize_type='yolo_style',
+    #                         multi_scale=False,
+    #                         multi_scale_range=[0.8, 1.0]),
+    #         Normalize(),
+    #     ]))
+
+    # for index in tqdm(range(len(coco))):
+    #     per_image_boxes = coco[index]['annots'][:, 0:4]
+    #     per_image_boxes_wh = per_image_boxes[:, 2:4] - per_image_boxes[:, 0:2]
+    #     per_image_boxes_wh = per_image_boxes_wh[per_image_boxes_wh[:, 0] > 0]
+    #     per_image_boxes_wh = per_image_boxes_wh[per_image_boxes_wh[:, 1] > 0]
+    #     per_image_boxes_wh = np.array(per_image_boxes_wh)
+    #     boxes_wh.append(per_image_boxes_wh)
 
     voc = VocDetection(
         root_dir=VOCdataset_path,
@@ -146,14 +154,6 @@ if __name__ == '__main__':
         per_image_boxes_wh = per_image_boxes_wh[per_image_boxes_wh[:, 1] > 0]
         per_image_boxes_wh = np.array(per_image_boxes_wh)
         boxes_wh.append(per_image_boxes_wh)
-
-    # for index in tqdm(range(len(coco))):
-    #     per_image_boxes = coco[index]['annots'][:, 0:4]
-    #     per_image_boxes_wh = per_image_boxes[:, 2:4] - per_image_boxes[:, 0:2]
-    #     per_image_boxes_wh = per_image_boxes_wh[per_image_boxes_wh[:, 0] > 0]
-    #     per_image_boxes_wh = per_image_boxes_wh[per_image_boxes_wh[:, 1] > 0]
-    #     per_image_boxes_wh = np.array(per_image_boxes_wh)
-    #     boxes_wh.append(per_image_boxes_wh)
 
     boxes_wh = np.concatenate(boxes_wh, axis=0)
     print(boxes_wh.shape)

@@ -27,14 +27,7 @@ def build_training_mode(config, model):
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model).cuda()
 
     local_rank = config.local_rank
-    # sam model has unused parameters
-    if hasattr(config, 'use_ema_model') and config.use_ema_model:
-        ema_model = EmaModel(model, decay=config.ema_model_decay)
-        ema_model.ema_model = nn.parallel.DistributedDataParallel(
-            ema_model.ema_model,
-            device_ids=[local_rank],
-            output_device=local_rank,
-            find_unused_parameters=True)
+
     model = nn.parallel.DistributedDataParallel(model,
                                                 device_ids=[local_rank],
                                                 output_device=local_rank,

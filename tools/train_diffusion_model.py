@@ -14,7 +14,7 @@ import time
 import torch
 from torch.utils.data import DataLoader
 
-from tools.scripts import train_diffusion_model
+from tools.diffusion_scripts import train_diffusion_model
 from tools.utils import (get_logger, set_seed, worker_seed_init_fn,
                          build_optimizer, Scheduler, build_training_mode)
 

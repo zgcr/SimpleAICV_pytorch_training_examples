@@ -17,7 +17,7 @@ import torchvision.transforms as transforms
 
 from simpleAICV.diffusion_model.metrics.compute_fid_is_score import ImagePathDataset
 
-from tools.scripts import generate_diffusion_model_images, compute_diffusion_model_metric
+from tools.diffusion_scripts import generate_diffusion_model_images, compute_diffusion_model_metric
 from tools.utils import get_logger, set_seed
 
 

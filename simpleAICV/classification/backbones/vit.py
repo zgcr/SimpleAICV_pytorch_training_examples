@@ -9,8 +9,6 @@ import torch.nn as nn
 from torch.utils.checkpoint import checkpoint
 
 __all__ = [
-    'vit_tiny_patch16',
-    'vit_small_patch16',
     'vit_base_patch16',
     'vit_large_patch16',
     'vit_huge_patch14',
@@ -30,17 +28,18 @@ class PatchEmbeddingBlock(nn.Module):
         super(PatchEmbeddingBlock, self).__init__()
         bias = False if has_norm else True
 
-        self.conv = nn.Conv2d(inplanes,
+        self.proj = nn.Conv2d(inplanes,
                               planes,
                               kernel_size,
                               stride=stride,
                               padding=padding,
                               groups=groups,
                               bias=bias)
-        self.norm = nn.LayerNorm(inplanes) if has_norm else nn.Identity()
+        self.norm = nn.LayerNorm(inplanes,
+                                 eps=1e-6) if has_norm else nn.Identity()
 
     def forward(self, x):
-        x = self.conv(x)
+        x = self.proj(x)
         x = x.flatten(2).transpose(1, 2)  # BCHW -> BNC
 
         x = self.norm(x)
@@ -55,8 +54,8 @@ class MultiHeadAttention(nn.Module):
         self.head_nums = head_nums
         self.scale = (inplanes // head_nums)**-0.5
 
-        self.qkv_linear = nn.Linear(inplanes, inplanes * 3)
-        self.out_linear = nn.Linear(inplanes, inplanes)
+        self.qkv = nn.Linear(inplanes, inplanes * 3)
+        self.proj = nn.Linear(inplanes, inplanes)
         self.dropout = nn.Dropout(dropout_prob)
         self.softmax = nn.Softmax(dim=-1)
 
@@ -64,9 +63,8 @@ class MultiHeadAttention(nn.Module):
         b, n, c = x.shape
 
         # [b,n,c] -> [b,n,3,head_num,c//head_num] -> [3,b,head_num,n,c//head_num]
-        x = self.qkv_linear(x).view(b, n, 3, self.head_nums,
-                                    c // self.head_nums).permute(
-                                        2, 0, 3, 1, 4)
+        x = self.qkv(x).view(b, n, 3, self.head_nums,
+                             c // self.head_nums).permute(2, 0, 3, 1, 4)
         # [3,b,head_num,n,c//head_num] -> 3个 [b,head_num,n,c//head_num]
         q, k, v = torch.unbind(x, dim=0)
 
@@ -76,7 +74,7 @@ class MultiHeadAttention(nn.Module):
         attn = self.dropout(attn)
 
         x = (attn @ v).transpose(1, 2).reshape(b, n, c)
-        x = self.out_linear(x)
+        x = self.proj(x)
         x = self.dropout(x)
 
         return x
@@ -146,21 +144,21 @@ class TransformerEncoderLayer(nn.Module):
                  dropout_prob=0.,
                  drop_path_prob=0.):
         super(TransformerEncoderLayer, self).__init__()
-        self.norm1 = nn.LayerNorm(inplanes)
-        self.attention = MultiHeadAttention(inplanes,
-                                            head_nums,
-                                            dropout_prob=dropout_prob)
-        self.norm2 = nn.LayerNorm(inplanes)
-        self.feed_forward = FeedForward(inplanes,
-                                        int(inplanes * feedforward_ratio),
-                                        dropout_prob=dropout_prob)
+        self.norm1 = nn.LayerNorm(inplanes, eps=1e-6)
+        self.attn = MultiHeadAttention(inplanes,
+                                       head_nums,
+                                       dropout_prob=dropout_prob)
+        self.norm2 = nn.LayerNorm(inplanes, eps=1e-6)
+        self.mlp = FeedForward(inplanes,
+                               int(inplanes * feedforward_ratio),
+                               dropout_prob=dropout_prob)
         # if test model,drop_path must set to 0.
         self.drop_path = DropPathBlock(
             drop_path_prob) if drop_path_prob > 0. else nn.Identity()
 
     def forward(self, x):
-        x = x + self.drop_path(self.attention(self.norm1(x)))
-        x = x + self.drop_path(self.feed_forward(self.norm2(x)))
+        x = x + self.drop_path(self.attn(self.norm1(x)))
+        x = x + self.drop_path(self.mlp(self.norm2(x)))
 
         return x
 
@@ -190,16 +188,16 @@ class ViT(nn.Module):
         self.num_classes = num_classes
         self.use_gradient_checkpoint = use_gradient_checkpoint
 
-        self.patch_embedding = PatchEmbeddingBlock(3,
-                                                   self.embedding_planes,
-                                                   kernel_size=self.patch_size,
-                                                   stride=self.patch_size,
-                                                   padding=0,
-                                                   groups=1,
-                                                   has_norm=False)
+        self.patch_embed = PatchEmbeddingBlock(3,
+                                               self.embedding_planes,
+                                               kernel_size=self.patch_size,
+                                               stride=self.patch_size,
+                                               padding=0,
+                                               groups=1,
+                                               has_norm=False)
 
         self.cls_token = nn.Parameter(torch.zeros(1, 1, self.embedding_planes))
-        self.position_encoding = nn.Parameter(
+        self.pos_embed = nn.Parameter(
             torch.ones(1, (self.image_size // self.patch_size)**2 + 1,
                        self.embedding_planes))
         self.embedding_dropout = nn.Dropout(dropout_prob)
@@ -224,7 +222,7 @@ class ViT(nn.Module):
                     drop_path_prob=drop_path_prob_list[i]))
         self.blocks = nn.ModuleList(blocks)
 
-        self.norm = nn.LayerNorm(self.embedding_planes)
+        self.norm = nn.LayerNorm(self.embedding_planes, eps=1e-6)
         self.fc = nn.Linear(self.embedding_planes, self.num_classes)
 
         for m in self.modules():
@@ -233,21 +231,21 @@ class ViT(nn.Module):
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0)
 
-        nn.init.trunc_normal_(self.position_encoding, std=.02)
+        nn.init.trunc_normal_(self.pos_embed, std=.02)
         nn.init.normal_(self.cls_token, std=1e-6)
         nn.init.trunc_normal_(self.fc.weight, std=2e-5)
         nn.init.zeros_(self.fc.bias)
 
     def forward(self, x):
-        x = self.patch_embedding(x)
+        x = self.patch_embed(x)
 
         x = torch.cat((self.cls_token.expand(x.shape[0], -1, -1), x), dim=1)
-        x = x + self.position_encoding
+        x = x + self.pos_embed
         x = self.embedding_dropout(x)
 
         for block in self.blocks:
             if self.use_gradient_checkpoint:
-                x = checkpoint(block, x)
+                x = checkpoint(block, x, use_reentrant=False)
             else:
                 x = block(x)
 
@@ -270,14 +268,6 @@ def _vit(patch_size, embedding_planes, block_nums, head_nums,
                 feedforward_ratio, **kwargs)
 
     return model
-
-
-def vit_tiny_patch16(**kwargs):
-    return _vit(16, 192, 12, 3, 4, **kwargs)
-
-
-def vit_small_patch16(**kwargs):
-    return _vit(16, 384, 12, 6, 4, **kwargs)
 
 
 def vit_base_patch16(**kwargs):
@@ -308,7 +298,7 @@ if __name__ == '__main__':
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-    net = vit_tiny_patch16(num_classes=1000)
+    net = vit_base_patch16(num_classes=1000)
     image_h, image_w = 224, 224
     from thop import profile
     from thop import clever_format
@@ -319,7 +309,7 @@ if __name__ == '__main__':
     out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
     print(f'1111, macs: {macs}, params: {params},out_shape: {out.shape}')
 
-    net = vit_small_patch16(num_classes=1000)
+    net = vit_large_patch16(num_classes=1000)
     image_h, image_w = 224, 224
     from thop import profile
     from thop import clever_format
@@ -330,7 +320,7 @@ if __name__ == '__main__':
     out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
     print(f'2222, macs: {macs}, params: {params},out_shape: {out.shape}')
 
-    net = vit_base_patch16(num_classes=1000)
+    net = vit_huge_patch14(num_classes=1000)
     image_h, image_w = 224, 224
     from thop import profile
     from thop import clever_format
@@ -341,29 +331,7 @@ if __name__ == '__main__':
     out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
     print(f'3333, macs: {macs}, params: {params},out_shape: {out.shape}')
 
-    net = vit_large_patch16(num_classes=1000)
-    image_h, image_w = 224, 224
-    from thop import profile
-    from thop import clever_format
-    macs, params = profile(net,
-                           inputs=(torch.randn(1, 3, image_h, image_w), ),
-                           verbose=False)
-    macs, params = clever_format([macs, params], '%.3f')
-    out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
-    print(f'4444, macs: {macs}, params: {params},out_shape: {out.shape}')
-
-    net = vit_huge_patch14(num_classes=1000)
-    image_h, image_w = 224, 224
-    from thop import profile
-    from thop import clever_format
-    macs, params = profile(net,
-                           inputs=(torch.randn(1, 3, image_h, image_w), ),
-                           verbose=False)
-    macs, params = clever_format([macs, params], '%.3f')
-    out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
-    print(f'5555, macs: {macs}, params: {params},out_shape: {out.shape}')
-
     net = vit_huge_patch14(num_classes=1000, use_gradient_checkpoint=True)
     image_h, image_w = 224, 224
     out = net(torch.autograd.Variable(torch.randn(4, 3, image_h, image_w)))
-    print(f'6666, out_shape: {out.shape}')
+    print(f'4444, out_shape: {out.shape}')

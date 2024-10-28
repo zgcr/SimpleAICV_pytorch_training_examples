@@ -26,7 +26,7 @@ __all__ = [
 
 class ResNetCifar(nn.Module):
 
-    def __init__(self, block, layer_nums, inplanes=64, num_classes=1000):
+    def __init__(self, block, layer_nums, inplanes=64, num_classes=100):
         super(ResNetCifar, self).__init__()
         self.block = block
         self.layer_nums = layer_nums
@@ -141,7 +141,7 @@ if __name__ == '__main__':
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-    net = resnet18cifar(num_classes=1000)
+    net = resnet18cifar(num_classes=100)
     image_h, image_w = 32, 32
     from thop import profile
     from thop import clever_format
@@ -152,7 +152,7 @@ if __name__ == '__main__':
     out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
     print(f'1111, macs: {macs}, params: {params},out_shape: {out.shape}')
 
-    net = resnet34cifar(num_classes=1000)
+    net = resnet34cifar(num_classes=100)
     image_h, image_w = 32, 32
     from thop import profile
     from thop import clever_format
@@ -163,7 +163,7 @@ if __name__ == '__main__':
     out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
     print(f'2222, macs: {macs}, params: {params},out_shape: {out.shape}')
 
-    net = resnet50cifar(num_classes=1000)
+    net = resnet50cifar(num_classes=100)
     image_h, image_w = 32, 32
     from thop import profile
     from thop import clever_format
@@ -174,7 +174,7 @@ if __name__ == '__main__':
     out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
     print(f'3333, macs: {macs}, params: {params},out_shape: {out.shape}')
 
-    net = resnet101cifar(num_classes=1000)
+    net = resnet101cifar(num_classes=100)
     image_h, image_w = 32, 32
     from thop import profile
     from thop import clever_format
@@ -185,7 +185,7 @@ if __name__ == '__main__':
     out = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
     print(f'4444, macs: {macs}, params: {params},out_shape: {out.shape}')
 
-    net = resnet152cifar(num_classes=1000)
+    net = resnet152cifar(num_classes=100)
     image_h, image_w = 32, 32
     from thop import profile
     from thop import clever_format

@@ -10,10 +10,11 @@ import argparse
 
 import torch
 import torch.nn as nn
+
 from torch.utils.data import DataLoader
 
-from tools.interactive_segmentation_scripts import test_sam
-from tools.utils import get_logger, set_seed, compute_macs_and_params
+from tools.interactive_segmentation_scripts import validate_segmentation_for_all_dataset
+from tools.utils import get_logger, set_seed
 
 
 def parse_args():
@@ -59,12 +60,15 @@ def main():
     batch_size = int(config.batch_size // config.gpus_num)
     num_workers = int(config.num_workers // config.gpus_num)
 
-    test_loader = DataLoader(config.test_dataset,
-                             batch_size=batch_size,
-                             shuffle=False,
-                             pin_memory=True,
-                             num_workers=num_workers,
-                             collate_fn=config.test_collater)
+    test_loader_list = []
+    for per_test_dataset in config.test_dataset_list:
+        test_loader = DataLoader(per_test_dataset,
+                                 batch_size=batch_size,
+                                 shuffle=False,
+                                 pin_memory=True,
+                                 num_workers=num_workers,
+                                 collate_fn=config.test_collater)
+        test_loader_list.append(test_loader)
 
     for key, value in config.__dict__.items():
         if not key.startswith('__'):
@@ -73,19 +77,22 @@ def main():
                 logger.info(log_info) if local_rank == 0 else None
 
     model = config.model
-    test_criterion = config.test_criterion
-
     model = model.cuda()
-    test_criterion = test_criterion.cuda()
 
     model = nn.parallel.DistributedDataParallel(model,
                                                 device_ids=[local_rank],
                                                 output_device=local_rank)
 
-    result_dict = test_sam(test_loader, model, test_criterion, config)
-    log_info = f'eval result:\n'
-    for key, value in result_dict.items():
-        log_info += f'{key}: {value}\n'
+    result_dict = validate_segmentation_for_all_dataset(
+        test_loader_list, model, config)
+
+    log_info = f'eval:\n\n'
+    for sub_name, sub_dict in result_dict.items():
+        log_info += f'{sub_name}:\n'
+        for key, value in sub_dict.items():
+            log_info += f'{key}: {value}\n'
+        log_info += f'\n'
+
     logger.info(log_info) if local_rank == 0 else None
 
     return

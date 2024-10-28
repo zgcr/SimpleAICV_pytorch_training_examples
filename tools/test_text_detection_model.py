@@ -10,6 +10,7 @@ import argparse
 
 import torch
 import torch.nn as nn
+
 from torch.utils.data import DataLoader
 
 from tools.text_scripts import test_text_detection_for_all_dataset

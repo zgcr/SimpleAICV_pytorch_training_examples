@@ -11,26 +11,13 @@ import torch.nn as nn
 
 __all__ = [
     'CTCPredictor',
-    'CTCEnhancePredictor',
 ]
 
 
 class CTCPredictor(nn.Module):
 
-    def __init__(self, inplanes, num_classes):
-        super(CTCPredictor, self).__init__()
-        self.linear = nn.Linear(inplanes, num_classes)
-
-    def forward(self, x):
-        x = self.linear(x)
-
-        return x
-
-
-class CTCEnhancePredictor(nn.Module):
-
     def __init__(self, inplanes, hidden_planes, num_classes):
-        super(CTCEnhancePredictor, self).__init__()
+        super(CTCPredictor, self).__init__()
         self.linear1 = nn.Linear(inplanes, hidden_planes)
         self.linear2 = nn.Linear(hidden_planes, num_classes)
 
@@ -57,7 +44,7 @@ if __name__ == '__main__':
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-    net = CTCPredictor(inplanes=256, num_classes=12114)
+    net = CTCPredictor(inplanes=256, hidden_planes=192, num_classes=12114)
     x = torch.randn(3, 64, 256)
     from thop import profile
     from thop import clever_format
@@ -65,14 +52,3 @@ if __name__ == '__main__':
     macs, params = clever_format([macs, params], '%.3f')
     out = net(x)
     print(f'1111, macs: {macs}, params: {params},out: {out.shape}')
-
-    net = CTCEnhancePredictor(inplanes=256,
-                              hidden_planes=192,
-                              num_classes=12114)
-    x = torch.randn(3, 64, 256)
-    from thop import profile
-    from thop import clever_format
-    macs, params = profile(net, inputs=(x, ), verbose=False)
-    macs, params = clever_format([macs, params], '%.3f')
-    out = net(x)
-    print(f'2222, macs: {macs}, params: {params},out: {out.shape}')

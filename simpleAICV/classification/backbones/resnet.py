@@ -228,10 +228,10 @@ class ResNet(nn.Module):
         x = self.maxpool1(x)
 
         if self.use_gradient_checkpoint:
-            x = checkpoint(self.layer1, x)
-            x = checkpoint(self.layer2, x)
-            x = checkpoint(self.layer3, x)
-            x = checkpoint(self.layer4, x)
+            x = checkpoint(self.layer1, x, use_reentrant=False)
+            x = checkpoint(self.layer2, x, use_reentrant=False)
+            x = checkpoint(self.layer3, x, use_reentrant=False)
+            x = checkpoint(self.layer4, x, use_reentrant=False)
         else:
             x = self.layer1(x)
             x = self.layer2(x)

@@ -38,10 +38,11 @@ class YOLACTDecoder(nn.Module):
         if self.resize_type == 'retina_style':
             self.resize = int(round(self.resize * 1333. / 800))
 
-        self.scales = self.resize / 544. * np.array(scales, dtype=np.float32)
+        self.scales = np.array(scales, dtype=np.float32)
         self.ratios = np.array(ratios, dtype=np.float32)
         self.strides = np.array(strides, dtype=np.float32)
-        self.anchors = YOLACTAnchors(scales=scales,
+        self.anchors = YOLACTAnchors(resize=resize,
+                                     scales=scales,
                                      ratios=ratios,
                                      strides=strides)
 
@@ -119,8 +120,8 @@ class YOLACTDecoder(nn.Module):
                     per_image_class_preds, axis=0)
 
                 # filter < min_score_threshold boxes
-                keep_indexes = (per_image_box_predict_max_score >
-                                self.min_score_threshold)
+                keep_indexes = (per_image_box_predict_max_score
+                                > self.min_score_threshold)
                 per_image_class_preds = per_image_class_preds[:, keep_indexes]
                 per_image_box_preds = per_image_box_preds[keep_indexes, :]
                 per_image_coef_preds = per_image_coef_preds[keep_indexes, :]
@@ -398,8 +399,8 @@ class SOLOV2Decoder(nn.Module):
                 per_image_kernel_preds = torch.cat(per_image_kernel_preds,
                                                    dim=0)
 
-                min_score_keep_indexs = (per_image_cate_preds >
-                                         self.min_score_threshold)
+                min_score_keep_indexs = (per_image_cate_preds
+                                         > self.min_score_threshold)
 
                 per_image_scores = per_image_cate_preds[min_score_keep_indexs]
 
@@ -550,8 +551,8 @@ class SOLOV2Decoder(nn.Module):
                     align_corners=True)
 
                 per_image_masks = per_image_masks.squeeze(0)
-                per_image_masks = (per_image_masks > self.mask_threshold).to(
-                    torch.uint8)
+                per_image_masks = (per_image_masks
+                                   > self.mask_threshold).to(torch.uint8)
 
                 per_image_masks = per_image_masks.cpu().numpy()
                 per_image_labels = per_image_labels.cpu().numpy()
@@ -650,13 +651,40 @@ if __name__ == '__main__':
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
+    import torchvision.transforms as transforms
+    from tqdm import tqdm
+
+    from tools.path import COCO2017_path
+
+    from simpleAICV.instance_segmentation.datasets.cocodataset import CocoInstanceSegmentation
+    from simpleAICV.instance_segmentation.common import InstanceSegmentationResize, RandomHorizontalFlip, Normalize, SOLOV2InstanceSegmentationCollater, YOLACTInstanceSegmentationCollater
+
+    cocodataset = CocoInstanceSegmentation(
+        COCO2017_path,
+        set_name='train2017',
+        filter_no_object_image=False,
+        transform=transforms.Compose([
+            InstanceSegmentationResize(resize=1024,
+                                       stride=32,
+                                       resize_type='yolo_style',
+                                       multi_scale=True,
+                                       multi_scale_range=[0.8, 1.0]),
+            RandomHorizontalFlip(prob=0.5),
+            Normalize(),
+        ]))
+
+    from torch.utils.data import DataLoader
+    collater = YOLACTInstanceSegmentationCollater(resize=1024,
+                                                  resize_type='yolo_style')
+    train_loader = DataLoader(cocodataset,
+                              batch_size=4,
+                              shuffle=True,
+                              num_workers=2,
+                              collate_fn=collater)
+
     from simpleAICV.instance_segmentation.models.yolact import resnet50_yolact
     net = resnet50_yolact()
-    image_h, image_w = 544, 544
-    preds = net(torch.autograd.Variable(torch.randn(2, 3, image_h, image_w)))
-    scaled_sizes = [[480, 544], [544, 480]]
-    origin_sizes = [[564, 640], [640, 564]]
-    decode = YOLACTDecoder(resize=544,
+    decode = YOLACTDecoder(resize=1024,
                            resize_type='yolo_style',
                            scales=[24, 48, 96, 192, 384],
                            ratios=[1, 1 / 2, 2],
@@ -666,32 +694,55 @@ if __name__ == '__main__':
                            max_object_num=100,
                            min_score_threshold=0.05,
                            nms_threshold=0.5)
-    batch_masks, batch_labels, batch_scores = decode(preds, scaled_sizes,
-                                                     origin_sizes)
+    for data in tqdm(train_loader):
+        images, boxes, masks, scales, sizes, origin_sizes = data[
+            'image'], data['box'], data['mask'], data['scale'], data[
+                'size'], data['origin_size']
+        print('1111', images.shape, len(boxes), len(masks), scales.shape,
+              sizes.shape, origin_sizes.shape)
+        preds = net(images)
+        batch_masks, batch_labels, batch_scores = decode(
+            preds, scales, origin_sizes)
 
-    for per_image_masks, per_image_labels, per_image_scores in zip(
-            batch_masks, batch_labels, batch_scores):
-        print('1111', per_image_masks.shape, per_image_labels.shape,
-              per_image_scores.shape)
+        for per_image_masks, per_image_labels, per_image_scores in zip(
+                batch_masks, batch_labels, batch_scores):
+            print('2222', per_image_masks.shape, per_image_labels.shape,
+                  per_image_scores.shape)
+        break
+
+    from torch.utils.data import DataLoader
+    collater = SOLOV2InstanceSegmentationCollater(resize=1024,
+                                                  resize_type='yolo_style')
+    train_loader = DataLoader(cocodataset,
+                              batch_size=4,
+                              shuffle=True,
+                              num_workers=2,
+                              collate_fn=collater)
 
     from simpleAICV.instance_segmentation.models.solov2 import resnet50_solov2
     net = resnet50_solov2()
-    image_h, image_w = 800, 800
-    preds = net(torch.autograd.Variable(torch.randn(2, 3, image_h, image_w)))
-    scaled_sizes = [[640, 800], [800, 640]]
-    origin_sizes = [[820, 1024], [1024, 821]]
     decode = SOLOV2Decoder(strides=(8, 8, 16, 32, 32),
                            grid_nums=(40, 36, 24, 16, 12),
                            mask_feature_upsample_scale=4,
                            max_mask_num=100,
                            topn=500,
                            min_score_threshold=0.1,
+                           keep_score_threshold=0.1,
                            mask_threshold=0.5,
                            update_threshold=0.05)
-    batch_masks, batch_labels, batch_scores = decode(preds, scaled_sizes,
-                                                     origin_sizes)
 
-    for per_image_masks, per_image_labels, per_image_scores in zip(
-            batch_masks, batch_labels, batch_scores):
-        print('1111', per_image_masks.shape, per_image_labels.shape,
-              per_image_scores.shape)
+    for data in tqdm(train_loader):
+        images, boxes, masks, scales, sizes, origin_sizes = data[
+            'image'], data['box'], data['mask'], data['scale'], data[
+                'size'], data['origin_size']
+        print('1111', images.shape, len(boxes), len(masks), scales.shape,
+              sizes.shape, origin_sizes.shape)
+        preds = net(images)
+        batch_masks, batch_labels, batch_scores = decode(
+            preds, sizes, origin_sizes)
+
+        for per_image_masks, per_image_labels, per_image_scores in zip(
+                batch_masks, batch_labels, batch_scores):
+            print('2222', per_image_masks.shape, per_image_labels.shape,
+                  per_image_scores.shape)
+        break

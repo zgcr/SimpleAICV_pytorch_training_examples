@@ -1,6 +1,8 @@
 import os
 import sys
 
+from traitlets import Instance
+
 BASE_DIR = os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(BASE_DIR)
@@ -13,13 +15,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from simpleAICV.detection.models.anchor import RetinaAnchors, FCOSPositions, TTFNetPositions
+from simpleAICV.detection.models.anchor import RetinaAnchors, FCOSPositions
 
 __all__ = [
     'RetinaLoss',
     'FCOSLoss',
-    'CenterNetLoss',
-    'TTFNetLoss',
     'DETRLoss',
     'DINODETRLoss',
 ]
@@ -134,13 +134,17 @@ class RetinaLoss(nn.Module):
                  alpha=0.25,
                  gamma=2,
                  beta=1.0 / 9.0,
-                 focal_eiou_gamma=0.5,
                  cls_loss_weight=1.,
                  box_loss_weight=1.,
-                 box_loss_type='CIoU'):
+                 box_loss_type='SmoothL1'):
         super(RetinaLoss, self).__init__()
         assert box_loss_type in [
-            'SmoothL1', 'IoU', 'GIoU', 'DIoU', 'CIoU', 'EIoU', 'Focal_EIoU'
+            'SmoothL1',
+            'IoU',
+            'GIoU',
+            'DIoU',
+            'CIoU',
+            'EIoU',
         ], 'wrong IoU type!'
         self.anchors = RetinaAnchors(areas=areas,
                                      ratios=ratios,
@@ -149,7 +153,6 @@ class RetinaLoss(nn.Module):
         self.alpha = alpha
         self.gamma = gamma
         self.beta = beta
-        self.focal_eiou_gamma = focal_eiou_gamma
         self.cls_loss_weight = cls_loss_weight
         self.box_loss_weight = box_loss_weight
         self.box_loss_type = box_loss_type
@@ -280,22 +283,12 @@ class RetinaLoss(nn.Module):
             box_loss = self.compute_batch_smoothl1_loss(
                 reg_preds, batch_anchors_annotations)
         else:
-            box_loss_type = 'EIoU' if self.box_loss_type == 'Focal_EIoU' else self.box_loss_type
             pred_boxes = self.snap_txtytwth_to_xyxy(reg_preds, batch_anchors)
             ious = self.iou_function(pred_boxes,
                                      batch_anchors_annotations[:, 0:4],
-                                     iou_type=box_loss_type,
+                                     iou_type=self.box_loss_type,
                                      box_type='xyxy')
             box_loss = 1 - ious
-
-            if self.box_loss_type == 'Focal_EIoU':
-                gamma_ious = self.iou_function(pred_boxes,
-                                               batch_anchors_annotations[:,
-                                                                         0:4],
-                                               iou_type='IoU',
-                                               box_type='xyxy')
-                gamma_ious = torch.pow(gamma_ious, self.focal_eiou_gamma)
-                box_loss = gamma_ious * box_loss
 
             box_loss = box_loss.sum() / positive_anchor_num
 
@@ -447,7 +440,7 @@ class FCOSLoss(nn.Module):
                  cls_loss_weight=1.,
                  box_loss_weight=1.,
                  center_ness_loss_weight=1.,
-                 box_loss_iou_type='CIoU',
+                 box_loss_iou_type='GIoU',
                  center_sample_radius=1.5,
                  use_center_sample=True):
         super(FCOSLoss, self).__init__()
@@ -707,8 +700,8 @@ class FCOSLoss(nn.Module):
                                                                        0:2]
 
                 candidates_min_value, _ = candidates.min(axis=-1, keepdim=True)
-                sample_flag = (candidates_min_value[:, :, 0] >
-                               0).int().unsqueeze(-1)
+                sample_flag = (candidates_min_value[:, :, 0]
+                               > 0).int().unsqueeze(-1)
                 # get all negative reg targets which points ctr out of gt box
                 candidates = candidates * sample_flag
 
@@ -719,19 +712,21 @@ class FCOSLoss(nn.Module):
                          candidates_center[:, :, 0])**2 +
                         (per_image_position[:, :, 1] -
                          candidates_center[:, :, 1])**2)
-                    center_sample_flag = (compute_distance <
-                                          judge_distance).int().unsqueeze(-1)
+                    center_sample_flag = (compute_distance
+                                          < judge_distance).int().unsqueeze(-1)
                     candidates = candidates * center_sample_flag
 
                 # get all negative reg targets which assign ground turth not in range of mi
                 candidates_max_value, _ = candidates.max(axis=-1, keepdim=True)
                 per_image_mi = per_image_mi.unsqueeze(1).repeat(
                     1, annotaion_num, 1)
-                m1_negative_flag = (candidates_max_value[:, :, 0] >
-                                    per_image_mi[:, :, 0]).int().unsqueeze(-1)
+                m1_negative_flag = (candidates_max_value[:, :, 0]
+                                    > per_image_mi[:, :,
+                                                   0]).int().unsqueeze(-1)
                 candidates = candidates * m1_negative_flag
-                m2_negative_flag = (candidates_max_value[:, :, 0] <
-                                    per_image_mi[:, :, 1]).int().unsqueeze(-1)
+                m2_negative_flag = (candidates_max_value[:, :, 0]
+                                    < per_image_mi[:, :,
+                                                   1]).int().unsqueeze(-1)
                 candidates = candidates * m2_negative_flag
 
                 final_sample_flag = candidates.sum(axis=-1).sum(axis=-1)
@@ -836,575 +831,6 @@ class FCOSLoss(nn.Module):
 
         # batch_targets shape:[batch_size, points_num, 8],8:l,t,r,b,class_index,center-ness_gt,point_ctr_x,point_ctr_y
         return cls_preds, reg_preds, center_preds, batch_targets
-
-
-class CenterNetLoss(nn.Module):
-
-    def __init__(self,
-                 alpha=2.,
-                 beta=4.,
-                 heatmap_loss_weight=1.0,
-                 offset_loss_weight=1.0,
-                 wh_loss_weight=0.1,
-                 min_overlap=0.7,
-                 max_object_num=100):
-        super(CenterNetLoss, self).__init__()
-        self.alpha = alpha
-        self.beta = beta
-        self.heatmap_loss_weight = heatmap_loss_weight
-        self.offset_loss_weight = offset_loss_weight
-        self.wh_loss_weight = wh_loss_weight
-        self.min_overlap = min_overlap
-        self.max_object_num = max_object_num
-
-    def forward(self, preds, annotations):
-        '''
-        compute heatmap loss, offset loss and wh loss in one batch
-        '''
-        device = annotations.device
-        heatmap_heads, offset_heads, wh_heads = preds
-
-        batch_heatmap_targets, batch_wh_targets, batch_offset_targets, batch_reg_to_heatmap_index, batch_positive_targets_mask = self.get_batch_targets(
-            heatmap_heads, annotations)
-
-        heatmap_heads = torch.clamp(heatmap_heads, min=1e-4, max=1. - 1e-4)
-
-        B, num_classes = heatmap_heads.shape[0], heatmap_heads.shape[1]
-        heatmap_heads = heatmap_heads.permute(0, 2, 3, 1).contiguous().view(
-            B, -1, num_classes)
-        batch_heatmap_targets = batch_heatmap_targets.permute(
-            0, 2, 3, 1).contiguous().view(B, -1, num_classes)
-
-        wh_heads = wh_heads.permute(0, 2, 3, 1).contiguous().view(B, -1, 2)
-        offset_heads = offset_heads.permute(0, 2, 3,
-                                            1).contiguous().view(B, -1, 2)
-
-        heatmap_loss = self.compute_batch_heatmap_loss(heatmap_heads,
-                                                       batch_heatmap_targets)
-        offset_loss = self.compute_batch_offsetl1_loss(
-            offset_heads, batch_offset_targets, batch_reg_to_heatmap_index,
-            batch_positive_targets_mask)
-        wh_loss = self.compute_batch_whl1_loss(wh_heads, batch_wh_targets,
-                                               batch_reg_to_heatmap_index,
-                                               batch_positive_targets_mask)
-
-        heatmap_loss = self.heatmap_loss_weight * heatmap_loss
-        offset_loss = self.offset_loss_weight * offset_loss
-        wh_loss = self.wh_loss_weight * wh_loss
-
-        loss_dict = {
-            'heatmap_loss': heatmap_loss,
-            'offset_loss': offset_loss,
-            'wh_loss': wh_loss,
-        }
-
-        return loss_dict
-
-    def compute_batch_heatmap_loss(self, heatmap_heads, batch_heatmap_targets):
-        device = heatmap_heads.device
-        positive_point_num = (
-            batch_heatmap_targets[batch_heatmap_targets == 1.].float()).sum()
-        if positive_point_num == 0:
-            return torch.tensor(0.).to(device)
-
-        # all center points
-        positive_indexes = (batch_heatmap_targets == 1.)
-        # all non center points
-        negative_indexes = (batch_heatmap_targets < 1.)
-
-        positive_loss = -torch.log(heatmap_heads) * torch.pow(
-            1 - heatmap_heads, self.alpha) * positive_indexes
-        negative_loss = -torch.log(1 - heatmap_heads) * torch.pow(
-            heatmap_heads, self.alpha) * torch.pow(
-                1 - batch_heatmap_targets, self.beta) * negative_indexes
-
-        loss = (positive_loss.sum() + negative_loss.sum()) / positive_point_num
-
-        return loss
-
-    def compute_batch_offsetl1_loss(self,
-                                    offset_heads,
-                                    batch_offset_targets,
-                                    batch_reg_to_heatmap_index,
-                                    batch_positive_targets_mask,
-                                    factor=1.0 / 9.0):
-        device = offset_heads.device
-        batch_reg_to_heatmap_index = batch_reg_to_heatmap_index.unsqueeze(
-            -1).repeat(1, 1, 2)
-        offset_heads = torch.gather(offset_heads, 1,
-                                    batch_reg_to_heatmap_index.long())
-
-        positive_point_num = (batch_positive_targets_mask[
-            batch_positive_targets_mask == 1.].float()).sum()
-        if positive_point_num == 0:
-            return torch.tensor(0.).to(device)
-
-        batch_positive_targets_mask = batch_positive_targets_mask.unsqueeze(
-            -1).repeat(1, 1, 2)
-
-        offset_heads = offset_heads * batch_positive_targets_mask
-        batch_offset_targets = batch_offset_targets * batch_positive_targets_mask
-
-        x = torch.abs(offset_heads - batch_offset_targets)
-        loss = torch.where(torch.ge(x, factor), x - 0.5 * factor,
-                           0.5 * (x**2) / factor)
-        loss = loss.sum() / positive_point_num
-
-        return loss
-
-    def compute_batch_whl1_loss(self,
-                                wh_heads,
-                                batch_wh_targets,
-                                batch_reg_to_heatmap_index,
-                                batch_positive_targets_mask,
-                                factor=1.0 / 9.0):
-        device = wh_heads.device
-        batch_reg_to_heatmap_index = batch_reg_to_heatmap_index.unsqueeze(
-            -1).repeat(1, 1, 2)
-        wh_heads = torch.gather(wh_heads, 1, batch_reg_to_heatmap_index.long())
-
-        positive_point_num = (batch_positive_targets_mask[
-            batch_positive_targets_mask == 1.].float()).sum()
-        if positive_point_num == 0:
-            return torch.tensor(0.).to(device)
-
-        batch_positive_targets_mask = batch_positive_targets_mask.unsqueeze(
-            -1).repeat(1, 1, 2)
-
-        wh_heads = wh_heads * batch_positive_targets_mask
-        batch_wh_targets = batch_wh_targets * batch_positive_targets_mask
-
-        x = torch.abs(wh_heads - batch_wh_targets)
-        loss = torch.where(torch.ge(x, factor), x - 0.5 * factor,
-                           0.5 * (x**2) / factor)
-        loss = loss.sum() / positive_point_num
-
-        return loss
-
-    def get_batch_targets(self, heatmap_heads, annotations):
-        B, num_classes, H, W = heatmap_heads.shape[0], heatmap_heads.shape[
-            1], heatmap_heads.shape[2], heatmap_heads.shape[3]
-        device = annotations.device
-
-        batch_heatmap_targets, batch_wh_targets, batch_offset_targets, batch_reg_to_heatmap_index, batch_positive_targets_mask=[],[],[],[],[]
-        for per_image_annots in annotations:
-            # limit max annots num for per image
-            per_image_annots = per_image_annots[per_image_annots[:, 4] >= 0]
-            # limit max object num
-            num_objs = min(per_image_annots.shape[0], self.max_object_num)
-
-            per_image_heatmap_targets = torch.zeros((num_classes, H, W),
-                                                    device=device)
-            per_image_wh_targets = torch.zeros((self.max_object_num, 2),
-                                               device=device)
-            per_image_offset_targets = torch.zeros((self.max_object_num, 2),
-                                                   device=device)
-            per_image_positive_targets_mask = torch.zeros(
-                (self.max_object_num, ), device=device)
-            per_image_reg_to_heatmap_index = torch.zeros(
-                (self.max_object_num, ), device=device)
-            gt_bboxes, gt_classes = per_image_annots[:,
-                                                     0:4], per_image_annots[:,
-                                                                            4]
-            # gt_bboxes divided by 4 to get downsample bboxes
-            gt_bboxes = gt_bboxes / 4.
-
-            gt_bboxes[:, [0, 2]] = torch.clamp(gt_bboxes[:, [0, 2]],
-                                               min=0,
-                                               max=W - 1)
-            gt_bboxes[:, [1, 3]] = torch.clamp(gt_bboxes[:, [1, 3]],
-                                               min=0,
-                                               max=H - 1)
-
-            # make sure all height and width >0
-            all_h, all_w = gt_bboxes[:,
-                                     3] - gt_bboxes[:,
-                                                    1], gt_bboxes[:,
-                                                                  2] - gt_bboxes[:,
-                                                                                 0]
-
-            per_image_wh_targets[0:num_objs, 0] = all_w
-            per_image_wh_targets[0:num_objs, 1] = all_h
-
-            centers = torch.cat(
-                [((gt_bboxes[:, 0] + gt_bboxes[:, 2]) / 2).unsqueeze(-1),
-                 ((gt_bboxes[:, 1] + gt_bboxes[:, 3]) / 2).unsqueeze(-1)],
-                axis=1)
-            centers_int = torch.trunc(centers)
-            centers_decimal = torch.frac(centers)
-
-            per_image_offset_targets[0:num_objs, :] = centers_decimal
-            per_image_positive_targets_mask[0:num_objs] = 1
-
-            per_image_reg_to_heatmap_index[
-                0:num_objs] = centers_int[:, 1] * W + centers_int[:, 0]
-
-            all_radius = self.compute_objects_gaussian_radius((all_h, all_w))
-            per_image_heatmap_targets = self.draw_umich_gaussian(
-                per_image_heatmap_targets, gt_classes, centers_int, all_radius)
-
-            batch_heatmap_targets.append(
-                per_image_heatmap_targets.unsqueeze(0))
-            batch_wh_targets.append(per_image_wh_targets.unsqueeze(0))
-            batch_reg_to_heatmap_index.append(
-                per_image_reg_to_heatmap_index.unsqueeze(0))
-            batch_offset_targets.append(per_image_offset_targets.unsqueeze(0))
-            batch_positive_targets_mask.append(
-                per_image_positive_targets_mask.unsqueeze(0))
-
-        batch_heatmap_targets = torch.cat(batch_heatmap_targets, axis=0)
-        batch_wh_targets = torch.cat(batch_wh_targets, axis=0)
-        batch_offset_targets = torch.cat(batch_offset_targets, axis=0)
-        batch_reg_to_heatmap_index = torch.cat(batch_reg_to_heatmap_index,
-                                               axis=0)
-        batch_positive_targets_mask = torch.cat(batch_positive_targets_mask,
-                                                axis=0)
-
-        return batch_heatmap_targets, batch_wh_targets, batch_offset_targets, batch_reg_to_heatmap_index, batch_positive_targets_mask
-
-    def compute_objects_gaussian_radius(self, objects_size):
-        all_h, all_w = objects_size
-        all_h, all_w = torch.ceil(all_h), torch.ceil(all_w)
-
-        a1 = 1
-        b1 = (all_h + all_w)
-        c1 = all_w * all_h * (1 - self.min_overlap) / (1 + self.min_overlap)
-        sq1 = torch.sqrt(b1**2 - 4 * a1 * c1)
-        r1 = (b1 + sq1) / 2
-
-        a2 = 4
-        b2 = 2 * (all_h + all_w)
-        c2 = (1 - self.min_overlap) * all_w * all_h
-        sq2 = torch.sqrt(b2**2 - 4 * a2 * c2)
-        r2 = (b2 + sq2) / 2
-
-        a3 = 4 * self.min_overlap
-        b3 = -2 * self.min_overlap * (all_h + all_w)
-        c3 = (self.min_overlap - 1) * all_w * all_h
-        sq3 = torch.sqrt(b3**2 - 4 * a3 * c3)
-        r3 = (b3 + sq3) / 2
-
-        radius = torch.min(r1, r2)
-        radius = torch.min(radius, r3)
-        radius = torch.max(torch.zeros_like(radius), torch.trunc(radius))
-
-        return radius
-
-    def gaussian2D(self, shape, sigma=1):
-        m, n = [(ss - 1.) / 2. for ss in shape]
-        y, x = np.ogrid[-m:m + 1, -n:n + 1]
-
-        h = np.exp(-(x * x + y * y) / (2 * sigma * sigma))
-        h[h < np.finfo(h.dtype).eps * h.max()] = 0
-
-        return h
-
-    def draw_umich_gaussian(self,
-                            per_image_heatmap_targets,
-                            gt_classes,
-                            all_centers,
-                            all_radius,
-                            k=1):
-        height, width = per_image_heatmap_targets.shape[
-            1], per_image_heatmap_targets.shape[2]
-        device = per_image_heatmap_targets.device
-
-        for per_class, per_center, per_radius in zip(gt_classes, all_centers,
-                                                     all_radius):
-            per_diameter = 2 * per_radius + 1
-            per_diameter = int(per_diameter.item())
-            gaussian = self.gaussian2D((per_diameter, per_diameter),
-                                       sigma=per_diameter / 6)
-            gaussian = torch.FloatTensor(gaussian).to(device)
-
-            x, y = per_center[0], per_center[1]
-            left, right = min(x, per_radius), min(width - x, per_radius + 1)
-            top, bottom = min(y, per_radius), min(height - y, per_radius + 1)
-
-            masked_heatmap = per_image_heatmap_targets[per_class.long(), (
-                y - top).long():(y +
-                                 bottom).long(), (x -
-                                                  left).long():(x +
-                                                                right).long()]
-            masked_gaussian = gaussian[(per_radius -
-                                        top).long():(per_radius +
-                                                     bottom).long(),
-                                       (per_radius -
-                                        left).long():(per_radius +
-                                                      right).long()]
-
-            if min(masked_gaussian.shape) > 0 and min(
-                    masked_heatmap.shape) > 0:
-                # 如果高斯图重叠，重叠点取最大值
-                masked_heatmap = torch.max(masked_heatmap, masked_gaussian * k)
-
-            per_image_heatmap_targets[per_class.long(),
-                                      (y - top).long():(y + bottom).long(),
-                                      (x - left).long():(
-                                          x + right).long()] = masked_heatmap
-
-        return per_image_heatmap_targets
-
-
-class TTFNetLoss(nn.Module):
-
-    def __init__(self,
-                 alpha=2.0,
-                 beta=4.0,
-                 stride=4,
-                 heatmap_loss_weight=1.0,
-                 box_loss_weight=5.0,
-                 box_loss_iou_type='CIoU',
-                 gaussian_alpha=0.54,
-                 gaussian_beta=0.54):
-        super(TTFNetLoss, self).__init__()
-        assert box_loss_iou_type in ['IoU', 'GIoU', 'DIoU', 'CIoU',
-                                     'EIoU'], 'wrong IoU type!'
-        self.positions = TTFNetPositions()
-        self.alpha = alpha
-        self.beta = beta
-        self.stride = stride
-        self.heatmap_loss_weight = heatmap_loss_weight
-        self.box_loss_weight = box_loss_weight
-        self.box_loss_iou_type = box_loss_iou_type
-        self.gaussian_alpha = gaussian_alpha
-        self.gaussian_beta = gaussian_beta
-        self.iou_function = IoUMethod()
-
-    def forward(self, preds, annotations):
-        '''
-        compute heatmap loss, wh loss in one batch
-        '''
-        device = annotations.device
-        heatmap_heads, wh_heads = preds
-        batch_size = heatmap_heads.shape[0]
-
-        feature_map_size = [heatmap_heads.shape[3], heatmap_heads.shape[2]]
-        one_image_positions = self.positions(feature_map_size)
-        batch_positions = torch.tensor(one_image_positions).unsqueeze(
-            0).repeat(batch_size, 1, 1, 1).to(device)
-
-        batch_heatmap_targets, batch_reg_targets = self.get_batch_targets(
-            heatmap_heads, annotations)
-
-        heatmap_heads = heatmap_heads.permute(0, 2, 3, 1).contiguous()
-        wh_heads = wh_heads.permute(0, 2, 3, 1).contiguous()
-        batch_heatmap_targets = batch_heatmap_targets.permute(0, 2, 3,
-                                                              1).contiguous()
-        batch_reg_targets = batch_reg_targets.permute(0, 2, 3, 1).contiguous()
-
-        heatmap_heads = torch.clamp(heatmap_heads, min=1e-4, max=1. - 1e-4)
-
-        heatmap_heads = heatmap_heads.view(-1, heatmap_heads.shape[-1])
-        wh_heads = wh_heads.view(-1, wh_heads.shape[-1])
-        batch_heatmap_targets = batch_heatmap_targets.view(
-            -1, batch_heatmap_targets.shape[-1])
-        batch_reg_targets = batch_reg_targets.view(-1,
-                                                   batch_reg_targets.shape[-1])
-        batch_positions = batch_positions.view(-1, batch_positions.shape[-1])
-
-        heatmap_loss = self.compute_batch_heatmap_loss(heatmap_heads,
-                                                       batch_heatmap_targets)
-        box_loss = self.compute_batch_iou_loss(wh_heads, batch_positions,
-                                               batch_reg_targets)
-
-        heatmap_loss = self.heatmap_loss_weight * heatmap_loss
-        box_loss = self.box_loss_weight * box_loss
-
-        loss_dict = {
-            'heatmap_loss': heatmap_loss,
-            'box_loss': box_loss,
-        }
-
-        return loss_dict
-
-    def compute_batch_heatmap_loss(self, heatmap_heads, batch_heatmap_targets):
-        device = heatmap_heads.device
-        positive_point_num = (
-            batch_heatmap_targets[batch_heatmap_targets == 1.].float()).sum()
-        if positive_point_num == 0:
-            return torch.tensor(0.).to(device)
-
-        positive_points_mask = (batch_heatmap_targets == 1.)
-        negative_points_mask = (batch_heatmap_targets < 1.)
-
-        positive_loss = -torch.log(heatmap_heads) * torch.pow(
-            1 - heatmap_heads, self.alpha) * positive_points_mask
-        negative_loss = -torch.log(1 - heatmap_heads) * torch.pow(
-            heatmap_heads, self.alpha) * torch.pow(
-                1 - batch_heatmap_targets, self.beta) * negative_points_mask
-
-        heatmap_loss = (positive_loss.sum() +
-                        negative_loss.sum()) / positive_point_num
-
-        return heatmap_loss
-
-    def compute_batch_iou_loss(self, wh_heads, batch_positions,
-                               batch_reg_targets):
-        # only use positive points sample to compute iou loss
-        device = wh_heads.device
-        wh_heads = torch.exp(wh_heads)
-        wh_heads = wh_heads[batch_reg_targets[:, 4] > 0]
-        batch_positions = batch_positions[batch_reg_targets[:, 4] > 0]
-        batch_reg_targets = batch_reg_targets[batch_reg_targets[:, 4] > 0]
-        positive_points_num = batch_reg_targets.shape[0]
-
-        if positive_points_num == 0:
-            return torch.tensor(0.).to(device)
-
-        # snap ltrb to x1y1x2y2
-        pred_bboxes_xy_min = (batch_positions - wh_heads[:, 0:2]) * self.stride
-        pred_bboxes_xy_max = (batch_positions + wh_heads[:, 2:4]) * self.stride
-        pred_bboxes = torch.cat([pred_bboxes_xy_min, pred_bboxes_xy_max],
-                                dim=1)
-
-        gt_bboxes = batch_reg_targets[:, 0:4]
-        gt_bboxes_weight = batch_reg_targets[:, 4]
-
-        ious = self.iou_function(pred_bboxes,
-                                 gt_bboxes,
-                                 iou_type=self.box_loss_iou_type,
-                                 box_type='xyxy')
-        ious_loss = 1 - ious
-
-        ious_loss = ious_loss * gt_bboxes_weight
-        ious_loss = ious_loss.sum() / (gt_bboxes_weight.sum() + 1e-4)
-
-        return ious_loss
-
-    def get_batch_targets(self, heatmap_heads, annotations):
-        B, num_classes, H, W = heatmap_heads.shape[0], heatmap_heads.shape[
-            1], heatmap_heads.shape[2], heatmap_heads.shape[3]
-        device = annotations.device
-
-        batch_heatmap_targets, batch_reg_targets = [], []
-        for per_image_annots in annotations:
-            per_image_annots = per_image_annots[per_image_annots[:, 4] >= 0]
-
-            per_image_heatmap_targets = torch.zeros((num_classes, H, W),
-                                                    dtype=torch.float32,
-                                                    device=device)
-            per_image_reg_targets = torch.ones(
-                (5, H, W), dtype=torch.float32, device=device) * (-1)
-
-            if per_image_annots.shape[0] != 0:
-                per_image_annots_box_wh = per_image_annots[:, 2:
-                                                           4] - per_image_annots[:,
-                                                                                 0:
-                                                                                 2]
-                per_image_annots_box_area = per_image_annots_box_wh[:,
-                                                                    0] * per_image_annots_box_wh[:,
-                                                                                                 1]
-                per_image_annots_box_area = torch.log(
-                    torch.clamp(per_image_annots_box_area, min=1e-4))
-                per_image_topk_annots_box_area, per_image_topk_annots_box_idxs = torch.topk(
-                    per_image_annots_box_area,
-                    per_image_annots_box_area.shape[0])
-
-                per_image_annots = per_image_annots[
-                    per_image_topk_annots_box_idxs]
-                per_image_gt_boxes = per_image_annots[:, 0:4]
-                per_image_gt_classes = per_image_annots[:, 4]
-
-                per_image_gt_boxes = per_image_gt_boxes / 4.
-                per_image_gt_boxes[:, [0, 2]] = torch.clamp(
-                    per_image_gt_boxes[:, [0, 2]], min=0, max=W - 1)
-                per_image_gt_boxes[:, [1, 3]] = torch.clamp(
-                    per_image_gt_boxes[:, [1, 3]], min=0, max=H - 1)
-                # make sure all height and width >0
-                all_h = per_image_gt_boxes[:, 3] - per_image_gt_boxes[:, 1]
-                all_w = per_image_gt_boxes[:, 2] - per_image_gt_boxes[:, 0]
-
-                centers = torch.cat(
-                    [((per_image_gt_boxes[:, 0] + per_image_gt_boxes[:, 2]) /
-                      2).unsqueeze(-1),
-                     ((per_image_gt_boxes[:, 1] + per_image_gt_boxes[:, 3]) /
-                      2).unsqueeze(-1)],
-                    axis=1)
-                centers_int = torch.trunc(centers)
-
-                h_radius_alpha = torch.trunc(
-                    (all_h / 2. * self.gaussian_alpha))
-                w_radius_alpha = torch.trunc(
-                    (all_w / 2. * self.gaussian_alpha))
-                h_radius_beta = torch.trunc((all_h / 2. * self.gaussian_beta))
-                w_radius_beta = torch.trunc((all_w / 2. * self.gaussian_beta))
-
-                # larger boxes have lower priority than small boxes.
-                for i, per_annot in enumerate(per_image_annots):
-                    per_gt_box, per_gt_class = per_annot[0:4], per_annot[4]
-                    fake_heatmap = torch.zeros((H, W),
-                                               dtype=torch.float32,
-                                               device=device)
-                    fake_heatmap = self.draw_truncate_gaussian(
-                        fake_heatmap, centers_int[i], h_radius_alpha[i].item(),
-                        w_radius_alpha[i].item())
-                    per_image_heatmap_targets[per_gt_class.long()] = torch.max(
-                        per_image_heatmap_targets[per_gt_class.long()],
-                        fake_heatmap)
-
-                    if self.gaussian_alpha != self.gaussian_beta:
-                        # reinit fake_heatmap to value 0
-                        fake_heatmap = torch.zeros((H, W),
-                                                   dtype=torch.float32,
-                                                   device=device)
-                        fake_heatmap = self.draw_truncate_gaussian(
-                            fake_heatmap, centers_int[i],
-                            h_radius_beta[i].item(), w_radius_beta[i].item())
-
-                    gt_box_heatmap_idxs = (fake_heatmap > 0)
-
-                    # gt box has been downsampled by stride
-                    per_image_reg_targets[
-                        0:4, gt_box_heatmap_idxs] = per_gt_box.unsqueeze(-1)
-
-                    local_heatmap = fake_heatmap[gt_box_heatmap_idxs]
-                    center_div = local_heatmap.sum()
-                    local_heatmap *= per_image_topk_annots_box_area[i]
-                    per_image_reg_targets[
-                        4, gt_box_heatmap_idxs] = local_heatmap / center_div
-
-            batch_heatmap_targets.append(
-                per_image_heatmap_targets.unsqueeze(0))
-            batch_reg_targets.append(per_image_reg_targets.unsqueeze(0))
-
-        batch_heatmap_targets = torch.cat(batch_heatmap_targets, axis=0)
-        batch_reg_targets = torch.cat(batch_reg_targets, axis=0)
-
-        return batch_heatmap_targets, batch_reg_targets
-
-    def gaussian_2d(self, shape, sigma_x=1, sigma_y=1):
-        m, n = [(ss - 1.) / 2. for ss in shape]
-        y, x = np.ogrid[-m:m + 1, -n:n + 1]
-
-        h = np.exp(-(x * x / (2 * sigma_x * sigma_x) + y * y /
-                     (2 * sigma_y * sigma_y)))
-        h[h < np.finfo(h.dtype).eps * h.max()] = 0
-
-        return h
-
-    def draw_truncate_gaussian(self, heatmap, center, h_radius, w_radius, k=1):
-        h, w = 2 * h_radius + 1, 2 * w_radius + 1
-        sigma_x, sigma_y = w / 6, h / 6
-        gaussian = self.gaussian_2d((h, w), sigma_x=sigma_x, sigma_y=sigma_y)
-        device = heatmap.device
-        gaussian = torch.from_numpy(gaussian).to(device)
-
-        x, y = int(center[0]), int(center[1])
-        h_radius, w_radius = int(h_radius), int(w_radius)
-
-        height, width = heatmap.shape[0], heatmap.shape[1]
-
-        left, right = int(min(x, w_radius)), int(min(width - x, w_radius + 1))
-        top, bottom = int(min(y, h_radius)), int(min(height - y, h_radius + 1))
-
-        masked_heatmap = heatmap[y - top:y + bottom, x - left:x + right]
-        masked_gaussian = gaussian[h_radius - top:h_radius + bottom,
-                                   w_radius - left:w_radius + right]
-        if min(masked_gaussian.shape) > 0 and min(masked_heatmap.shape) > 0:
-            torch.max(masked_heatmap, masked_gaussian * k, out=masked_heatmap)
-
-        return heatmap
 
 
 class DETRLoss(nn.Module):
@@ -1844,6 +1270,7 @@ class DINODETRLoss(nn.Module):
         return loss_dict
 
     def compute_batch_cls_loss(self, cls_preds, annotations, indices):
+        cls_preds = cls_preds.float()
         cls_preds = torch.sigmoid(cls_preds)
         cls_preds = torch.clamp(cls_preds, min=1e-4, max=1. - 1e-4)
         batch_size, query_nums = cls_preds.shape[0], cls_preds.shape[1]
@@ -1981,6 +1408,7 @@ class DINODETRLoss(nn.Module):
 
         # [b*query_nums,num_classes]
         cls_preds = cls_preds.flatten(0, 1)
+        cls_preds = cls_preds.float()
         cls_preds = torch.sigmoid(cls_preds)
         cls_preds = torch.clamp(cls_preds, min=1e-4, max=1. - 1e-4)
 
@@ -2129,108 +1557,69 @@ if __name__ == '__main__':
                               num_workers=2,
                               collate_fn=collater)
 
-    # from simpleAICV.detection.models.retinanet import resnet50_retinanet
-    # net = resnet50_retinanet()
-    # loss = RetinaLoss(areas=[[32, 32], [64, 64], [128, 128], [256, 256],
-    #                          [512, 512]],
-    #                   ratios=[0.5, 1, 2],
-    #                   scales=[2**0, 2**(1.0 / 3.0), 2**(2.0 / 3.0)],
-    #                   strides=[8, 16, 32, 64, 128],
-    #                   alpha=0.25,
-    #                   gamma=2,
-    #                   beta=1.0 / 9.0,
-    #                   focal_eiou_gamma=0.5,
-    #                   cls_loss_weight=1.,
-    #                   box_loss_weight=1.,
-    #                   box_loss_type='CIoU')
+    from simpleAICV.detection.models.retinanet import resnet50_retinanet
+    net = resnet50_retinanet()
+    # 'SmoothL1', 'IoU', 'GIoU', 'DIoU', 'CIoU', 'EIoU'
+    loss = RetinaLoss(areas=[[32, 32], [64, 64], [128, 128], [256, 256],
+                             [512, 512]],
+                      ratios=[0.5, 1, 2],
+                      scales=[2**0, 2**(1.0 / 3.0), 2**(2.0 / 3.0)],
+                      strides=[8, 16, 32, 64, 128],
+                      alpha=0.25,
+                      gamma=2,
+                      beta=1.0 / 9.0,
+                      cls_loss_weight=1.,
+                      box_loss_weight=1.,
+                      box_loss_type='SmoothL1')
 
-    # for data in tqdm(train_loader):
-    #     images, annots, scales, sizes = data['image'], data['annots'], data[
-    #         'scale'], data['size']
-    #     print('1111', images.shape, annots.shape, scales.shape, sizes.shape)
-    #     preds = net(images)
-    #     for pred in preds:
-    #         for per_level_pred in pred:
-    #             print('2222', per_level_pred.shape)
-    #     loss_dict = loss(preds, annots)
-    #     print('3333', loss_dict)
-    #     break
+    for data in tqdm(train_loader):
+        images, annots, scales, sizes = data['image'], data['annots'], data[
+            'scale'], data['size']
+        print('1111', images.shape, annots.shape, scales.shape, sizes.shape)
+        preds = net(images)
+        for pred in preds:
+            for per_level_pred in pred:
+                print('2222', per_level_pred.shape)
+        loss_dict = loss(preds, annots)
+        print('3333', loss_dict)
+        break
 
-    # from simpleAICV.detection.models.fcos import resnet50_fcos
-    # net = resnet50_fcos()
-    # loss = FCOSLoss(strides=[8, 16, 32, 64, 128],
-    #                 mi=[[-1, 64], [64, 128], [128, 256], [256, 512],
-    #                     [512, 100000000]],
-    #                 alpha=0.25,
-    #                 gamma=2.,
-    #                 cls_loss_weight=1.,
-    #                 box_loss_weight=1.,
-    #                 center_ness_loss_weight=1.,
-    #                 box_loss_iou_type='CIoU',
-    #                 center_sample_radius=1.5,
-    #                 use_center_sample=True)
+    from simpleAICV.detection.models.fcos import resnet50_fcos
+    net = resnet50_fcos()
+    # 'IoU', 'GIoU', 'DIoU', 'CIoU', 'EIoU'
+    loss = FCOSLoss(strides=[8, 16, 32, 64, 128],
+                    mi=[[-1, 64], [64, 128], [128, 256], [256, 512],
+                        [512, 100000000]],
+                    alpha=0.25,
+                    gamma=2.,
+                    cls_loss_weight=1.,
+                    box_loss_weight=1.,
+                    center_ness_loss_weight=1.,
+                    box_loss_iou_type='GIoU',
+                    center_sample_radius=1.5,
+                    use_center_sample=True)
 
-    # for data in tqdm(train_loader):
-    #     images, annots, scales, sizes = data['image'], data['annots'], data[
-    #         'scale'], data['size']
-    #     print('1111', images.shape, annots.shape, scales.shape, sizes.shape)
-    #     preds = net(images)
-    #     for pred in preds:
-    #         for per_level_pred in pred:
-    #             print('2222', per_level_pred.shape)
-    #     loss_dict = loss(preds, annots)
-    #     print('3333', loss_dict)
-    #     break
+    for data in tqdm(train_loader):
+        images, annots, scales, sizes = data['image'], data['annots'], data[
+            'scale'], data['size']
+        print('1111', images.shape, annots.shape, scales.shape, sizes.shape)
+        preds = net(images)
+        for pred in preds:
+            for per_level_pred in pred:
+                print('2222', per_level_pred.shape)
+        loss_dict = loss(preds, annots)
+        print('3333', loss_dict)
+        break
 
-    # from simpleAICV.detection.models.centernet import resnet18_centernet
-    # net = resnet18_centernet()
-    # loss = CenterNetLoss(alpha=2.,
-    #                      beta=4.,
-    #                      heatmap_loss_weight=1.0,
-    #                      offset_loss_weight=1.0,
-    #                      wh_loss_weight=0.1,
-    #                      min_overlap=0.7,
-    #                      max_object_num=100)
-
-    # for data in tqdm(train_loader):
-    #     images, annots, scales, sizes = data['image'], data['annots'], data[
-    #         'scale'], data['size']
-    #     print('1111', images.shape, annots.shape, scales.shape, sizes.shape)
-    #     preds = net(images)
-    #     print('2222', preds[0].shape, preds[1].shape, preds[2].shape)
-    #     loss_dict = loss(preds, annots)
-    #     print('3333', loss_dict)
-    #     break
-
-    # from simpleAICV.detection.models.ttfnet import resnet18_ttfnet
-    # net = resnet18_ttfnet()
-    # loss = TTFNetLoss(alpha=2.0,
-    #                   beta=4.0,
-    #                   stride=4,
-    #                   heatmap_loss_weight=1.0,
-    #                   box_loss_weight=5.0,
-    #                   box_loss_iou_type='CIoU',
-    #                   gaussian_alpha=0.54,
-    #                   gaussian_beta=0.54)
-
-    # for data in tqdm(train_loader):
-    #     images, annots, scales, sizes = data['image'], data['annots'], data[
-    #         'scale'], data['size']
-    #     print('1111', images.shape, annots.shape, scales.shape, sizes.shape)
-    #     preds = net(images)
-    #     print('2222', preds[0].shape, preds[1].shape)
-    #     loss_dict = loss(preds, annots)
-    #     print('3333', loss_dict)
-    #     break
-
+    #########################################################################
     from torch.utils.data import DataLoader
-    detr_collater = DETRDetectionCollater(resize=800,
+    detr_collater = DETRDetectionCollater(resize=640,
                                           resize_type='yolo_style',
                                           max_annots_num=100)
     detr_train_loader = DataLoader(cocodataset,
-                                   batch_size=4,
+                                   batch_size=2,
                                    shuffle=True,
-                                   num_workers=2,
+                                   num_workers=1,
                                    collate_fn=detr_collater)
 
     from simpleAICV.detection.models.detr import resnet50_detr
@@ -2255,13 +1644,13 @@ if __name__ == '__main__':
         break
 
     from torch.utils.data import DataLoader
-    detr_collater = DETRDetectionCollater(resize=800,
+    detr_collater = DETRDetectionCollater(resize=640,
                                           resize_type='yolo_style',
                                           max_annots_num=100)
     detr_train_loader = DataLoader(cocodataset,
                                    batch_size=2,
                                    shuffle=True,
-                                   num_workers=2,
+                                   num_workers=1,
                                    collate_fn=detr_collater)
 
     from simpleAICV.detection.models.dinodetr import resnet50_dinodetr
@@ -2285,6 +1674,12 @@ if __name__ == '__main__':
         print('1111', images.shape, masks.shape, annots.shape)
         preds = net(images, masks, annots)
         print('2222', preds.keys())
+        for key, value in preds.items():
+            if isinstance(value, torch.Tensor):
+                print('2222', key, value.shape)
+            else:
+                print('2222', key)
+
         loss_dict = loss(preds, annots)
         print('3333', loss_dict)
         break

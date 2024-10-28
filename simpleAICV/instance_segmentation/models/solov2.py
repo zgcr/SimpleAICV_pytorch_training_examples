@@ -12,7 +12,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from simpleAICV.instance_segmentation.models import backbones
+from torch.utils.checkpoint import checkpoint
+
+from simpleAICV.detection.models import backbones
 
 __all__ = [
     'resnet18_solov2',
@@ -20,6 +22,14 @@ __all__ = [
     'resnet50_solov2',
     'resnet101_solov2',
     'resnet152_solov2',
+    'vanb0_solov2',
+    'vanb1_solov2',
+    'vanb2_solov2',
+    'vanb3_solov2',
+    'convformers18_solov2',
+    'convformers36_solov2',
+    'convformerm36_solov2',
+    'convformerb36_solov2',
 ]
 
 
@@ -416,7 +426,8 @@ class SOLOV2(nn.Module):
                  bbox_inter_planes=512,
                  instance_planes=256,
                  grid_nums=(40, 36, 24, 16, 12),
-                 num_classes=80):
+                 num_classes=80,
+                 use_gradient_checkpoint=False):
         super(SOLOV2, self).__init__()
         self.fpn_planes = fpn_planes
         self.mask_feature_planes = mask_feature_planes
@@ -425,10 +436,12 @@ class SOLOV2(nn.Module):
         self.instance_planes = instance_planes
         self.grid_nums = grid_nums
         self.num_classes = num_classes
+        self.use_gradient_checkpoint = use_gradient_checkpoint
 
         self.backbone = backbones.__dict__[backbone_type](
             **{
                 'pretrained_path': backbone_pretrained_path,
+                'use_gradient_checkpoint': use_gradient_checkpoint,
             })
         self.fpn = SOLOV2FPN(self.backbone.out_channels, self.fpn_planes)
 
@@ -456,7 +469,10 @@ class SOLOV2(nn.Module):
         # torch.Size([1, 256, 40, 40])
         # torch.Size([1, 256, 20, 20])
         # torch.Size([1, 256, 10, 10])
-        x = self.fpn(x)
+        if self.use_gradient_checkpoint:
+            x = checkpoint(self.fpn, x, use_reentrant=False)
+        else:
+            x = self.fpn(x)
 
         # torch.Size([16, 256, 160, 160])
         mask_feat_pred = self.mask_feature_head(x[0:4])
@@ -517,6 +533,54 @@ def resnet152_solov2(backbone_pretrained_path='', **kwargs):
                    **kwargs)
 
 
+def vanb0_solov2(backbone_pretrained_path='', **kwargs):
+    return _solov2('vanb0backbone',
+                   backbone_pretrained_path=backbone_pretrained_path,
+                   **kwargs)
+
+
+def vanb1_solov2(backbone_pretrained_path='', **kwargs):
+    return _solov2('vanb1backbone',
+                   backbone_pretrained_path=backbone_pretrained_path,
+                   **kwargs)
+
+
+def vanb2_solov2(backbone_pretrained_path='', **kwargs):
+    return _solov2('vanb2backbone',
+                   backbone_pretrained_path=backbone_pretrained_path,
+                   **kwargs)
+
+
+def vanb3_solov2(backbone_pretrained_path='', **kwargs):
+    return _solov2('vanb3backbone',
+                   backbone_pretrained_path=backbone_pretrained_path,
+                   **kwargs)
+
+
+def convformers18_solov2(backbone_pretrained_path='', **kwargs):
+    return _solov2('convformers18backbone',
+                   backbone_pretrained_path=backbone_pretrained_path,
+                   **kwargs)
+
+
+def convformers36_solov2(backbone_pretrained_path='', **kwargs):
+    return _solov2('convformers36backbone',
+                   backbone_pretrained_path=backbone_pretrained_path,
+                   **kwargs)
+
+
+def convformerm36_solov2(backbone_pretrained_path='', **kwargs):
+    return _solov2('convformerm36backbone',
+                   backbone_pretrained_path=backbone_pretrained_path,
+                   **kwargs)
+
+
+def convformerb36_solov2(backbone_pretrained_path='', **kwargs):
+    return _solov2('convformerb36backbone',
+                   backbone_pretrained_path=backbone_pretrained_path,
+                   **kwargs)
+
+
 if __name__ == '__main__':
     import os
     import random
@@ -533,7 +597,221 @@ if __name__ == '__main__':
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
+    net = resnet18_solov2()
+    image_h, image_w = 1024, 1024
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    out1, out2, out3 = net(
+        torch.autograd.Variable(torch.randn(4, 3, image_h, image_w)))
+    print('2222', out1.shape)
+    for per_out in out2:
+        print('3333', per_out.shape)
+    for per_out in out3:
+        print('4444', per_out.shape)
+
+    net = resnet34_solov2()
+    image_h, image_w = 1024, 1024
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    out1, out2, out3 = net(
+        torch.autograd.Variable(torch.randn(4, 3, image_h, image_w)))
+    print('2222', out1.shape)
+    for per_out in out2:
+        print('3333', per_out.shape)
+    for per_out in out3:
+        print('4444', per_out.shape)
+
     net = resnet50_solov2()
+    image_h, image_w = 1024, 1024
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    out1, out2, out3 = net(
+        torch.autograd.Variable(torch.randn(4, 3, image_h, image_w)))
+    print('2222', out1.shape)
+    for per_out in out2:
+        print('3333', per_out.shape)
+    for per_out in out3:
+        print('4444', per_out.shape)
+
+    net = resnet101_solov2()
+    image_h, image_w = 1024, 1024
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    out1, out2, out3 = net(
+        torch.autograd.Variable(torch.randn(4, 3, image_h, image_w)))
+    print('2222', out1.shape)
+    for per_out in out2:
+        print('3333', per_out.shape)
+    for per_out in out3:
+        print('4444', per_out.shape)
+
+    net = resnet152_solov2()
+    image_h, image_w = 1024, 1024
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    out1, out2, out3 = net(
+        torch.autograd.Variable(torch.randn(4, 3, image_h, image_w)))
+    print('2222', out1.shape)
+    for per_out in out2:
+        print('3333', per_out.shape)
+    for per_out in out3:
+        print('4444', per_out.shape)
+
+    net = resnet152_solov2(use_gradient_checkpoint=True)
+    image_h, image_w = 1024, 1024
+    out1, out2, out3 = net(
+        torch.autograd.Variable(torch.randn(4, 3, image_h, image_w)))
+    print('2222', out1.shape)
+    for per_out in out2:
+        print('3333', per_out.shape)
+    for per_out in out3:
+        print('4444', per_out.shape)
+
+    net = vanb0_solov2()
+    image_h, image_w = 1024, 1024
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    out1, out2, out3 = net(
+        torch.autograd.Variable(torch.randn(4, 3, image_h, image_w)))
+    print('2222', out1.shape)
+    for per_out in out2:
+        print('3333', per_out.shape)
+    for per_out in out3:
+        print('4444', per_out.shape)
+
+    net = vanb1_solov2()
+    image_h, image_w = 1024, 1024
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    out1, out2, out3 = net(
+        torch.autograd.Variable(torch.randn(4, 3, image_h, image_w)))
+    print('2222', out1.shape)
+    for per_out in out2:
+        print('3333', per_out.shape)
+    for per_out in out3:
+        print('4444', per_out.shape)
+
+    net = vanb2_solov2()
+    image_h, image_w = 1024, 1024
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    out1, out2, out3 = net(
+        torch.autograd.Variable(torch.randn(4, 3, image_h, image_w)))
+    print('2222', out1.shape)
+    for per_out in out2:
+        print('3333', per_out.shape)
+    for per_out in out3:
+        print('4444', per_out.shape)
+
+    net = vanb3_solov2()
+    image_h, image_w = 1024, 1024
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    out1, out2, out3 = net(
+        torch.autograd.Variable(torch.randn(4, 3, image_h, image_w)))
+    print('2222', out1.shape)
+    for per_out in out2:
+        print('3333', per_out.shape)
+    for per_out in out3:
+        print('4444', per_out.shape)
+
+    net = convformers18_solov2()
+    image_h, image_w = 1024, 1024
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    out1, out2, out3 = net(
+        torch.autograd.Variable(torch.randn(4, 3, image_h, image_w)))
+    print('2222', out1.shape)
+    for per_out in out2:
+        print('3333', per_out.shape)
+    for per_out in out3:
+        print('4444', per_out.shape)
+
+    net = convformers36_solov2()
+    image_h, image_w = 1024, 1024
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    out1, out2, out3 = net(
+        torch.autograd.Variable(torch.randn(4, 3, image_h, image_w)))
+    print('2222', out1.shape)
+    for per_out in out2:
+        print('3333', per_out.shape)
+    for per_out in out3:
+        print('4444', per_out.shape)
+
+    net = convformerm36_solov2()
+    image_h, image_w = 1024, 1024
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    out1, out2, out3 = net(
+        torch.autograd.Variable(torch.randn(4, 3, image_h, image_w)))
+    print('2222', out1.shape)
+    for per_out in out2:
+        print('3333', per_out.shape)
+    for per_out in out3:
+        print('4444', per_out.shape)
+
+    net = convformerb36_solov2()
     image_h, image_w = 1024, 1024
     from thop import profile
     from thop import clever_format

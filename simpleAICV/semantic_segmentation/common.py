@@ -35,12 +35,10 @@ class Resize:
         scale *= np.float32(scale_factor)
         size = np.array([image.shape[0], image.shape[1]]).astype(np.float32)
 
-        return {
-            'image': image,
-            'mask': mask,
-            'scale': scale,
-            'size': size,
-        }
+        sample['image'], sample['mask'], sample['scale'], sample[
+            'size'] = image, mask, scale, size
+
+        return sample
 
 
 class RandomCropResize:
@@ -51,7 +49,7 @@ class RandomCropResize:
                  multi_scale_range=(0.5, 2.0),
                  crop_size=(512, 512),
                  cat_max_ratio=0.75,
-                 ignore_index=None):
+                 ignore_index=255):
         self.image_scale = image_scale
         self.multi_scale = multi_scale
         self.multi_scale_range = multi_scale_range
@@ -112,12 +110,10 @@ class RandomCropResize:
 
         size = np.array([image.shape[0], image.shape[1]]).astype(np.float32)
 
-        return {
-            'image': image,
-            'mask': mask,
-            'scale': scale,
-            'size': size,
-        }
+        sample['image'], sample['mask'], sample['scale'], sample[
+            'size'] = image, mask, scale, size
+
+        return sample
 
     def get_crop_bbox(self, image):
         margin_h = max(image.shape[0] - self.crop_size[0], 0)
@@ -143,12 +139,10 @@ class RandomHorizontalFlip:
             image = image[:, ::-1, :]
             mask = mask[:, ::-1]
 
-        return {
-            'image': image,
-            'mask': mask,
-            'scale': scale,
-            'size': size,
-        }
+        sample['image'], sample['mask'], sample['scale'], sample[
+            'size'] = image, mask, scale, size
+
+        return sample
 
 
 class PhotoMetricDistortion:
@@ -206,12 +200,10 @@ class PhotoMetricDistortion:
         if mode == 0:
             image = self.contrast(image)
 
-        return {
-            'image': image,
-            'mask': mask,
-            'scale': scale,
-            'size': size,
-        }
+        sample['image'], sample['mask'], sample['scale'], sample[
+            'size'] = image, mask, scale, size
+
+        return sample
 
     def convert(self, image, alpha=1, beta=0):
         """Multiple with alpha and add beat with clip."""
@@ -279,17 +271,15 @@ class Normalize:
 
         image = image / 255.
 
-        return {
-            'image': image,
-            'mask': mask,
-            'scale': scale,
-            'size': size,
-        }
+        sample['image'], sample['mask'], sample['scale'], sample[
+            'size'] = image, mask, scale, size
+
+        return sample
 
 
 class SemanticSegmentationCollater:
 
-    def __init__(self, resize=512, ignore_index=None):
+    def __init__(self, resize=512, ignore_index=255):
         self.resize = resize
         self.ignore_index = ignore_index
 

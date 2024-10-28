@@ -44,6 +44,7 @@ class ACCV2022TrainDataset(Dataset):
                 if per_image_name in broken_list:
                     continue
                 self.image_path_list.append(per_image_path)
+        self.image_path_list = sorted(self.image_path_list)
 
         self.class_name_to_label = {
             sub_class_name: i
@@ -144,7 +145,7 @@ if __name__ == '__main__':
               per_sample['label'], type(per_sample['image']),
               type(per_sample['label']))
 
-        # temp_dir = './temp'
+        # temp_dir = './temp1'
         # if not os.path.exists(temp_dir):
         #     os.makedirs(temp_dir)
 
@@ -173,7 +174,7 @@ if __name__ == '__main__':
     train_loader = DataLoader(accv2022traindataset,
                               batch_size=128,
                               shuffle=True,
-                              num_workers=4,
+                              num_workers=2,
                               collate_fn=collater)
 
     count = 0
@@ -213,7 +214,7 @@ if __name__ == '__main__':
               per_sample['label'], type(per_sample['image']),
               type(per_sample['label']))
 
-        # temp_dir = './temp'
+        # temp_dir = './temp1'
         # if not os.path.exists(temp_dir):
         #     os.makedirs(temp_dir)
 
@@ -250,9 +251,9 @@ if __name__ == '__main__':
                                                  label_smoothing=0.1,
                                                  num_classes=5000)
     train_loader = DataLoader(accv2022traindataset,
-                              batch_size=8,
+                              batch_size=4,
                               shuffle=True,
-                              num_workers=4,
+                              num_workers=2,
                               collate_fn=collater)
 
     for i, data in enumerate(tqdm(train_loader)):
@@ -260,7 +261,7 @@ if __name__ == '__main__':
         print(images.shape, labels.shape)
         print(images.dtype, labels.dtype, torch.unique(labels))
 
-        # temp_dir = './temp'
+        # temp_dir = './temp2'
         # if not os.path.exists(temp_dir):
         #     os.makedirs(temp_dir)
 

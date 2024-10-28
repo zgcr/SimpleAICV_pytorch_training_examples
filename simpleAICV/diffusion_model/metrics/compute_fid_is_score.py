@@ -6,10 +6,10 @@ import numpy as np
 from PIL import Image
 from scipy import linalg
 
-import torch
+from torch.utils.data import Dataset
 
 
-class ImagePathDataset(torch.utils.data.Dataset):
+class ImagePathDataset(Dataset):
 
     def __init__(self, files, transform=None):
         self.files = files
@@ -20,11 +20,12 @@ class ImagePathDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, i):
         path = self.files[i]
-        img = Image.open(path).convert('RGB')
-        if self.transform is not None:
-            img = self.transform(img)
+        image = Image.open(path).convert('RGB')
 
-        return img
+        if self.transform:
+            image = self.transform(image)
+
+        return image
 
 
 def calculate_frechet_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):

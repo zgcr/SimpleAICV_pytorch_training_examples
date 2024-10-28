@@ -36,6 +36,7 @@ class ImageNet21KSingleLabelDataset(Dataset):
                 per_image_path = os.path.join(per_sub_class_dir,
                                               per_image_name)
                 self.image_path_list.append(per_image_path)
+        self.image_path_list = sorted(self.image_path_list)
 
         self.class_name_to_label = {
             sub_class_name: i
@@ -56,10 +57,12 @@ class ImageNet21KSingleLabelDataset(Dataset):
         return len(self.image_path_list)
 
     def __getitem__(self, idx):
+        path = self.image_path_list[idx]
         image = self.load_image(idx)
         label = self.load_label(idx)
 
         sample = {
+            'path': path,
             'image': image,
             'label': label,
         }
@@ -179,10 +182,12 @@ class ImageNet21KSemanticTreeLabelDataset(Dataset):
         return len(self.image_path_list)
 
     def __getitem__(self, idx):
+        path = self.image_path_list[idx]
         image = self.load_image(idx)
         label = self.load_label(idx)
 
         sample = {
+            'path': path,
             'image': image,
             'label': label,
         }
@@ -279,147 +284,7 @@ if __name__ == '__main__':
 
     from simpleAICV.classification.common import Opencv2PIL, PIL2Opencv, TorchRandomResizedCrop, TorchRandomHorizontalFlip, RandomErasing, TorchResize, TorchCenterCrop, Normalize, AutoAugment, RandAugment, ClassificationCollater
 
-    # imagenet21ktraindataset = ImageNet21KSingleLabelDataset(
-    #     root_dir=ImageNet21K_path,
-    #     set_name='train',
-    #     transform=transforms.Compose([
-    #         Opencv2PIL(),
-    #         TorchRandomResizedCrop(resize=224),
-    #         TorchRandomHorizontalFlip(prob=0.5),
-    #         PIL2Opencv(),
-    #         # Normalize(),
-    #     ]))
-
-    # count = 0
-    # for per_sample in tqdm(imagenet21ktraindataset):
-    #     print(per_sample['image'].shape, per_sample['label'].shape,
-    #           per_sample['label'], type(per_sample['image']),
-    #           type(per_sample['label']))
-
-    #     # temp_dir = './temp'
-    #     # if not os.path.exists(temp_dir):
-    #     #     os.makedirs(temp_dir)
-
-    #     # color = [random.randint(0, 255) for _ in range(3)]
-    #     # image = np.ascontiguousarray(per_sample['image'], dtype=np.uint8)
-    #     # image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-    #     # label = per_sample['label']
-    #     # text = f'label:{int(label)}'
-    #     # cv2.putText(image,
-    #     #             text, (30, 30),
-    #     #             cv2.FONT_HERSHEY_PLAIN,
-    #     #             1.5,
-    #     #             color=color,
-    #     #             thickness=1)
-
-    #     # cv2.imencode('.jpg', image)[1].tofile(
-    #     #     os.path.join(temp_dir, f'idx_{count}.jpg'))
-
-    #     if count < 10:
-    #         count += 1
-    #     else:
-    #         break
-
-    # from torch.utils.data import DataLoader
-    # collater = ClassificationCollater()
-    # train_loader = DataLoader(imagenet21ktraindataset,
-    #                           batch_size=128,
-    #                           shuffle=True,
-    #                           num_workers=2,
-    #                           collate_fn=collater)
-
-    # count = 0
-    # for data in tqdm(train_loader):
-    #     images, labels = data['image'], data['label']
-    #     print(images.shape, labels.shape)
-    #     print(images.dtype, labels.dtype)
-    #     if count < 10:
-    #         count += 1
-    #     else:
-    #         break
-
-    # imagenet21kvaldataset = ImageNet21KSingleLabelDataset(
-    #     root_dir=ImageNet21K_path,
-    #     set_name='val',
-    #     transform=transforms.Compose([
-    #         Opencv2PIL(),
-    #         TorchResize(resize=256),
-    #         TorchCenterCrop(resize=224),
-    #         PIL2Opencv(),
-    #         Normalize(),
-    #     ]))
-
-    # count = 0
-    # for per_sample in tqdm(imagenet21kvaldataset):
-    #     print(per_sample['image'].shape, per_sample['label'].shape,
-    #           per_sample['label'], type(per_sample['image']),
-    #           type(per_sample['label']))
-
-    #     if count < 10:
-    #         count += 1
-    #     else:
-    #         break
-
-    # from torch.utils.data import DataLoader
-    # collater = ClassificationCollater()
-    # val_loader = DataLoader(imagenet21kvaldataset,
-    #                         batch_size=128,
-    #                         shuffle=False,
-    #                         num_workers=4,
-    #                         collate_fn=collater)
-
-    # count = 0
-    # for data in tqdm(val_loader):
-    #     images, labels = data['image'], data['label']
-    #     print(images.shape, labels.shape)
-    #     print(images.dtype, labels.dtype)
-    #     if count < 10:
-    #         count += 1
-    #     else:
-    #         break
-
-    # imagenet21ktraindataset = ImageNet21KSingleLabelDataset(
-    #     root_dir=ImageNet21K_path,
-    #     set_name='train',
-    #     transform=transforms.Compose([
-    #         Opencv2PIL(),
-    #         TorchRandomResizedCrop(resize=224),
-    #         TorchRandomHorizontalFlip(prob=0.5),
-    #         # AutoAugment(),
-    #         RandAugment(magnitude=10, num_layers=2),
-    #         PIL2Opencv(),
-    #         Normalize(),
-    #     ]))
-
-    # count = 0
-    # for per_sample in tqdm(imagenet21ktraindataset):
-    #     print(per_sample['image'].shape, per_sample['label'].shape,
-    #           per_sample['label'], type(per_sample['image']),
-    #           type(per_sample['label']))
-
-    #     if count < 10:
-    #         count += 1
-    #     else:
-    #         break
-
-    # from torch.utils.data import DataLoader
-    # collater = ClassificationCollater()
-    # train_loader = DataLoader(imagenet21ktraindataset,
-    #                           batch_size=128,
-    #                           shuffle=True,
-    #                           num_workers=4,
-    #                           collate_fn=collater)
-
-    # count = 0
-    # for data in tqdm(train_loader):
-    #     images, labels = data['image'], data['label']
-    #     print(images.shape, labels.shape)
-    #     print(images.dtype, labels.dtype)
-    #     if count < 10:
-    #         count += 1
-    #     else:
-    #         break
-
+    ####################################################################################
     imagenet21ktraindataset = ImageNet21KSingleLabelDataset(
         root_dir=ImageNet21K_path,
         set_name='train',
@@ -428,17 +293,16 @@ if __name__ == '__main__':
             TorchRandomResizedCrop(resize=224),
             TorchRandomHorizontalFlip(prob=0.5),
             PIL2Opencv(),
-            RandomErasing(prob=1.0, mode='pixel'),
             # Normalize(),
         ]))
 
     count = 0
     for per_sample in tqdm(imagenet21ktraindataset):
-        print(per_sample['image'].shape, per_sample['label'].shape,
-              per_sample['label'], type(per_sample['image']),
-              type(per_sample['label']))
+        print(per_sample['path'], per_sample['image'].shape,
+              per_sample['label'].shape, per_sample['label'],
+              type(per_sample['image']), type(per_sample['label']))
 
-        # temp_dir = './temp'
+        # temp_dir = './temp1'
         # if not os.path.exists(temp_dir):
         #     os.makedirs(temp_dir)
 
@@ -457,7 +321,152 @@ if __name__ == '__main__':
         # cv2.imencode('.jpg', image)[1].tofile(
         #     os.path.join(temp_dir, f'idx_{count}.jpg'))
 
-        if count < 10:
+        if count < 2:
+            count += 1
+        else:
+            break
+
+    from torch.utils.data import DataLoader
+    collater = ClassificationCollater()
+    train_loader = DataLoader(imagenet21ktraindataset,
+                              batch_size=128,
+                              shuffle=True,
+                              num_workers=2,
+                              collate_fn=collater)
+
+    count = 0
+    for data in tqdm(train_loader):
+        images, labels = data['image'], data['label']
+        print(images.shape, labels.shape)
+        print(images.dtype, labels.dtype)
+        if count < 2:
+            count += 1
+        else:
+            break
+
+    ####################################################################################
+    imagenet21kvaldataset = ImageNet21KSingleLabelDataset(
+        root_dir=ImageNet21K_path,
+        set_name='val',
+        transform=transforms.Compose([
+            Opencv2PIL(),
+            TorchResize(resize=256),
+            TorchCenterCrop(resize=224),
+            PIL2Opencv(),
+            Normalize(),
+        ]))
+
+    count = 0
+    for per_sample in tqdm(imagenet21kvaldataset):
+        print(per_sample['path'], per_sample['image'].shape,
+              per_sample['label'].shape, per_sample['label'],
+              type(per_sample['image']), type(per_sample['label']))
+
+        if count < 2:
+            count += 1
+        else:
+            break
+
+    from torch.utils.data import DataLoader
+    collater = ClassificationCollater()
+    val_loader = DataLoader(imagenet21kvaldataset,
+                            batch_size=128,
+                            shuffle=False,
+                            num_workers=4,
+                            collate_fn=collater)
+
+    count = 0
+    for data in tqdm(val_loader):
+        images, labels = data['image'], data['label']
+        print(images.shape, labels.shape)
+        print(images.dtype, labels.dtype)
+        if count < 2:
+            count += 1
+        else:
+            break
+
+    ####################################################################################
+    imagenet21ktraindataset = ImageNet21KSingleLabelDataset(
+        root_dir=ImageNet21K_path,
+        set_name='train',
+        transform=transforms.Compose([
+            Opencv2PIL(),
+            TorchRandomResizedCrop(resize=224),
+            TorchRandomHorizontalFlip(prob=0.5),
+            # AutoAugment(),
+            RandAugment(magnitude=10, num_layers=2),
+            PIL2Opencv(),
+            Normalize(),
+        ]))
+
+    count = 0
+    for per_sample in tqdm(imagenet21ktraindataset):
+        print(per_sample['path'], per_sample['image'].shape,
+              per_sample['label'].shape, per_sample['label'],
+              type(per_sample['image']), type(per_sample['label']))
+
+        if count < 2:
+            count += 1
+        else:
+            break
+
+    from torch.utils.data import DataLoader
+    collater = ClassificationCollater()
+    train_loader = DataLoader(imagenet21ktraindataset,
+                              batch_size=128,
+                              shuffle=True,
+                              num_workers=4,
+                              collate_fn=collater)
+
+    count = 0
+    for data in tqdm(train_loader):
+        images, labels = data['image'], data['label']
+        print(images.shape, labels.shape)
+        print(images.dtype, labels.dtype)
+        if count < 2:
+            count += 1
+        else:
+            break
+
+    ###################################################################################
+    imagenet21ktraindataset = ImageNet21KSingleLabelDataset(
+        root_dir=ImageNet21K_path,
+        set_name='train',
+        transform=transforms.Compose([
+            Opencv2PIL(),
+            TorchRandomResizedCrop(resize=224),
+            TorchRandomHorizontalFlip(prob=0.5),
+            PIL2Opencv(),
+            RandomErasing(prob=1.0, mode='pixel'),
+            # Normalize(),
+        ]))
+
+    count = 0
+    for per_sample in tqdm(imagenet21ktraindataset):
+        print(per_sample['path'], per_sample['image'].shape,
+              per_sample['label'].shape, per_sample['label'],
+              type(per_sample['image']), type(per_sample['label']))
+
+        # temp_dir = './temp1'
+        # if not os.path.exists(temp_dir):
+        #     os.makedirs(temp_dir)
+
+        # color = [random.randint(0, 255) for _ in range(3)]
+        # image = np.ascontiguousarray(per_sample['image'], dtype=np.uint8)
+        # image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        # label = per_sample['label']
+        # text = f'label:{int(label)}'
+        # cv2.putText(image,
+        #             text, (30, 30),
+        #             cv2.FONT_HERSHEY_PLAIN,
+        #             1.5,
+        #             color=color,
+        #             thickness=1)
+
+        # cv2.imencode('.jpg', image)[1].tofile(
+        #     os.path.join(temp_dir, f'idx_{count}.jpg'))
+
+        if count < 2:
             count += 1
         else:
             break
@@ -475,7 +484,7 @@ if __name__ == '__main__':
                                                  label_smoothing=0.1,
                                                  num_classes=10450)
     train_loader = DataLoader(imagenet21ktraindataset,
-                              batch_size=8,
+                              batch_size=4,
                               shuffle=True,
                               num_workers=4,
                               collate_fn=collater)
@@ -485,7 +494,7 @@ if __name__ == '__main__':
         print(images.shape, labels.shape)
         print(images.dtype, labels.dtype, torch.unique(labels))
 
-        # temp_dir = './temp'
+        # temp_dir = './temp2'
         # if not os.path.exists(temp_dir):
         #     os.makedirs(temp_dir)
 
@@ -502,7 +511,7 @@ if __name__ == '__main__':
         #         os.path.join(temp_dir, f'idx_{i}_count_{count}.jpg'))
         #     count += 1
 
-        if i < 1:
+        if i < 2:
             i += 1
         else:
             break
@@ -520,11 +529,11 @@ if __name__ == '__main__':
 
     count = 0
     for per_sample in tqdm(imagenet21ktraindataset):
-        print(per_sample['image'].shape, per_sample['label'].shape,
-              per_sample['label'], type(per_sample['image']),
-              type(per_sample['label']))
+        print(per_sample['path'], per_sample['image'].shape,
+              per_sample['label'].shape, per_sample['label'],
+              type(per_sample['image']), type(per_sample['label']))
 
-        # temp_dir = './temp'
+        # temp_dir = './temp3'
         # if not os.path.exists(temp_dir):
         #     os.makedirs(temp_dir)
 
@@ -543,7 +552,7 @@ if __name__ == '__main__':
         # cv2.imencode('.jpg', image)[1].tofile(
         #     os.path.join(temp_dir, f'idx_{count}.jpg'))
 
-        if count < 10:
+        if count < 2:
             count += 1
         else:
             break
@@ -569,7 +578,7 @@ if __name__ == '__main__':
             labels)
         print(preds[0], labels[0], semantic_labels[0])
 
-        if count < 5:
+        if count < 2:
             count += 1
         else:
             break

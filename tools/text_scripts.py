@@ -1,10 +1,7 @@
 import cv2
 
-import os
-
 import collections
 import numpy as np
-import json
 import re
 import time
 from tqdm import tqdm
@@ -12,21 +9,13 @@ from tqdm import tqdm
 from nltk.metrics.distance import edit_distance
 
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 
 from torch.cuda.amp import autocast
 
 from simpleAICV.text_detection.common import AverageMeter, PrecisionRecallMeter
-
-
-def all_reduce_operation_in_group_for_variables(variables, operator, group):
-    for i in range(len(variables)):
-        if not torch.is_tensor(variables[i]):
-            variables[i] = torch.tensor(variables[i]).cuda()
-        torch.distributed.all_reduce(variables[i], op=operator, group=group)
-        variables[i] = variables[i].item()
-
-    return variables
+from tools.scripts import all_reduce_operation_in_group_for_variables
 
 
 def test_text_recognition_for_all_dataset(val_loader_list, model, criterion,
@@ -915,14 +904,13 @@ def train_text_recognition(train_loader, model, criterion, optimizer,
         trans_targets, target_lengths = trans_targets.cuda(
         ), target_lengths.cuda()
 
+        skip_batch_flag = False
+
         if torch.any(torch.isinf(images)):
-            continue
+            skip_batch_flag = True
 
         if torch.any(torch.isnan(images)):
-            continue
-
-        if torch.sum(images) == 0:
-            continue
+            skip_batch_flag = True
 
         if config.use_amp:
             with autocast():
@@ -1051,10 +1039,8 @@ def train_text_recognition(train_loader, model, criterion, optimizer,
             inf_nan_flag = True
 
         if loss == 0. or inf_nan_flag:
-            log_info = f'zero loss or nan loss or inf loss!'
-            logger.info(log_info) if local_rank == 0 else None
-            optimizer.zero_grad()
-            continue
+            print(f'GPU id:{local_rank},zero loss or nan loss or inf loss!')
+            skip_batch_flag = True
 
         loss = loss / config.accumulation_steps
         for key, value in loss_value.items():
@@ -1075,22 +1061,65 @@ def train_text_recognition(train_loader, model, criterion, optimizer,
                 with model.no_sync():
                     loss.backward()
 
+        if hasattr(config, 'skip_inf_nan_grad') and config.skip_inf_nan_grad:
+            grad_inf_nan_flag = False
+            for _, param in model.named_parameters():
+                per_weight_grad = param.grad
+                if per_weight_grad is not None:
+                    if torch.any(torch.isnan(per_weight_grad)) or torch.any(
+                            torch.isnan(per_weight_grad)):
+                        grad_inf_nan_flag = True
+            if grad_inf_nan_flag:
+                print(f'GPU id:{local_rank},nan grad or inf grad!')
+                skip_batch_flag = True
+
+        [skip_batch_flag] = all_reduce_operation_in_group_for_variables(
+            variables=[skip_batch_flag],
+            operator=torch.distributed.ReduceOp.SUM,
+            group=config.group)
+
+        if skip_batch_flag:
+            log_info = f'skip this batch!'
+            logger.info(log_info) if local_rank == 0 else None
+            optimizer.zero_grad()
+            continue
+
+        torch.distributed.barrier()
+
         if config.use_amp:
             if iter_index % config.accumulation_steps == 0:
-                if hasattr(config,
-                           'clip_max_norm') and config.clip_max_norm > 0:
+                if (hasattr(config, 'clip_grad_value')
+                        and config.clip_grad_value
+                        > 0) or (hasattr(config, 'clip_max_norm')
+                                 and config.clip_max_norm > 0):
                     config.scaler.unscale_(optimizer)
-                    torch.nn.utils.clip_grad_norm_(model.parameters(),
-                                                   config.clip_max_norm)
+
+                    if hasattr(config, 'clip_grad_value'):
+                        torch.nn.utils.clip_grad_value_(
+                            model.parameters(), config.clip_grad_value)
+
+                    if hasattr(config, 'clip_max_norm'):
+                        torch.nn.utils.clip_grad_norm_(model.parameters(),
+                                                       config.clip_max_norm)
+
                 config.scaler.step(optimizer)
                 config.scaler.update()
                 optimizer.zero_grad()
         else:
             if iter_index % config.accumulation_steps == 0:
-                if hasattr(config,
-                           'clip_max_norm') and config.clip_max_norm > 0:
-                    torch.nn.utils.clip_grad_norm_(model.parameters(),
-                                                   config.clip_max_norm)
+                if (hasattr(config, 'clip_grad_value')
+                        and config.clip_grad_value
+                        > 0) or (hasattr(config, 'clip_max_norm')
+                                 and config.clip_max_norm > 0):
+
+                    if hasattr(config, 'clip_grad_value'):
+                        torch.nn.utils.clip_grad_value_(
+                            model.parameters(), config.clip_grad_value)
+
+                    if hasattr(config, 'clip_max_norm'):
+                        torch.nn.utils.clip_grad_norm_(model.parameters(),
+                                                       config.clip_max_norm)
+
                 optimizer.step()
                 optimizer.zero_grad()
 
@@ -1662,14 +1691,13 @@ def train_text_detection(train_loader, model, criterion, optimizer, scheduler,
         images, targets = data['image'], data['annots']
         images = images.cuda()
 
+        skip_batch_flag = False
+
         if torch.any(torch.isinf(images)):
-            continue
+            skip_batch_flag = True
 
         if torch.any(torch.isnan(images)):
-            continue
-
-        if torch.sum(images) == 0:
-            continue
+            skip_batch_flag = True
 
         if config.use_amp:
             with autocast():
@@ -1702,10 +1730,8 @@ def train_text_detection(train_loader, model, criterion, optimizer, scheduler,
             inf_nan_flag = True
 
         if loss == 0. or inf_nan_flag:
-            log_info = f'zero loss or nan loss or inf loss!'
-            logger.info(log_info) if local_rank == 0 else None
-            optimizer.zero_grad()
-            continue
+            print(f'GPU id:{local_rank},zero loss or nan loss or inf loss!')
+            skip_batch_flag = True
 
         loss = loss / config.accumulation_steps
         for key, value in loss_value.items():
@@ -1726,22 +1752,65 @@ def train_text_detection(train_loader, model, criterion, optimizer, scheduler,
                 with model.no_sync():
                     loss.backward()
 
+        if hasattr(config, 'skip_inf_nan_grad') and config.skip_inf_nan_grad:
+            grad_inf_nan_flag = False
+            for _, param in model.named_parameters():
+                per_weight_grad = param.grad
+                if per_weight_grad is not None:
+                    if torch.any(torch.isnan(per_weight_grad)) or torch.any(
+                            torch.isnan(per_weight_grad)):
+                        grad_inf_nan_flag = True
+            if grad_inf_nan_flag:
+                print(f'GPU id:{local_rank},nan grad or inf grad!')
+                skip_batch_flag = True
+
+        [skip_batch_flag] = all_reduce_operation_in_group_for_variables(
+            variables=[skip_batch_flag],
+            operator=torch.distributed.ReduceOp.SUM,
+            group=config.group)
+
+        if skip_batch_flag:
+            log_info = f'skip this batch!'
+            logger.info(log_info) if local_rank == 0 else None
+            optimizer.zero_grad()
+            continue
+
+        torch.distributed.barrier()
+
         if config.use_amp:
             if iter_index % config.accumulation_steps == 0:
-                if hasattr(config,
-                           'clip_max_norm') and config.clip_max_norm > 0:
+                if (hasattr(config, 'clip_grad_value')
+                        and config.clip_grad_value
+                        > 0) or (hasattr(config, 'clip_max_norm')
+                                 and config.clip_max_norm > 0):
                     config.scaler.unscale_(optimizer)
-                    torch.nn.utils.clip_grad_norm_(model.parameters(),
-                                                   config.clip_max_norm)
+
+                    if hasattr(config, 'clip_grad_value'):
+                        torch.nn.utils.clip_grad_value_(
+                            model.parameters(), config.clip_grad_value)
+
+                    if hasattr(config, 'clip_max_norm'):
+                        torch.nn.utils.clip_grad_norm_(model.parameters(),
+                                                       config.clip_max_norm)
+
                 config.scaler.step(optimizer)
                 config.scaler.update()
                 optimizer.zero_grad()
         else:
             if iter_index % config.accumulation_steps == 0:
-                if hasattr(config,
-                           'clip_max_norm') and config.clip_max_norm > 0:
-                    torch.nn.utils.clip_grad_norm_(model.parameters(),
-                                                   config.clip_max_norm)
+                if (hasattr(config, 'clip_grad_value')
+                        and config.clip_grad_value
+                        > 0) or (hasattr(config, 'clip_max_norm')
+                                 and config.clip_max_norm > 0):
+
+                    if hasattr(config, 'clip_grad_value'):
+                        torch.nn.utils.clip_grad_value_(
+                            model.parameters(), config.clip_grad_value)
+
+                    if hasattr(config, 'clip_max_norm'):
+                        torch.nn.utils.clip_grad_norm_(model.parameters(),
+                                                       config.clip_max_norm)
+
                 optimizer.step()
                 optimizer.zero_grad()
 

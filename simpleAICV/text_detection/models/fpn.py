@@ -195,10 +195,10 @@ if __name__ == '__main__':
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-    net = DBNetFPN(inplanes_list=[16, 24, 56, 480], inter_planes=96)
-    C2, C3, C4, C5 = torch.randn(1, 16, 240, 240), torch.randn(
-        1, 24, 120, 120), torch.randn(1, 56, 60,
-                                      60), torch.randn(1, 480, 30, 30)
+    net = DBNetFPN(inplanes_list=[256, 512, 1024, 2048], inter_planes=256)
+    C2, C3, C4, C5 = torch.randn(1, 256, 240, 240), torch.randn(
+        1, 512, 120, 120), torch.randn(1, 1024, 60,
+                                       60), torch.randn(1, 2048, 30, 30)
     from thop import profile
     from thop import clever_format
     macs, params = profile(net, inputs=([C2, C3, C4, C5], ), verbose=False)

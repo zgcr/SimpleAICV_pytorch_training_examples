@@ -13,13 +13,11 @@ import torch.nn.functional as F
 
 from torchvision.ops import nms
 
-from simpleAICV.detection.models.anchor import RetinaAnchors, FCOSPositions, TTFNetPositions
+from simpleAICV.detection.models.anchor import RetinaAnchors, FCOSPositions
 
 __all__ = [
     'RetinaDecoder',
     'FCOSDecoder',
-    'CenterNetDecoder',
-    'TTFNetDecoder',
     'DETRDecoder',
     'DINODETRDecoder',
 ]
@@ -366,266 +364,6 @@ class FCOSDecoder:
         return pred_bboxes
 
 
-class CenterNetDecoder(nn.Module):
-
-    def __init__(self,
-                 topk=100,
-                 stride=4,
-                 min_score_threshold=0.05,
-                 max_object_num=100):
-        super(CenterNetDecoder, self).__init__()
-        self.topk = topk
-        self.stride = stride
-        self.min_score_threshold = min_score_threshold
-        self.max_object_num = max_object_num
-
-    def forward(self, preds):
-        with torch.no_grad():
-            heatmap_heads, offset_heads, wh_heads = preds
-            device = heatmap_heads.device
-            batch_size = heatmap_heads.shape[0]
-            batch_scores = torch.ones((batch_size, self.max_object_num),
-                                      dtype=torch.float32,
-                                      device=device) * (-1)
-            batch_classes = torch.ones((batch_size, self.max_object_num),
-                                       dtype=torch.float32,
-                                       device=device) * (-1)
-            batch_bboxes = torch.zeros((batch_size, self.max_object_num, 4),
-                                       dtype=torch.float32,
-                                       device=device)
-
-            for i, (per_image_heatmap_heads, per_image_offset_heads,
-                    per_image_wh_heads) in enumerate(
-                        zip(heatmap_heads, offset_heads, wh_heads)):
-                #filter and keep points which value large than the surrounding 8 points
-                per_image_heatmap_heads = self.nms(per_image_heatmap_heads)
-                topk_score, topk_indexes, topk_classes, topk_ys, topk_xs = self.get_topk(
-                    per_image_heatmap_heads, K=self.topk)
-
-                per_image_offset_heads = per_image_offset_heads.permute(
-                    1, 2, 0).contiguous().view(-1, 2)
-                per_image_offset_heads = torch.gather(
-                    per_image_offset_heads, 0, topk_indexes.repeat(1, 2))
-                topk_xs = topk_xs + per_image_offset_heads[:, 0:1]
-                topk_ys = topk_ys + per_image_offset_heads[:, 1:2]
-
-                per_image_wh_heads = per_image_wh_heads.permute(
-                    1, 2, 0).contiguous().view(-1, 2)
-                per_image_wh_heads = torch.gather(per_image_wh_heads, 0,
-                                                  topk_indexes.repeat(1, 2))
-
-                topk_bboxes = torch.cat([
-                    topk_xs - per_image_wh_heads[:, 0:1] / 2,
-                    topk_ys - per_image_wh_heads[:, 1:2] / 2,
-                    topk_xs + per_image_wh_heads[:, 0:1] / 2,
-                    topk_ys + per_image_wh_heads[:, 1:2] / 2
-                ],
-                                        dim=1)
-                topk_bboxes = topk_bboxes * self.stride
-
-                topk_classes = topk_classes[
-                    topk_score > self.min_score_threshold].float()
-                topk_bboxes = topk_bboxes[
-                    topk_score > self.min_score_threshold].float()
-                topk_score = topk_score[
-                    topk_score > self.min_score_threshold].float()
-
-                final_detection_num = min(self.max_object_num,
-                                          topk_score.shape[0])
-
-                batch_scores[
-                    i,
-                    0:final_detection_num] = topk_score[0:final_detection_num]
-                batch_classes[i, 0:final_detection_num] = topk_classes[
-                    0:final_detection_num]
-                batch_bboxes[i, 0:final_detection_num, :] = topk_bboxes[
-                    0:final_detection_num, :]
-
-            batch_scores, batch_classes, batch_bboxes = batch_scores.cpu(
-            ).numpy(), batch_classes.cpu().numpy(), batch_bboxes.cpu().numpy()
-
-            # batch_scores shape:[batch_size,topk]
-            # batch_classes shape:[batch_size,topk]
-            # batch_bboxes shape[batch_size,topk,4]
-            return batch_scores, batch_classes, batch_bboxes
-
-    def nms(self, per_image_heatmap_heads, kernel=3):
-        per_image_heatmap_max = F.max_pool2d(per_image_heatmap_heads,
-                                             kernel,
-                                             stride=1,
-                                             padding=(kernel - 1) // 2)
-        keep = (per_image_heatmap_max == per_image_heatmap_heads).float()
-
-        return per_image_heatmap_heads * keep
-
-    def get_topk(self, per_image_heatmap_heads, K):
-        num_classes, H, W = per_image_heatmap_heads.shape[
-            0], per_image_heatmap_heads.shape[
-                1], per_image_heatmap_heads.shape[2]
-
-        per_image_heatmap_heads = per_image_heatmap_heads.view(num_classes, -1)
-        # 先取每个类别的heatmap上前k个最大激活点
-        topk_scores, topk_indexes = torch.topk(per_image_heatmap_heads.view(
-            num_classes, -1),
-                                               K,
-                                               dim=-1)
-
-        # 取余，计算topk项在feature map上的y和x index(位置)
-        topk_indexes = topk_indexes % (H * W)
-        topk_ys = (topk_indexes / W).int().float()
-        topk_xs = (topk_indexes % W).int().float()
-
-        # 在topk_scores中取前k个最大分数(所有类别混合在一起再取)
-        topk_score, topk_score_indexes = torch.topk(topk_scores.view(-1),
-                                                    K,
-                                                    dim=-1)
-
-        # 整除K得到预测的类编号，因为heatmap view前第一个维度是类别数
-        topk_classes = (topk_score_indexes / K).int()
-
-        topk_score_indexes = topk_score_indexes.unsqueeze(-1)
-        topk_indexes = torch.gather(topk_indexes.view(-1, 1), 0,
-                                    topk_score_indexes)
-        topk_ys = torch.gather(topk_ys.view(-1, 1), 0, topk_score_indexes)
-        topk_xs = torch.gather(topk_xs.view(-1, 1), 0, topk_score_indexes)
-
-        return topk_score, topk_indexes, topk_classes, topk_ys, topk_xs
-
-
-class TTFNetDecoder(nn.Module):
-
-    def __init__(self,
-                 topk=100,
-                 stride=4,
-                 min_score_threshold=0.05,
-                 max_object_num=100):
-        super(TTFNetDecoder, self).__init__()
-        self.positions = TTFNetPositions()
-        self.topk = topk
-        self.stride = stride
-        self.min_score_threshold = min_score_threshold
-        self.max_object_num = max_object_num
-
-    def forward(self, preds):
-        with torch.no_grad():
-            heatmap_heads, wh_heads = preds
-            device = heatmap_heads.device
-            batch_size = heatmap_heads.shape[0]
-
-            feature_map_size = [heatmap_heads.shape[3], heatmap_heads.shape[2]]
-            one_image_positions = self.positions(feature_map_size)
-            batch_positions = torch.tensor(one_image_positions).unsqueeze(
-                0).repeat(batch_size, 1, 1, 1).to(device)
-
-            batch_scores = torch.ones((batch_size, self.max_object_num),
-                                      dtype=torch.float32,
-                                      device=device) * (-1)
-            batch_classes = torch.ones((batch_size, self.max_object_num),
-                                       dtype=torch.float32,
-                                       device=device) * (-1)
-            batch_bboxes = torch.zeros((batch_size, self.max_object_num, 4),
-                                       dtype=torch.float32,
-                                       device=device)
-
-            heatmap_heads = self.nms(heatmap_heads)
-            topk_scores, topk_idxs, topk_classes, topk_ys, topk_xs = self.get_topk(
-                heatmap_heads, K=self.topk)
-
-            # batch_positions shape:[b,h,w,2]
-            # wh_heads shape:[b,4,h,w]->[b,h,w,4]->[b,h*w,4]
-            wh_heads = wh_heads.permute(0, 2, 3, 1).contiguous()
-            pred_bboxes = self.snap_ltrb_to_x1y1x2y2(wh_heads, batch_positions)
-            pred_bboxes = pred_bboxes.view(pred_bboxes.shape[0], -1,
-                                           pred_bboxes.shape[3])
-            pred_bboxes = torch.gather(pred_bboxes, 1,
-                                       topk_idxs.unsqueeze(-1).repeat(1, 1, 4))
-
-            for i, (per_image_scores, per_image_classes,
-                    per_image_bboxes) in enumerate(
-                        zip(topk_scores, topk_classes, pred_bboxes)):
-                per_image_classes = per_image_classes[
-                    per_image_scores > self.min_score_threshold].float()
-                per_image_bboxes = per_image_bboxes[
-                    per_image_scores > self.min_score_threshold].float()
-                per_image_scores = per_image_scores[
-                    per_image_scores > self.min_score_threshold].float()
-
-                final_detection_num = min(self.max_object_num,
-                                          per_image_scores.shape[0])
-
-                batch_scores[i, 0:final_detection_num] = per_image_scores[
-                    0:final_detection_num]
-                batch_classes[i, 0:final_detection_num] = per_image_classes[
-                    0:final_detection_num]
-                batch_bboxes[i, 0:final_detection_num, :] = per_image_bboxes[
-                    0:final_detection_num, :]
-
-            batch_scores, batch_classes, batch_bboxes = batch_scores.cpu(
-            ).numpy(), batch_classes.cpu().numpy(), batch_bboxes.cpu().numpy()
-
-            # batch_scores shape:[batch_size,topk]
-            # batch_classes shape:[batch_size,topk]
-            # batch_bboxes shape[batch_size,topk,4]
-            return batch_scores, batch_classes, batch_bboxes
-
-    def nms(self, heatmap_heads, kernel=3):
-        #filter and keep points which value large than the surrounding 8 points
-        heatmap_max = F.max_pool2d(heatmap_heads,
-                                   kernel,
-                                   stride=1,
-                                   padding=(kernel - 1) // 2)
-        keep = (heatmap_max == heatmap_heads).float()
-
-        return heatmap_heads * keep
-
-    def get_topk(self, heatmap_heads, K):
-        B, num_classes, H, W = heatmap_heads.shape[0], heatmap_heads.shape[
-            1], heatmap_heads.shape[2], heatmap_heads.shape[3]
-
-        # 先取每个类别的heatmap上前k个最大激活点
-        topk_scores, topk_idxs = torch.topk(
-            heatmap_heads.view(B, num_classes, -1), K)
-
-        # 取余，计算topk项在feature map上的y和x index(位置)
-        topk_idxs = topk_idxs % (H * W)
-        topk_ys = (topk_idxs / W).int().float()
-        topk_xs = (topk_idxs % W).int().float()
-
-        # 在topk_scores中取前k个最大分数(所有类别混合在一起再取)
-        topk_score, topk_score_indexes = torch.topk(topk_scores.view(B, -1), K)
-
-        # 整除K得到预测的类编号，因为heatmap view前第一个维度是类别数
-        topk_classes = (topk_score_indexes / K).int()
-
-        topk_score_indexes = topk_score_indexes.unsqueeze(2)
-        topk_idxs = topk_idxs.view(B, -1,
-                                   1).gather(1, topk_score_indexes).view(B, K)
-        topk_ys = topk_ys.view(B, -1, 1).gather(1,
-                                                topk_score_indexes).view(B, K)
-        topk_xs = topk_xs.view(B, -1, 1).gather(1,
-                                                topk_score_indexes).view(B, K)
-
-        return topk_score, topk_idxs, topk_classes, topk_ys, topk_xs
-
-    def snap_ltrb_to_x1y1x2y2(self, wh_heads, batch_positions):
-        '''
-        snap wh_heads to pred bboxes
-        wh_heads:[B,H,W,4],4:[l,t,r,b]
-        batch_positions:[B,H,W,2],2:[point_ctr_x,point_ctr_y]
-        '''
-        wh_heads = torch.exp(wh_heads)
-        pred_bboxes_xy_min = (batch_positions -
-                              wh_heads[:, :, :, 0:2]) * self.stride
-        pred_bboxes_xy_max = (batch_positions +
-                              wh_heads[:, :, :, 2:4]) * self.stride
-        pred_bboxes = torch.cat([pred_bboxes_xy_min, pred_bboxes_xy_max],
-                                dim=3)
-        pred_bboxes = pred_bboxes.int()
-
-        # pred bboxes shape:[B,H,W,4]
-        return pred_bboxes
-
-
 class DETRDecoder:
 
     def __init__(self,
@@ -767,6 +505,7 @@ class DINODETRDecoder:
     def __call__(self, preds, scaled_sizes):
         cls_preds, reg_preds = preds['pred_logits'], preds['pred_boxes']
 
+        cls_preds = cls_preds.float()
         cls_preds = F.sigmoid(cls_preds)
         cls_preds = cls_preds.cpu().detach().numpy()
         reg_preds = reg_preds.cpu().detach().numpy()
@@ -877,106 +616,148 @@ if __name__ == '__main__':
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-    # from simpleAICV.detection.models.retinanet import resnet50_retinanet
-    # net = resnet50_retinanet()
-    # image_h, image_w = 640, 640
-    # preds = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
-    # decode = RetinaDecoder(areas=[[32, 32], [64, 64], [128, 128], [256, 256],
-    #                               [512, 512]],
-    #                        ratios=[0.5, 1, 2],
-    #                        scales=[2**0, 2**(1.0 / 3.0), 2**(2.0 / 3.0)],
-    #                        strides=[8, 16, 32, 64, 128],
-    #                        topn=1000,
-    #                        min_score_threshold=0.01,
-    #                        nms_type='python_nms',
-    #                        nms_threshold=0.5,
-    #                        max_object_num=100)
-    # batch_scores, batch_classes, batch_pred_bboxes = decode(preds)
-    # print('1111', batch_scores.shape, batch_classes.shape,
-    #       batch_pred_bboxes.shape)
+    import torchvision.transforms as transforms
+    from tqdm import tqdm
 
-    # from simpleAICV.detection.models.fcos import resnet50_fcos
-    # net = resnet50_fcos()
-    # image_h, image_w = 640, 640
-    # preds = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
-    # decode = FCOSDecoder(strides=[8, 16, 32, 64, 128],
-    #                      topn=1000,
-    #                      min_score_threshold=0.01,
-    #                      nms_type='torch_nms',
-    #                      nms_threshold=0.6,
-    #                      max_object_num=100)
-    # batch_scores, batch_classes, batch_pred_bboxes = decode(preds)
-    # print('2222', batch_scores.shape, batch_classes.shape,
-    #       batch_pred_bboxes.shape)
+    from tools.path import COCO2017_path
 
-    # from simpleAICV.detection.models.centernet import resnet18_centernet
-    # net = resnet18_centernet()
-    # image_h, image_w = 512, 512
-    # preds = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
-    # annotations = torch.FloatTensor([[[113, 120, 183, 255, 5],
-    #                                   [13, 45, 175, 210, 2]],
-    #                                  [[11, 18, 223, 225, 1],
-    #                                   [-1, -1, -1, -1, -1]],
-    #                                  [[-1, -1, -1, -1, -1],
-    #                                   [-1, -1, -1, -1, -1]]])
-    # decode = CenterNetDecoder(topk=100,
-    #                           stride=4,
-    #                           min_score_threshold=0.05,
-    #                           max_object_num=100)
-    # batch_scores, batch_classes, batch_pred_bboxes = decode(preds)
-    # print('3333', batch_scores.shape, batch_classes.shape,
-    #       batch_pred_bboxes.shape)
+    from simpleAICV.detection.datasets.cocodataset import CocoDetection
+    from simpleAICV.detection.common import RandomHorizontalFlip, RandomCrop, RandomTranslate, Normalize, DetectionResize, DetectionCollater, DETRDetectionCollater
 
-    # from simpleAICV.detection.models.ttfnet import resnet18_ttfnet
-    # net = resnet18_ttfnet()
-    # image_h, image_w = 512, 512
-    # preds = net(torch.autograd.Variable(torch.randn(3, 3, image_h, image_w)))
-    # annotations = torch.FloatTensor([[[113, 120, 183, 255, 5],
-    #                                   [13, 45, 175, 210, 2]],
-    #                                  [[11, 18, 223, 225, 1],
-    #                                   [-1, -1, -1, -1, -1]],
-    #                                  [[-1, -1, -1, -1, -1],
-    #                                   [-1, -1, -1, -1, -1]]])
-    # decode = TTFNetDecoder(topk=100,
-    #                        stride=4,
-    #                        min_score_threshold=0.05,
-    #                        max_object_num=100)
-    # batch_scores, batch_classes, batch_pred_bboxes = decode(preds)
-    # print('4444', batch_scores.shape, batch_classes.shape,
-    #       batch_pred_bboxes.shape)
+    cocodataset = CocoDetection(COCO2017_path,
+                                set_name='train2017',
+                                transform=transforms.Compose([
+                                    RandomHorizontalFlip(prob=0.5),
+                                    RandomCrop(prob=0.5),
+                                    RandomTranslate(prob=0.5),
+                                    DetectionResize(
+                                        resize=640,
+                                        stride=32,
+                                        resize_type='yolo_style',
+                                        multi_scale=False,
+                                        multi_scale_range=[0.8, 1.0]),
+                                    Normalize(),
+                                ]))
+
+    from torch.utils.data import DataLoader
+    collater = DetectionCollater(resize=640,
+                                 resize_type='yolo_style',
+                                 max_annots_num=100)
+    train_loader = DataLoader(cocodataset,
+                              batch_size=8,
+                              shuffle=True,
+                              num_workers=2,
+                              collate_fn=collater)
+
+    from simpleAICV.detection.models.retinanet import resnet50_retinanet
+    net = resnet50_retinanet()
+    # 'torch_nms', 'python_nms', 'diou_python_nms'
+    decode = RetinaDecoder(areas=[[32, 32], [64, 64], [128, 128], [256, 256],
+                                  [512, 512]],
+                           ratios=[0.5, 1, 2],
+                           scales=[2**0, 2**(1.0 / 3.0), 2**(2.0 / 3.0)],
+                           strides=[8, 16, 32, 64, 128],
+                           topn=1000,
+                           min_score_threshold=0.01,
+                           nms_type='python_nms',
+                           nms_threshold=0.5,
+                           max_object_num=100)
+    for data in tqdm(train_loader):
+        images, annots, scales, sizes = data['image'], data['annots'], data[
+            'scale'], data['size']
+        print('1111', images.shape, annots.shape, scales.shape, sizes.shape)
+        preds = net(images)
+        batch_scores, batch_classes, batch_pred_bboxes = decode(preds)
+        print('2222', batch_scores.shape, batch_classes.shape,
+              batch_pred_bboxes.shape)
+        break
+
+    from simpleAICV.detection.models.fcos import resnet50_fcos
+    net = resnet50_fcos()
+    # 'torch_nms', 'python_nms', 'diou_python_nms'
+    decode = FCOSDecoder(strides=[8, 16, 32, 64, 128],
+                         topn=1000,
+                         min_score_threshold=0.01,
+                         nms_type='python_nms',
+                         nms_threshold=0.6,
+                         max_object_num=100)
+    for data in tqdm(train_loader):
+        images, annots, scales, sizes = data['image'], data['annots'], data[
+            'scale'], data['size']
+        print('1111', images.shape, annots.shape, scales.shape, sizes.shape)
+        preds = net(images)
+        batch_scores, batch_classes, batch_pred_bboxes = decode(preds)
+        print('2222', batch_scores.shape, batch_classes.shape,
+              batch_pred_bboxes.shape)
+        break
+
+    ############################################################################
+    from torch.utils.data import DataLoader
+    detr_collater = DETRDetectionCollater(resize=640,
+                                          resize_type='yolo_style',
+                                          max_annots_num=100)
+    detr_train_loader = DataLoader(cocodataset,
+                                   batch_size=2,
+                                   shuffle=True,
+                                   num_workers=1,
+                                   collate_fn=detr_collater)
 
     from simpleAICV.detection.models.detr import resnet50_detr
     net = resnet50_detr()
-    image_h, image_w = 800, 800
-    x = torch.randn(4, 3, image_h, image_w)
-    mask = torch.randn(4, image_h, image_w)
-    preds = net(torch.autograd.Variable(x), torch.autograd.Variable(mask))
     decode = DETRDecoder(num_classes=80,
                          max_object_num=100,
                          min_score_threshold=0.05,
                          topn=100,
                          nms_type=None,
                          nms_threshold=0.5)
-    scaled_sizes = torch.tensor([[640, 640], [640, 640], [640, 640],
-                                 [640, 640]])
-    batch_scores, batch_classes, batch_pred_bboxes = decode(
-        preds, scaled_sizes)
-    print('5555', batch_scores.shape, batch_classes.shape,
-          batch_pred_bboxes.shape)
+    for data in tqdm(detr_train_loader):
+        images, annots, masks, scaled_sizes = data['image'], data[
+            'scaled_annots'], data['mask'], data['scaled_size']
+        print('1111', images.shape, annots.shape)
+        preds = net(images, masks)
+        for pred in preds:
+            print('2222', pred.shape)
+        batch_scores, batch_classes, batch_pred_bboxes = decode(
+            preds, scaled_sizes)
+        print('3333', batch_scores.shape, batch_classes.shape,
+              batch_pred_bboxes.shape)
+        break
+
+    from torch.utils.data import DataLoader
+    detr_collater = DETRDetectionCollater(resize=640,
+                                          resize_type='yolo_style',
+                                          max_annots_num=100)
+    detr_train_loader = DataLoader(cocodataset,
+                                   batch_size=2,
+                                   shuffle=True,
+                                   num_workers=1,
+                                   collate_fn=detr_collater)
 
     from simpleAICV.detection.models.dinodetr import resnet50_dinodetr
     net = resnet50_dinodetr().cuda()
-    image_h, image_w = 800, 800
-    x = torch.randn(2, 3, image_h, image_w).cuda()
-    mask = torch.randn(2, image_h, image_w).cuda()
-    preds = net(torch.autograd.Variable(x), torch.autograd.Variable(mask))
     decode = DINODETRDecoder(max_object_num=100,
                              min_score_threshold=0.05,
                              topn=100,
                              nms_type='python_nms',
                              nms_threshold=0.5)
-    scaled_sizes = torch.tensor([[640, 640], [640, 640]])
-    batch_scores, batch_classes, batch_pred_bboxes = decode(
-        preds, scaled_sizes)
-    print('6666', batch_scores.shape, batch_classes.shape,
-          batch_pred_bboxes.shape)
+    for data in tqdm(detr_train_loader):
+        images, annots, masks, scaled_sizes = data['image'], data[
+            'scaled_annots'], data['mask'], data['scaled_size']
+        net = net.cuda()
+        images = images.cuda()
+        annots = annots.cuda()
+        masks = masks.cuda()
+        print('1111', images.shape, masks.shape, annots.shape)
+        preds = net(images, masks, annots)
+        print('2222', preds.keys())
+        for key, value in preds.items():
+            if isinstance(value, torch.Tensor):
+                print('2222', key, value.shape)
+            else:
+                print('2222', key)
+
+        batch_scores, batch_classes, batch_pred_bboxes = decode(
+            preds, scaled_sizes)
+        print('3333', batch_scores.shape, batch_classes.shape,
+              batch_pred_bboxes.shape)
+        break

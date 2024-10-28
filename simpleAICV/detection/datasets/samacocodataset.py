@@ -6,175 +6,49 @@ from pycocotools.coco import COCO
 from torch.utils.data import Dataset
 
 COCO_CLASSES = [
-    'person',
-    'bicycle',
-    'car',
-    'motorcycle',
-    'airplane',
-    'bus',
-    'train',
-    'truck',
-    'boat',
-    'traffic light',
-    'fire hydrant',
-    'stop sign',
-    'parking meter',
-    'bench',
-    'bird',
-    'cat',
-    'dog',
-    'horse',
-    'sheep',
-    'cow',
-    'elephant',
-    'bear',
-    'zebra',
-    'giraffe',
-    'backpack',
-    'umbrella',
-    'handbag',
-    'tie',
-    'suitcase',
-    'frisbee',
-    'skis',
-    'snowboard',
-    'sports ball',
-    'kite',
-    'baseball bat',
-    'baseball glove',
-    'skateboard',
-    'surfboard',
-    'tennis racket',
-    'bottle',
-    'wine glass',
-    'cup',
-    'fork',
-    'knife',
-    'spoon',
-    'bowl',
-    'banana',
-    'apple',
-    'sandwich',
-    'orange',
-    'broccoli',
-    'carrot',
-    'hot dog',
-    'pizza',
-    'donut',
-    'cake',
-    'chair',
-    'couch',
-    'potted plant',
-    'bed',
-    'dining table',
-    'toilet',
-    'tv',
-    'laptop',
-    'mouse',
-    'remote',
-    'keyboard',
-    'cell phone',
-    'microwave',
-    'oven',
-    'toaster',
-    'sink',
-    'refrigerator',
-    'book',
-    'clock',
-    'vase',
-    'scissors',
-    'teddy bear',
-    'hair drier',
-    'toothbrush',
+    'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train',
+    'truck', 'boat', 'traffic light', 'fire hydrant', 'stop sign',
+    'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow',
+    'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag',
+    'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball', 'kite',
+    'baseball bat', 'baseball glove', 'skateboard', 'surfboard',
+    'tennis racket', 'bottle', 'wine glass', 'cup', 'fork', 'knife', 'spoon',
+    'bowl', 'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot',
+    'hot dog', 'pizza', 'donut', 'cake', 'chair', 'couch', 'potted plant',
+    'bed', 'dining table', 'toilet', 'tv', 'laptop', 'mouse', 'remote',
+    'keyboard', 'cell phone', 'microwave', 'oven', 'toaster', 'sink',
+    'refrigerator', 'book', 'clock', 'vase', 'scissors', 'teddy bear',
+    'hair drier', 'toothbrush'
 ]
 
 COCO_CLASSES_COLOR = [
-    (156, 77, 36),
-    (218, 3, 199),
-    (252, 197, 160),
-    (82, 69, 38),
-    (132, 17, 27),
-    (71, 19, 213),
-    (108, 81, 1),
-    (49, 54, 81),
-    (8, 249, 143),
-    (80, 20, 4),
-    (75, 227, 112),
-    (82, 41, 57),
-    (157, 0, 97),
-    (0, 209, 246),
-    (116, 242, 109),
-    (60, 225, 243),
-    (2, 125, 5),
-    (118, 94, 170),
-    (171, 1, 17),
-    (54, 97, 38),
-    (16, 132, 55),
-    (1, 90, 238),
-    (112, 4, 197),
-    (147, 219, 248),
-    (253, 0, 14),
-    (103, 77, 249),
-    (149, 1, 222),
-    (120, 94, 51),
-    (88, 29, 129),
-    (204, 29, 128),
-    (19, 0, 244),
-    (92, 154, 54),
-    (34, 89, 7),
-    (29, 168, 224),
-    (111, 25, 1),
-    (137, 70, 83),
-    (24, 217, 19),
-    (47, 170, 155),
-    (34, 234, 107),
-    (182, 116, 221),
-    (102, 243, 211),
-    (53, 247, 123),
-    (147, 159, 24),
-    (194, 147, 121),
-    (76, 101, 233),
-    (50, 11, 88),
-    (253, 33, 83),
-    (84, 1, 57),
-    (248, 243, 24),
-    (244, 79, 35),
-    (162, 240, 132),
-    (1, 32, 203),
-    (208, 10, 8),
-    (30, 64, 206),
-    (234, 80, 229),
-    (31, 253, 207),
-    (110, 34, 78),
-    (234, 72, 73),
-    (92, 3, 16),
-    (113, 0, 65),
-    (196, 177, 53),
-    (63, 92, 139),
-    (76, 143, 1),
-    (61, 93, 84),
-    (82, 130, 157),
-    (28, 2, 84),
-    (55, 226, 12),
-    (34, 99, 82),
-    (47, 5, 239),
-    (53, 100, 219),
-    (132, 37, 147),
-    (244, 156, 224),
-    (179, 57, 59),
-    (2, 27, 76),
-    (0, 100, 83),
-    (64, 39, 116),
-    (170, 46, 246),
-    (27, 51, 87),
-    (185, 71, 0),
-    (107, 247, 29),
+    (156, 77, 36), (218, 3, 199), (252, 197, 160), (82, 69, 38), (132, 17, 27),
+    (71, 19, 213), (108, 81, 1), (49, 54, 81), (8, 249, 143), (80, 20, 4),
+    (75, 227, 112), (82, 41, 57), (157, 0, 97), (0, 209, 246), (116, 242, 109),
+    (60, 225, 243), (2, 125, 5), (118, 94, 170), (171, 1, 17), (54, 97, 38),
+    (16, 132, 55), (1, 90, 238), (112, 4, 197), (147, 219, 248), (253, 0, 14),
+    (103, 77, 249), (149, 1, 222),
+    (120, 94, 51), (88, 29, 129), (204, 29, 128), (19, 0, 244), (92, 154, 54),
+    (34, 89, 7), (29, 168, 224), (111, 25, 1), (137, 70, 83), (24, 217, 19),
+    (47, 170, 155), (34, 234, 107), (182, 116, 221), (102, 243, 211),
+    (53, 247, 123), (147, 159, 24), (194, 147, 121), (76, 101, 233),
+    (50, 11, 88), (253, 33, 83), (84, 1, 57), (248, 243, 24), (244, 79, 35),
+    (162, 240, 132), (1, 32, 203), (208, 10, 8), (30, 64, 206), (234, 80, 229),
+    (31, 253, 207), (110, 34, 78), (234, 72, 73), (92, 3, 16), (113, 0, 65),
+    (196, 177, 53), (63, 92, 139), (76, 143, 1), (61, 93, 84), (82, 130, 157),
+    (28, 2, 84), (55, 226, 12), (34, 99, 82), (47, 5, 239), (53, 100, 219),
+    (132, 37, 147), (244, 156, 224), (179, 57, 59), (2, 27, 76), (0, 100, 83),
+    (64, 39, 116), (170, 46, 246), (27, 51, 87), (185, 71, 0), (107, 247, 29)
 ]
 
 
 class SamaCocoDetection(Dataset):
 
-    def __init__(self, root_dir, set_name='train', transform=None):
+    def __init__(self,
+                 root_dir,
+                 set_name='train',
+                 filter_no_object_image=False,
+                 transform=None):
         assert set_name in ['train', 'validation'], 'Wrong set name!'
 
         self.image_dir = os.path.join(root_dir, 'images', set_name)
@@ -182,9 +56,9 @@ class SamaCocoDetection(Dataset):
                                       f'sama_coco_{set_name}.json')
         self.coco = COCO(self.annot_dir)
 
-        self.image_ids = self.coco.getImgIds()
+        self.image_ids = sorted(self.coco.getImgIds())
 
-        if 'train' in set_name:
+        if filter_no_object_image:
             # filter image id without annotation,from 118287 ids to 117266 ids
             ids = []
             for image_id in self.image_ids:
@@ -194,6 +68,7 @@ class SamaCocoDetection(Dataset):
                     continue
                 ids.append(image_id)
             self.image_ids = ids
+            self.image_ids = sorted(self.image_ids)
 
         self.cat_ids = self.coco.getCatIds()
         self.cats = sorted(self.coco.loadCats(self.cat_ids),
@@ -224,6 +99,9 @@ class SamaCocoDetection(Dataset):
         return len(self.image_ids)
 
     def __getitem__(self, idx):
+        file_name = self.coco.loadImgs(self.image_ids[idx])[0]['file_name']
+        path = os.path.join(self.image_dir, file_name)
+
         image = self.load_image(idx)
         annots = self.load_annots(idx)
 
@@ -231,6 +109,7 @@ class SamaCocoDetection(Dataset):
         size = np.array([image.shape[0], image.shape[1]]).astype(np.float32)
 
         sample = {
+            'path': path,
             'image': image,
             'annots': annots,
             'scale': scale,
@@ -273,7 +152,7 @@ class SamaCocoDetection(Dataset):
             inter_h = max(0, min(bbox[1] + bbox[3], image_h) - max(bbox[1], 0))
             if inter_w * inter_h == 0:
                 continue
-            if bbox[2] * bbox[3] < 1 or bbox[2] < 1 or bbox[3] < 1:
+            if bbox[2] * bbox[3] <= 1 or bbox[2] <= 1 or bbox[3] <= 1:
                 continue
             if annot['category_id'] not in self.cat_ids:
                 continue
@@ -319,7 +198,7 @@ if __name__ == '__main__':
     import torchvision.transforms as transforms
     from tqdm import tqdm
 
-    from simpleAICV.detection.common import RandomHorizontalFlip, RandomCrop, RandomTranslate, Normalize, DetectionResize, DetectionCollater, BatchAlignDETRDetectionCollater
+    from simpleAICV.detection.common import RandomHorizontalFlip, RandomCrop, RandomTranslate, Normalize, DetectionResize, DetectionCollater, DETRDetectionCollater
 
     cocodataset = SamaCocoDetection(
         SAMA_COCO_path,
@@ -338,6 +217,7 @@ if __name__ == '__main__':
 
     count = 0
     for per_sample in tqdm(cocodataset):
+        print('1111', per_sample['path'])
         print('1111', per_sample['image'].shape, per_sample['annots'].shape,
               per_sample['scale'], per_sample['size'])
         print('1111', per_sample['image'].dtype, per_sample['annots'].dtype,
@@ -395,9 +275,6 @@ if __name__ == '__main__':
             break
 
     from torch.utils.data import DataLoader
-    # collater = DetectionCollater(resize=800,
-    #                              resize_type='retina_style',
-    #                              max_annots_num=100)
     collater = DetectionCollater(resize=640,
                                  resize_type='yolo_style',
                                  max_annots_num=100)
@@ -489,12 +366,13 @@ if __name__ == '__main__':
 
     count = 0
     for per_sample in tqdm(cocodataset):
+        print('1111', per_sample['path'])
         print('1111', per_sample['image'].shape, per_sample['annots'].shape,
               per_sample['scale'], per_sample['size'])
         print('1111', per_sample['image'].dtype, per_sample['annots'].dtype,
               per_sample['scale'].dtype, per_sample['size'].dtype)
 
-        # temp_dir = './temp1'
+        # temp_dir = './temp3'
         # if not os.path.exists(temp_dir):
         #     os.makedirs(temp_dir)
 
@@ -546,7 +424,9 @@ if __name__ == '__main__':
             break
 
     from torch.utils.data import DataLoader
-    collater = BatchAlignDETRDetectionCollater(max_annots_num=100)
+    collater = DETRDetectionCollater(resize=800,
+                                     resize_type='retina_style',
+                                     max_annots_num=100)
     train_loader = DataLoader(cocodataset,
                               batch_size=8,
                               shuffle=True,
@@ -560,7 +440,7 @@ if __name__ == '__main__':
         print('2222', images.shape, annots.shape, scales.shape, sizes.shape)
         print('2222', images.dtype, annots.dtype, scales.dtype, sizes.dtype)
 
-        # temp_dir = './temp2'
+        # temp_dir = './temp4'
         # if not os.path.exists(temp_dir):
         #     os.makedirs(temp_dir)
 

@@ -214,37 +214,41 @@ if __name__ == '__main__':
                 os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
     sys.path.append(BASE_DIR)
 
-    from tools.path import COCO2017_path
+    from tools.path import interactive_segmentation_dataset_path
 
     import torchvision.transforms as transforms
     from tqdm import tqdm
 
-    from simpleAICV.interactive_segmentation.datasets.coco2017dataset import COCO2017dataset
-    from simpleAICV.interactive_segmentation.common import SamResize, SamRandomHorizontalFlip, SamNormalize, SAMCollater, load_state_dict
+    from simpleAICV.interactive_segmentation.datasets.sam_segmentation_dataset import SAMSegmentationDataset
+    from simpleAICV.interactive_segmentation.common import SamResize, SamRandomHorizontalFlip, SamNormalize, SAMBatchCollater, load_state_dict
 
-    sam1bdataset = COCO2017dataset(COCO2017_path,
-                                   set_name='train2017',
-                                   positive_points_num=9,
-                                   negative_points_num=9,
-                                   area_filter_ratio=0.0025,
-                                   box_noise_pixel=50,
-                                   mask_noise_pixel=100,
-                                   transform=transforms.Compose([
-                                       SamResize(resize=1024),
-                                       SamRandomHorizontalFlip(prob=0.5),
-                                       SamNormalize(
-                                           mean=[123.675, 116.28, 103.53],
-                                           std=[58.395, 57.12, 57.375]),
-                                   ]))
+    samdataset = SAMSegmentationDataset(interactive_segmentation_dataset_path,
+                                        set_name=[
+                                            'sa_000020',
+                                        ],
+                                        set_type='train',
+                                        per_set_image_choose_max_num={
+                                            'sa_000020': 1000000,
+                                        },
+                                        per_image_mask_chosse_max_num=16,
+                                        positive_points_num=9,
+                                        negative_points_num=9,
+                                        area_filter_ratio=0.0001,
+                                        box_noise_wh_ratio=0.1,
+                                        mask_noise_area_ratio=0.04,
+                                        transform=transforms.Compose([
+                                            SamResize(resize=1024),
+                                            SamRandomHorizontalFlip(prob=0.5),
+                                            SamNormalize(
+                                                mean=[123.675, 116.28, 103.53],
+                                                std=[58.395, 57.12, 57.375]),
+                                        ]))
 
     from torch.utils.data import DataLoader
-    collater = SAMCollater(resize=1024,
-                           positive_point_num_range=[1, 9],
-                           negative_point_num_range=[1, 9],
-                           batch_align_random_point_num=True,
-                           positive_negative_point_num_ratio=1)
-    train_loader = DataLoader(sam1bdataset,
-                              batch_size=2,
+
+    collater = SAMBatchCollater(resize=1024, positive_point_num_range=1)
+    train_loader = DataLoader(samdataset,
+                              batch_size=4,
                               shuffle=True,
                               num_workers=2,
                               collate_fn=collater)
@@ -267,53 +271,29 @@ if __name__ == '__main__':
                                        mask_inter_planes=16)
 
     for data in tqdm(train_loader):
-        origin_images, origin_bboxs, origin_masks, origin_sizes = data[
-            'origin_image'], data['origin_bbox'], data['origin_mask'], data[
-                'origin_size']
-
         input_images, input_boxs, input_masks, sizes = data['image'], data[
             'box'], data['mask'], data['size']
 
-        input_positive_prompt_points, input_negative_prompt_points, input_prompt_points = data[
-            'positive_prompt_point'], data['negative_prompt_point'], data[
-                'prompt_point']
-
-        input_prompt_boxs, input_prompt_masks, batch_images, batch_masks, batch_prompts = data[
-            'prompt_box'], data['prompt_mask'], data['batch_image'], data[
-                'batch_mask'], data['batch_prompt']
+        input_prompt_points, input_prompt_boxs, input_prompt_masks = data[
+            'prompt_point'], data['prompt_box'], data['prompt_mask']
 
         image_encoder_net = image_encoder_net.cuda()
         prompt_encoder_net = prompt_encoder_net.cuda()
 
-        batch_images = batch_images.cuda()
-        print('1111', batch_images.shape)
+        input_images = input_images.cuda()
+        print('1111', input_images.shape)
 
-        device = batch_images.device
+        batch_image_embeddings = image_encoder_net(input_images)
 
-        # [4, 256, 64, 64]
-        batch_image_embeddings = image_encoder_net(batch_images)
+        input_prompt_points = input_prompt_points.cuda()
+        input_prompt_boxs = input_prompt_boxs.cuda()
+        input_prompt_masks = input_prompt_masks.cuda()
 
-        batch_mask_outputs, batch_iou_outputs = [], []
-        for per_image_prompt, per_image_embedding in zip(
-                batch_prompts, batch_image_embeddings):
-            prompt_points = None
-            if per_image_prompt['prompt_point'] is not None:
-                prompt_points = per_image_prompt['prompt_point']
-                prompt_points = prompt_points.to(device)
+        sparse_embeddings, dense_embeddings = prompt_encoder_net(
+            points=input_prompt_points,
+            boxes=input_prompt_boxs,
+            masks=input_prompt_masks)
 
-            prompt_boxes = None
-            if per_image_prompt['prompt_box'] is not None:
-                prompt_boxes = per_image_prompt['prompt_box']
-                prompt_boxes = prompt_boxes.to(device)
-
-            prompt_mask = None
-            if per_image_prompt['prompt_mask'] is not None:
-                prompt_mask = per_image_prompt['prompt_mask']
-                prompt_mask = prompt_mask.to(device)
-
-            sparse_embeddings, dense_embeddings = prompt_encoder_net(
-                points=prompt_points, boxes=prompt_boxes, masks=prompt_mask)
-
-            print('1111', sparse_embeddings.shape, dense_embeddings.shape)
+        print('2222', sparse_embeddings.shape, dense_embeddings.shape)
 
         break

@@ -1,1 +1,0 @@
-python visualize_attention_map.py --work-dir ./

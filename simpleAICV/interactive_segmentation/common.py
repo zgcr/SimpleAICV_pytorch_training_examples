@@ -9,6 +9,8 @@ import cv2
 import numpy as np
 
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
 from simpleAICV.classification.common import AverageMeter, load_state_dict
 
@@ -19,10 +21,6 @@ class SamResize:
         self.resize = resize
 
     def __call__(self, sample):
-        origin_image, origin_bbox, origin_mask, origin_size = sample[
-            'origin_image'], sample['origin_bbox'], sample[
-                'origin_mask'], sample['origin_size']
-
         image, box, mask, size = sample['image'], sample['box'], sample[
             'mask'], sample['size']
 
@@ -47,20 +45,14 @@ class SamResize:
         prompt_mask = cv2.resize(prompt_mask, (resize_w, resize_h),
                                  interpolation=cv2.INTER_NEAREST)
 
-        return {
-            'origin_image': origin_image,
-            'origin_bbox': origin_bbox,
-            'origin_mask': origin_mask,
-            'origin_size': origin_size,
-            'image': image,
-            'box': box,
-            'mask': mask,
-            'size': size,
-            'positive_prompt_point': positive_prompt_point,
-            'negative_prompt_point': negative_prompt_point,
-            'prompt_box': prompt_box,
-            'prompt_mask': prompt_mask,
-        }
+        sample['image'], sample['box'], sample['mask'], sample[
+            'size'] = image, box, mask, size
+
+        sample['positive_prompt_point'], sample[
+            'negative_prompt_point'], sample['prompt_box'], sample[
+                'prompt_mask'] = positive_prompt_point, negative_prompt_point, prompt_box, prompt_mask
+
+        return sample
 
 
 class SamRandomHorizontalFlip:
@@ -69,10 +61,6 @@ class SamRandomHorizontalFlip:
         self.prob = prob
 
     def __call__(self, sample):
-        origin_image, origin_bbox, origin_mask, origin_size = sample[
-            'origin_image'], sample['origin_bbox'], sample[
-                'origin_mask'], sample['origin_size']
-
         image, box, mask, size = sample['image'], sample['box'], sample[
             'mask'], sample['size']
 
@@ -108,20 +96,14 @@ class SamRandomHorizontalFlip:
             for i in range(len(negative_prompt_point)):
                 negative_prompt_point[i][0] = w - negative_prompt_point[i][0]
 
-        return {
-            'origin_image': origin_image,
-            'origin_bbox': origin_bbox,
-            'origin_mask': origin_mask,
-            'origin_size': origin_size,
-            'image': image,
-            'box': box,
-            'mask': mask,
-            'size': size,
-            'positive_prompt_point': positive_prompt_point,
-            'negative_prompt_point': negative_prompt_point,
-            'prompt_box': prompt_box,
-            'prompt_mask': prompt_mask,
-        }
+        sample['image'], sample['box'], sample['mask'], sample[
+            'size'] = image, box, mask, size
+
+        sample['positive_prompt_point'], sample[
+            'negative_prompt_point'], sample['prompt_box'], sample[
+                'prompt_mask'] = positive_prompt_point, negative_prompt_point, prompt_box, prompt_mask
+
+        return sample
 
 
 class SamNormalize:
@@ -135,10 +117,6 @@ class SamNormalize:
                                   axis=0)
 
     def __call__(self, sample):
-        origin_image, origin_bbox, origin_mask, origin_size = sample[
-            'origin_image'], sample['origin_bbox'], sample[
-                'origin_mask'], sample['origin_size']
-
         image, box, mask, size = sample['image'], sample['box'], sample[
             'mask'], sample['size']
 
@@ -148,70 +126,42 @@ class SamNormalize:
 
         image = (image - self.mean) / self.std
 
-        return {
-            'origin_image': origin_image,
-            'origin_bbox': origin_bbox,
-            'origin_mask': origin_mask,
-            'origin_size': origin_size,
-            'image': image,
-            'box': box,
-            'mask': mask,
-            'size': size,
-            'positive_prompt_point': positive_prompt_point,
-            'negative_prompt_point': negative_prompt_point,
-            'prompt_box': prompt_box,
-            'prompt_mask': prompt_mask,
-        }
+        sample['image'], sample['box'], sample['mask'], sample[
+            'size'] = image, box, mask, size
+
+        sample['positive_prompt_point'], sample[
+            'negative_prompt_point'], sample['prompt_box'], sample[
+                'prompt_mask'] = positive_prompt_point, negative_prompt_point, prompt_box, prompt_mask
+
+        return sample
 
 
-class SAMCollater:
+class SAMBatchCollater:
 
-    def __init__(self,
-                 resize,
-                 positive_point_num_range=[1, 9],
-                 negative_point_num_range=[1, 9],
-                 batch_align_random_point_num=False,
-                 positive_negative_point_num_ratio=None):
+    def __init__(self, resize, positive_point_num_range=[1, 9]):
         self.resize = resize
         assert resize % 64 == 0
 
         self.prompt_mask_size = resize // 4
 
         assert isinstance(positive_point_num_range, (int, list))
-        assert isinstance(negative_point_num_range, (int, list))
         if isinstance(positive_point_num_range, list):
             assert isinstance(positive_point_num_range[0], int)
             assert isinstance(positive_point_num_range[1], int)
             assert positive_point_num_range[0] <= positive_point_num_range[1]
             assert positive_point_num_range[0] >= 1
-        if isinstance(negative_point_num_range, list):
-            assert isinstance(negative_point_num_range[0], int)
-            assert isinstance(negative_point_num_range[1], int)
-            assert negative_point_num_range[0] <= negative_point_num_range[1]
-            assert negative_point_num_range[0] >= 1
         if isinstance(positive_point_num_range, int):
             assert positive_point_num_range >= 0
-        if isinstance(negative_point_num_range, int):
-            assert negative_point_num_range >= 0
 
         self.positive_point_num_range = positive_point_num_range
-        self.negative_point_num_range = negative_point_num_range
-        self.batch_align_random_point_num = batch_align_random_point_num
-        self.positive_negative_point_num_ratio = positive_negative_point_num_ratio
 
     def __call__(self, data):
-        origin_images = [s['origin_image'] for s in data]
-        origin_bboxes = [s['origin_bbox'] for s in data]
-        origin_masks = [s['origin_mask'] for s in data]
-        origin_sizes = [s['origin_size'] for s in data]
-
         images = [s['image'] for s in data]
         boxes = [x['box'] for x in data]
         masks = [x['mask'] for x in data]
         sizes = [x['size'] for x in data]
 
         positive_prompt_points = [x['positive_prompt_point'] for x in data]
-        negative_prompt_points = [s['negative_prompt_point'] for s in data]
         prompt_boxs = [x['prompt_box'] for x in data]
         prompt_masks = [x['prompt_mask'] for x in data]
 
@@ -225,9 +175,7 @@ class SAMCollater:
             # [3,H,W]
             per_input_image = per_input_image.permute(2, 0, 1)
             input_images.append(per_input_image)
-
-        batch_images = torch.stack(
-            [per_input_image for per_input_image in input_images], dim=0)
+        input_images = torch.stack(input_images, dim=0)
 
         input_boxes = []
         for i, per_box in enumerate(boxes):
@@ -236,6 +184,7 @@ class SAMCollater:
             # [4]
             per_input_box = torch.from_numpy(per_input_box)
             input_boxes.append(per_input_box)
+        input_boxes = torch.stack(input_boxes, dim=0)
 
         input_masks = []
         for i, per_mask in enumerate(masks):
@@ -245,10 +194,8 @@ class SAMCollater:
             # [H,W]
             per_input_mask = torch.from_numpy(per_input_mask)
             input_masks.append(per_input_mask)
-
-        batch_masks = torch.stack(
-            [per_input_mask for per_input_mask in input_masks], dim=0)
-        batch_masks = batch_masks.unsqueeze(1)
+        input_masks = torch.stack(input_masks, dim=0)
+        input_masks = input_masks.unsqueeze(1)
 
         assert len(input_images) == len(input_boxes) == len(input_masks)
 
@@ -256,17 +203,11 @@ class SAMCollater:
 
         input_positive_prompt_points = []
         if isinstance(self.positive_point_num_range, list):
-            if self.batch_align_random_point_num:
-                random_positive_point_num = np.random.randint(
-                    self.positive_point_num_range[0],
-                    self.positive_point_num_range[1] + 1)
+            random_positive_point_num = np.random.randint(
+                self.positive_point_num_range[0],
+                self.positive_point_num_range[1] + 1)
 
             for i in range(len(positive_prompt_points)):
-                if not self.batch_align_random_point_num:
-                    random_positive_point_num = np.random.randint(
-                        self.positive_point_num_range[0],
-                        self.positive_point_num_range[1] + 1)
-
                 per_input_positive_prompt_points = positive_prompt_points[i][
                     0:random_positive_point_num, :]
                 # [random_positive_point_num,3]
@@ -288,84 +229,11 @@ class SAMCollater:
 
                 input_positive_prompt_points.append(
                     per_input_positive_prompt_points)
+        if len(input_positive_prompt_points) > 0:
+            input_positive_prompt_points = torch.stack(
+                input_positive_prompt_points, dim=0)
 
-        input_negative_prompt_points = []
-        if isinstance(self.negative_point_num_range, list):
-            if self.batch_align_random_point_num:
-                if self.positive_negative_point_num_ratio:
-                    random_negative_point_num = min(
-                        int(random_positive_point_num *
-                            self.positive_negative_point_num_ratio),
-                        self.negative_point_num_range[1])
-                else:
-                    random_negative_point_num = np.random.randint(
-                        self.negative_point_num_range[0],
-                        self.negative_point_num_range[1] + 1)
-
-            for i in range(len(negative_prompt_points)):
-                if not self.batch_align_random_point_num:
-                    if self.positive_negative_point_num_ratio:
-                        random_negative_point_num = min(
-                            int(
-                                len(input_positive_prompt_points[i]) *
-                                self.positive_negative_point_num_ratio),
-                            self.negative_point_num_range[1])
-                    else:
-                        random_negative_point_num = np.random.randint(
-                            self.negative_point_num_range[0],
-                            self.negative_point_num_range[1] + 1)
-
-                per_input_negative_prompt_points = negative_prompt_points[i][
-                    0:random_negative_point_num, :]
-                # [random_negative_point_num,3]
-                per_input_negative_prompt_points = torch.from_numpy(
-                    per_input_negative_prompt_points)
-                input_negative_prompt_points.append(
-                    per_input_negative_prompt_points)
-
-        elif isinstance(self.negative_point_num_range, int):
-            for i in range(len(negative_prompt_points)):
-                if self.negative_point_num_range <= 0:
-                    per_input_negative_prompt_points = None
-                else:
-                    if self.positive_negative_point_num_ratio:
-                        negative_point_num = min(
-                            int(random_positive_point_num *
-                                self.positive_negative_point_num_ratio),
-                            self.negative_point_num_range)
-                    else:
-                        negative_point_num = self.negative_point_num_range
-
-                    per_input_negative_prompt_points = negative_prompt_points[
-                        i][0:negative_point_num, :]
-                    # [negative_point_num,3]
-                    per_input_negative_prompt_points = torch.from_numpy(
-                        per_input_negative_prompt_points)
-
-                input_negative_prompt_points.append(
-                    per_input_negative_prompt_points)
-
-        assert len(input_positive_prompt_points) == len(
-            input_negative_prompt_points)
-
-        input_prompt_points = []
-        for per_input_positive_prompt_points, per_input_negative_prompt_points in zip(
-                input_positive_prompt_points, input_negative_prompt_points):
-            if per_input_positive_prompt_points is not None and per_input_negative_prompt_points is not None:
-                per_input_prompt_points = torch.cat([
-                    per_input_positive_prompt_points.clone(),
-                    per_input_negative_prompt_points.clone(),
-                ],
-                                                    dim=0)
-            elif per_input_positive_prompt_points is not None:
-                per_input_prompt_points = per_input_positive_prompt_points.clone(
-                )
-            elif per_input_negative_prompt_points is not None:
-                per_input_prompt_points = per_input_negative_prompt_points.clone(
-                )
-            else:
-                per_input_prompt_points = None
-            input_prompt_points.append(per_input_prompt_points)
+        input_prompt_points = input_positive_prompt_points
 
         input_prompt_boxs = []
         for i, per_prompt_box in enumerate(prompt_boxs):
@@ -375,6 +243,7 @@ class SAMCollater:
             # [4]
             per_input_prompt_box = torch.from_numpy(per_input_prompt_box)
             input_prompt_boxs.append(per_input_prompt_box)
+        input_prompt_boxs = torch.stack(input_prompt_boxs, dim=0)
 
         input_prompt_masks = []
         for i, per_prompt_mask in enumerate(prompt_masks):
@@ -392,45 +261,20 @@ class SAMCollater:
             # [H//4,W//4]
             per_input_prompt_mask = torch.from_numpy(per_input_prompt_mask)
             input_prompt_masks.append(per_input_prompt_mask)
+        input_prompt_masks = torch.stack(input_prompt_masks, dim=0)
+        input_prompt_masks = input_prompt_masks.unsqueeze(1)
 
         assert len(input_images) == len(input_boxes) == len(
             input_masks) == len(input_positive_prompt_points) == len(
-                input_negative_prompt_points) == len(
-                    input_prompt_points) == len(input_prompt_boxs) == len(
-                        input_prompt_masks)
-
-        batch_prompts = []
-        for per_input_image, per_input_prompt_points, per_input_prompt_box, per_input_prompt_mask, per_image_mask in zip(
-                input_images, input_prompt_points, input_prompt_boxs,
-                input_prompt_masks, input_masks):
-            per_image_prompts = {
-                'prompt_point': per_input_prompt_points.unsqueeze(0),
-                'prompt_box': per_input_prompt_box.unsqueeze(0),
-                'prompt_mask': per_input_prompt_mask.unsqueeze(0).unsqueeze(0),
-            }
-            batch_prompts.append(per_image_prompts)
-
-        assert len(input_images) == len(input_boxes) == len(
-            input_masks) == len(input_positive_prompt_points) == len(
-                input_negative_prompt_points) == len(
-                    input_prompt_points) == len(input_prompt_boxs) == len(
-                        input_prompt_masks) == len(batch_prompts)
+                input_prompt_points) == len(input_prompt_boxs) == len(
+                    input_prompt_masks)
 
         return {
-            'origin_image': origin_images,
-            'origin_bbox': origin_bboxes,
-            'origin_mask': origin_masks,
-            'origin_size': origin_sizes,
             'image': input_images,
             'box': input_boxes,
             'mask': input_masks,
             'size': sizes,
-            'positive_prompt_point': input_positive_prompt_points,
-            'negative_prompt_point': input_negative_prompt_points,
             'prompt_point': input_prompt_points,
             'prompt_box': input_prompt_boxs,
             'prompt_mask': input_prompt_masks,
-            'batch_image': batch_images,
-            'batch_mask': batch_masks,
-            'batch_prompt': batch_prompts,
         }

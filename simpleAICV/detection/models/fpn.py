@@ -6,8 +6,6 @@ BASE_DIR = os.path.dirname(
         os.path.abspath(__file__)))))
 sys.path.append(BASE_DIR)
 
-import math
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -89,46 +87,6 @@ class RetinaFPN(nn.Module):
         return [P3, P4, P5, P6, P7]
 
 
-class VitDetFPN(nn.Module):
-
-    def __init__(self, inplanes, planes):
-        super(VitDetFPN, self).__init__()
-        self.P3 = nn.ConvTranspose2d(inplanes,
-                                     planes,
-                                     kernel_size=2,
-                                     stride=2,
-                                     padding=0,
-                                     output_padding=0,
-                                     bias=True)
-        self.P4 = nn.Sequential(
-            nn.Conv2d(inplanes,
-                      planes,
-                      kernel_size=1,
-                      stride=1,
-                      padding=0,
-                      bias=True),
-            nn.GELU(),
-        )
-        self.P5 = nn.Sequential(
-            nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.GELU(),
-        )
-        self.P6 = nn.Sequential(
-            nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.GELU(),
-        )
-        self.P7 = nn.MaxPool2d(kernel_size=2, stride=2)
-
-    def forward(self, x):
-        P3 = self.P3(x)
-        P4 = self.P4(x)
-        P5 = self.P5(P4)
-        P6 = self.P6(P5)
-        P7 = self.P7(P6)
-
-        return [P3, P4, P5, P6, P7]
-
-
 if __name__ == '__main__':
     import os
     import random
@@ -157,14 +115,3 @@ if __name__ == '__main__':
     outs = net([C3, C4, C5])
     for out in outs:
         print('2222', out.shape)
-
-    net = VitDetFPN(768, 256)
-    x = torch.randn(3, 768, 32, 32)
-    from thop import profile
-    from thop import clever_format
-    macs, params = profile(net, inputs=(x, ), verbose=False)
-    macs, params = clever_format([macs, params], '%.3f')
-    print(f'3333, macs: {macs}, params: {params}')
-    outs = net(x)
-    for out in outs:
-        print('4444', out.shape)

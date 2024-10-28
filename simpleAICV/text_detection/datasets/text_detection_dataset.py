@@ -58,6 +58,7 @@ class TextDetection(Dataset):
 
                     self.image_path_list.append(per_image_path)
                     self.image_label_dict[key] = per_image_label
+        self.image_path_list = sorted(self.image_path_list)
 
         self.transform = transform
 
@@ -67,6 +68,8 @@ class TextDetection(Dataset):
         return len(self.image_path_list)
 
     def __getitem__(self, idx):
+        path = self.image_path_list[idx]
+
         image = self.load_image(idx)
         annots = self.load_annots(idx)
 
@@ -74,6 +77,7 @@ class TextDetection(Dataset):
         size = np.array([image.shape[0], image.shape[1]]).astype(np.float32)
 
         sample = {
+            'path': path,
             'image': image,
             'annots': annots,
             'scale': scale,
@@ -144,17 +148,18 @@ if __name__ == '__main__':
             RandomRotate(angle=[-30, 30], prob=0.3),
             MainDirectionRandomRotate(angle=[0, 90, 180, 270],
                                       prob=[0.7, 0.1, 0.1, 0.1]),
-            Resize(resize=960),
+            Resize(resize=1024),
             #  Normalize(),
         ]))
 
     count = 0
     for per_sample in tqdm(textdetectiondataset):
-        print(per_sample['image'].shape, len(per_sample['annots']),
+        print('1111', per_sample['path'])
+        print('1111', per_sample['image'].shape, len(per_sample['annots']),
               per_sample['annots'][0]['points'].shape, per_sample['scale'],
               per_sample['size'])
 
-        # temp_dir = './temp'
+        # temp_dir = './temp1'
         # if not os.path.exists(temp_dir):
         #     os.makedirs(temp_dir)
 
@@ -183,15 +188,15 @@ if __name__ == '__main__':
         # cv2.imencode('.jpg', image)[1].tofile(
         #     os.path.join(temp_dir, f'idx_{count}.jpg'))
 
-        if count < 10:
+        if count < 2:
             count += 1
         else:
             break
 
     from torch.utils.data import DataLoader
-    collater = TextDetectionCollater(resize=960)
+    collater = TextDetectionCollater(resize=1024)
     train_loader = DataLoader(textdetectiondataset,
-                              batch_size=8,
+                              batch_size=4,
                               shuffle=False,
                               num_workers=2,
                               collate_fn=collater)
@@ -199,9 +204,9 @@ if __name__ == '__main__':
     count = 0
     for data in tqdm(train_loader):
         images, annots = data['image'], data['annots']
-        print(images.shape, annots[0][0]['points'].shape)
+        print('2222', images.shape, annots[0][0]['points'].shape)
 
-        if count < 5:
+        if count < 2:
             count += 1
         else:
             break
@@ -220,17 +225,18 @@ if __name__ == '__main__':
             RandomRotate(angle=[-30, 30], prob=0.3),
             MainDirectionRandomRotate(angle=[0, 90, 180, 270],
                                       prob=[0.7, 0.1, 0.1, 0.1]),
-            Resize(resize=960),
+            Resize(resize=1024),
             #  Normalize(),
         ]))
 
     count = 0
     for per_sample in tqdm(textdetectiondataset):
-        print(per_sample['image'].shape, len(per_sample['annots']),
+        print('1111', per_sample['path'])
+        print('1111', per_sample['image'].shape, len(per_sample['annots']),
               per_sample['annots'][0]['points'].shape, per_sample['scale'],
               per_sample['size'])
 
-        # temp_dir = './temp'
+        # temp_dir = './temp2'
         # if not os.path.exists(temp_dir):
         #     os.makedirs(temp_dir)
 
@@ -259,18 +265,18 @@ if __name__ == '__main__':
         # cv2.imencode('.jpg', image)[1].tofile(
         #     os.path.join(temp_dir, f'idx_{count}.jpg'))
 
-        if count < 10:
+        if count < 2:
             count += 1
         else:
             break
 
     from torch.utils.data import DataLoader
-    collater = DBNetTextDetectionCollater(resize=960,
+    collater = DBNetTextDetectionCollater(resize=1024,
                                           min_box_size=3,
                                           min_max_threshold=[0.3, 0.7],
                                           shrink_ratio=0.6)
     train_loader = DataLoader(textdetectiondataset,
-                              batch_size=8,
+                              batch_size=4,
                               shuffle=False,
                               num_workers=2,
                               collate_fn=collater)
@@ -279,8 +285,9 @@ if __name__ == '__main__':
     for data in tqdm(train_loader):
         images, annots, scales, sizes = data['image'], data['annots'], data[
             'scale'], data['size']
+        print('2222', images.shape)
 
-        # temp_dir = './temp2'
+        # temp_dir = './temp3'
         # if not os.path.exists(temp_dir):
         #     os.makedirs(temp_dir)
 
@@ -317,7 +324,7 @@ if __name__ == '__main__':
         #     threshold_ignore_mask = annots['threshold_ignore_mask'][i].numpy(
         #     ) * 255
 
-        #     print("1111", per_image.shape, probability_mask.shape,
+        #     print("3333", per_image.shape, probability_mask.shape,
         #           probability_ignore_mask.shape, threshold_mask.shape,
         #           threshold_ignore_mask.shape)
 
@@ -335,7 +342,7 @@ if __name__ == '__main__':
         #         os.path.join(temp_dir,
         #                      f'idx_{count}_{i}_threshold_ignore_mask.jpg'))
 
-        if count < 5:
+        if count < 2:
             count += 1
         else:
             break

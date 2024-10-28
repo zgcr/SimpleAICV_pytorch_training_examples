@@ -13,6 +13,7 @@ import pyclipper
 from shapely.geometry import Polygon
 
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
 
 from simpleAICV.classification.common import load_state_dict, AverageMeter
@@ -88,12 +89,8 @@ class MainDirectionRandomRotate:
             box = box.transpose(1, 0)
             new_annots[i]['points'] = box.astype(np.float32)
 
-        sample = {
-            'image': image,
-            'annots': new_annots,
-            'scale': scale,
-            'size': size,
-        }
+        sample['image'], sample['annots'], sample['scale'], sample[
+            'size'] = image, new_annots, scale, size
 
         return sample
 
@@ -166,12 +163,8 @@ class RandomRotate:
             box = box.transpose(1, 0)
             new_annots[i]['points'] = box.astype(np.float32)
 
-        sample = {
-            'image': image,
-            'annots': new_annots,
-            'scale': scale,
-            'size': size,
-        }
+        sample['image'], sample['annots'], sample['scale'], sample[
+            'size'] = image, new_annots, scale, size
 
         return sample
 
@@ -202,12 +195,8 @@ class Resize:
             new_annots[i]['points'] = np.array(
                 new_annots[i]['points']) * factor
 
-        sample = {
-            'image': image,
-            'annots': new_annots,
-            'scale': scale,
-            'size': size,
-        }
+        sample['image'], sample['annots'], sample['scale'], sample[
+            'size'] = image, new_annots, scale, size
 
         return sample
 
@@ -226,12 +215,8 @@ class Normalize:
 
         new_annots = copy.deepcopy(annots)
 
-        sample = {
-            'image': image,
-            'annots': new_annots,
-            'scale': scale,
-            'size': size,
-        }
+        sample['image'], sample['annots'], sample['scale'], sample[
+            'size'] = image, new_annots, scale, size
 
         return sample
 

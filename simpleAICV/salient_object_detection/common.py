@@ -23,10 +23,7 @@ class RandomCrop:
         self.random_range = random_range
 
     def __call__(self, sample):
-        image_path, mask_path, origin_image, origin_mask, origin_size, image, mask, size = sample[
-            'image_path'], sample['mask_path'], sample['origin_image'], sample[
-                'origin_mask'], sample['origin_size'], sample['image'], sample[
-                    'mask'], sample['size']
+        image, mask, size = sample['image'], sample['mask'], sample['size']
 
         if np.random.uniform(0, 1) > self.prob:
             return sample
@@ -93,16 +90,7 @@ class RandomCrop:
 
         size = np.array([image.shape[0], image.shape[1]]).astype(np.float32)
 
-        sample = {
-            'image_path': image_path,
-            'mask_path': mask_path,
-            'origin_image': origin_image,
-            'origin_mask': origin_mask,
-            'origin_size': origin_size,
-            'image': image,
-            'mask': mask,
-            'size': size,
-        }
+        sample['image'], sample['mask'], sample['size'] = image, mask, size
 
         return sample
 
@@ -113,25 +101,13 @@ class RandomHorizontalFlip:
         self.prob = prob
 
     def __call__(self, sample):
-        image_path, mask_path, origin_image, origin_mask, origin_size, image, mask, size = sample[
-            'image_path'], sample['mask_path'], sample['origin_image'], sample[
-                'origin_mask'], sample['origin_size'], sample['image'], sample[
-                    'mask'], sample['size']
+        image, mask, size = sample['image'], sample['mask'], sample['size']
 
         if np.random.uniform(0, 1) < self.prob:
             image = image[:, ::-1, :]
             mask = mask[:, ::-1]
 
-        sample = {
-            'image_path': image_path,
-            'mask_path': mask_path,
-            'origin_image': origin_image,
-            'origin_mask': origin_mask,
-            'origin_size': origin_size,
-            'image': image,
-            'mask': mask,
-            'size': size,
-        }
+        sample['image'], sample['mask'], sample['size'] = image, mask, size
 
         return sample
 
@@ -142,41 +118,24 @@ class RandomVerticalFlip:
         self.prob = prob
 
     def __call__(self, sample):
-        image_path, mask_path, origin_image, origin_mask, origin_size, image, mask, size = sample[
-            'image_path'], sample['mask_path'], sample['origin_image'], sample[
-                'origin_mask'], sample['origin_size'], sample['image'], sample[
-                    'mask'], sample['size']
+        image, mask, size = sample['image'], sample['mask'], sample['size']
 
         if np.random.uniform(0, 1) < self.prob:
             image = image[::-1, :, :]
             mask = mask[::-1, :]
 
-        sample = {
-            'image_path': image_path,
-            'mask_path': mask_path,
-            'origin_image': origin_image,
-            'origin_mask': origin_mask,
-            'origin_size': origin_size,
-            'image': image,
-            'mask': mask,
-            'size': size,
-        }
+        sample['image'], sample['mask'], sample['size'] = image, mask, size
 
         return sample
 
 
 class YoloStyleResize:
 
-    def __init__(self, resize=832, divisor=32, stride=32):
+    def __init__(self, resize=832):
         self.resize = resize
-        self.divisor = divisor
-        self.stride = stride
 
     def __call__(self, sample):
-        image_path, mask_path, origin_image, origin_mask, origin_size, image, mask, size = sample[
-            'image_path'], sample['mask_path'], sample['origin_image'], sample[
-                'origin_mask'], sample['origin_size'], sample['image'], sample[
-                    'mask'], sample['size']
+        image, mask, size = sample['image'], sample['mask'], sample['size']
 
         h, w, _ = image.shape
 
@@ -190,16 +149,7 @@ class YoloStyleResize:
 
         size = np.array([image.shape[0], image.shape[1]]).astype(np.float32)
 
-        sample = {
-            'image_path': image_path,
-            'mask_path': mask_path,
-            'origin_image': origin_image,
-            'origin_mask': origin_mask,
-            'origin_size': origin_size,
-            'image': image,
-            'mask': mask,
-            'size': size,
-        }
+        sample['image'], sample['mask'], sample['size'] = image, mask, size
 
         return sample
 
@@ -210,10 +160,7 @@ class Resize:
         self.resize = resize
 
     def __call__(self, sample):
-        image_path, mask_path, origin_image, origin_mask, origin_size, image, mask, size = sample[
-            'image_path'], sample['mask_path'], sample['origin_image'], sample[
-                'origin_mask'], sample['origin_size'], sample['image'], sample[
-                    'mask'], sample['size']
+        image, mask, size = sample['image'], sample['mask'], sample['size']
 
         image = cv2.resize(image, (self.resize, self.resize))
         mask = cv2.resize(mask, (self.resize, self.resize),
@@ -221,16 +168,7 @@ class Resize:
 
         size = np.array([image.shape[0], image.shape[1]]).astype(np.float32)
 
-        sample = {
-            'image_path': image_path,
-            'mask_path': mask_path,
-            'origin_image': origin_image,
-            'origin_mask': origin_mask,
-            'origin_size': origin_size,
-            'image': image,
-            'mask': mask,
-            'size': size,
-        }
+        sample['image'], sample['mask'], sample['size'] = image, mask, size
 
         return sample
 
@@ -241,39 +179,21 @@ class Normalize:
         pass
 
     def __call__(self, sample):
-        image_path, mask_path, origin_image, origin_mask, origin_size, image, mask, size = sample[
-            'image_path'], sample['mask_path'], sample['origin_image'], sample[
-                'origin_mask'], sample['origin_size'], sample['image'], sample[
-                    'mask'], sample['size']
+        image, mask, size = sample['image'], sample['mask'], sample['size']
 
         image = image / 255.
 
-        sample = {
-            'image_path': image_path,
-            'mask_path': mask_path,
-            'origin_image': origin_image,
-            'origin_mask': origin_mask,
-            'origin_size': origin_size,
-            'image': image,
-            'mask': mask,
-            'size': size,
-        }
+        sample['image'], sample['mask'], sample['size'] = image, mask, size
 
         return sample
 
 
-class ResizeSegmentationCollater:
+class SalientObjectDetectionSegmentationCollater:
 
-    def __init__(self, resize=832, stride=32):
+    def __init__(self, resize=832):
         self.resize = resize
-        self.stride = stride
 
     def __call__(self, data):
-        image_paths = [s['image_path'] for s in data]
-        mask_paths = [s['mask_path'] for s in data]
-        origin_images = [s['origin_image'] for s in data]
-        origin_masks = [s['origin_mask'] for s in data]
-        origin_sizes = [s['origin_size'] for s in data]
         images = [s['image'] for s in data]
         masks = [s['mask'] for s in data]
         sizes = [s['size'] for s in data]
@@ -292,15 +212,9 @@ class ResizeSegmentationCollater:
             input_masks[i, 0:mask.shape[0], 0:mask.shape[1]] = mask
         input_masks = torch.from_numpy(input_masks)
 
-        origin_sizes = np.array(origin_sizes, dtype=np.float32)
         sizes = np.array(sizes, dtype=np.float32)
 
         return {
-            'image_path': image_paths,
-            'mask_path': mask_paths,
-            'origin_image': origin_images,
-            'origin_mask': origin_masks,
-            'origin_size': origin_sizes,
             'image': input_images,
             'mask': input_masks,
             'size': sizes,

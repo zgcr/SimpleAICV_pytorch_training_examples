@@ -222,10 +222,10 @@ if __name__ == '__main__':
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-    from tools.path import text_detection_dataset_path
-
     import torchvision.transforms as transforms
     from tqdm import tqdm
+
+    from tools.path import text_detection_dataset_path
 
     from simpleAICV.text_detection.datasets.text_detection_dataset import TextDetection
     from simpleAICV.text_detection.common import RandomRotate, MainDirectionRandomRotate, Resize, Normalize, TextDetectionCollater, DBNetTextDetectionCollater
@@ -233,47 +233,45 @@ if __name__ == '__main__':
     textdetectiondataset = TextDetection(
         text_detection_dataset_path,
         set_name=[
-            # 'ICDAR2017RCTW_text_detection',
-            # 'ICDAR2019ART_text_detection',
-            # 'ICDAR2019LSVT_text_detection',
-            # 'ICDAR2019MLT_text_detection',
+            'ICDAR2017RCTW_text_detection',
+            'ICDAR2019ART_text_detection',
+            'ICDAR2019LSVT_text_detection',
+            'ICDAR2019MLT_text_detection',
             'ICDAR2019ReCTS_text_detection',
         ],
         set_type='train',
         transform=transforms.Compose([
-            # RandomRotate(angle=[-30, 30], prob=0.3),
-            # MainDirectionRandomRotate(angle=[0, 90, 180, 270],
-            #                           prob=[0.7, 0.1, 0.1, 0.1]),
-            Resize(resize=960),
+            Resize(resize=1024),
             #  Normalize(),
         ]))
 
     count = 0
     for per_sample in tqdm(textdetectiondataset):
-        print(per_sample['image'].shape, per_sample['image'].dtype)
+        print('1111', per_sample['image'].shape, per_sample['image'].dtype)
 
-        if count < 5:
+        if count < 2:
             count += 1
         else:
             break
 
     from torch.utils.data import DataLoader
-    collater = DBNetTextDetectionCollater(resize=960,
+    collater = DBNetTextDetectionCollater(resize=1024,
                                           min_box_size=3,
                                           min_max_threshold=[0.3, 0.7],
                                           shrink_ratio=0.6)
     train_loader = DataLoader(textdetectiondataset,
-                              batch_size=8,
+                              batch_size=4,
                               shuffle=True,
                               num_workers=2,
                               collate_fn=collater)
 
-    decoder = DBNetDecoder(hard_border_threshold=0.3,
+    decoder = DBNetDecoder(use_morph_open=False,
+                           hard_border_threshold=None,
                            box_score_threshold=0.5,
-                           rectangle_similarity=0.6,
-                           min_box_size=3,
                            min_area_size=9,
                            max_box_num=1000,
+                           rectangle_similarity=0.6,
+                           min_box_size=3,
                            line_text_expand_ratio=1.2,
                            curve_text_expand_ratio=1.5)
 
@@ -289,10 +287,9 @@ if __name__ == '__main__':
                 np.concatenate((probability_mask.unsqueeze(1),
                                 threshold_mask.unsqueeze(1)),
                                axis=1)), sizes)
-        print("1111", len(batch_boxes), len(batch_scores))
-        print("2222", batch_boxes[0], batch_scores[0])
+        print("2222", len(batch_boxes), len(batch_scores))
 
-        # temp_dir = './temp2'
+        # temp_dir = './temp1'
         # if not os.path.exists(temp_dir):
         #     os.makedirs(temp_dir)
 
@@ -319,7 +316,7 @@ if __name__ == '__main__':
         #     cv2.imencode('.jpg', per_image)[1].tofile(
         #         os.path.join(temp_dir, f'idx_{count}_{i}.jpg'))
 
-        if count < 5:
+        if count < 2:
             count += 1
         else:
             break

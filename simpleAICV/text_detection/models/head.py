@@ -100,7 +100,7 @@ class DBNetHead(nn.Module):
                                kernel_size=2,
                                stride=2,
                                groups=1,
-                               bias=True), nn.Sigmoid())
+                               bias=True))
         self.thresh_conv = nn.Sequential(
             ConvBnActBlock(inplanes,
                            inplanes // 4,
@@ -122,11 +122,18 @@ class DBNetHead(nn.Module):
                                kernel_size=2,
                                stride=2,
                                groups=1,
-                               bias=True), nn.Sigmoid())
+                               bias=True))
+
+        self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
         probability_map = self.binary_conv(x)
+        probability_map = probability_map.float()
+        probability_map = self.sigmoid(probability_map)
+
         threshold_map = self.thresh_conv(x)
+        threshold_map = threshold_map.float()
+        threshold_map = self.sigmoid(threshold_map)
 
         preds = torch.cat([probability_map, threshold_map], dim=1)
 
@@ -149,8 +156,8 @@ if __name__ == '__main__':
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-    net = DBNetHead(inplanes=96, k=50)
-    x = torch.randn(1, 96, 240, 240)
+    net = DBNetHead(inplanes=256, k=50)
+    x = torch.randn(1, 256, 240, 240)
     from thop import profile
     from thop import clever_format
     macs, params = profile(net, inputs=(x, ), verbose=False)

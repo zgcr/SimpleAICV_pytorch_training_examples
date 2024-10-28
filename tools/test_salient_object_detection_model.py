@@ -10,6 +10,7 @@ import argparse
 
 import torch
 import torch.nn as nn
+
 from torch.utils.data import DataLoader
 
 from tools.salient_object_detection_scripts import validate_salient_object_detection_segmentation_for_all_dataset

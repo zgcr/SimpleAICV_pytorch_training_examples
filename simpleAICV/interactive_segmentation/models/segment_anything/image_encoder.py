@@ -381,6 +381,41 @@ if __name__ == '__main__':
                           window_size=14,
                           global_attn_indexes=[2, 5, 8, 11],
                           use_gradient_checkpoint=True)
+    out = net(torch.autograd.Variable(torch.randn(1, 3, image_h, image_w)))
+    print(f'2222, out_shape: {out.shape}')
+
+    net = ViTImageEncoder(image_size=1024,
+                          patch_size=16,
+                          inplanes=3,
+                          embedding_planes=1024,
+                          block_nums=24,
+                          head_nums=16,
+                          mlp_ratio=4,
+                          out_planes=256,
+                          window_size=14,
+                          global_attn_indexes=[5, 11, 17, 23],
+                          use_gradient_checkpoint=False)
+    image_h, image_w = 1024, 1024
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    out = net(torch.autograd.Variable(torch.randn(2, 3, image_h, image_w)))
+    print(f'1111, macs: {macs}, params: {params},out_shape: {out.shape}')
+
+    net = ViTImageEncoder(image_size=1024,
+                          patch_size=16,
+                          inplanes=3,
+                          embedding_planes=1280,
+                          block_nums=32,
+                          head_nums=16,
+                          mlp_ratio=4,
+                          out_planes=256,
+                          window_size=14,
+                          global_attn_indexes=[7, 15, 23, 31],
+                          use_gradient_checkpoint=False)
     image_h, image_w = 1024, 1024
     from thop import profile
     from thop import clever_format

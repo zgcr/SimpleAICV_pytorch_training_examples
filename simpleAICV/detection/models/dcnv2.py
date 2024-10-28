@@ -6,6 +6,7 @@ import torchvision.ops
 
 
 class DeformableConv2d(nn.Module):
+
     def __init__(self,
                  inplanes,
                  planes,
@@ -55,7 +56,7 @@ class DeformableConv2d(nn.Module):
 
     def forward(self, x):
         offset = self.offset_conv(x)
-        mask = torch.sigmoid(self.mask_conv(x))
+        mask = torch.sigmoid(self.mask_conv(x).float())
 
         x = torchvision.ops.deform_conv2d(input=x,
                                           offset=offset,

@@ -12,6 +12,8 @@ import math
 import torch
 import torch.nn as nn
 
+from torch.utils.checkpoint import checkpoint
+
 from simpleAICV.detection.common import load_state_dict
 
 __all__ = [
@@ -175,7 +177,7 @@ class ConvBnActBlock(nn.Module):
                       padding=padding,
                       groups=groups,
                       bias=bias),
-            FrozenBatchNorm2d(planes) if has_bn else nn.Sequential(),
+            nn.BatchNorm2d(planes) if has_bn else nn.Sequential(),
             nn.ReLU(inplace=True) if has_act else nn.Sequential(),
         )
 
@@ -292,15 +294,20 @@ class Bottleneck(nn.Module):
         return x
 
 
-class ResNetBackbone(nn.Module):
+class DetrResNetBackbone(nn.Module):
 
-    def __init__(self, block, layer_nums, inplanes=64):
-        super(ResNetBackbone, self).__init__()
+    def __init__(self,
+                 block,
+                 layer_nums,
+                 inplanes=64,
+                 use_gradient_checkpoint=False):
+        super(DetrResNetBackbone, self).__init__()
         self.block = block
         self.layer_nums = layer_nums
         self.inplanes = inplanes
         self.planes = [inplanes, inplanes * 2, inplanes * 4, inplanes * 8]
         self.expansion = 1 if block is BasicBlock else 4
+        self.use_gradient_checkpoint = use_gradient_checkpoint
 
         self.conv1 = ConvBnActBlock(3,
                                     self.inplanes,
@@ -341,7 +348,7 @@ class ResNetBackbone(nn.Module):
                 nn.init.kaiming_normal_(m.weight,
                                         mode='fan_out',
                                         nonlinearity='relu')
-            elif isinstance(m, (FrozenBatchNorm2d)):
+            elif isinstance(m, (nn.BatchNorm2d)):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
 
@@ -360,16 +367,22 @@ class ResNetBackbone(nn.Module):
         x = self.conv1(x)
         x = self.maxpool1(x)
 
-        x1 = self.layer1(x)
-        x2 = self.layer2(x1)
-        x3 = self.layer3(x2)
-        x4 = self.layer4(x3)
+        if self.use_gradient_checkpoint:
+            C2 = checkpoint(self.layer1, x, use_reentrant=False)
+            C3 = checkpoint(self.layer2, C2, use_reentrant=False)
+            C4 = checkpoint(self.layer3, C3, use_reentrant=False)
+            C5 = checkpoint(self.layer4, C4, use_reentrant=False)
+        else:
+            C2 = self.layer1(x)
+            C3 = self.layer2(C2)
+            C4 = self.layer3(C3)
+            C5 = self.layer4(C4)
 
-        return [x1, x2, x3, x4]
+        return [C2, C3, C4, C5]
 
 
-def _resnetbackbone(block, layers, inplanes, pretrained_path=''):
-    model = ResNetBackbone(block, layers, inplanes)
+def _detrresnetbackbone(block, layers, inplanes, pretrained_path='', **kwargs):
+    model = DetrResNetBackbone(block, layers, inplanes, **kwargs)
 
     if pretrained_path:
         load_state_dict(pretrained_path, model)
@@ -379,42 +392,47 @@ def _resnetbackbone(block, layers, inplanes, pretrained_path=''):
     return model
 
 
-def detr_resnet18backbone(pretrained_path=''):
-    model = _resnetbackbone(BasicBlock, [2, 2, 2, 2],
-                            64,
-                            pretrained_path=pretrained_path)
+def detr_resnet18backbone(pretrained_path='', **kwargs):
+    model = _detrresnetbackbone(BasicBlock, [2, 2, 2, 2],
+                                64,
+                                pretrained_path=pretrained_path,
+                                **kwargs)
 
     return model
 
 
-def detr_resnet34backbone(pretrained_path=''):
-    model = _resnetbackbone(BasicBlock, [3, 4, 6, 3],
-                            64,
-                            pretrained_path=pretrained_path)
+def detr_resnet34backbone(pretrained_path='', **kwargs):
+    model = _detrresnetbackbone(BasicBlock, [3, 4, 6, 3],
+                                64,
+                                pretrained_path=pretrained_path,
+                                **kwargs)
 
     return model
 
 
-def detr_resnet50backbone(pretrained_path=''):
-    model = _resnetbackbone(Bottleneck, [3, 4, 6, 3],
-                            64,
-                            pretrained_path=pretrained_path)
+def detr_resnet50backbone(pretrained_path='', **kwargs):
+    model = _detrresnetbackbone(Bottleneck, [3, 4, 6, 3],
+                                64,
+                                pretrained_path=pretrained_path,
+                                **kwargs)
 
     return model
 
 
-def detr_resnet101backbone(pretrained_path=''):
-    model = _resnetbackbone(Bottleneck, [3, 4, 23, 3],
-                            64,
-                            pretrained_path=pretrained_path)
+def detr_resnet101backbone(pretrained_path='', **kwargs):
+    model = _detrresnetbackbone(Bottleneck, [3, 4, 23, 3],
+                                64,
+                                pretrained_path=pretrained_path,
+                                **kwargs)
 
     return model
 
 
-def detr_resnet152backbone(pretrained_path=''):
-    model = _resnetbackbone(Bottleneck, [3, 8, 36, 3],
-                            64,
-                            pretrained_path=pretrained_path)
+def detr_resnet152backbone(pretrained_path='', **kwargs):
+    model = _detrresnetbackbone(Bottleneck, [3, 8, 36, 3],
+                                64,
+                                pretrained_path=pretrained_path,
+                                **kwargs)
 
     return model
 
@@ -435,14 +453,69 @@ if __name__ == '__main__':
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-    net = detr_resnet50backbone()
-    image_h, image_w = 800, 800
+    net = detr_resnet18backbone()
+    image_h, image_w = 1024, 1024
     from thop import profile
     from thop import clever_format
     x = torch.randn(1, 3, image_h, image_w)
     macs, params = profile(net, inputs=(x, ), verbose=False)
     macs, params = clever_format([macs, params], '%.3f')
     print(f'1111, macs: {macs}, params: {params}')
+    out = net(torch.autograd.Variable(x))
+    for per_out in out:
+        print('2222', per_out.shape)
+
+    net = detr_resnet34backbone()
+    image_h, image_w = 1024, 1024
+    from thop import profile
+    from thop import clever_format
+    x = torch.randn(1, 3, image_h, image_w)
+    macs, params = profile(net, inputs=(x, ), verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    out = net(torch.autograd.Variable(x))
+    for per_out in out:
+        print('2222', per_out.shape)
+
+    net = detr_resnet50backbone()
+    image_h, image_w = 1024, 1024
+    from thop import profile
+    from thop import clever_format
+    x = torch.randn(1, 3, image_h, image_w)
+    macs, params = profile(net, inputs=(x, ), verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    out = net(torch.autograd.Variable(x))
+    for per_out in out:
+        print('2222', per_out.shape)
+
+    net = detr_resnet101backbone()
+    image_h, image_w = 1024, 1024
+    from thop import profile
+    from thop import clever_format
+    x = torch.randn(1, 3, image_h, image_w)
+    macs, params = profile(net, inputs=(x, ), verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    out = net(torch.autograd.Variable(x))
+    for per_out in out:
+        print('2222', per_out.shape)
+
+    net = detr_resnet152backbone()
+    image_h, image_w = 1024, 1024
+    from thop import profile
+    from thop import clever_format
+    x = torch.randn(1, 3, image_h, image_w)
+    macs, params = profile(net, inputs=(x, ), verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    print(f'1111, macs: {macs}, params: {params}')
+    out = net(torch.autograd.Variable(x))
+    for per_out in out:
+        print('2222', per_out.shape)
+
+    net = detr_resnet152backbone(use_gradient_checkpoint=True)
+    image_h, image_w = 1024, 1024
+    x = torch.randn(1, 3, image_h, image_w)
     out = net(torch.autograd.Variable(x))
     for per_out in out:
         print('2222', per_out.shape)

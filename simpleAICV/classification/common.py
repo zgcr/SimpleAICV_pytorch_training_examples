@@ -9,7 +9,7 @@ import cv2
 import math
 import numpy as np
 
-from PIL import Image, ImageDraw
+from PIL import Image
 
 import torch
 import torch.nn.functional as F
@@ -32,10 +32,9 @@ class Opencv2PIL:
 
         image = Image.fromarray(np.uint8(image))
 
-        return {
-            'image': image,
-            'label': label,
-        }
+        sample['image'], sample['label'] = image, label
+
+        return sample
 
 
 class PIL2Opencv:
@@ -51,10 +50,9 @@ class PIL2Opencv:
 
         image = np.asarray(image).astype(np.float32)
 
-        return {
-            'image': image,
-            'label': label,
-        }
+        sample['image'], sample['label'] = image, label
+
+        return sample
 
 
 class TorchRandomResizedCrop:
@@ -71,10 +69,9 @@ class TorchRandomResizedCrop:
 
         image = self.RandomResizedCrop(image)
 
-        return {
-            'image': image,
-            'label': label,
-        }
+        sample['image'], sample['label'] = image, label
+
+        return sample
 
 
 class TorchPad:
@@ -92,10 +89,9 @@ class TorchPad:
 
         image = self.Pad(image)
 
-        return {
-            'image': image,
-            'label': label,
-        }
+        sample['image'], sample['label'] = image, label
+
+        return sample
 
 
 class TorchRandomHorizontalFlip:
@@ -111,10 +107,9 @@ class TorchRandomHorizontalFlip:
 
         image = self.RandomHorizontalFlip(image)
 
-        return {
-            'image': image,
-            'label': label,
-        }
+        sample['image'], sample['label'] = image, label
+
+        return sample
 
 
 class TorchRandomCrop:
@@ -130,10 +125,9 @@ class TorchRandomCrop:
 
         image = self.RandomCrop(image)
 
-        return {
-            'image': image,
-            'label': label,
-        }
+        sample['image'], sample['label'] = image, label
+
+        return sample
 
 
 class TorchColorJitter:
@@ -152,10 +146,9 @@ class TorchColorJitter:
 
         image = self.ColorJitter(image)
 
-        return {
-            'image': image,
-            'label': label,
-        }
+        sample['image'], sample['label'] = image, label
+
+        return sample
 
 
 class TorchResize:
@@ -171,10 +164,9 @@ class TorchResize:
 
         image = self.Resize(image)
 
-        return {
-            'image': image,
-            'label': label,
-        }
+        sample['image'], sample['label'] = image, label
+
+        return sample
 
 
 class TorchCenterCrop:
@@ -190,35 +182,9 @@ class TorchCenterCrop:
 
         image = self.CenterCrop(image)
 
-        return {
-            'image': image,
-            'label': label,
-        }
+        sample['image'], sample['label'] = image, label
 
-
-class PILCutOut:
-
-    def __init__(self, factor=0.5):
-        self.factor = factor
-
-    def __call__(self, x):
-        img_draw = ImageDraw.Draw(x)
-
-        h, w = x.size[0], x.size[1]  # HWC
-        h_cutout = int(self.cutout_factor * h + 0.5)
-        w_cutout = int(self.cutout_factor * w + 0.5)
-        y_c = np.random.randint(h)
-        x_c = np.random.randint(w)
-
-        y1 = np.clip(y_c - h_cutout // 2, 0, h)
-        y2 = np.clip(y_c + h_cutout // 2, 0, h)
-        x1 = np.clip(x_c - w_cutout // 2, 0, w)
-        x2 = np.clip(x_c + w_cutout // 2, 0, w)
-        fill_color = (np.random.randint(0, 255), np.random.randint(0, 255),
-                      np.random.randint(0, 255))
-        img_draw.rectangle([x1, y1, x2, y2], fill=fill_color)
-
-        return x
+        return sample
 
 
 class Normalize:
@@ -235,10 +201,9 @@ class Normalize:
         image = image / 255.
         image = image.astype(np.float32)
 
-        return {
-            'image': image,
-            'label': label,
-        }
+        sample['image'], sample['label'] = image, label
+
+        return sample
 
 
 class NormalizeTo255:
@@ -255,10 +220,9 @@ class NormalizeTo255:
         image = image * 255.
         image = image.astype(np.float32)
 
-        return {
-            'image': image,
-            'label': label,
-        }
+        sample['image'], sample['label'] = image, label
+
+        return sample
 
 
 class TorchMeanStdNormalize:
@@ -272,16 +236,16 @@ class TorchMeanStdNormalize:
         sample must be a dict,contains 'image'、'label' keys.
         '''
         image, label = sample['image'], sample['label']
+
         image = self.to_tensor(image)
         image = self.Normalize(image)
         # 3 H W ->H W 3
         image = image.permute(1, 2, 0)
         image = image.numpy()
 
-        return {
-            'image': image,
-            'label': label,
-        }
+        sample['image'], sample['label'] = image, label
+
+        return sample
 
 
 class ReflectPad:
@@ -294,13 +258,13 @@ class ReflectPad:
         sample must be a dict,contains 'image'、'label' keys.
         '''
         image, label = sample['image'], sample['label']
+
         image = cv2.copyMakeBorder(image, self.pad, self.pad, self.pad,
                                    self.pad, cv2.BORDER_REFLECT)
 
-        return {
-            'image': image,
-            'label': label,
-        }
+        sample['image'], sample['label'] = image, label
+
+        return sample
 
 
 class PCAJitter:
@@ -328,10 +292,9 @@ class PCAJitter:
         for i in range(3):
             image[:, :, i] = image[:, :, i] + rgb[i]
 
-        return {
-            'image': image,
-            'label': label,
-        }
+        sample['image'], sample['label'] = image, label
+
+        return sample
 
 
 class RandomCrop:
@@ -344,6 +307,7 @@ class RandomCrop:
         sample must be a dict,contains 'image'、'label' keys.
         '''
         image, label = sample['image'], sample['label']
+
         origin_h, origin_w, _ = image.shape
 
         if origin_w < self.resize or origin_h < self.resize:
@@ -358,10 +322,9 @@ class RandomCrop:
         top, left, h, w = self.get_top_left_w_h(origin_h, origin_w)
         image = image[top:top + h, left:left + w, :]
 
-        return {
-            'image': image,
-            'label': label,
-        }
+        sample['image'], sample['label'] = image, label
+
+        return sample
 
     def get_top_left_w_h(self, origin_h, origin_w):
         if origin_w == self.resize and origin_h == self.resize:
@@ -396,10 +359,9 @@ class RandomResizedCrop:
         image = image[top:top + h, left:left + w, :]
         image = cv2.resize(image, (self.resize, self.resize))
 
-        return {
-            'image': image,
-            'label': label,
-        }
+        sample['image'], sample['label'] = image, label
+
+        return sample
 
     def get_top_left_w_h(self, origin_h, origin_w):
         area = origin_h * origin_w
@@ -491,10 +453,9 @@ class CenterCrop:
         image = image[crop_top:crop_top + crop_height,
                       crop_left:crop_left + crop_width, :]
 
-        return {
-            'image': image,
-            'label': label,
-        }
+        sample['image'], sample['label'] = image, label
+
+        return sample
 
 
 class RandomHorizontalFlip:
@@ -511,10 +472,9 @@ class RandomHorizontalFlip:
         if np.random.uniform(0, 1) < self.prob:
             image = image[:, ::-1, :]
 
-        return {
-            'image': image,
-            'label': label,
-        }
+        sample['image'], sample['label'] = image, label
+
+        return sample
 
 
 class ColorJitter:
@@ -538,6 +498,7 @@ class ColorJitter:
         sample must be a dict,contains 'image'、'label' keys.
         '''
         image, label = sample['image'], sample['label']
+
         image = image.astype(np.float32)
 
         color_jitter_type_idx = np.random.choice([0, 1, 2, 3])
@@ -574,10 +535,9 @@ class ColorJitter:
 
         image = image.astype(np.float32)
 
-        return {
-            'image': image,
-            'label': label,
-        }
+        sample['image'], sample['label'] = image, label
+
+        return sample
 
 
 class Resize:
@@ -593,10 +553,9 @@ class Resize:
 
         image = cv2.resize(image, (self.resize, self.resize))
 
-        return {
-            'image': image,
-            'label': label,
-        }
+        sample['image'], sample['label'] = image, label
+
+        return sample
 
 
 class RandomErasing:
@@ -645,10 +604,9 @@ class RandomErasing:
         if np.random.uniform(0, 1) < self.prob:
             image = self.erase(image)
 
-        return {
-            'image': image,
-            'label': label,
-        }
+        sample['image'], sample['label'] = image, label
+
+        return sample
 
     def erase(self, image):
         image_h, image_w, image_c = image.shape
@@ -751,29 +709,6 @@ class AccMeter:
                           ) / self.sample_num if self.sample_num != 0 else 0
 
 
-class TotalAccMeter:
-    '''Computes and stores the average and current value'''
-
-    def __init__(self):
-        self.reset()
-
-    def reset(self):
-        self.acc1 = 0
-        self.acc5 = 0
-        self.count = 0
-        self.acc1_avg = 0
-        self.acc5_avg = 0
-
-    def update(self, acc1, acc5, n=1):
-        self.acc1 += acc1 * n
-        self.acc5 += acc5 * n
-        self.count += n
-
-    def compute(self):
-        self.acc1_avg = float(self.acc1) / self.count if self.count != 0 else 0
-        self.acc5_avg = float(self.acc5) / self.count if self.count != 0 else 0
-
-
 class SemanticSoftmaxMeter:
     "Average the values of `func` taking into account potential different batch sizes"
 
@@ -820,24 +755,6 @@ class SemanticSoftmaxMeter:
         self.acc1 = self.sum / self.count if self.count != 0 else 0
 
 
-def compute_batch_accuracy(output, target, topk=(1, 5)):
-    '''Computes the accuracy over the k top predictions for the specified values of k'''
-    with torch.no_grad():
-        maxk = max(topk)
-        batch_size = target.size(0)
-
-        _, pred = output.topk(maxk, 1, True, True)
-        pred = pred.t()
-        correct = pred.eq(target.view(1, -1).expand_as(pred))
-
-        res = []
-        for k in topk:
-            correct_k = correct[:k].reshape(-1).float().sum(0, keepdim=True)
-            res.append(correct_k.mul_(1.0 / batch_size))
-
-        return res
-
-
 def load_state_dict(saved_model_path,
                     model,
                     excluded_layer_name=(),
@@ -867,7 +784,7 @@ def load_state_dict(saved_model_path,
             not_loaded_save_state_dict.append(name)
 
     position_encoding_already_loaded = False
-    if 'position_encoding' in filtered_state_dict.keys():
+    if 'pos_embed' in filtered_state_dict.keys():
         position_encoding_already_loaded = True
 
     # for vit net, loading a position encoding layer with new input size
@@ -876,12 +793,12 @@ def load_state_dict(saved_model_path,
         # assert class_token num are unchanged for model and saved_model
         # assert embedding_planes are unchanged for model and saved_model
         model_num_cls_token = model.cls_token.shape[1]
-        model_embedding_planes = model.position_encoding.shape[2]
+        model_embedding_planes = model.pos_embed.shape[2]
         model_encoding_shape = int(
-            (model.position_encoding.shape[1] - model_num_cls_token)**0.5)
+            (model.pos_embed.shape[1] - model_num_cls_token)**0.5)
         encoding_layer_name, encoding_layer_weight = None, None
         for name, weight in saved_state_dict.items():
-            if 'position_encoding' in name:
+            if 'pos_embed' in name:
                 encoding_layer_name = name
                 encoding_layer_weight = weight
                 break
@@ -906,7 +823,7 @@ def load_state_dict(saved_model_path,
             (save_model_cls_token_weight, save_model_position_weight), dim=1)
 
         filtered_state_dict[encoding_layer_name] = model_encoding_layer_weight
-        not_loaded_save_state_dict.remove('position_encoding')
+        not_loaded_save_state_dict.remove('pos_embed')
 
     if len(filtered_state_dict) == 0:
         print('No pretrained parameters to load!')

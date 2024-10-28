@@ -13,19 +13,17 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from simpleAICV.classification.common import load_state_dict
+from simpleAICV.classification.common import AverageMeter, load_state_dict
 
 
 class YoloStyleResize:
 
     def __init__(self,
                  resize=640,
-                 divisor=32,
                  stride=32,
                  multi_scale=False,
                  multi_scale_range=[0.5, 1.0]):
         self.resize = resize
-        self.divisor = divisor
         self.stride = stride
         self.multi_scale = multi_scale
         self.multi_scale_range = multi_scale_range
@@ -34,8 +32,9 @@ class YoloStyleResize:
         '''
         sample must be a dict,contains 'image'、'annots'、'scale' keys.
         '''
-        path, image, annots, scale, size = sample['path'], sample[
-            'image'], sample['annots'], sample['scale'], sample['size']
+        image, annots, scale, size = sample['image'], sample['annots'], sample[
+            'scale'], sample['size']
+
         h, w = image.shape[0], image.shape[1]
 
         if self.multi_scale:
@@ -64,13 +63,10 @@ class YoloStyleResize:
         annots[:, :4] *= factor
         scale *= factor
 
-        return {
-            'path': path,
-            'image': image,
-            'annots': annots,
-            'scale': scale,
-            'size': size,
-        }
+        sample['image'], sample['annots'], sample['scale'], sample[
+            'size'] = image, annots, scale, size
+
+        return sample
 
 
 class RandomHorizontalFlip:
@@ -82,8 +78,8 @@ class RandomHorizontalFlip:
         '''
         sample must be a dict,contains 'image'、'annots'、'scale' keys.
         '''
-        path, image, annots, scale, size = sample['path'], sample[
-            'image'], sample['annots'], sample['scale'], sample['size']
+        image, annots, scale, size = sample['image'], sample['annots'], sample[
+            'scale'], sample['size']
 
         if annots.shape[0] == 0:
             return sample
@@ -98,13 +94,10 @@ class RandomHorizontalFlip:
             annots[:, 0] = w - x2
             annots[:, 2] = w - x1
 
-        return {
-            'path': path,
-            'image': image,
-            'annots': annots,
-            'scale': scale,
-            'size': size,
-        }
+        sample['image'], sample['annots'], sample['scale'], sample[
+            'size'] = image, annots, scale, size
+
+        return sample
 
 
 class RandomVerticalFlip:
@@ -116,8 +109,8 @@ class RandomVerticalFlip:
         '''
         sample must be a dict,contains 'image'、'annots'、'scale' keys.
         '''
-        path, image, annots, scale, size = sample['path'], sample[
-            'image'], sample['annots'], sample['scale'], sample['size']
+        image, annots, scale, size = sample['image'], sample['annots'], sample[
+            'scale'], sample['size']
 
         if annots.shape[0] == 0:
             return sample
@@ -132,13 +125,10 @@ class RandomVerticalFlip:
             annots[:, 1] = h - y2
             annots[:, 3] = h - y1
 
-        return {
-            'path': path,
-            'image': image,
-            'annots': annots,
-            'scale': scale,
-            'size': size,
-        }
+        sample['image'], sample['annots'], sample['scale'], sample[
+            'size'] = image, annots, scale, size
+
+        return sample
 
 
 class RandomCrop:
@@ -150,8 +140,8 @@ class RandomCrop:
         '''
         sample must be a dict,contains 'image'、'annots'、'scale' keys.
         '''
-        path, image, annots, scale, size = sample['path'], sample[
-            'image'], sample['annots'], sample['scale'], sample['size']
+        image, annots, scale, size = sample['image'], sample['annots'], sample[
+            'scale'], sample['size']
 
         if annots.shape[0] == 0:
             return sample
@@ -180,13 +170,10 @@ class RandomCrop:
 
         size = np.array([image.shape[0], image.shape[1]]).astype(np.float32)
 
-        return {
-            'path': path,
-            'image': image,
-            'annots': annots,
-            'scale': scale,
-            'size': size,
-        }
+        sample['image'], sample['annots'], sample['scale'], sample[
+            'size'] = image, annots, scale, size
+
+        return sample
 
 
 class RandomTranslate:
@@ -198,8 +185,8 @@ class RandomTranslate:
         '''
         sample must be a dict,contains 'image'、'annots'、'scale' keys.
         '''
-        path, image, annots, scale, size = sample['path'], sample[
-            'image'], sample['annots'], sample['scale'], sample['size']
+        image, annots, scale, size = sample['image'], sample['annots'], sample[
+            'scale'], sample['size']
 
         if annots.shape[0] == 0:
             return sample
@@ -223,13 +210,10 @@ class RandomTranslate:
 
         size = np.array([image.shape[0], image.shape[1]]).astype(np.float32)
 
-        return {
-            'path': path,
-            'image': image,
-            'annots': annots,
-            'scale': scale,
-            'size': size,
-        }
+        sample['image'], sample['annots'], sample['scale'], sample[
+            'size'] = image, annots, scale, size
+
+        return sample
 
 
 class RandomGaussianBlur:
@@ -239,29 +223,24 @@ class RandomGaussianBlur:
         self.prob = prob
 
     def __call__(self, sample):
-        if np.random.uniform(0, 1) > self.prob:
-            return sample
-
-        path, image, annots, scale, size = sample['path'], sample[
-            'image'], sample['annots'], sample['scale'], sample['size']
+        image, annots, scale, size = sample['image'], sample['annots'], sample[
+            'scale'], sample['size']
 
         if annots.shape[0] == 0:
             return sample
 
-        sigma = np.random.uniform(self.sigma[0], self.sigma[1])
-        ksize = int(2 * ((sigma - 0.8) / 0.3 + 1) + 1)
-        if ksize % 2 == 0:
-            ksize += 1
+        if np.random.uniform(0, 1) < self.prob:
+            sigma = np.random.uniform(self.sigma[0], self.sigma[1])
+            ksize = int(2 * ((sigma - 0.8) / 0.3 + 1) + 1)
+            if ksize % 2 == 0:
+                ksize += 1
 
-        image = cv2.GaussianBlur(image, (ksize, ksize), sigma)
+            image = cv2.GaussianBlur(image, (ksize, ksize), sigma)
 
-        return {
-            'path': path,
-            'image': image,
-            'annots': annots,
-            'scale': scale,
-            'size': size,
-        }
+        sample['image'], sample['annots'], sample['scale'], sample[
+            'size'] = image, annots, scale, size
+
+        return sample
 
 
 class MainDirectionRandomRotate:
@@ -271,8 +250,8 @@ class MainDirectionRandomRotate:
         self.prob = prob
 
     def __call__(self, sample):
-        path, image, annots, scale, size = sample['path'], sample[
-            'image'], sample['annots'], sample['scale'], sample['size']
+        image, annots, scale, size = sample['image'], sample['annots'], sample[
+            'scale'], sample['size']
 
         if annots.shape[0] == 0:
             return sample
@@ -347,13 +326,10 @@ class MainDirectionRandomRotate:
 
         new_annots = np.array(new_annots, dtype=np.float32)
 
-        return {
-            'path': path,
-            'image': image,
-            'annots': new_annots,
-            'scale': scale,
-            'size': size,
-        }
+        sample['image'], sample['annots'], sample['scale'], sample[
+            'size'] = image, new_annots, scale, size
+
+        return sample
 
 
 class RandomRotate:
@@ -363,8 +339,8 @@ class RandomRotate:
         self.prob = prob
 
     def __call__(self, sample):
-        path, image, annots, scale, size = sample['path'], sample[
-            'image'], sample['annots'], sample['scale'], sample['size']
+        image, annots, scale, size = sample['image'], sample['annots'], sample[
+            'scale'], sample['size']
 
         if annots.shape[0] == 0:
             return sample
@@ -434,13 +410,10 @@ class RandomRotate:
 
         new_annots = np.array(new_annots, dtype=np.float32)
 
-        return {
-            'path': path,
-            'image': image,
-            'annots': new_annots,
-            'scale': scale,
-            'size': size,
-        }
+        sample['image'], sample['annots'], sample['scale'], sample[
+            'size'] = image, new_annots, scale, size
+
+        return sample
 
 
 class Normalize:
@@ -452,18 +425,15 @@ class Normalize:
         '''
         sample must be a dict,contains 'image'、'annots'、'scale' keys.
         '''
-        path, image, annots, scale, size = sample['path'], sample[
-            'image'], sample['annots'], sample['scale'], sample['size']
+        image, annots, scale, size = sample['image'], sample['annots'], sample[
+            'scale'], sample['size']
 
         image = image / 255.
 
-        return {
-            'path': path,
-            'image': image,
-            'annots': annots,
-            'scale': scale,
-            'size': size,
-        }
+        sample['image'], sample['annots'], sample['scale'], sample[
+            'size'] = image, annots, scale, size
+
+        return sample
 
 
 class FaceDetectionCollater:
@@ -472,7 +442,6 @@ class FaceDetectionCollater:
         self.resize = resize
 
     def __call__(self, data):
-        paths = [s['path'] for s in data]
         images = [s['image'] for s in data]
         annots = [s['annots'] for s in data]
         scales = [s['scale'] for s in data]
@@ -504,28 +473,8 @@ class FaceDetectionCollater:
         sizes = np.array(sizes, dtype=np.float32)
 
         return {
-            'path': paths,
             'image': input_images,
             'annots': input_annots,
             'scale': scales,
             'size': sizes,
         }
-
-
-class AverageMeter:
-    '''Computes and stores the average and current value'''
-
-    def __init__(self):
-        self.reset()
-
-    def reset(self):
-        self.val = 0
-        self.avg = 0
-        self.sum = 0
-        self.count = 0
-
-    def update(self, val, n=1):
-        self.val = val
-        self.sum += val * n
-        self.count += n
-        self.avg = self.sum / self.count
