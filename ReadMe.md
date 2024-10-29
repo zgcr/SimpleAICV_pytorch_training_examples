@@ -33,7 +33,7 @@ https://www.zhihu.com/column/c_1692623656205897728
 
 # Introduction
 
-**This repository provides simple training and testing examples for the following tasks:**
+**This repository provides simple training and testing examples for following tasks:**
 
 | task                          | support dataset                                                        | support network                               |
 | ----------------------------- | ---------------------------------------------------------------------- | --------------------------------------------- |
@@ -53,7 +53,7 @@ https://www.zhihu.com/column/c_1692623656205897728
 
 # All task training results
 
-**Most experiments were trained on 2-8 RTX4090D GPU, pytorch2.3, ubuntu22.04.**
+**Most experiments were trained on 2-8 RTX4090D GPUs, pytorch2.3, ubuntu22.04.**
 
 **See all task training results in [results.md](results.md).**
 
@@ -63,11 +63,9 @@ https://www.zhihu.com/column/c_1692623656205897728
 
 **2、This repository only support one node one gpu/one node multi gpus mode with pytorch DDP training.**
 
-**3、Please make sure your Python environment version>=3.9.**
+**3、Please make sure your Python environment version>=3.9 and pytorch version>=2.0.**
 
-**4、Please make sure your pytorch version>=2.0.**
-
-**5、If you want to use torch.complie() function,please make sure your pytorch version>=2.0.Using pytorch2.0/2.2/2.3,don't use pytorch2.1.**
+**4、If you want to use torch.complie() function,using pytorch2.0/2.2/2.3,don't use pytorch2.1.**
 
 **Use pip or conda to install those Packages in your Python environment:**
 
@@ -113,7 +111,7 @@ chmod +x make.sh
 
 # Download my pretrained models and experiments records
 
-You can download all my pretrained models and all my experiments records/checkpoints from huggingface or Baidu-Netdisk.
+You can download all my pretrained models and experiments records/checkpoints from huggingface or Baidu-Netdisk.
 
 If you only want to download all my pretrained models(model.state_dict()),you can download pretrained_models folder.
 
@@ -342,7 +340,7 @@ face_detection demo
 segment_anything demo
 ```
 
-For example,you can run detection gradio demo(please prepare trained model weight first and modify model weight path):
+For example,you can run detection gradio demo(please prepare trained model weight first and modify model weight load path):
 ```
 python gradio_detect_single_image.py
 ```
