@@ -11,7 +11,6 @@ log
 flagged
 pretrained_models
 interactive_segmentation
-11.interactive_segmentation_training
-gradio_segment_anything_point_prompt_single_image.py
+13.interactive_segmentation_training
 stable_diffusion_model
 21.stable_diffusion_model_inference

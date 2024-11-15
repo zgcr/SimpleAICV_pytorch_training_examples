@@ -21,8 +21,7 @@ from simpleAICV.interactive_segmentation.common import load_state_dict
 
 seed = 0
 model_name = 'sam_h'
-
-trained_model_path = '/root/code/SimpleAICV_pytorch_training_examples/pretrained_models/sam_official_pytorch_weights/sam_vit_h_4b8939.pth'
+trained_model_path = '/root/autodl-tmp/pretrained_models/sam_official_pytorch_weights/sam_vit_h_4b8939.pth'
 input_image_size = 1024
 clip_threshold = 0.5
 
@@ -78,43 +77,37 @@ def preprocess_image(image, resize):
     return origin_image, padded_img, scale, scaled_size, origin_size
 
 
-def predict(image, select_points, mask_out_idx):
-
-    assert len(select_points) >= 1, 'no prompt point!'
-
+def predict(inputs, mask_out_idx):
+    image = inputs['image']
     origin_image, resized_img, scale, scaled_size, origin_size = preprocess_image(
         image, input_image_size)
     resized_img = torch.tensor(resized_img).permute(2, 0, 1).unsqueeze(0)
 
-    resized_input_points = []
-    resized_input_labels = []
-    for per_select_points in select_points:
-        resized_input_points.append([
-            per_select_points[0][0],
-            per_select_points[0][1],
-        ])
-        resized_input_labels.append([per_select_points[1]])
-    resized_input_points = np.array(resized_input_points) * scale
-    resized_input_labels = np.array(resized_input_labels)
+    mask = inputs['mask']
+    mask = cv2.cvtColor(mask, cv2.COLOR_RGB2GRAY)
+    mask[mask > 0] = 255
 
-    prompt_points = np.concatenate(
-        [resized_input_points, resized_input_labels], axis=1)
+    # 获取最小外接矩形坐标
+    x1, y1, w, h = cv2.boundingRect(mask)
+    x2 = x1 + w
+    y2 = y1 + h
 
-    prompt_points = torch.tensor(np.expand_dims(prompt_points,
-                                                axis=0)).float().cuda()
+    input_box = np.array([x1, y1, x2, y2]) * scale
+    input_prompt_box = torch.tensor(np.expand_dims(input_box,
+                                                   axis=0)).float().cuda()
 
-    batch_prompts = [{
-        'prompt_point': prompt_points,
-        'prompt_box': None,
-        'prompt_mask': None,
-    }]
+    batch_prompts = {
+        'prompt_point': None,
+        'prompt_box': input_prompt_box,
+        'prompt_mask': None
+    }
 
     mask_out_idx = [mask_out_idx]
 
     with torch.no_grad():
         batch_mask_outputs, batch_iou_outputs = model(
             resized_img, batch_prompts, mask_out_idxs=mask_out_idx)
-        masks, iou_preds = batch_mask_outputs[0], batch_iou_outputs[0]
+        masks, iou_preds = batch_mask_outputs, batch_iou_outputs
 
     masks = masks.squeeze(dim=0).squeeze(dim=0)
     masks = masks.numpy().astype(np.float32)
@@ -174,40 +167,24 @@ def predict(image, select_points, mask_out_idx):
     return per_image_mask, binary_mask
 
 
-#################################################################
-
-# points bgr color
-colors = [(0, 0, 255), (0, 255, 0)]
-markers = [1, 5]
-
 with gr.Blocks() as demo:
     with gr.Tab(label='Segment Anything!'):
         with gr.Row():
             with gr.Column():
-                # store original image without points, default None
-                original_image = gr.State(value=None)
-                input_image = gr.Image(type='pil')
-                # point prompt
-                with gr.Column():
-                    # store points
-                    selected_points = gr.State([])
-                    with gr.Row():
-                        gr.Markdown(
-                            'Click on the image to select prompt point.')
-                        undo_point_button = gr.Button('Undo point')
-                    with gr.Row():
-                        gr.Markdown('Choose prompt point type.')
-                        radio = gr.Radio(
-                            choices=['foreground_point', 'background_point'],
-                            value='foreground_point',
-                            label='prompt point type')
-                    with gr.Row():
-                        gr.Markdown('Choose sam model mask out idx.')
-                        mask_out_idx = gr.Slider(minimum=0,
-                                                 maximum=3,
-                                                 value=0,
-                                                 step=1,
-                                                 label='mask out idx')
+                inputs = gr.Image(label="Circle the target",
+                                  tool="sketch",
+                                  type='numpy',
+                                  image_mode='RGB',
+                                  mask_opacity=0.5,
+                                  brush_radius=30)
+                with gr.Row():
+                    gr.Markdown('Choose sam model mask out idx.')
+                    mask_out_idx = gr.Slider(minimum=0,
+                                             maximum=3,
+                                             value=0,
+                                             step=1,
+                                             label='mask out idx')
+
                 # run button
                 run_button = gr.Button("RUN!")
             # show image with mask
@@ -217,75 +194,8 @@ with gr.Blocks() as demo:
             with gr.Tab(label='Mask'):
                 output_mask = gr.Image(type='pil')
 
-    # once user upload an image, the original image is stored in `original_image`
-    def store_image(origin_image):
-
-        return origin_image, []
-
-    # user click the image to get points, and show the points on the image
-    def get_point(image, select_points, point_type, evt: gr.SelectData):
-        temp_image = image.copy()
-
-        # append the foreground_point
-        if point_type == 'foreground_point':
-            select_points.append((evt.index, 1))
-        # append the background_point
-        elif point_type == 'background_point':
-            select_points.append((evt.index, 0))
-        # default foreground_point
-        else:
-            select_points.append((evt.index, 1))
-
-        # PIL image(RGB) to opencv image(RGB)
-        temp_image = np.asarray(temp_image).astype(np.float32)
-        temp_image = cv2.cvtColor(temp_image, cv2.COLOR_RGB2BGR)
-
-        # draw points
-        for point, label in select_points:
-            cv2.drawMarker(temp_image,
-                           point,
-                           colors[label],
-                           markerType=markers[label],
-                           markerSize=20,
-                           thickness=5)
-
-        temp_image = cv2.cvtColor(temp_image, cv2.COLOR_BGR2RGB)
-        temp_image = Image.fromarray(np.uint8(temp_image))
-
-        return temp_image
-
-    # undo the selected point
-    def undo_points(origin_image, select_points):
-        temp_image = origin_image.copy()
-        # PIL image(RGB) to opencv image(RGB)
-        temp_image = np.asarray(temp_image).astype(np.float32)
-        temp_image = cv2.cvtColor(temp_image, cv2.COLOR_RGB2BGR)
-
-        # draw points
-        if len(select_points) != 0:
-            select_points.pop()
-            for point, label in select_points:
-                cv2.drawMarker(temp_image,
-                               point,
-                               colors[label],
-                               markerType=markers[label],
-                               markerSize=20,
-                               thickness=5)
-
-        temp_image = cv2.cvtColor(temp_image, cv2.COLOR_BGR2RGB)
-        temp_image = Image.fromarray(np.uint8(temp_image))
-
-        return temp_image
-
-    input_image.upload(store_image, [input_image],
-                       [original_image, selected_points])
-
-    input_image.select(get_point, [input_image, selected_points, radio],
-                       [input_image])
-    undo_point_button.click(undo_points, [original_image, selected_points],
-                            [input_image])
     run_button.click(predict,
-                     inputs=[original_image, selected_points, mask_out_idx],
+                     inputs=[inputs, mask_out_idx],
                      outputs=[output_image_with_mask, output_mask])
 
 # local website: http://127.0.0.1:6006/

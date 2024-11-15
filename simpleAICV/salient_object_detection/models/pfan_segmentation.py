@@ -152,7 +152,7 @@ class ConvTransposeBnActBlock(nn.Module):
         return x
 
 
-class VANPFANSegmentation(nn.Module):
+class PFANSegmentation(nn.Module):
 
     def __init__(self,
                  backbone_type,
@@ -160,7 +160,7 @@ class VANPFANSegmentation(nn.Module):
                  planes=[32, 64, 160, 256],
                  cpfe_planes=32,
                  use_gradient_checkpoint=False):
-        super(VANPFANSegmentation, self).__init__()
+        super(PFANSegmentation, self).__init__()
         self.use_gradient_checkpoint = use_gradient_checkpoint
 
         self.backbone = backbones.__dict__[backbone_type](
@@ -321,86 +321,83 @@ class VANPFANSegmentation(nn.Module):
         return pred
 
 
-def _van_pfan_segmentation(backbone_type, backbone_pretrained_path, planes,
-                           **kwargs):
-    model = VANPFANSegmentation(
-        backbone_type=backbone_type,
-        backbone_pretrained_path=backbone_pretrained_path,
-        planes=planes,
-        **kwargs)
+def _pfan_segmentation(backbone_type, backbone_pretrained_path, planes,
+                       **kwargs):
+    model = PFANSegmentation(backbone_type=backbone_type,
+                             backbone_pretrained_path=backbone_pretrained_path,
+                             planes=planes,
+                             **kwargs)
 
     return model
 
 
 def resnet18_pfan_segmentation(backbone_pretrained_path='', **kwargs):
-    return _van_pfan_segmentation('resnet18backbone', backbone_pretrained_path,
-                                  [64, 128, 256, 512], **kwargs)
+    return _pfan_segmentation('resnet18backbone', backbone_pretrained_path,
+                              [64, 128, 256, 512], **kwargs)
 
 
 def resnet34_pfan_segmentation(backbone_pretrained_path='', **kwargs):
-    return _van_pfan_segmentation('resnet34backbone', backbone_pretrained_path,
-                                  [64, 128, 256, 512], **kwargs)
+    return _pfan_segmentation('resnet34backbone', backbone_pretrained_path,
+                              [64, 128, 256, 512], **kwargs)
 
 
 def resnet50_pfan_segmentation(backbone_pretrained_path='', **kwargs):
-    return _van_pfan_segmentation('resnet50backbone', backbone_pretrained_path,
-                                  [256, 512, 1024, 2048], **kwargs)
+    return _pfan_segmentation('resnet50backbone', backbone_pretrained_path,
+                              [256, 512, 1024, 2048], **kwargs)
 
 
 def resnet101_pfan_segmentation(backbone_pretrained_path='', **kwargs):
-    return _van_pfan_segmentation('resnet101backbone',
-                                  backbone_pretrained_path,
-                                  [256, 512, 1024, 2048], **kwargs)
+    return _pfan_segmentation('resnet101backbone', backbone_pretrained_path,
+                              [256, 512, 1024, 2048], **kwargs)
 
 
 def resnet152_pfan_segmentation(backbone_pretrained_path='', **kwargs):
-    return _van_pfan_segmentation('resnet152backbone',
-                                  backbone_pretrained_path,
-                                  [256, 512, 1024, 2048], **kwargs)
+    return _pfan_segmentation('resnet152backbone', backbone_pretrained_path,
+                              [256, 512, 1024, 2048], **kwargs)
 
 
 def vanb0_pfan_segmentation(backbone_pretrained_path='', **kwargs):
-    return _van_pfan_segmentation('vanb0backbone', backbone_pretrained_path,
-                                  [32, 64, 160, 256], **kwargs)
+    return _pfan_segmentation('vanb0backbone', backbone_pretrained_path,
+                              [32, 64, 160, 256], **kwargs)
 
 
 def vanb1_pfan_segmentation(backbone_pretrained_path='', **kwargs):
-    return _van_pfan_segmentation('vanb1backbone', backbone_pretrained_path,
-                                  [64, 128, 320, 512], **kwargs)
+    return _pfan_segmentation('vanb1backbone', backbone_pretrained_path,
+                              [64, 128, 320, 512], **kwargs)
 
 
 def vanb2_pfan_segmentation(backbone_pretrained_path='', **kwargs):
-    return _van_pfan_segmentation('vanb2backbone', backbone_pretrained_path,
-                                  [64, 128, 320, 512], **kwargs)
+    return _pfan_segmentation('vanb2backbone', backbone_pretrained_path,
+                              [64, 128, 320, 512], **kwargs)
 
 
 def vanb3_pfan_segmentation(backbone_pretrained_path='', **kwargs):
-    return _van_pfan_segmentation('vanb3backbone', backbone_pretrained_path,
-                                  [64, 128, 320, 512], **kwargs)
+    return _pfan_segmentation('vanb3backbone', backbone_pretrained_path,
+                              [64, 128, 320, 512], **kwargs)
 
 
 def convformers18_pfan_segmentation(backbone_pretrained_path='', **kwargs):
-    return _van_pfan_segmentation('convformers18backbone',
-                                  backbone_pretrained_path,
-                                  [64, 128, 320, 512], **kwargs)
+    return _pfan_segmentation('convformers18backbone',
+                              backbone_pretrained_path, [64, 128, 320, 512],
+                              **kwargs)
 
 
 def convformers36_pfan_segmentation(backbone_pretrained_path='', **kwargs):
-    return _van_pfan_segmentation('convformers36backbone',
-                                  backbone_pretrained_path,
-                                  [64, 128, 320, 512], **kwargs)
+    return _pfan_segmentation('convformers36backbone',
+                              backbone_pretrained_path, [64, 128, 320, 512],
+                              **kwargs)
 
 
 def convformerm36_pfan_segmentation(backbone_pretrained_path='', **kwargs):
-    return _van_pfan_segmentation('convformerm36backbone',
-                                  backbone_pretrained_path,
-                                  [96, 192, 384, 576], **kwargs)
+    return _pfan_segmentation('convformerm36backbone',
+                              backbone_pretrained_path, [96, 192, 384, 576],
+                              **kwargs)
 
 
 def convformerb36_pfan_segmentation(backbone_pretrained_path='', **kwargs):
-    return _van_pfan_segmentation('convformerb36backbone',
-                                  backbone_pretrained_path,
-                                  [128, 256, 512, 768], **kwargs)
+    return _pfan_segmentation('convformerb36backbone',
+                              backbone_pretrained_path, [128, 256, 512, 768],
+                              **kwargs)
 
 
 if __name__ == '__main__':

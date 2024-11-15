@@ -41,6 +41,7 @@ else:
 model.eval()
 
 
+@torch.no_grad
 def predict(image):
     transform = transforms.Compose([
         transforms.Resize(int(input_image_size * (256 / 224))),
@@ -59,7 +60,7 @@ def predict(image):
     return {f'类别{i}': float(output[i]) for i in range(model_num_classes)}
 
 
-title = '图像分类'
+title = '图像分类demo'
 description = '选择一张图片进行图像分类吧！'
 inputs = gr.Image(type='pil')
 outputs = gr.Label(num_top_classes=5)

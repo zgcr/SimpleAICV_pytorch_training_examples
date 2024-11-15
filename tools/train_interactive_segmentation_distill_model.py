@@ -27,7 +27,6 @@ def build_training_mode(config, model):
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model).cuda()
 
     local_rank = config.local_rank
-
     model = nn.parallel.DistributedDataParallel(model,
                                                 device_ids=[local_rank],
                                                 output_device=local_rank,

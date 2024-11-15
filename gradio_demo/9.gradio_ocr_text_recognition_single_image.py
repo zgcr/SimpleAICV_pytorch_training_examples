@@ -92,6 +92,7 @@ def preprocess_image(image, resize_h):
     return origin_image, padded_img, scaled_size, origin_size
 
 
+@torch.no_grad
 def predict(image):
     origin_image, resized_img, scaled_size, origin_size = preprocess_image(
         image, resize_h)
@@ -109,7 +110,7 @@ def predict(image):
     return pred_strs
 
 
-title = '文本识别'
+title = '文本识别demo'
 description = '选择一张图片进行文本识别吧！'
 inputs = gr.Image(type='pil')
 outputs = gr.Textbox()

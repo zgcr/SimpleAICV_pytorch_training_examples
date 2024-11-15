@@ -16,7 +16,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from torch.cuda.amp import GradScaler
 
-from tools.interactive_segmentation_scripts import train_sam
+from tools.interactive_segmentation_scripts import train_sam_segmentation
 from tools.utils import (get_logger, set_seed, worker_seed_init_fn,
                          build_optimizer, Scheduler, EmaModel)
 
@@ -27,7 +27,6 @@ def build_training_mode(config, model):
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model).cuda()
 
     local_rank = config.local_rank
-
     model = nn.parallel.DistributedDataParallel(model,
                                                 device_ids=[local_rank],
                                                 output_device=local_rank,
@@ -61,21 +60,29 @@ def main():
     checkpoint_dir = os.path.join(args.work_dir, 'checkpoints')
     resume_model = os.path.join(checkpoint_dir, 'latest.pth')
     config.gpus_type = torch.cuda.get_device_name()
+    config.gpus_num = torch.cuda.device_count()
 
     set_seed(config.seed)
 
     local_rank = int(os.environ['LOCAL_RANK'])
     config.local_rank = local_rank
+
     # start init process
     torch.distributed.init_process_group(backend='nccl', init_method='env://')
     torch.cuda.set_device(local_rank)
 
-    single_node_gpus_num = torch.cuda.device_count()
-    single_node_process_num = int(os.environ['LOCAL_WORLD_SIZE'])
-    per_process_gpu_num = int(single_node_process_num / single_node_gpus_num)
-    total_process_num = torch.distributed.get_world_size()
-    config.gpus_num = int(per_process_gpu_num * total_process_num)
+    # total_rank多机多卡判断
+    total_rank = torch.distributed.get_rank()
+    config.total_rank = total_rank
 
+    # 获取多机多卡训练时所有节点上的卡总数
+    per_node_process_nums = int(os.environ['LOCAL_WORLD_SIZE'])
+    per_node_gpus_num = torch.cuda.device_count()
+    per_node_per_process_gpus_num = int(per_node_gpus_num /
+                                        per_node_process_nums)
+
+    world_size = torch.distributed.get_world_size()
+    config.gpus_num = int(per_node_per_process_gpus_num * world_size)
     config.group = torch.distributed.new_group(list(range(config.gpus_num)))
 
     if local_rank == 0:
@@ -149,7 +156,7 @@ def main():
             logger.info(log_info) if local_rank == 0 else None
 
     scheduler = Scheduler(config, optimizer)
-    model, config.ema_model, config.scaler = build_training_mode(config, model)
+    model, _, config.scaler = build_training_mode(config, model)
 
     start_epoch, train_time = 1, 0
     best_loss, train_loss = 1e9, 0
@@ -169,10 +176,6 @@ def main():
 
         log_info = f'resuming model from {resume_model}. resume_epoch: {saved_epoch:0>3d}, used_time: {used_time:.3f} hours, best_loss: {best_loss:.4f}, lr: {lr:.6f}'
         logger.info(log_info) if local_rank == 0 else None
-
-        if 'ema_model_state_dict' in checkpoint.keys():
-            config.ema_model.ema_model.load_state_dict(
-                checkpoint['ema_model_state_dict'])
 
     # use torch 2.0 compile function
     config.compile_support = False
@@ -204,8 +207,9 @@ def main():
         torch.cuda.empty_cache()
 
         train_sampler.set_epoch(epoch)
-        train_loss = train_sam(train_loader, model, train_criterion, optimizer,
-                               scheduler, epoch, logger, config)
+        train_loss = train_sam_segmentation(train_loader, model,
+                                            train_criterion, optimizer,
+                                            scheduler, epoch, logger, config)
         log_info = f'train: epoch {epoch:0>3d}, train_loss: {train_loss:.4f}'
         logger.info(log_info) if local_rank == 0 else None
 
@@ -215,9 +219,7 @@ def main():
 
         if epoch % config.save_interval == 0:
             if local_rank == 0:
-                if config.use_ema_model:
-                    save_model = config.ema_model.ema_model.module.state_dict()
-                elif config.use_compile:
+                if config.use_compile:
                     save_model = model._orig_mod.module.state_dict()
                 else:
                     save_model = model.module.state_dict()
@@ -228,10 +230,7 @@ def main():
             # save best acc1 model and each epoch checkpoint
             if train_loss < best_loss:
                 best_loss = train_loss
-                if config.use_ema_model:
-                    save_best_model = config.ema_model.ema_model.module.state_dict(
-                    )
-                elif config.use_compile:
+                if config.use_compile:
                     save_best_model = model._orig_mod.module.state_dict()
                 else:
                     save_best_model = model.module.state_dict()
@@ -244,40 +243,17 @@ def main():
             else:
                 save_checkpoint_model = model.state_dict()
 
-            if config.use_ema_model:
-                torch.save(
-                    {
-                        'epoch':
-                        epoch,
-                        'time':
-                        train_time,
-                        'best_loss':
-                        best_loss,
-                        'train_loss':
-                        train_loss,
-                        'lr':
-                        scheduler.current_lr,
-                        'model_state_dict':
-                        save_checkpoint_model,
-                        'ema_model_state_dict':
-                        config.ema_model.ema_model.state_dict(),
-                        'optimizer_state_dict':
-                        optimizer.state_dict(),
-                        'scheduler_state_dict':
-                        scheduler.state_dict(),
-                    }, os.path.join(checkpoint_dir, 'latest.pth'))
-            else:
-                torch.save(
-                    {
-                        'epoch': epoch,
-                        'time': train_time,
-                        'best_loss': best_loss,
-                        'train_loss': train_loss,
-                        'lr': scheduler.current_lr,
-                        'model_state_dict': save_checkpoint_model,
-                        'optimizer_state_dict': optimizer.state_dict(),
-                        'scheduler_state_dict': scheduler.state_dict(),
-                    }, os.path.join(checkpoint_dir, 'latest.pth'))
+            torch.save(
+                {
+                    'epoch': epoch,
+                    'time': train_time,
+                    'best_loss': best_loss,
+                    'train_loss': train_loss,
+                    'lr': scheduler.current_lr,
+                    'model_state_dict': save_checkpoint_model,
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    'scheduler_state_dict': scheduler.state_dict(),
+                }, os.path.join(checkpoint_dir, 'latest.pth'))
 
         log_info = f'until epoch: {epoch:0>3d}, best_loss: {best_loss:.4f}'
         logger.info(log_info) if local_rank == 0 else None

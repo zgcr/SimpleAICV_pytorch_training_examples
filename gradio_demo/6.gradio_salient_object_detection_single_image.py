@@ -71,6 +71,7 @@ def preprocess_image(image, resize):
     return origin_image, padded_img, scale, scaled_size, origin_size
 
 
+@torch.no_grad
 def predict(image):
     origin_image, resized_img, scale, scaled_size, origin_size = preprocess_image(
         image, input_image_size)
@@ -97,7 +98,7 @@ def predict(image):
     return combine_image
 
 
-title = '显著性检测'
+title = '显著性检测demo'
 description = '选择一张图片进行显著性检测吧！'
 inputs = gr.Image(type='pil')
 outputs = gr.Image(type='pil')

@@ -98,6 +98,7 @@ def preprocess_image(image, resize, resize_type):
     return origin_image, padded_img, scale, scaled_size, origin_size
 
 
+@torch.no_grad
 def predict(image):
     origin_image, resized_img, scale, scaled_size, origin_size = preprocess_image(
         image, input_image_size, image_resize_type)
@@ -172,7 +173,7 @@ def predict(image):
     return per_image_mask
 
 
-title = '实例分割'
+title = '实例分割demo'
 description = '选择一张图片进行实例分割吧！'
 inputs = gr.Image(type='pil')
 outputs = gr.Image(type='pil')

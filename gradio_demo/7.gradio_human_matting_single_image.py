@@ -56,6 +56,7 @@ def preprocess_image(image, resize):
     return origin_image, image, [resize, resize], [h, w]
 
 
+@torch.no_grad
 def predict(image):
     origin_image, resized_img, [resize_h,
                                 resize_w], [origin_h,
@@ -84,7 +85,7 @@ def predict(image):
     return combine_image
 
 
-title = '人像matting'
+title = '人像matting demo'
 description = '选择一张图片进行人像matting吧！'
 inputs = gr.Image(type='pil')
 outputs = gr.Image(type='pil')

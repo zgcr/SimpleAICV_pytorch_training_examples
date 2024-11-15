@@ -30,6 +30,12 @@ text_recognition_dataset_path = '/root/autodl-tmp/text_recognition_dataset'
 # face_detection
 face_detection_dataset_path = '/root/autodl-tmp/face_detection'
 
+# face_parsing
+face_parsing_dataset_path = '/root/autodl-tmp/face_parsing_dataset'
+
+# human_parsing
+human_parsing_dataset_path = '/root/autodl-tmp/human_parsing_dataset'
+
 # interactive_segmentation
 interactive_segmentation_dataset_path = '/root/autodl-tmp/interactive_segmentation_dataset'
 

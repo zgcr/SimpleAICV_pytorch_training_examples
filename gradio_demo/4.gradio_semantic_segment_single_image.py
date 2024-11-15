@@ -71,6 +71,7 @@ def preprocess_image(image, resize):
     return origin_image, padded_img, scale, [resize_h, resize_w]
 
 
+@torch.no_grad
 def predict(image):
     origin_image, resized_img, scale, [resize_h, resize_w] = preprocess_image(
         image, input_image_size)
@@ -201,7 +202,7 @@ def predict(image):
     return per_image_mask
 
 
-title = '语义分割'
+title = '语义分割demo'
 description = '选择一张图片进行语义分割吧！'
 inputs = gr.Image(type='pil')
 outputs = gr.Image(type='pil')

@@ -28,6 +28,8 @@
 - [OCR text detection task results](#ocr-text-detection-task-results)
 - [OCR text recognition task results](#ocr-text-recognition-task-results)
 - [Face detection task results](#face-detection-task-results)
+- [Face parsing task results](#face-parsing-task-results)
+- [Human parsing task results](#human-parsing-task-results)
 - [Diffusion model task results](#diffusion-model-task-results)
   - [All diffusion model with different sampling methods on CelebA-HQ](#all-diffusion-model-with-different-sampling-methods-on-celeba-hq)
   - [All diffusion model with different sampling methods on CIFAR10](#all-diffusion-model-with-different-sampling-methods-on-cifar10)
@@ -402,6 +404,44 @@ Use WiderFace train and UFDD val datasets to train, WiderFace val dataset to tes
 | resnet50_retinaface | 114.229G | 27.280M | 1024x1024  | 16    | 100    | 0.9369  | 0.9148    | 0.7801  |
 
 You can find more model training details in 10.face_detection_training/.
+
+# Face parsing task results
+
+**PFAN face parsing**
+
+Paper1:https://arxiv.org/abs/1903.00179
+
+Paper2:https://arxiv.org/abs/2202.09741
+
+Use FaceSynthetics and CelebAMask-HQ dataset to train and test.
+
+| Network                         | dataset        | macs    | params  | input size | batch | epochs | precision | recall  | iou     | dice    |
+| ------------------------------- | -------------- | ------- | ------- | ---------- | ----- | ------ | --------- | ------- | ------- | ------- |
+| resnet50_pfan_face_parsing      | FaceSynthetics | 28.361G | 26.585M | 512x512    | 192   | 100    | 95.4084   | 95.0583 | 91.1481 | 95.2320 |
+| convformerm36_pfan_face_parsing | FaceSynthetics | 71.985G | 54.464M | 512x512    | 192   | 100    | 96.2895   | 96.2122 | 92.9436 | 96.2506 |
+| resnet50_pfan_face_parsing      | CelebAMask-HQ  | 28.361G | 26.585M | 512x512    | 192   | 100    | 82.0985   | 77.9908 | 69.3835 | 79.7142 |
+| convformerm36_pfan_face_parsing | CelebAMask-HQ  | 71.985G | 54.464M | 512x512    | 192   | 100    | 83.4664   | 81.1791 | 72.6132 | 82.1953 |
+
+You can find more model training details in 11.face_parsing_training/.
+
+# Human parsing task results
+
+**PFAN human parsing**
+
+Paper1:https://arxiv.org/abs/1903.00179
+
+Paper2:https://arxiv.org/abs/2202.09741
+
+Use LIP and CIHP dataset to train and test.
+
+| Network                          | dataset | macs    | params  | input size | batch | epochs | precision | recall  | iou     | dice    |
+| -------------------------------- | ------- | ------- | ------- | ---------- | ----- | ------ | --------- | ------- | ------- | ------- |
+| resnet50_pfan_human_parsing      | LIP     | 28.437G | 26.585M | 512x512    | 192   | 100    | 57.5257   | 50.6568 | 39.2989 | 53.2604 |
+| convformerm36_pfan_human_parsing | LIP     | 72.060G | 54.464M | 512x512    | 192   | 100    | 60.6652   | 57.3280 | 44.3857 | 58.7892 |
+| resnet50_pfan_human_parsing      | CIHP    | 28.437G | 26.585M | 512x512    | 192   | 100    | 61.9748   | 55.4004 | 44.7195 | 57.8736 |
+| convformerm36_pfan_human_parsing | CIHP    | 72.060G | 54.464M | 512x512    | 192   | 100    | 67.4147   | 62.6415 | 51.0651 | 64.6072 |
+
+You can find more model training details in 12.human_parsing_training/.
 
 # Diffusion model task results
 

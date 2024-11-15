@@ -48,6 +48,8 @@ https://www.zhihu.com/column/c_1692623656205897728
 | OCR text detection task       | combine dataset                                                        | DBNet                                         |
 | OCR text recognition task     | combine dataset                                                        | CTC Model                                     |
 | Face detection task           | combine dataset                                                        | RetinaFace                                    |
+| Face parsing task             | FaceSynthetics<br>CelebAMask-HQ                                        | pfan-face-parsing                             |
+| Human parsing task            | LIP<br>CIHP                                                            | pfan-human-parsing                            |
 | Interactive segmentation task | combine dataset                                                        | SAM(segment-anything)                         |
 | Diffusion model task          | CelebA-HQ<br>CIFAR10<br>CIFAR100<br>FFHQ                               | DDPM<br>DDIM                                  |
 
@@ -75,7 +77,6 @@ torchvision
 pillow
 numpy
 Cython
-colormath
 pycocotools
 opencv-python
 scipy
@@ -91,7 +92,7 @@ onnx
 onnxruntime
 onnxsim
 thop==0.1.1.post2209072238
-gradio==4.26.0
+gradio==3.50.0
 transformers==4.41.2
 open-clip-torch==2.24.0
 ```
@@ -128,6 +129,8 @@ https://huggingface.co/zgcr654321/7.human_matting_training/tree/main
 https://huggingface.co/zgcr654321/8.ocr_text_detection_training/tree/main
 https://huggingface.co/zgcr654321/9.ocr_text_recognition_training/tree/main
 https://huggingface.co/zgcr654321/10.face_detection_training/tree/main
+https://huggingface.co/zgcr654321/11.face_parsing_training/tree/main
+https://huggingface.co/zgcr654321/12.human_parsing_training/tree/main
 https://huggingface.co/zgcr654321/20.diffusion_model_training/tree/main
 https://huggingface.co/zgcr654321/pretrained_models/tree/main
 
@@ -337,7 +340,10 @@ human_matting demo
 text_detection demo
 text_recognition demo
 face_detection demo
-segment_anything demo
+face_parsing demo
+human_parsing demo
+point target segment_anything demo
+circle target segment_anything demo
 ```
 
 For example,you can run detection gradio demo(please prepare trained model weight first and modify model weight load path):

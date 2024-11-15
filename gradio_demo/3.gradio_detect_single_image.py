@@ -100,6 +100,7 @@ def preprocess_image(image, resize, resize_type):
     return origin_image, padded_img, padded_mask, scale, scaled_size
 
 
+@torch.no_grad
 def predict(image):
     origin_image, resized_img, padded_mask, scale, scaled_size = preprocess_image(
         image, input_image_size, image_resize_type)
@@ -176,7 +177,7 @@ def predict(image):
     return origin_image
 
 
-title = '目标检测'
+title = '目标检测demo'
 description = '选择一张图片进行目标检测吧！'
 inputs = gr.Image(type='pil')
 outputs = gr.Image(type='pil')

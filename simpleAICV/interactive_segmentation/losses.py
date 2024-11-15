@@ -6,7 +6,6 @@ __all__ = [
     'SAMMultiLevelLoss',
     'SAMMultiLevelIoUMaxLoss',
     'SAMMultiLevelAssignLoss',
-    'SAMMultiLevelMinimizeLoss',
 ]
 
 
@@ -456,89 +455,6 @@ class SAMMultiLevelAssignLoss(nn.Module):
         return total_iou_predict_loss
 
 
-class SAMMultiLevelMinimizeLoss(nn.Module):
-
-    def __init__(self,
-                 alpha=0.8,
-                 gamma=2,
-                 smooth=1e-4,
-                 focal_loss_weight=20,
-                 dice_loss_weight=1,
-                 iou_predict_loss_weight=1,
-                 mask_threshold=0.0):
-        super(SAMMultiLevelMinimizeLoss, self).__init__()
-        self.alpha = alpha
-        self.gamma = gamma
-        self.smooth = smooth
-        self.focal_loss_weight = focal_loss_weight
-        self.dice_loss_weight = dice_loss_weight
-        self.iou_predict_loss_weight = iou_predict_loss_weight
-        self.mask_threshold = mask_threshold
-
-        self.sigmoid = nn.Sigmoid()
-
-    def forward(self, inputs, targets):
-        pred_masks, pred_ious = inputs
-
-        batch_loss = self.compute_each_level_loss(pred_masks, targets,
-                                                  pred_ious)
-        batch_loss, _ = torch.min(batch_loss, dim=1)
-        batch_loss = batch_loss.mean()
-
-        loss_dict = {
-            'total_loss': batch_loss,
-        }
-
-        return loss_dict
-
-    def compute_each_level_loss(self, inputs, targets, iou_predictions):
-        batch_focal_loss = []
-        for per_idx in range(inputs.shape[1]):
-            per_idx_inputs = inputs[:, per_idx:per_idx + 1, :, :]
-            focal_loss = F.binary_cross_entropy_with_logits(per_idx_inputs,
-                                                            targets,
-                                                            reduction='none')
-            focal_loss = self.alpha * (
-                1 - torch.exp(-focal_loss))**self.gamma * focal_loss
-            focal_loss = focal_loss.mean(dim=[2, 3])
-            batch_focal_loss.append(focal_loss)
-        batch_focal_loss = torch.cat(batch_focal_loss, dim=1)
-
-        batch_dice_loss = []
-        for per_idx in range(inputs.shape[1]):
-            per_idx_inputs = inputs[:, per_idx:per_idx + 1, :, :]
-            per_idx_inputs = per_idx_inputs.float()
-            per_idx_inputs = self.sigmoid(per_idx_inputs)
-            per_idx_inputs = torch.clamp(per_idx_inputs,
-                                         min=1e-4,
-                                         max=1. - 1e-4)
-            intersection = per_idx_inputs * targets
-            dice_loss = 1. - ((2. * intersection + self.smooth) /
-                              (per_idx_inputs + targets + self.smooth))
-            dice_loss = dice_loss.mean(dim=[2, 3])
-            batch_dice_loss.append(dice_loss)
-        batch_dice_loss = torch.cat(batch_dice_loss, dim=1)
-
-        batch_iou_predict_loss = []
-        for per_idx in range(inputs.shape[1]):
-            per_idx_inputs = inputs[:, per_idx:per_idx + 1, :, :]
-            per_idx_inputs = (per_idx_inputs >= self.mask_threshold).float()
-            intersection = per_idx_inputs * targets
-            per_idx_iou_gt = (intersection + self.smooth) / (
-                (per_idx_inputs + targets - intersection) + self.smooth)
-            per_idx_iou_gt = per_idx_iou_gt.mean(dim=[2, 3])
-            per_idx_iou_predictions = iou_predictions[:, per_idx:per_idx + 1]
-            iou_predict_loss = F.mse_loss(per_idx_iou_predictions,
-                                          per_idx_iou_gt,
-                                          reduction='none')
-            batch_iou_predict_loss.append(iou_predict_loss)
-        batch_iou_predict_loss = torch.cat(batch_iou_predict_loss, dim=1)
-
-        batch_loss = batch_focal_loss * self.focal_loss_weight + batch_dice_loss * self.dice_loss_weight + batch_iou_predict_loss * self.iou_predict_loss_weight
-
-        return batch_loss
-
-
 if __name__ == '__main__':
     import os
     import sys
@@ -709,49 +625,6 @@ if __name__ == '__main__':
                                    idx_nums=4,
                                    area_ranges=[[0.04, 0.64], [0.0, 0.04],
                                                 [0.01, 0.25], [0.16, 1.0]])
-
-    for data in tqdm(train_loader):
-        input_images, input_boxs, input_masks, sizes = data['image'], data[
-            'box'], data['mask'], data['size']
-
-        input_prompt_points, input_prompt_boxs, input_prompt_masks = data[
-            'prompt_point'], data['prompt_box'], data['prompt_mask']
-
-        net = net.cuda()
-        input_images = input_images.cuda()
-        input_masks = input_masks.cuda()
-        print('1111', input_images.shape, input_masks.shape)
-
-        input_prompt_points = input_prompt_points.cuda()
-        input_prompt_boxs = input_prompt_boxs.cuda()
-        input_prompt_masks = input_prompt_masks.cuda()
-
-        print('2222', input_prompt_points.shape, input_prompt_boxs.shape,
-              input_prompt_masks.shape)
-
-        input_prompts = {
-            'prompt_point': input_prompt_points,
-            'prompt_box': input_prompt_boxs,
-            'prompt_mask': input_prompt_masks,
-        }
-
-        preds = net(input_images, input_prompts, mask_out_idxs=[0, 1, 2, 3])
-
-        print('3333', preds[0].shape, preds[1].shape, preds[0].dtype,
-              preds[1].dtype)
-
-        loss_dict = loss(preds, input_masks)
-        print('4444', loss_dict)
-
-        break
-
-    loss = SAMMultiLevelMinimizeLoss(alpha=0.8,
-                                     gamma=2,
-                                     smooth=1e-4,
-                                     focal_loss_weight=20,
-                                     dice_loss_weight=1,
-                                     iou_predict_loss_weight=1,
-                                     mask_threshold=0.0)
 
     for data in tqdm(train_loader):
         input_images, input_boxs, input_masks, sizes = data['image'], data[
