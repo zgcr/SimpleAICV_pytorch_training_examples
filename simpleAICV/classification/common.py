@@ -792,38 +792,41 @@ def load_state_dict(saved_model_path,
         # assert position_encoding_layer name are unchanged for model and saved_model
         # assert class_token num are unchanged for model and saved_model
         # assert embedding_planes are unchanged for model and saved_model
-        model_num_cls_token = model.cls_token.shape[1]
-        model_embedding_planes = model.pos_embed.shape[2]
-        model_encoding_shape = int(
-            (model.pos_embed.shape[1] - model_num_cls_token)**0.5)
-        encoding_layer_name, encoding_layer_weight = None, None
-        for name, weight in saved_state_dict.items():
-            if 'pos_embed' in name:
-                encoding_layer_name = name
-                encoding_layer_weight = weight
-                break
-        save_model_encoding_shape = int(
-            (encoding_layer_weight.shape[1] - model_num_cls_token)**0.5)
+        if hasattr(model, 'cls_token') and hasattr(model, 'pos_embed'):
+            model_num_cls_token = model.cls_token.shape[1]
+            model_embedding_planes = model.pos_embed.shape[2]
+            model_encoding_shape = int(
+                (model.pos_embed.shape[1] - model_num_cls_token)**0.5)
+            encoding_layer_name, encoding_layer_weight = None, None
+            for name, weight in saved_state_dict.items():
+                if 'pos_embed' in name:
+                    encoding_layer_name = name
+                    encoding_layer_weight = weight
+                    break
+            save_model_encoding_shape = int(
+                (encoding_layer_weight.shape[1] - model_num_cls_token)**0.5)
 
-        save_model_cls_token_weight = encoding_layer_weight[:, 0:
-                                                            model_num_cls_token, :]
-        save_model_position_weight = encoding_layer_weight[:,
-                                                           model_num_cls_token:, :]
-        save_model_position_weight = save_model_position_weight.reshape(
-            -1, save_model_encoding_shape, save_model_encoding_shape,
-            model_embedding_planes).permute(0, 3, 1, 2)
-        save_model_position_weight = F.interpolate(save_model_position_weight,
-                                                   size=(model_encoding_shape,
-                                                         model_encoding_shape),
-                                                   mode='bicubic',
-                                                   align_corners=False)
-        save_model_position_weight = save_model_position_weight.permute(
-            0, 2, 3, 1).flatten(1, 2)
-        model_encoding_layer_weight = torch.cat(
-            (save_model_cls_token_weight, save_model_position_weight), dim=1)
+            save_model_cls_token_weight = encoding_layer_weight[:, 0:
+                                                                model_num_cls_token, :]
+            save_model_position_weight = encoding_layer_weight[:,
+                                                               model_num_cls_token:, :]
+            save_model_position_weight = save_model_position_weight.reshape(
+                -1, save_model_encoding_shape, save_model_encoding_shape,
+                model_embedding_planes).permute(0, 3, 1, 2)
+            save_model_position_weight = F.interpolate(
+                save_model_position_weight,
+                size=(model_encoding_shape, model_encoding_shape),
+                mode='bicubic',
+                align_corners=False)
+            save_model_position_weight = save_model_position_weight.permute(
+                0, 2, 3, 1).flatten(1, 2)
+            model_encoding_layer_weight = torch.cat(
+                (save_model_cls_token_weight, save_model_position_weight),
+                dim=1)
 
-        filtered_state_dict[encoding_layer_name] = model_encoding_layer_weight
-        not_loaded_save_state_dict.remove('pos_embed')
+            filtered_state_dict[
+                encoding_layer_name] = model_encoding_layer_weight
+            not_loaded_save_state_dict.remove('pos_embed')
 
     if len(filtered_state_dict) == 0:
         print('No pretrained parameters to load!')

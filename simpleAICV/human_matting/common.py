@@ -171,8 +171,7 @@ class YoloStyleResize:
                                  0.5), int(h * float(factor) + 0.5)
 
         image = cv2.resize(image, (resize_w, resize_h))
-        mask = cv2.resize(mask, (resize_w, resize_h),
-                          interpolation=cv2.INTER_NEAREST)
+        mask = cv2.resize(mask, (resize_w, resize_h))
         trimap = cv2.resize(trimap, (resize_w, resize_h),
                             interpolation=cv2.INTER_NEAREST)
         fg_map = cv2.resize(fg_map, (resize_w, resize_h))
@@ -198,8 +197,7 @@ class Resize:
                 'bg_map'], sample['size']
 
         image = cv2.resize(image, (self.resize, self.resize))
-        mask = cv2.resize(mask, (self.resize, self.resize),
-                          interpolation=cv2.INTER_NEAREST)
+        mask = cv2.resize(mask, (self.resize, self.resize))
         trimap = cv2.resize(trimap, (self.resize, self.resize),
                             interpolation=cv2.INTER_NEAREST)
         fg_map = cv2.resize(fg_map, (self.resize, self.resize))

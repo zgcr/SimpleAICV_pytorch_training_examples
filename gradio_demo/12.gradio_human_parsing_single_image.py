@@ -28,7 +28,7 @@ model_num_classes = 20
 classes_name = LIP_20_CLASSES
 classes_color = CLASSES_20_COLOR
 
-trained_model_path = '/root/autodl-tmp/pretrained_models/pfan_human_parsing_train_on_LIP/convformerm36_pfan_human_parsing-metric44.386.pth'
+trained_model_path = '/root/autodl-tmp/pretrained_models/human_parsing_train_on_LIP/convformerm36_pfan_human_parsing-metric44.386.pth'
 input_image_size = 512
 
 os.environ['PYTHONHASHSEED'] = str(seed)

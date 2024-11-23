@@ -35,23 +35,23 @@ https://www.zhihu.com/column/c_1692623656205897728
 
 **This repository provides simple training and testing examples for following tasks:**
 
-| task                          | support dataset                                                        | support network                               |
-| ----------------------------- | ---------------------------------------------------------------------- | --------------------------------------------- |
-| Image classification task     | CIFAR100<br>ImageNet1K(ILSVRC2012)<br>ImageNet21K(Winter 2021 release) | Convformer<br>DarkNet<br>ResNet<br>VAN<br>ViT |
-| Knowledge distillation task   | ImageNet1K(ILSVRC2012)                                                 | DML loss(ResNet)<br>KD loss(ResNet)           |
-| Masked image modeling task    | ImageNet1K(ILSVRC2012)                                                 | MAE(ViT)                                      |
-| Object detection task         | COCO2017<br>Objects365(v2,2020)<br>VOC2007 and VOC2012                 | DETR<br>DINO-DETR<br>RetinaNet<br>FCOS        |
-| Semantic segmentation task    | ADE20K<br>COCO2017                                                     | DeepLabv3+                                    |
-| Instance segmentation task    | COCO2017                                                               | SOLOv2<br>YOLACT                              |
-| Salient object detection task | combine dataset                                                        | pfan-segmentation                             |
-| Human matting task            | combine dataset                                                        | pfan-matting                                  |
-| OCR text detection task       | combine dataset                                                        | DBNet                                         |
-| OCR text recognition task     | combine dataset                                                        | CTC Model                                     |
-| Face detection task           | combine dataset                                                        | RetinaFace                                    |
-| Face parsing task             | FaceSynthetics<br>CelebAMask-HQ                                        | pfan-face-parsing                             |
-| Human parsing task            | LIP<br>CIHP                                                            | pfan-human-parsing                            |
-| Interactive segmentation task | combine dataset                                                        | SAM(segment-anything)                         |
-| Diffusion model task          | CelebA-HQ<br>CIFAR10<br>CIFAR100<br>FFHQ                               | DDPM<br>DDIM                                  |
+| task                          | support dataset                                                        | support network                                |
+| ----------------------------- | ---------------------------------------------------------------------- | ---------------------------------------------- |
+| Image classification task     | CIFAR100<br>ImageNet1K(ILSVRC2012)<br>ImageNet21K(Winter 2021 release) | Convformer<br>DarkNet<br>ResNet<br>VAN<br>ViT  |
+| Knowledge distillation task   | ImageNet1K(ILSVRC2012)                                                 | DML loss(ResNet)<br>KD loss(ResNet)            |
+| Masked image modeling task    | ImageNet1K(ILSVRC2012)                                                 | MAE(ViT)                                       |
+| Object detection task         | COCO2017<br>Objects365(v2,2020)<br>VOC2007 and VOC2012                 | DETR<br>DINO-DETR<br>RetinaNet<br>FCOS         |
+| Semantic segmentation task    | ADE20K<br>COCO2017                                                     | DeepLabv3+                                     |
+| Instance segmentation task    | COCO2017                                                               | SOLOv2<br>YOLACT                               |
+| Salient object detection task | combine dataset                                                        | pfan-segmentation                              |
+| Human matting task            | combine dataset                                                        | pfan-matting                                   |
+| OCR text detection task       | combine dataset                                                        | DBNet                                          |
+| OCR text recognition task     | combine dataset                                                        | CTC Model                                      |
+| Face detection task           | combine dataset                                                        | RetinaFace                                     |
+| Face parsing task             | FaceSynthetics<br>CelebAMask-HQ                                        | pfan-face-parsing     <br>sapiens_face_parsing |
+| Human parsing task            | LIP<br>CIHP                                                            | pfan-human-parsing <br>sapiens_human_parsing   |
+| Interactive segmentation task | combine dataset                                                        | SAM(segment-anything)                          |
+| Diffusion model task          | CelebA-HQ<br>CIFAR10<br>CIFAR100<br>FFHQ                               | DDPM<br>DDIM                                   |
 
 # All task training results
 

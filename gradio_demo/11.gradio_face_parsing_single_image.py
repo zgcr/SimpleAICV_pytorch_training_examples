@@ -28,7 +28,7 @@ model_num_classes = 19
 classes_name = CelebAMask_HQ_19_CLASSES
 classes_color = CLASSES_19_COLOR
 
-trained_model_path = '/root/autodl-tmp/pretrained_models/pfan_face_parsing_train_on_CelebAMask-HQ/convformerm36_pfan_face_parsing-metric72.613.pth'
+trained_model_path = '/root/autodl-tmp/pretrained_models/face_parsing_train_on_CelebAMask-HQ/convformerm36_pfan_face_parsing-metric72.613.pth'
 input_image_size = 512
 
 os.environ['PYTHONHASHSEED'] = str(seed)

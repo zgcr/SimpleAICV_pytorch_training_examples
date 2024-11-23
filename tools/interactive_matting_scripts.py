@@ -43,8 +43,11 @@ class MattingEvalMeter:
         self.grad = 0
         self.conn = 0
 
-    def add_batch_result(self, preds, masks):
-        for per_pred, per_mask in zip(preds, masks):
+    def add_batch_result(self, preds, masks, pred_ious):
+        for per_pred, per_mask, per_pred_iou in zip(preds, masks, pred_ious):
+            max_iou_idx = np.argmax(per_pred_iou, axis=0)
+            per_pred = per_pred[max_iou_idx]
+
             for i in range(self.thresh_num):
                 pred_foreground = per_pred > self.thresh[i]
                 mask_foreground = per_mask > self.thresh[i]
@@ -63,7 +66,10 @@ class MattingEvalMeter:
                 self.miou_list[i] += np.sum(intersection / (union + 1e-4))
 
         nan_inf_count = 0
-        for per_pred, per_mask in zip(preds, masks):
+        for per_pred, per_mask, per_pred_iou in zip(preds, masks, pred_ious):
+            max_iou_idx = np.argmax(per_pred_iou, axis=0)
+            per_pred = per_pred[max_iou_idx]
+
             if np.any(np.isinf(per_pred)) or np.any(np.isnan(per_pred)):
                 nan_inf_count += 1
                 print('per image pred nan or inf pred!')
@@ -239,28 +245,35 @@ def validate_matting(test_loader, model, config):
                         mode="nearest")
                     batch_prompts['prompt_mask'] = iter_prompt_mask
 
-                _, _, batch_masks_fused_preds, _ = model(
+                _, _, batch_masks_fused_preds, batch_iou_preds = model(
                     batch_images, batch_prompts, config.mask_out_idxs)
 
-            batch_masks_fused_preds = torch.squeeze(batch_masks_fused_preds,
-                                                    dim=1).cpu().numpy()
+            if len(batch_masks_fused_preds.shape) == 5:
+                batch_masks_fused_preds = torch.squeeze(
+                    batch_masks_fused_preds, dim=2)
+            batch_masks_fused_preds = batch_masks_fused_preds.cpu().numpy()
             batch_masks = torch.squeeze(batch_masks, dim=1).cpu().numpy()
+            batch_iou_preds = batch_iou_preds.cpu().numpy()
 
-            batch_pred_list, batch_mask_list = [], []
+            batch_pred_list, batch_mask_list, batch_iou_preds_list = [], [], []
             for image_idx in range(len(batch_masks_fused_preds)):
                 per_image_size = sizes[image_idx]
                 per_image_fused_preds = batch_masks_fused_preds[image_idx]
-                per_image_fused_preds = per_image_fused_preds[:int(
+                per_image_fused_preds = per_image_fused_preds[:, :int(
                     per_image_size[0]), :int(per_image_size[1])]
 
                 per_image_mask = batch_masks[image_idx]
                 per_image_mask = per_image_mask[:int(per_image_size[0]), :int(
                     per_image_size[1])]
 
+                per_image_iou_pred = batch_iou_preds[image_idx]
+
                 batch_pred_list.append(per_image_fused_preds)
                 batch_mask_list.append(per_image_mask)
+                batch_iou_preds_list.append(per_image_iou_pred)
 
-            eval_metric.add_batch_result(batch_pred_list, batch_mask_list)
+            eval_metric.add_batch_result(batch_pred_list, batch_mask_list,
+                                         batch_iou_preds_list)
 
         eval_metric.compute_all_metrics()
 

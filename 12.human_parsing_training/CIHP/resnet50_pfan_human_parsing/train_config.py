@@ -31,7 +31,7 @@ class config:
     })
 
     # load pretrained model or not
-    trained_model_path = '/root/autodl-tmp/pretrained_models/pfan_human_parsing_train_on_LIP/resnet50_pfan_human_parsing-metric39.299.pth'
+    trained_model_path = '/root/autodl-tmp/pretrained_models/human_parsing_train_on_LIP/resnet50_pfan_human_parsing-metric39.299.pth'
     load_state_dict(trained_model_path,
                     model,
                     loading_new_input_size_position_encoding_weight=False)

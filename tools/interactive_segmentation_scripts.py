@@ -26,7 +26,7 @@ class SegmentationEvalMeter:
 
     def add_batch_result(self, preds, preds_iou, masks):
         for per_pred, per_pred_iou, per_mask in zip(preds, preds_iou, masks):
-            max_iou_idx = per_pred_iou.argmax(dim=0)
+            max_iou_idx = np.argmax(per_pred_iou, axis=0)
             per_pred = per_pred[max_iou_idx]
 
             intersection = np.sum(np.sum(per_pred * per_mask, axis=-1),
@@ -132,13 +132,12 @@ def validate_segmentation(test_loader, model, config):
 
                 batch_mask_outputs, batch_iou_outputs = model(
                     batch_images, batch_prompts, config.mask_out_idxs)
-                batch_mask_outputs = torch.cat(batch_mask_outputs, dim=0)
-                batch_iou_outputs = torch.cat(batch_iou_outputs, dim=0)
 
             batch_mask_outputs = (
                 batch_mask_outputs
                 > config.mask_threshold).float().cpu().numpy()
             batch_masks = batch_masks.squeeze(dim=1).float().cpu().numpy()
+            batch_iou_outputs = batch_iou_outputs.cpu().numpy()
 
             eval_metric.add_batch_result(batch_mask_outputs, batch_iou_outputs,
                                          batch_masks)
@@ -170,6 +169,11 @@ def train_distill_sam_encoder(train_loader, model, criterion, optimizer,
         model.module.teacher.eval()
 
     local_rank = config.local_rank
+    if hasattr(config, 'total_rank'):
+        total_rank = config.total_rank
+    else:
+        total_rank = 0
+
     iters = len(train_loader.dataset) // config.batch_size
     iter_index = 1
     assert config.accumulation_steps >= 1, 'illegal accumulation_steps!'
@@ -258,7 +262,8 @@ def train_distill_sam_encoder(train_loader, model, criterion, optimizer,
 
         if skip_batch_flag:
             log_info = f'skip this batch!'
-            logger.info(log_info) if local_rank == 0 else None
+            logger.info(
+                log_info) if local_rank == 0 and total_rank == 0 else None
             optimizer.zero_grad()
             continue
 
@@ -327,7 +332,8 @@ def train_distill_sam_encoder(train_loader, model, criterion, optimizer,
             log_info = f'train: epoch {epoch:0>4d}, iter [{accumulation_iter_index:0>5d}, {accumulation_iters:0>5d}], lr: {scheduler.current_lr:.6f}, loss: {loss*config.accumulation_steps:.4f}, '
             for key, value in loss_value.items():
                 log_info += f'{key}: {value*config.accumulation_steps:.4f}, '
-            logger.info(log_info) if local_rank == 0 else None
+            logger.info(
+                log_info) if local_rank == 0 and total_rank == 0 else None
 
         iter_index += 1
 
@@ -474,6 +480,10 @@ def get_and_combine_additional_prompt_points_and_masks_with_gt(
         masks_gt = gt_masks
         masks_pred = pred_masks
         batch_size = len(masks_gt)
+
+        if len(masks_pred.shape) == 5:
+            masks_pred = torch.squeeze(masks_pred, dim=2)
+
         for idx_t in range(batch_size):
             per_image_input_prompts_points = input_prompts_points[idx_t]
             # [1,h,w]
@@ -539,6 +549,11 @@ def train_distill_sam_model(train_loader, model, criterion, optimizer,
         model.module.student.mask_decoder.eval()
 
     local_rank = config.local_rank
+    if hasattr(config, 'total_rank'):
+        total_rank = config.total_rank
+    else:
+        total_rank = 0
+
     iters = len(train_loader.dataset) // config.batch_size
     iter_index = 1
 
@@ -691,7 +706,8 @@ def train_distill_sam_model(train_loader, model, criterion, optimizer,
 
             if skip_batch_flag:
                 log_info = f'skip this batch!'
-                logger.info(log_info) if local_rank == 0 else None
+                logger.info(
+                    log_info) if local_rank == 0 and total_rank == 0 else None
                 optimizer.zero_grad()
                 continue
 
@@ -752,7 +768,8 @@ def train_distill_sam_model(train_loader, model, criterion, optimizer,
             log_info = f'train: epoch {epoch:0>4d}, iter [{accumulation_iter_index:0>6d}, {accumulation_iters:0>6d}], lr: {scheduler.current_lr:.6f}, loss: {loss:.4f}, '
             for key, value in loss_value.items():
                 log_info += f'{key}: {value:.4f}, '
-            logger.info(log_info) if local_rank == 0 else None
+            logger.info(
+                log_info) if local_rank == 0 and total_rank == 0 else None
 
         iter_index += 1
 

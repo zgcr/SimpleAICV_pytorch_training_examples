@@ -356,8 +356,8 @@ Use combine dataset Deep_Automatic_Portrait_Matting/RealWorldPortrait636/P3M10K 
 
 | Network                    | macs     | params  | input size | batch | epochs | iou    | precision | recall | sad    | mae    | mse    | grad   | conn   |
 | -------------------------- | -------- | ------- | ---------- | ----- | ------ | ------ | --------- | ------ | ------ | ------ | ------ | ------ | ------ |
-| resnet50_pfan_matting      | 86.093G  | 29.654M | 832x832    | 96    | 100    | 0.9809 | 0.9873    | 0.9932 | 6.0597 | 0.0087 | 0.0051 | 7.9799 | 5.8297 |
-| convformerm36_pfan_matting | 195.854G | 55.503M | 832x832    | 96    | 100    | 0.9843 | 0.9901    | 0.9939 | 5.0884 | 0.0073 | 0.0038 | 6.4283 | 4.8397 |
+| resnet50_pfan_matting      | 86.093G  | 29.654M | 832x832    | 96    | 100    | 0.9824 | 0.9884    | 0.9937 | 5.7071 | 0.0082 | 0.0047 | 6.7001 | 5.4373 |
+| convformerm36_pfan_matting | 195.854G | 55.503M | 832x832    | 96    | 100    | 0.9865 | 0.9912    | 0.9951 | 4.5806 | 0.0066 | 0.0033 | 5.0129 | 4.2882 |
 
 You can find more model training details in 7.human_matting_training/.
 
@@ -413,14 +413,20 @@ Paper1:https://arxiv.org/abs/1903.00179
 
 Paper2:https://arxiv.org/abs/2202.09741
 
+**Sapiens**
+
+Paper:https://arxiv.org/pdf/2408.12569
+
 Use FaceSynthetics and CelebAMask-HQ dataset to train and test.
 
-| Network                         | dataset        | macs    | params  | input size | batch | epochs | precision | recall  | iou     | dice    |
-| ------------------------------- | -------------- | ------- | ------- | ---------- | ----- | ------ | --------- | ------- | ------- | ------- |
-| resnet50_pfan_face_parsing      | FaceSynthetics | 28.361G | 26.585M | 512x512    | 192   | 100    | 95.4084   | 95.0583 | 91.1481 | 95.2320 |
-| convformerm36_pfan_face_parsing | FaceSynthetics | 71.985G | 54.464M | 512x512    | 192   | 100    | 96.2895   | 96.2122 | 92.9436 | 96.2506 |
-| resnet50_pfan_face_parsing      | CelebAMask-HQ  | 28.361G | 26.585M | 512x512    | 192   | 100    | 82.0985   | 77.9908 | 69.3835 | 79.7142 |
-| convformerm36_pfan_face_parsing | CelebAMask-HQ  | 71.985G | 54.464M | 512x512    | 192   | 100    | 83.4664   | 81.1791 | 72.6132 | 82.1953 |
+| Network                         | dataset        | macs     | params   | input size | batch | epochs | precision | recall  | iou     | dice    |
+| ------------------------------- | -------------- | -------- | -------- | ---------- | ----- | ------ | --------- | ------- | ------- | ------- |
+| resnet50_pfan_face_parsing      | FaceSynthetics | 28.361G  | 26.585M  | 512x512    | 192   | 100    | 95.4084   | 95.0583 | 91.1481 | 95.2320 |
+| convformerm36_pfan_face_parsing | FaceSynthetics | 71.985G  | 54.464M  | 512x512    | 192   | 100    | 96.2895   | 96.2122 | 92.9436 | 96.2506 |
+| sapiens_0_3b_face_parsing       | FaceSynthetics | 452.167G | 314.250M | 512x512    | 160   | 100    | 97.0999   | 96.9897 | 94.3823 | 97.0446 |
+| resnet50_pfan_face_parsing      | CelebAMask-HQ  | 28.361G  | 26.585M  | 512x512    | 192   | 100    | 82.0985   | 77.9908 | 69.3835 | 79.7142 |
+| convformerm36_pfan_face_parsing | CelebAMask-HQ  | 71.985G  | 54.464M  | 512x512    | 192   | 100    | 83.4664   | 81.1791 | 72.6132 | 82.1953 |
+| sapiens_0_3b_face_parsing       | CelebAMask-HQ  | 452.167G | 314.250M | 512x512    | 160   | 100    | 86.0223   | 84.0680 | 76.2724 | 84.9471 |
 
 You can find more model training details in 11.face_parsing_training/.
 
@@ -432,14 +438,20 @@ Paper1:https://arxiv.org/abs/1903.00179
 
 Paper2:https://arxiv.org/abs/2202.09741
 
+**Sapiens**
+
+Paper:https://arxiv.org/pdf/2408.12569
+
 Use LIP and CIHP dataset to train and test.
 
-| Network                          | dataset | macs    | params  | input size | batch | epochs | precision | recall  | iou     | dice    |
-| -------------------------------- | ------- | ------- | ------- | ---------- | ----- | ------ | --------- | ------- | ------- | ------- |
-| resnet50_pfan_human_parsing      | LIP     | 28.437G | 26.585M | 512x512    | 192   | 100    | 57.5257   | 50.6568 | 39.2989 | 53.2604 |
-| convformerm36_pfan_human_parsing | LIP     | 72.060G | 54.464M | 512x512    | 192   | 100    | 60.6652   | 57.3280 | 44.3857 | 58.7892 |
-| resnet50_pfan_human_parsing      | CIHP    | 28.437G | 26.585M | 512x512    | 192   | 100    | 61.9748   | 55.4004 | 44.7195 | 57.8736 |
-| convformerm36_pfan_human_parsing | CIHP    | 72.060G | 54.464M | 512x512    | 192   | 100    | 67.4147   | 62.6415 | 51.0651 | 64.6072 |
+| Network                          | dataset | macs     | params   | input size | batch | epochs | precision | recall  | iou     | dice    |
+| -------------------------------- | ------- | -------- | -------- | ---------- | ----- | ------ | --------- | ------- | ------- | ------- |
+| resnet50_pfan_human_parsing      | LIP     | 28.437G  | 26.585M  | 512x512    | 192   | 100    | 57.5257   | 50.6568 | 39.2989 | 53.2604 |
+| convformerm36_pfan_human_parsing | LIP     | 72.060G  | 54.464M  | 512x512    | 192   | 100    | 60.6652   | 57.3280 | 44.3857 | 58.7892 |
+| sapiens_0_3b_human_parsing       | LIP     | 452.175G | 314.250M | 512x512    | 160   | 100    | 57.0063   | 51.9517 | 39.8993 | 54.0054 |
+| resnet50_pfan_human_parsing      | CIHP    | 28.437G  | 26.585M  | 512x512    | 192   | 100    | 61.9748   | 55.4004 | 44.7195 | 57.8736 |
+| convformerm36_pfan_human_parsing | CIHP    | 72.060G  | 54.464M  | 512x512    | 192   | 100    | 67.4147   | 62.6415 | 51.0651 | 64.6072 |
+| sapiens_0_3b_human_parsing       | CIHP    | 452.175G | 314.250M | 512x512    | 160   | 100    | 65.0747   | 57.9976 | 47.1512 | 60.7108 |
 
 You can find more model training details in 12.human_parsing_training/.
 

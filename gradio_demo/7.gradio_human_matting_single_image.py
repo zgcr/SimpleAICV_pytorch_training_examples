@@ -22,7 +22,7 @@ from simpleAICV.human_matting.common import load_state_dict
 seed = 0
 model_name = 'convformerm36_pfan_matting'
 
-trained_model_path = '/root/autodl-tmp/pretrained_models/pfan_matting_train_on_human_matting_dataset/convformerm36_pfan_matting-metric0.985.pth'
+trained_model_path = '/root/autodl-tmp/pretrained_models/pfan_matting_train_on_human_matting_dataset/convformerm36_pfan_matting-metric0.987.pth'
 input_image_size = 832
 clip_threshold = 0.2
 
