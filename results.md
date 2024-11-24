@@ -33,6 +33,7 @@
 - [Interactive segmentation task results](#interactive-segmentation-task-results)
   - [light sam distill from pretrain weight on sa\_1b\_11w](#light-sam-distill-from-pretrain-weight-on-sa_1b_11w)
   - [light sam train on combine salient object detection and human matting dataset](#light-sam-train-on-combine-salient-object-detection-and-human-matting-dataset)
+  - [light sam matting train on combine human matting dataset](#light-sam-matting-train-on-combine-human-matting-dataset)
 - [Diffusion model task results](#diffusion-model-task-results)
   - [All diffusion model with different sampling methods on CelebA-HQ](#all-diffusion-model-with-different-sampling-methods-on-celeba-hq)
   - [All diffusion model with different sampling methods on CIFAR10](#all-diffusion-model-with-different-sampling-methods-on-cifar10)
@@ -479,11 +480,24 @@ You can find all jupyter notebook examples in 13.interactive_segmentation_traini
 | convformer_m36_sam_encoder | sa_1b_11w | 1024x1024  | 32    | 40     | 0.0030 |
 | convformer_m36_sam         | sa_1b_11w | 1024x1024  | 32    | 5      | 0.1417 |
 
+You can find more model training details in 13.interactive_segmentation_training/sa_1b/.
+
 ## light sam train on combine salient object detection and human matting dataset
 
 | Network            | dataset         | input size | batch | epochs | loss   | precision | recall | iou    |
 | ------------------ | --------------- | ---------- | ----- | ------ | ------ | --------- | ------ | ------ |
 | convformer_m36_sam | combine dataset | 1024x1024  | 64    | 100    | 0.1012 | 0.9340    | 0.9554 | 0.8988 |
+
+You can find more model training details in 13.interactive_segmentation_training/salient_object_detection_human_matting_pretrain/.
+
+## light sam matting train on combine human matting dataset
+
+| Network                     | dataset         | input size | batch | epochs | iou    | precision | recall | sad    | mae    | mse    | grad   | conn   |
+| --------------------------- | --------------- | ---------- | ----- | ------ | ------ | --------- | ------ | ------ | ------ | ------ | ------ | ------ |
+| convformer_m36_sam_matting1 | combine dataset | 1024x1024  | 48    | 200    | 0.9806 | 0.9874    | 0.9930 | 6.5461 | 0.0087 | 0.0051 | 6.9578 | 6.3325 |
+| convformer_m36_sam_matting2 | combine dataset | 1024x1024  | 32    | 200    | 0.9799 | 0.9877    | 0.9919 | 6.8052 | 0.0091 | 0.0055 | 6.9553 | 6.5909 |
+
+You can find more model training details in 13.interactive_segmentation_training/human_matting/.
 
 # Diffusion model task results
 
