@@ -12,6 +12,10 @@ __all__ = [
     'vit_base_patch16',
     'vit_large_patch16',
     'vit_huge_patch14',
+    'vit_small_patch14',
+    'vit_base_patch14',
+    'vit_large_patch14',
+    'vit_giant_patch14',
     'sapiens_0_3b',
     'sapiens_0_6b',
     'sapiens_1_0b',
@@ -286,6 +290,22 @@ def vit_huge_patch14(**kwargs):
     return _vit(14, 1280, 32, 16, 4, **kwargs)
 
 
+def vit_small_patch14(**kwargs):
+    return _vit(14, 384, 12, 6, 4, **kwargs)
+
+
+def vit_base_patch14(**kwargs):
+    return _vit(14, 768, 12, 12, 4, **kwargs)
+
+
+def vit_large_patch14(**kwargs):
+    return _vit(14, 1024, 24, 16, 4, **kwargs)
+
+
+def vit_giant_patch14(**kwargs):
+    return _vit(14, 1536, 40, 24, 4, **kwargs)
+
+
 # 1024x1024 pretrain 1024x768 seg
 def sapiens_0_3b(**kwargs):
     return _vit(16, 1024, 24, 16, 4, **kwargs)
@@ -394,6 +414,50 @@ if __name__ == '__main__':
     print(f'7777, macs: {macs}, params: {params},out_shape: {out.shape}')
 
     net = sapiens_2_0b(num_classes=1000)
+    image_h, image_w = 224, 224
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    out = net(torch.autograd.Variable(torch.randn(1, 3, image_h, image_w)))
+    print(f'8888, macs: {macs}, params: {params},out_shape: {out.shape}')
+
+    net = vit_small_patch14(num_classes=1000)
+    image_h, image_w = 224, 224
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    out = net(torch.autograd.Variable(torch.randn(1, 3, image_h, image_w)))
+    print(f'8888, macs: {macs}, params: {params},out_shape: {out.shape}')
+
+    net = vit_base_patch14(num_classes=1000)
+    image_h, image_w = 224, 224
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    out = net(torch.autograd.Variable(torch.randn(1, 3, image_h, image_w)))
+    print(f'8888, macs: {macs}, params: {params},out_shape: {out.shape}')
+
+    net = vit_large_patch14(num_classes=1000)
+    image_h, image_w = 224, 224
+    from thop import profile
+    from thop import clever_format
+    macs, params = profile(net,
+                           inputs=(torch.randn(1, 3, image_h, image_w), ),
+                           verbose=False)
+    macs, params = clever_format([macs, params], '%.3f')
+    out = net(torch.autograd.Variable(torch.randn(1, 3, image_h, image_w)))
+    print(f'8888, macs: {macs}, params: {params},out_shape: {out.shape}')
+
+    net = vit_giant_patch14(num_classes=1000)
     image_h, image_w = 224, 224
     from thop import profile
     from thop import clever_format

@@ -30,6 +30,9 @@
 - [Face detection task results](#face-detection-task-results)
 - [Face parsing task results](#face-parsing-task-results)
 - [Human parsing task results](#human-parsing-task-results)
+- [Interactive segmentation task results](#interactive-segmentation-task-results)
+  - [light sam distill from pretrain weight on sa\_1b\_11w](#light-sam-distill-from-pretrain-weight-on-sa_1b_11w)
+  - [light sam train on combine salient object detection and human matting dataset](#light-sam-train-on-combine-salient-object-detection-and-human-matting-dataset)
 - [Diffusion model task results](#diffusion-model-task-results)
   - [All diffusion model with different sampling methods on CelebA-HQ](#all-diffusion-model-with-different-sampling-methods-on-celeba-hq)
   - [All diffusion model with different sampling methods on CIFAR10](#all-diffusion-model-with-different-sampling-methods-on-cifar10)
@@ -454,6 +457,33 @@ Use LIP and CIHP dataset to train and test.
 | sapiens_0_3b_human_parsing       | CIHP    | 452.175G | 314.250M | 512x512    | 160   | 100    | 65.0747   | 57.9976 | 47.1512 | 60.7108 |
 
 You can find more model training details in 12.human_parsing_training/.
+
+# Interactive segmentation task results
+
+**SAM**
+
+Paper:https://arxiv.org/pdf/2304.02643
+
+**SAM2**
+
+Paper:https://arxiv.org/pdf/2408.00714
+
+Use sa_1b_11w dataset, combine salient object detection dataset,combine human matting dataset to train and test.
+
+You can find all jupyter notebook examples in 13.interactive_segmentation_training/sam_predict_example/.
+
+## light sam distill from pretrain weight on sa_1b_11w
+
+| Network                    | dataset   | input size | batch | epochs | loss   |
+| -------------------------- | --------- | ---------- | ----- | ------ | ------ |
+| convformer_m36_sam_encoder | sa_1b_11w | 1024x1024  | 32    | 40     | 0.0030 |
+| convformer_m36_sam         | sa_1b_11w | 1024x1024  | 32    | 5      | 0.1417 |
+
+## light sam train on combine salient object detection and human matting dataset
+
+| Network            | dataset         | input size | batch | epochs | loss   | precision | recall | iou    |
+| ------------------ | --------------- | ---------- | ----- | ------ | ------ | --------- | ------ | ------ |
+| convformer_m36_sam | combine dataset | 1024x1024  | 64    | 100    | 0.1012 | 0.9340    | 0.9554 | 0.8988 |
 
 # Diffusion model task results
 
