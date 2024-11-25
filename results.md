@@ -34,6 +34,7 @@
   - [light sam distill from pretrain weight on sa\_1b\_11w](#light-sam-distill-from-pretrain-weight-on-sa_1b_11w)
   - [light sam train on combine salient object detection and human matting dataset](#light-sam-train-on-combine-salient-object-detection-and-human-matting-dataset)
   - [light sam matting train on combine human matting dataset](#light-sam-matting-train-on-combine-human-matting-dataset)
+  - [light sam matting train on combine salient object detection dataset](#light-sam-matting-train-on-combine-salient-object-detection-dataset)
 - [Diffusion model task results](#diffusion-model-task-results)
   - [All diffusion model with different sampling methods on CelebA-HQ](#all-diffusion-model-with-different-sampling-methods-on-celeba-hq)
   - [All diffusion model with different sampling methods on CIFAR10](#all-diffusion-model-with-different-sampling-methods-on-cifar10)
@@ -498,6 +499,15 @@ You can find more model training details in 13.interactive_segmentation_training
 | convformer_m36_sam_matting2 | combine dataset | 1024x1024  | 32    | 200    | 0.9799 | 0.9877    | 0.9919 | 6.8052 | 0.0091 | 0.0055 | 6.9553 | 6.5909 |
 
 You can find more model training details in 13.interactive_segmentation_training/human_matting/.
+
+## light sam matting train on combine salient object detection dataset
+
+| Network                     | dataset         | input size | batch | epochs | iou    | precision | recall | sad     | mae    | mse    | grad    | conn    |
+| --------------------------- | --------------- | ---------- | ----- | ------ | ------ | --------- | ------ | ------- | ------ | ------ | ------- | ------- |
+| convformer_m36_sam_matting1 | combine dataset | 1024x1024  | 48    | 200    | 0.8586 | 0.9151    | 0.9326 | 24.2321 | 0.0331 | 0.0320 | 40.8393 | 24.2515 |
+| convformer_m36_sam_matting2 | combine dataset | 1024x1024  | 32    | 200    | 0.8586 | 0.9193    | 0.9275 | 23.8464 | 0.0326 | 0.0315 | 40.2559 | 23.8651 |
+
+You can find more model training details in 13.interactive_segmentation_training/salient_object_detection/.
 
 # Diffusion model task results
 
