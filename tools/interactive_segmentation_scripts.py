@@ -12,6 +12,42 @@ from simpleAICV.classification.common import AverageMeter
 from tools.scripts import all_reduce_operation_in_group_for_variables
 
 
+def get_amp_type(model):
+    device = next(model.parameters()).device
+    properties = torch.cuda.get_device_properties(device)
+
+    support_bfloat16_flag = True
+    # 检查计算能力
+    if properties.major < 8:
+        support_bfloat16_flag = False
+
+    # 检查 PyTorch版本
+    if torch.__version__ < "1.10":
+        support_bfloat16_flag = False
+
+    # 检查CUDA版本
+    if torch.version.cuda and float(torch.version.cuda.split(".")[0]) < 11:
+        support_bfloat16_flag = False
+
+    device_name = torch.cuda.get_device_name()
+    support_bfloat16_device_name_list = [
+        '4090',
+        'A100',
+        'A800',
+        'H100',
+        'H800',
+    ]
+    if not any(per_device_name in device_name
+               for per_device_name in support_bfloat16_device_name_list):
+        support_bfloat16_flag = False
+
+    amp_type = torch.float16
+    if support_bfloat16_flag:
+        amp_type = torch.bfloat16
+
+    return amp_type
+
+
 class SegmentationEvalMeter:
 
     def __init__(self):
@@ -168,6 +204,8 @@ def train_distill_sam_encoder(train_loader, model, criterion, optimizer,
     if config.freeze_teacher:
         model.module.teacher.eval()
 
+    amp_type = get_amp_type(model)
+
     local_rank = config.local_rank
     if hasattr(config, 'total_rank'):
         total_rank = config.total_rank
@@ -191,7 +229,7 @@ def train_distill_sam_encoder(train_loader, model, criterion, optimizer,
             skip_batch_flag = True
 
         if config.use_amp:
-            with autocast():
+            with autocast(dtype=amp_type):
                 if iter_index % config.accumulation_steps == 0:
                     tea_outputs, stu_outputs = model(batch_images)
                     loss_value = criterion(tea_outputs, stu_outputs)
@@ -548,6 +586,8 @@ def train_distill_sam_model(train_loader, model, criterion, optimizer,
     if config.frozen_student_mask_decoder:
         model.module.student.mask_decoder.eval()
 
+    amp_type = get_amp_type(model)
+
     local_rank = config.local_rank
     if hasattr(config, 'total_rank'):
         total_rank = config.total_rank
@@ -650,7 +690,7 @@ def train_distill_sam_model(train_loader, model, criterion, optimizer,
                         stu_outputs, config)
 
             if config.use_amp:
-                with autocast():
+                with autocast(dtype=amp_type):
                     tea_outputs, stu_outputs = model(batch_images,
                                                      batch_prompts,
                                                      config.mask_out_idxs)
@@ -792,6 +832,8 @@ def train_sam_segmentation(train_loader, model, criterion, optimizer,
     if config.frozen_mask_decoder:
         model.module.mask_decoder.eval()
 
+    amp_type = get_amp_type(model)
+
     local_rank = config.local_rank
     if hasattr(config, 'total_rank'):
         total_rank = config.total_rank
@@ -895,7 +937,7 @@ def train_sam_segmentation(train_loader, model, criterion, optimizer,
                         batch_mask_outputs, config)
 
             if config.use_amp:
-                with autocast():
+                with autocast(dtype=amp_type):
                     batch_mask_outputs, batch_iou_outputs = model(
                         batch_images, batch_prompts, config.mask_out_idxs)
                     loss_value = criterion(

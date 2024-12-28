@@ -50,7 +50,7 @@ https://www.zhihu.com/column/c_1692623656205897728
 | Face detection task           | combine dataset                                                        | RetinaFace                                                                         |
 | Face parsing task             | FaceSynthetics<br>CelebAMask-HQ                                        | pfan-face-parsing     <br>sapiens_face_parsing                                     |
 | Human parsing task            | LIP<br>CIHP                                                            | pfan-human-parsing <br>sapiens_human_parsing                                       |
-| Interactive segmentation task | combine dataset                                                        | SAM(segment-anything)<br>SAM2(segment-anything2)<br>light_sam<br>light_sam_matting |
+| Interactive segmentation task | combine dataset                                                        | SAM(segment-anything)<br>light_sam<br>light_sam_matting |
 | Diffusion model task          | CelebA-HQ<br>CIFAR10<br>CIFAR100<br>FFHQ                               | DDPM<br>DDIM                                                                       |
 
 # All task training results

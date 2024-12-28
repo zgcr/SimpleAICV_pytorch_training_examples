@@ -466,10 +466,6 @@ You can find more model training details in 12.human_parsing_training/.
 
 Paper:https://arxiv.org/pdf/2304.02643
 
-**SAM2**
-
-Paper:https://arxiv.org/pdf/2408.00714
-
 Use sa_1b_11w dataset, combine salient object detection dataset,combine human matting dataset to train and test.
 
 You can find all jupyter notebook examples in 13.interactive_segmentation_training/sam_predict_example/.

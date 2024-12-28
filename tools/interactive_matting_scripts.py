@@ -11,7 +11,7 @@ import torch.nn.functional as F
 from torch.cuda.amp import autocast
 
 from simpleAICV.classification.common import AverageMeter
-from tools.interactive_segmentation_scripts import get_and_combine_additional_prompt_points_and_masks_with_gt
+from tools.interactive_segmentation_scripts import get_and_combine_additional_prompt_points_and_masks_with_gt, get_amp_type
 from tools.scripts import all_reduce_operation_in_group_for_variables
 
 
@@ -325,6 +325,8 @@ def train_sam_matting(train_loader, model, criterion, optimizer, scheduler,
     if config.frozen_mask_decoder:
         model.module.mask_decoder.eval()
 
+    amp_type = get_amp_type(model)
+
     local_rank = config.local_rank
     iters = len(train_loader.dataset) // config.batch_size
     iter_index = 1
@@ -424,7 +426,7 @@ def train_sam_matting(train_loader, model, criterion, optimizer, scheduler,
                         batch_masks_fused_preds, config)
 
             if config.use_amp:
-                with autocast():
+                with autocast(dtype=amp_type):
                     batch_masks_global_preds, batch_masks_local_preds, batch_masks_fused_preds, batch_iou_preds = model(
                         batch_images, batch_prompts, config.mask_out_idxs)
                     loss_value = criterion(batch_images, [
