@@ -25,7 +25,7 @@
 
 # 📢 News!
 
-* 2024/06/25: support segment-anything model training/testing/jupyter notebook example/gradio demo.
+* 2025/01/18: train light segment-anything model with bf16.
 
 # My column
 
