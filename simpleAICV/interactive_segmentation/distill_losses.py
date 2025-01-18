@@ -80,6 +80,7 @@ class SAMDistillLoss(nn.Module):
         idx_nums = stu_preds.shape[1]
 
         tea_preds = (tea_preds > self.mask_threshold).float()
+        stu_preds = stu_preds.float()
 
         total_distill_focal_loss = 0.
         for per_idx in range(idx_nums):
@@ -113,7 +114,6 @@ class SAMDistillLoss(nn.Module):
 
         stu_preds = stu_preds.float()
         stu_preds = self.sigmoid(stu_preds)
-        stu_preds = torch.clamp(stu_preds, min=1e-4, max=1. - 1e-4)
 
         tea_preds = (tea_preds > self.mask_threshold).float()
 

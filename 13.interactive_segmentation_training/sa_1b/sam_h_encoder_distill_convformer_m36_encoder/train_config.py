@@ -94,10 +94,10 @@ class config:
 
     seed = 0
     # batch_size is total size
-    batch_size = 32
+    batch_size = 24
     # num_workers is total workers
     num_workers = 16
-    accumulation_steps = 1
+    accumulation_steps = 2
 
     optimizer = (
         'AdamW',

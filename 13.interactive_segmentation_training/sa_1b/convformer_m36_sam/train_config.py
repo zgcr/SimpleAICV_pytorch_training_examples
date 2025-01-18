@@ -123,7 +123,7 @@ class config:
 
     seed = 0
     # batch_size is total size
-    batch_size = 32
+    batch_size = 64
     # num_workers is total workers
     num_workers = 16
 

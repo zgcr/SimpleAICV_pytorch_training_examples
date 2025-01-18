@@ -54,6 +54,8 @@ class SAMMultiLevelLoss(nn.Module):
         idx_nums = inputs.shape[1]
         targets = targets.reshape(-1)
 
+        inputs = inputs.float()
+
         total_focal_loss = 0.
         for per_idx in range(inputs.shape[1]):
             per_idx_inputs = inputs[:, per_idx:per_idx + 1, :, :]
@@ -78,7 +80,6 @@ class SAMMultiLevelLoss(nn.Module):
 
         inputs = inputs.float()
         inputs = self.sigmoid(inputs)
-        inputs = torch.clamp(inputs, min=1e-4, max=1. - 1e-4)
 
         targets = targets.reshape(-1)
 
@@ -186,6 +187,7 @@ class SAMMultiLevelIoUMaxLoss(nn.Module):
         return loss_dict
 
     def focal_loss(self, inputs, targets):
+        inputs = inputs.float()
         inputs = inputs.view(-1)
         targets = targets.view(-1)
 
@@ -201,8 +203,8 @@ class SAMMultiLevelIoUMaxLoss(nn.Module):
         return focal_loss
 
     def dice_loss(self, inputs, targets):
+        inputs = inputs.float()
         inputs = self.sigmoid(inputs)
-        inputs = torch.clamp(inputs, min=1e-4, max=1. - 1e-4)
 
         inputs = inputs.view(-1)
         targets = targets.view(-1)
@@ -292,6 +294,8 @@ class SAMMultiLevelAssignLoss(nn.Module):
         # torch.Size([3, 4, 1024, 1024]) torch.Size([3, 1, 1024, 1024])
         batch_size = inputs.shape[0]
 
+        inputs = inputs.float()
+
         total_focal_loss = 0.
         valid_batch_size = 0.
         for per_sample_idx in range(batch_size):
@@ -344,7 +348,6 @@ class SAMMultiLevelAssignLoss(nn.Module):
 
         inputs = inputs.float()
         inputs = self.sigmoid(inputs)
-        inputs = torch.clamp(inputs, min=1e-4, max=1. - 1e-4)
 
         total_dice_loss = 0.
         valid_batch_size = 0.

@@ -92,7 +92,7 @@ class SAMMattingOneLevelLoss(nn.Module):
         # trimap shape:[b,h,w]
         global_pred = global_pred.permute(0, 2, 3, 1).contiguous()
         num_classes = global_pred.shape[3]
-
+        global_pred = global_pred.float()
         global_pred = torch.clamp(global_pred, min=1e-4, max=1. - 1e-4)
 
         convert_trimap = trimap.clone()
@@ -117,7 +117,7 @@ class SAMMattingOneLevelLoss(nn.Module):
         # trimap shape:[b,h,w]
         global_pred = global_pred.permute(0, 2, 3, 1).contiguous()
         num_classes = global_pred.shape[3]
-
+        global_pred = global_pred.float()
         global_pred = torch.clamp(global_pred, min=1e-4, max=1. - 1e-4)
 
         convert_trimap = trimap.clone()
@@ -146,6 +146,7 @@ class SAMMattingOneLevelLoss(nn.Module):
         # alpha shape:[b,1,h,w] -> [b,h,w]
         # trimap shape:[b,h,w]
         local_pred = local_pred.permute(0, 2, 3, 1).contiguous()
+        local_pred = local_pred.float()
         local_pred = torch.clamp(local_pred, min=1e-4, max=1. - 1e-4)
         local_pred = torch.squeeze(local_pred, dim=-1)
 
@@ -165,7 +166,7 @@ class SAMMattingOneLevelLoss(nn.Module):
         # alpha shape:[b,1,h,w]
         # trimap shape:[b,h,w]
         device = local_pred.device
-
+        local_pred = local_pred.float()
         local_pred = torch.clamp(local_pred, min=1e-4, max=1. - 1e-4)
 
         trimap = torch.unsqueeze(trimap, dim=1)
@@ -222,6 +223,7 @@ class SAMMattingOneLevelLoss(nn.Module):
         # fusion_pred shape:[b,1,h,w] -> [b,h,w,1] -> [b,h,w]
         # alpha shape:[b,1,h,w] -> [b,h,w]
         fusion_pred = fusion_pred.permute(0, 2, 3, 1).contiguous()
+        fusion_pred = fusion_pred.float()
         fusion_pred = torch.clamp(fusion_pred, min=1e-4, max=1. - 1e-4)
         fusion_pred = torch.squeeze(fusion_pred, dim=-1)
 
@@ -238,7 +240,7 @@ class SAMMattingOneLevelLoss(nn.Module):
         # fusion_pred shape:[b,1,h,w]
         # alpha shape:[b,1,h,w]
         device = fusion_pred.device
-
+        fusion_pred = fusion_pred.float()
         fusion_pred = torch.clamp(fusion_pred, min=1e-4, max=1. - 1e-4)
 
         gauss_kernel = self.build_gauss_kernel(size=5, sigma=1.0,
@@ -257,6 +259,7 @@ class SAMMattingOneLevelLoss(nn.Module):
         # fg_map shape:[b,3,h,w]
         # bg_map shape:[b,3,h,w]
         # fusion_pred shape:[b,1,h,w]
+        fusion_pred = fusion_pred.float()
         fusion_pred = torch.clamp(fusion_pred, min=1e-4, max=1. - 1e-4)
         fusion_pred = torch.cat([fusion_pred, fusion_pred, fusion_pred], dim=1)
 
@@ -272,6 +275,7 @@ class SAMMattingOneLevelLoss(nn.Module):
     def fusion_iou_predict_loss(self, inputs, targets, iou_predictions):
         # torch.Size([3, 1, 1024, 1024]) torch.Size([3, 1, 1024, 1024])
         batch_size = inputs.shape[0]
+        inputs = inputs.float()
         inputs = torch.clamp(inputs, min=1e-4, max=1. - 1e-4)
 
         inputs = (inputs >= self.mask_threshold).float()
@@ -375,6 +379,7 @@ class SAMMattingMultiLevelLoss(nn.Module):
         # trimap shape:[b,h,w]->[b,1,h,w]
         global_pred = global_pred.permute(0, 1, 3, 4, 2).contiguous()
         num_classes = global_pred.shape[4]
+        global_pred = global_pred.float()
         global_pred = torch.clamp(global_pred, min=1e-4, max=1. - 1e-4)
 
         trimap = torch.unsqueeze(trimap, dim=1)
@@ -399,6 +404,7 @@ class SAMMattingMultiLevelLoss(nn.Module):
         # trimap shape:[b,h,w]->[b,1,h,w]
         global_pred = global_pred.permute(0, 1, 3, 4, 2).contiguous()
         num_classes = global_pred.shape[4]
+        global_pred = global_pred.float()
         global_pred = torch.clamp(global_pred, min=1e-4, max=1. - 1e-4)
 
         trimap = torch.unsqueeze(trimap, dim=1)
@@ -428,6 +434,7 @@ class SAMMattingMultiLevelLoss(nn.Module):
         # alpha shape:[b,1,h,w]
         # trimap shape:[b,h,w]->[b,1,h,w]
         local_pred = local_pred.permute(0, 1, 3, 4, 2).contiguous()
+        local_pred = local_pred.float()
         local_pred = torch.clamp(local_pred, min=1e-4, max=1. - 1e-4)
         local_pred = torch.squeeze(local_pred, dim=-1)
 
@@ -450,6 +457,7 @@ class SAMMattingMultiLevelLoss(nn.Module):
         # trimap shape:[b,h,w] -> [b,1,h,w]
         device = local_pred.device
         local_pred = local_pred.permute(0, 1, 3, 4, 2).contiguous()
+        local_pred = local_pred.float()
         local_pred = torch.clamp(local_pred, min=1e-4, max=1. - 1e-4)
         local_pred = torch.squeeze(local_pred, dim=-1)
 
@@ -510,6 +518,7 @@ class SAMMattingMultiLevelLoss(nn.Module):
         # fusion_pred shape:[b,4,1,h,w] -> [b,4,h,w,1] -> [b,4,h,w]
         # alpha shape:[b,1,h,w]
         fusion_pred = fusion_pred.permute(0, 1, 3, 4, 2).contiguous()
+        fusion_pred = fusion_pred.float()
         fusion_pred = torch.clamp(fusion_pred, min=1e-4, max=1. - 1e-4)
         fusion_pred = torch.squeeze(fusion_pred, dim=-1)
 
@@ -528,6 +537,7 @@ class SAMMattingMultiLevelLoss(nn.Module):
         # alpha shape:[b,1,h,w]
         device = fusion_pred.device
         fusion_pred = fusion_pred.permute(0, 1, 3, 4, 2).contiguous()
+        fusion_pred = fusion_pred.float()
         fusion_pred = torch.clamp(fusion_pred, min=1e-4, max=1. - 1e-4)
         fusion_pred = torch.squeeze(fusion_pred, dim=-1)
 
@@ -549,7 +559,7 @@ class SAMMattingMultiLevelLoss(nn.Module):
         # fg_map shape:[b,3,h,w]
         # bg_map shape:[b,3,h,w]
         # fusion_pred shape:[b,4,1,h,w]
-
+        fusion_pred = fusion_pred.float()
         fusion_pred = torch.clamp(fusion_pred, min=1e-4, max=1. - 1e-4)
         fusion_pred = torch.cat([fusion_pred, fusion_pred, fusion_pred], dim=2)
 
@@ -574,6 +584,7 @@ class SAMMattingMultiLevelLoss(nn.Module):
         # torch.Size([3, 4, 1, 1024, 1024]) torch.Size([3, 1, 1024, 1024])
         batch_size = inputs.shape[0]
         inputs = torch.squeeze(inputs, dim=2)
+        inputs = inputs.float()
         inputs = torch.clamp(inputs, min=1e-4, max=1. - 1e-4)
 
         targets = torch.repeat_interleave(targets, inputs.shape[1], dim=1)
@@ -703,6 +714,7 @@ class SAMMattingMultiLevelIoUMaxLoss(nn.Module):
         # trimap shape:[b,h,w]->[b,h,w]
         global_pred = global_pred.permute(0, 2, 3, 1).contiguous()
         num_classes = global_pred.shape[3]
+        global_pred = global_pred.float()
         global_pred = torch.clamp(global_pred, min=1e-4, max=1. - 1e-4)
 
         convert_trimap = trimap.clone()
@@ -728,6 +740,7 @@ class SAMMattingMultiLevelIoUMaxLoss(nn.Module):
         # trimap shape:[b,h,w]->[b,h,w]
         global_pred = global_pred.permute(0, 2, 3, 1).contiguous()
         num_classes = global_pred.shape[3]
+        global_pred = global_pred.float()
         global_pred = torch.clamp(global_pred, min=1e-4, max=1. - 1e-4)
 
         convert_trimap = trimap.clone()
@@ -754,6 +767,7 @@ class SAMMattingMultiLevelIoUMaxLoss(nn.Module):
         # local_pred shape:[b,1,h,w]
         # alpha shape:[b,1,h,w]
         # trimap shape:[b,h,w]->[b,1,h,w]
+        local_pred = local_pred.float()
         local_pred = torch.clamp(local_pred, min=1e-4, max=1. - 1e-4)
 
         trimap = torch.unsqueeze(trimap, dim=1)
@@ -773,6 +787,7 @@ class SAMMattingMultiLevelIoUMaxLoss(nn.Module):
         # alpha shape:[b,1,h,w]
         # trimap shape:[b,h,w] -> [b,1,h,w]
         device = local_pred.device
+        local_pred = local_pred.float()
         local_pred = torch.clamp(local_pred, min=1e-4, max=1. - 1e-4)
 
         trimap = torch.unsqueeze(trimap, dim=1)
@@ -830,6 +845,7 @@ class SAMMattingMultiLevelIoUMaxLoss(nn.Module):
         # torch.Size([2, 1, 1024, 1024]) torch.Size([2, 1, 1024, 1024])
         # fusion_pred shape:[b,1,h,w]
         # alpha shape:[b,1,h,w]
+        fusion_pred = fusion_pred.float()
         fusion_pred = torch.clamp(fusion_pred, min=1e-4, max=1. - 1e-4)
 
         weighted = torch.ones_like(alpha)
@@ -845,6 +861,7 @@ class SAMMattingMultiLevelIoUMaxLoss(nn.Module):
         # fusion_pred shape:[b,1,h,w]
         # alpha shape:[b,1,h,w]
         device = fusion_pred.device
+        fusion_pred = fusion_pred.float()
         fusion_pred = torch.clamp(fusion_pred, min=1e-4, max=1. - 1e-4)
 
         gauss_kernel = self.build_gauss_kernel(
@@ -865,6 +882,7 @@ class SAMMattingMultiLevelIoUMaxLoss(nn.Module):
         # fg_map shape:[b,3,h,w]
         # bg_map shape:[b,3,h,w]
         # fusion_pred shape:[b,1,h,w]
+        fusion_pred = fusion_pred.float()
         fusion_pred = torch.clamp(fusion_pred, min=1e-4, max=1. - 1e-4)
         fusion_pred = torch.cat([fusion_pred, fusion_pred, fusion_pred], dim=1)
 
@@ -880,6 +898,7 @@ class SAMMattingMultiLevelIoUMaxLoss(nn.Module):
     def fusion_iou_predict_loss(self, inputs, targets, iou_predictions):
         # torch.Size([3, 1, 1024, 1024]) torch.Size([3, 1, 1024, 1024])
         batch_size = inputs.shape[0]
+        inputs = inputs.float()
         inputs = torch.clamp(inputs, min=1e-4, max=1. - 1e-4)
 
         inputs = (inputs >= self.mask_threshold).float()
@@ -990,6 +1009,7 @@ class SAMMattingMultiLevelAssignLoss(nn.Module):
         # trimap shape:[b,h,w]
         global_pred = global_pred.permute(0, 1, 3, 4, 2).contiguous()
         num_classes = global_pred.shape[4]
+        global_pred = global_pred.float()
         global_pred = torch.clamp(global_pred, min=1e-4, max=1. - 1e-4)
 
         trimap = torch.unsqueeze(trimap, dim=1)
@@ -1062,6 +1082,7 @@ class SAMMattingMultiLevelAssignLoss(nn.Module):
         # trimap shape:[b,h,w]
         global_pred = global_pred.permute(0, 1, 3, 4, 2).contiguous()
         num_classes = global_pred.shape[4]
+        global_pred = global_pred.float()
         global_pred = torch.clamp(global_pred, min=1e-4, max=1. - 1e-4)
 
         trimap = torch.unsqueeze(trimap, dim=1)
@@ -1142,6 +1163,7 @@ class SAMMattingMultiLevelAssignLoss(nn.Module):
         # alpha shape:[b,1,h,w]
         # trimap shape:[b,h,w]->[b,1,h,w]
         local_pred = local_pred.permute(0, 1, 3, 4, 2).contiguous()
+        local_pred = local_pred.float()
         local_pred = torch.clamp(local_pred, min=1e-4, max=1. - 1e-4)
         local_pred = torch.squeeze(local_pred, dim=-1)
 
@@ -1210,6 +1232,7 @@ class SAMMattingMultiLevelAssignLoss(nn.Module):
         # trimap shape:[b,h,w]
         device = local_pred.device
         local_pred = local_pred.permute(0, 1, 3, 4, 2).contiguous()
+        local_pred = local_pred.float()
         local_pred = torch.clamp(local_pred, min=1e-4, max=1. - 1e-4)
         local_pred = torch.squeeze(local_pred, dim=-1)
 
@@ -1327,6 +1350,7 @@ class SAMMattingMultiLevelAssignLoss(nn.Module):
         # fusion_pred shape:[b,4,1,h,w] -> [b,4,h,w,1] -> [b,4,h,w]
         # alpha shape:[b,1,h,w]
         fusion_pred = fusion_pred.permute(0, 1, 3, 4, 2).contiguous()
+        fusion_pred = fusion_pred.float()
         fusion_pred = torch.clamp(fusion_pred, min=1e-4, max=1. - 1e-4)
         fusion_pred = torch.squeeze(fusion_pred, dim=-1)
 
@@ -1388,6 +1412,7 @@ class SAMMattingMultiLevelAssignLoss(nn.Module):
         # alpha shape:[b,1,h,w]
         device = fusion_pred.device
         fusion_pred = fusion_pred.permute(0, 1, 3, 4, 2).contiguous()
+        fusion_pred = fusion_pred.float()
         fusion_pred = torch.clamp(fusion_pred, min=1e-4, max=1. - 1e-4)
         fusion_pred = torch.squeeze(fusion_pred, dim=-1)
 
@@ -1459,6 +1484,7 @@ class SAMMattingMultiLevelAssignLoss(nn.Module):
         # fg_map shape:[b,3,h,w]
         # bg_map shape:[b,3,h,w]
         # fusion_pred shape:[b,4,1,h,w]
+        fusion_pred = fusion_pred.float()
         fusion_pred = torch.clamp(fusion_pred, min=1e-4, max=1. - 1e-4)
         fusion_pred = torch.cat([fusion_pred, fusion_pred, fusion_pred], dim=2)
 
@@ -1537,6 +1563,7 @@ class SAMMattingMultiLevelAssignLoss(nn.Module):
         # torch.Size([3, 4, 1, 1024, 1024]) torch.Size([3, 1, 1024, 1024])
         batch_size = inputs.shape[0]
         inputs = torch.squeeze(inputs, dim=2)
+        inputs = inputs.float()
         inputs = torch.clamp(inputs, min=1e-4, max=1. - 1e-4)
 
         targets = torch.repeat_interleave(targets, inputs.shape[1], dim=1)

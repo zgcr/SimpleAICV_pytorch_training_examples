@@ -39,6 +39,10 @@ human_parsing_dataset_path = '/root/autodl-tmp/human_parsing_dataset'
 # interactive_segmentation
 interactive_segmentation_dataset_path = '/root/autodl-tmp/interactive_segmentation_dataset'
 
+# video_human_matting
+video_matting_dataset_path = '/root/autodl-tmp/video_matting_datasets'
+background_video_dataset_path = '/root/autodl-tmp/video_matting_datasets/background_video_dataset'
+
 # diffusion_model
 CelebAHQ_path = '/root/autodl-tmp/CelebA-HQ'
 FFHQ_path = '/root/autodl-tmp/FFHQ'

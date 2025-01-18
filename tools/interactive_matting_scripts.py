@@ -328,6 +328,12 @@ def train_sam_matting(train_loader, model, criterion, optimizer, scheduler,
     amp_type = get_amp_type(model)
 
     local_rank = config.local_rank
+
+    if hasattr(config, 'total_rank'):
+        total_rank = config.total_rank
+    else:
+        total_rank = 0
+
     iters = len(train_loader.dataset) // config.batch_size
     iter_index = 1
 
@@ -497,7 +503,8 @@ def train_sam_matting(train_loader, model, criterion, optimizer, scheduler,
 
             if skip_batch_flag:
                 log_info = f'skip this batch!'
-                logger.info(log_info) if local_rank == 0 else None
+                logger.info(
+                    log_info) if local_rank == 0 and total_rank == 0 else None
                 optimizer.zero_grad()
                 continue
 
@@ -558,7 +565,8 @@ def train_sam_matting(train_loader, model, criterion, optimizer, scheduler,
             log_info = f'train: epoch {epoch:0>4d}, iter [{accumulation_iter_index:0>6d}, {accumulation_iters:0>6d}], lr: {scheduler.current_lr:.6f}, loss: {loss:.4f}, '
             for key, value in loss_value.items():
                 log_info += f'{key}: {value:.4f}, '
-            logger.info(log_info) if local_rank == 0 else None
+            logger.info(
+                log_info) if local_rank == 0 and total_rank == 0 else None
 
         iter_index += 1
 

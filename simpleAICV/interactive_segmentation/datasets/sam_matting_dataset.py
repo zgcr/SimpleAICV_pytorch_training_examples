@@ -244,8 +244,7 @@ class SAMMattingDataset(Dataset):
             resize_w, resize_h = int(image_w * float(factor) +
                                      0.5), int(image_h * float(factor) + 0.5)
             image = cv2.resize(image, (resize_w, resize_h))
-            image_mask = cv2.resize(image_mask, (resize_w, resize_h),
-                                    interpolation=cv2.INTER_NEAREST)
+            image_mask = cv2.resize(image_mask, (resize_w, resize_h))
             image_box = image_box * factor
 
         size = np.array([image.shape[0], image.shape[1]]).astype(np.float32)
@@ -967,8 +966,7 @@ if __name__ == '__main__':
 
         #     per_image_prompt_mask = cv2.resize(
         #         per_image_prompt_mask, (per_image_prompt_mask.shape[1] * 4,
-        #                                 per_image_prompt_mask.shape[0] * 4),
-        #         interpolation=cv2.INTER_NEAREST)
+        #                                 per_image_prompt_mask.shape[0] * 4))
 
         #     positive_prompt_point_color = [
         #         int(np.random.choice(range(256))) for _ in range(3)

@@ -79,8 +79,7 @@ class HumanMattingDataset(Dataset):
             resize_w, resize_h = int(image_w * float(factor) +
                                      0.5), int(image_h * float(factor) + 0.5)
             image = cv2.resize(image, (resize_w, resize_h))
-            mask = cv2.resize(mask, (resize_w, resize_h),
-                              interpolation=cv2.INTER_NEAREST)
+            mask = cv2.resize(mask, (resize_w, resize_h))
 
         size = np.array([image.shape[0], image.shape[1]]).astype(np.float32)
 

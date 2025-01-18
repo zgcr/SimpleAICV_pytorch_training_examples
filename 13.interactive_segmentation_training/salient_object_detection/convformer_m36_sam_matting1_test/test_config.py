@@ -28,7 +28,7 @@ class config:
         })
 
     # load pretrained model or not
-    trained_model_path = '/root/autodl-tmp/pretrained_models/light_sam_matting_train_on_salient_object_detection/convformerm36_light_sam_matting1-loss0.126.pth'
+    trained_model_path = '/root/autodl-tmp/pretrained_models/light_sam_matting_train_on_salient_object_detection/convformerm36_light_sam_matting1-loss0.124.pth'
     load_state_dict(trained_model_path,
                     model,
                     loading_new_input_size_position_encoding_weight=False)

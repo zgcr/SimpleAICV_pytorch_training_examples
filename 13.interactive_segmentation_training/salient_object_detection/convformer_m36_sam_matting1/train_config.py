@@ -49,7 +49,7 @@ class config:
                     model.image_encoder,
                     loading_new_input_size_position_encoding_weight=False)
 
-    trained_model_path = '/root/autodl-tmp/pretrained_models/light_sam_train_on_salient_object_detection_human_matting_dataset/convformerm36_light_sam-loss0.101.pth'
+    trained_model_path = '/root/autodl-tmp/pretrained_models/light_sam_train_on_salient_object_detection_human_matting_dataset/convformerm36_light_sam-loss0.099.pth'
     load_state_dict(trained_model_path,
                     model,
                     loading_new_input_size_position_encoding_weight=False)
