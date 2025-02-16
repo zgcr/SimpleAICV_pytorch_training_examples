@@ -181,12 +181,6 @@ class SAMMattingDataset(Dataset):
                         # bbox format:[x_min, y_min, w, h]
                         per_box = per_annot['bbox']
 
-                        if math.ceil(
-                                per_box[2] * per_box[3]) < 25 or math.ceil(
-                                    per_box[2]) < 5 or math.ceil(
-                                        per_box[3]) < 5:
-                            continue
-
                         x_min = math.ceil(max(per_box[0], 0))
                         y_min = math.ceil(max(per_box[1], 0))
                         x_max = math.ceil(
@@ -196,7 +190,11 @@ class SAMMattingDataset(Dataset):
                         box_w = math.ceil(x_max - x_min)
                         box_h = math.ceil(y_max - y_min)
 
-                        if box_w * box_h < 25 or box_w < 5 or box_h < 5:
+                        if box_w / per_image_w < 0.01 and box_h / per_image_h < 0.01:
+                            continue
+
+                        if (box_w * box_h) / float(
+                                per_image_h * per_image_w) < 0.00005:
                             continue
 
                         if per_annot['area'] / float(
@@ -427,10 +425,10 @@ class SAMMattingDataset(Dataset):
         if h / mask_np_shape[0] <= 0.01 or w / mask_np_shape[1] <= 0.01:
             return properties_bbox.astype(np.float32)
 
-        if h <= 10 or w <= 10:
-            return properties_bbox.astype(np.float32)
-
         noise_x, noise_y = w * self.box_noise_wh_ratio, h * self.box_noise_wh_ratio
+        noise_x, noise_y = min(int(mask_np_shape[1] * 0.02),
+                               noise_x), min(int(mask_np_shape[0] * 0.02),
+                                             noise_y)
 
         if noise_x <= 1 or noise_y <= 1:
             return properties_bbox.astype(np.float32)
@@ -601,224 +599,224 @@ if __name__ == '__main__':
         print('1515', np.max(per_sample['bg_map']),
               np.min(per_sample['bg_map']))
 
-        # temp_dir = f'./temp1'
-        # if not os.path.exists(temp_dir):
-        #     os.makedirs(temp_dir)
+        temp_dir = f'./temp1'
+        if not os.path.exists(temp_dir):
+            os.makedirs(temp_dir)
 
-        # image = np.ascontiguousarray(per_sample['image'], dtype=np.uint8)
-        # image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-        # box = per_sample['box']
-        # mask = per_sample['mask']
+        image = np.ascontiguousarray(per_sample['image'], dtype=np.uint8)
+        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        box = per_sample['box']
+        mask = per_sample['mask']
 
-        # image_for_box = copy.deepcopy(image)
-        # per_image_box = (box[0:4]).astype(np.int32)
-        # box_color = [int(np.random.choice(range(256))) for _ in range(3)]
-        # left_top, right_bottom = (per_image_box[0],
-        #                           per_image_box[1]), (per_image_box[2],
-        #                                               per_image_box[3])
-        # cv2.rectangle(image_for_box,
-        #               left_top,
-        #               right_bottom,
-        #               color=box_color,
-        #               thickness=2,
-        #               lineType=cv2.LINE_AA)
-        # text = 'object_box'
-        # text_size = cv2.getTextSize(text, 0, 0.5, thickness=1)[0]
-        # fill_right_bottom = (max(left_top[0] + text_size[0], right_bottom[0]),
-        #                      left_top[1] - text_size[1] - 3)
-        # cv2.rectangle(image_for_box,
-        #               left_top,
-        #               fill_right_bottom,
-        #               color=box_color,
-        #               thickness=-1,
-        #               lineType=cv2.LINE_AA)
-        # cv2.putText(image_for_box,
-        #             text, (left_top[0], left_top[1] - 2),
-        #             cv2.FONT_HERSHEY_SIMPLEX,
-        #             0.5,
-        #             color=(0, 0, 0),
-        #             thickness=1,
-        #             lineType=cv2.LINE_AA)
+        image_for_box = copy.deepcopy(image)
+        per_image_box = (box[0:4]).astype(np.int32)
+        box_color = [int(np.random.choice(range(256))) for _ in range(3)]
+        left_top, right_bottom = (per_image_box[0],
+                                  per_image_box[1]), (per_image_box[2],
+                                                      per_image_box[3])
+        cv2.rectangle(image_for_box,
+                      left_top,
+                      right_bottom,
+                      color=box_color,
+                      thickness=2,
+                      lineType=cv2.LINE_AA)
+        text = 'object_box'
+        text_size = cv2.getTextSize(text, 0, 0.5, thickness=1)[0]
+        fill_right_bottom = (max(left_top[0] + text_size[0], right_bottom[0]),
+                             left_top[1] - text_size[1] - 3)
+        cv2.rectangle(image_for_box,
+                      left_top,
+                      fill_right_bottom,
+                      color=box_color,
+                      thickness=-1,
+                      lineType=cv2.LINE_AA)
+        cv2.putText(image_for_box,
+                    text, (left_top[0], left_top[1] - 2),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.5,
+                    color=(0, 0, 0),
+                    thickness=1,
+                    lineType=cv2.LINE_AA)
 
-        # image_for_mask = copy.deepcopy(image).astype('uint8')
-        # mask = mask.astype('uint8')
-        # per_image_mask = np.zeros(
-        #     (image_for_mask.shape[0], image_for_mask.shape[1], 3))
-        # per_image_contours = []
-        # mask = np.nonzero(mask == 1.)
-        # mask_color = [int(np.random.choice(range(256))) for _ in range(3)]
-        # per_image_mask[mask[0], mask[1]] = mask_color
-        # new_per_image_mask = np.zeros(
-        #     (image_for_mask.shape[0], image_for_mask.shape[1]))
-        # new_per_image_mask[mask[0], mask[1]] = 255
-        # contours, _ = cv2.findContours(new_per_image_mask.astype('uint8'),
-        #                                cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        # per_image_contours.append(contours)
-        # per_image_mask = per_image_mask.astype('uint8')
-        # per_image_mask = cv2.cvtColor(per_image_mask, cv2.COLOR_RGBA2BGR)
-        # all_classes_mask = np.nonzero(per_image_mask != 0)
-        # if len(all_classes_mask[0]) > 0:
-        #     per_image_mask[all_classes_mask[0],
-        #                    all_classes_mask[1]] = cv2.addWeighted(
-        #                        image_for_mask[all_classes_mask[0],
-        #                                       all_classes_mask[1]], 0.5,
-        #                        per_image_mask[all_classes_mask[0],
-        #                                       all_classes_mask[1]], 1, 0)
-        # no_class_mask = np.nonzero(per_image_mask == 0)
-        # if len(no_class_mask[0]) > 0:
-        #     per_image_mask[no_class_mask[0],
-        #                    no_class_mask[1]] = image_for_mask[no_class_mask[0],
-        #                                                       no_class_mask[1]]
-        # for contours in per_image_contours:
-        #     cv2.drawContours(per_image_mask, contours, -1, (255, 255, 255), 2)
+        image_for_mask = copy.deepcopy(image).astype('uint8')
+        mask = mask.astype('uint8')
+        per_image_mask = np.zeros(
+            (image_for_mask.shape[0], image_for_mask.shape[1], 3))
+        per_image_contours = []
+        mask = np.nonzero(mask == 1.)
+        mask_color = [int(np.random.choice(range(256))) for _ in range(3)]
+        per_image_mask[mask[0], mask[1]] = mask_color
+        new_per_image_mask = np.zeros(
+            (image_for_mask.shape[0], image_for_mask.shape[1]))
+        new_per_image_mask[mask[0], mask[1]] = 255
+        contours, _ = cv2.findContours(new_per_image_mask.astype('uint8'),
+                                       cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        per_image_contours.append(contours)
+        per_image_mask = per_image_mask.astype('uint8')
+        per_image_mask = cv2.cvtColor(per_image_mask, cv2.COLOR_RGBA2BGR)
+        all_classes_mask = np.nonzero(per_image_mask != 0)
+        if len(all_classes_mask[0]) > 0:
+            per_image_mask[all_classes_mask[0],
+                           all_classes_mask[1]] = cv2.addWeighted(
+                               image_for_mask[all_classes_mask[0],
+                                              all_classes_mask[1]], 0.5,
+                               per_image_mask[all_classes_mask[0],
+                                              all_classes_mask[1]], 1, 0)
+        no_class_mask = np.nonzero(per_image_mask == 0)
+        if len(no_class_mask[0]) > 0:
+            per_image_mask[no_class_mask[0],
+                           no_class_mask[1]] = image_for_mask[no_class_mask[0],
+                                                              no_class_mask[1]]
+        for contours in per_image_contours:
+            cv2.drawContours(per_image_mask, contours, -1, (255, 255, 255), 2)
 
-        # cv2.imencode('.jpg', image_for_box)[1].tofile(
-        #     os.path.join(temp_dir, f'idx_{count}_image_with_box.jpg'))
-        # cv2.imencode('.jpg', per_image_mask)[1].tofile(
-        #     os.path.join(temp_dir, f'idx_{count}_image_with_mask.jpg'))
+        cv2.imencode('.jpg', image_for_box)[1].tofile(
+            os.path.join(temp_dir, f'idx_{count}_image_with_box.jpg'))
+        cv2.imencode('.jpg', per_image_mask)[1].tofile(
+            os.path.join(temp_dir, f'idx_{count}_image_with_mask.jpg'))
 
-        # temp_dir = f'./temp1'
-        # if not os.path.exists(temp_dir):
-        #     os.makedirs(temp_dir)
+        temp_dir = f'./temp1'
+        if not os.path.exists(temp_dir):
+            os.makedirs(temp_dir)
 
-        # image = np.ascontiguousarray(per_sample['image'], dtype=np.uint8)
-        # image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-        # positive_prompt_point = per_sample['positive_prompt_point']
-        # negative_prompt_point = per_sample['negative_prompt_point']
-        # prompt_box = per_sample['prompt_box']
-        # prompt_mask = per_sample['prompt_mask']
-        # positive_prompt_point_color = [
-        #     int(np.random.choice(range(256))) for _ in range(3)
-        # ]
-        # negative_prompt_point_color = [
-        #     int(np.random.choice(range(256))) for _ in range(3)
-        # ]
-        # prompt_box_color = [
-        #     int(np.random.choice(range(256))) for _ in range(3)
-        # ]
-        # prompt_mask_color = [
-        #     int(np.random.choice(range(256))) for _ in range(3)
-        # ]
+        image = np.ascontiguousarray(per_sample['image'], dtype=np.uint8)
+        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        positive_prompt_point = per_sample['positive_prompt_point']
+        negative_prompt_point = per_sample['negative_prompt_point']
+        prompt_box = per_sample['prompt_box']
+        prompt_mask = per_sample['prompt_mask']
+        positive_prompt_point_color = [
+            int(np.random.choice(range(256))) for _ in range(3)
+        ]
+        negative_prompt_point_color = [
+            int(np.random.choice(range(256))) for _ in range(3)
+        ]
+        prompt_box_color = [
+            int(np.random.choice(range(256))) for _ in range(3)
+        ]
+        prompt_mask_color = [
+            int(np.random.choice(range(256))) for _ in range(3)
+        ]
 
-        # image_for_prompt_box = copy.deepcopy(image)
+        image_for_prompt_box = copy.deepcopy(image)
 
-        # for per_point in positive_prompt_point:
-        #     cv2.circle(image_for_prompt_box,
-        #                (int(per_point[0]), int(per_point[1])), 10,
-        #                positive_prompt_point_color, -1)
+        for per_point in positive_prompt_point:
+            cv2.circle(image_for_prompt_box,
+                       (int(per_point[0]), int(per_point[1])), 10,
+                       positive_prompt_point_color, -1)
 
-        # for per_point in negative_prompt_point:
-        #     cv2.circle(image_for_prompt_box,
-        #                (int(per_point[0]), int(per_point[1])), 10,
-        #                negative_prompt_point_color, -1)
+        for per_point in negative_prompt_point:
+            cv2.circle(image_for_prompt_box,
+                       (int(per_point[0]), int(per_point[1])), 10,
+                       negative_prompt_point_color, -1)
 
-        # per_image_prompt_box = (prompt_box[0:4]).astype(np.int32)
-        # left_top, right_bottom = (per_image_prompt_box[0],
-        #                           per_image_prompt_box[1]), (
-        #                               per_image_prompt_box[2],
-        #                               per_image_prompt_box[3])
-        # cv2.rectangle(image_for_prompt_box,
-        #               left_top,
-        #               right_bottom,
-        #               color=prompt_box_color,
-        #               thickness=2,
-        #               lineType=cv2.LINE_AA)
-        # text = f'prompt_box'
-        # text_size = cv2.getTextSize(text, 0, 0.5, thickness=1)[0]
-        # fill_right_bottom = (max(left_top[0] + text_size[0], right_bottom[0]),
-        #                      left_top[1] - text_size[1] - 3)
-        # cv2.rectangle(image_for_prompt_box,
-        #               left_top,
-        #               fill_right_bottom,
-        #               color=prompt_box_color,
-        #               thickness=-1,
-        #               lineType=cv2.LINE_AA)
-        # cv2.putText(image_for_prompt_box,
-        #             text, (left_top[0], left_top[1] - 2),
-        #             cv2.FONT_HERSHEY_SIMPLEX,
-        #             0.5,
-        #             color=(0, 0, 0),
-        #             thickness=1,
-        #             lineType=cv2.LINE_AA)
+        per_image_prompt_box = (prompt_box[0:4]).astype(np.int32)
+        left_top, right_bottom = (per_image_prompt_box[0],
+                                  per_image_prompt_box[1]), (
+                                      per_image_prompt_box[2],
+                                      per_image_prompt_box[3])
+        cv2.rectangle(image_for_prompt_box,
+                      left_top,
+                      right_bottom,
+                      color=prompt_box_color,
+                      thickness=2,
+                      lineType=cv2.LINE_AA)
+        text = f'prompt_box'
+        text_size = cv2.getTextSize(text, 0, 0.5, thickness=1)[0]
+        fill_right_bottom = (max(left_top[0] + text_size[0], right_bottom[0]),
+                             left_top[1] - text_size[1] - 3)
+        cv2.rectangle(image_for_prompt_box,
+                      left_top,
+                      fill_right_bottom,
+                      color=prompt_box_color,
+                      thickness=-1,
+                      lineType=cv2.LINE_AA)
+        cv2.putText(image_for_prompt_box,
+                    text, (left_top[0], left_top[1] - 2),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.5,
+                    color=(0, 0, 0),
+                    thickness=1,
+                    lineType=cv2.LINE_AA)
 
-        # image_for_prompt_mask = copy.deepcopy(image).astype('uint8')
+        image_for_prompt_mask = copy.deepcopy(image).astype('uint8')
 
-        # for per_point in positive_prompt_point:
-        #     cv2.circle(image_for_prompt_mask,
-        #                (int(per_point[0]), int(per_point[1])), 10,
-        #                positive_prompt_point_color, -1)
+        for per_point in positive_prompt_point:
+            cv2.circle(image_for_prompt_mask,
+                       (int(per_point[0]), int(per_point[1])), 10,
+                       positive_prompt_point_color, -1)
 
-        # for per_point in negative_prompt_point:
-        #     cv2.circle(image_for_prompt_mask,
-        #                (int(per_point[0]), int(per_point[1])), 10,
-        #                negative_prompt_point_color, -1)
+        for per_point in negative_prompt_point:
+            cv2.circle(image_for_prompt_mask,
+                       (int(per_point[0]), int(per_point[1])), 10,
+                       negative_prompt_point_color, -1)
 
-        # prompt_mask = prompt_mask.astype('uint8')
-        # per_image_prompt_mask = np.zeros((image_for_prompt_mask.shape[0],
-        #                                   image_for_prompt_mask.shape[1], 3))
-        # per_image_prompt_contours = []
-        # prompt_mask = np.nonzero(prompt_mask == 1.)
-        # if len(prompt_mask[0]) > 0:
-        #     per_image_prompt_mask[prompt_mask[0],
-        #                           prompt_mask[1]] = prompt_mask_color
-        # new_per_image_prompt_mask = np.zeros(
-        #     (image_for_prompt_mask.shape[0], image_for_prompt_mask.shape[1]))
-        # new_per_image_prompt_mask[prompt_mask[0], prompt_mask[1]] = 255
-        # contours, _ = cv2.findContours(
-        #     new_per_image_prompt_mask.astype('uint8'), cv2.RETR_TREE,
-        #     cv2.CHAIN_APPROX_SIMPLE)
-        # per_image_prompt_contours.append(contours)
-        # per_image_prompt_mask = per_image_prompt_mask.astype('uint8')
-        # per_image_prompt_mask = cv2.cvtColor(per_image_prompt_mask,
-        #                                      cv2.COLOR_RGBA2BGR)
-        # all_classes_mask = np.nonzero(per_image_prompt_mask != 0)
-        # if len(all_classes_mask[0]) > 0:
-        #     per_image_prompt_mask[
-        #         all_classes_mask[0], all_classes_mask[1]] = cv2.addWeighted(
-        #             image_for_prompt_mask[all_classes_mask[0],
-        #                                   all_classes_mask[1]], 0.5,
-        #             per_image_prompt_mask[all_classes_mask[0],
-        #                                   all_classes_mask[1]], 1, 0)
-        # no_class_mask = np.nonzero(per_image_prompt_mask == 0)
-        # if len(no_class_mask[0]) > 0:
-        #     per_image_prompt_mask[no_class_mask[0],
-        #                           no_class_mask[1]] = image_for_prompt_mask[
-        #                               no_class_mask[0], no_class_mask[1]]
-        # for contours in per_image_prompt_contours:
-        #     cv2.drawContours(per_image_prompt_mask, contours, -1,
-        #                      (255, 255, 255), 2)
+        prompt_mask = prompt_mask.astype('uint8')
+        per_image_prompt_mask = np.zeros((image_for_prompt_mask.shape[0],
+                                          image_for_prompt_mask.shape[1], 3))
+        per_image_prompt_contours = []
+        prompt_mask = np.nonzero(prompt_mask == 1.)
+        if len(prompt_mask[0]) > 0:
+            per_image_prompt_mask[prompt_mask[0],
+                                  prompt_mask[1]] = prompt_mask_color
+        new_per_image_prompt_mask = np.zeros(
+            (image_for_prompt_mask.shape[0], image_for_prompt_mask.shape[1]))
+        new_per_image_prompt_mask[prompt_mask[0], prompt_mask[1]] = 255
+        contours, _ = cv2.findContours(
+            new_per_image_prompt_mask.astype('uint8'), cv2.RETR_TREE,
+            cv2.CHAIN_APPROX_SIMPLE)
+        per_image_prompt_contours.append(contours)
+        per_image_prompt_mask = per_image_prompt_mask.astype('uint8')
+        per_image_prompt_mask = cv2.cvtColor(per_image_prompt_mask,
+                                             cv2.COLOR_RGBA2BGR)
+        all_classes_mask = np.nonzero(per_image_prompt_mask != 0)
+        if len(all_classes_mask[0]) > 0:
+            per_image_prompt_mask[
+                all_classes_mask[0], all_classes_mask[1]] = cv2.addWeighted(
+                    image_for_prompt_mask[all_classes_mask[0],
+                                          all_classes_mask[1]], 0.5,
+                    per_image_prompt_mask[all_classes_mask[0],
+                                          all_classes_mask[1]], 1, 0)
+        no_class_mask = np.nonzero(per_image_prompt_mask == 0)
+        if len(no_class_mask[0]) > 0:
+            per_image_prompt_mask[no_class_mask[0],
+                                  no_class_mask[1]] = image_for_prompt_mask[
+                                      no_class_mask[0], no_class_mask[1]]
+        for contours in per_image_prompt_contours:
+            cv2.drawContours(per_image_prompt_mask, contours, -1,
+                             (255, 255, 255), 2)
 
-        # cv2.imencode('.jpg', image_for_prompt_box)[1].tofile(
-        #     os.path.join(temp_dir,
-        #                  f'idx_{count}_image_with_prompt_point_box.jpg'))
-        # cv2.imencode('.jpg', per_image_prompt_mask)[1].tofile(
-        #     os.path.join(temp_dir, f'idx_{count}_image_with_prompt_mask.jpg'))
+        cv2.imencode('.jpg', image_for_prompt_box)[1].tofile(
+            os.path.join(temp_dir,
+                         f'idx_{count}_image_with_prompt_point_box.jpg'))
+        cv2.imencode('.jpg', per_image_prompt_mask)[1].tofile(
+            os.path.join(temp_dir, f'idx_{count}_image_with_prompt_mask.jpg'))
 
-        # temp_dir = './temp1'
-        # if not os.path.exists(temp_dir):
-        #     os.makedirs(temp_dir)
+        temp_dir = './temp1'
+        if not os.path.exists(temp_dir):
+            os.makedirs(temp_dir)
 
-        # image = np.ascontiguousarray(per_sample['image'], dtype=np.uint8)
-        # image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+        image = np.ascontiguousarray(per_sample['image'], dtype=np.uint8)
+        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
-        # mask = per_sample['mask'] * 255.
+        mask = per_sample['mask'] * 255.
 
-        # trimap = per_sample['trimap']
-        # fg_map = per_sample['fg_map']
-        # fg_map = cv2.cvtColor(fg_map, cv2.COLOR_RGB2BGR)
-        # bg_map = per_sample['bg_map']
-        # bg_map = cv2.cvtColor(bg_map, cv2.COLOR_RGB2BGR)
+        trimap = per_sample['trimap']
+        fg_map = per_sample['fg_map']
+        fg_map = cv2.cvtColor(fg_map, cv2.COLOR_RGB2BGR)
+        bg_map = per_sample['bg_map']
+        bg_map = cv2.cvtColor(bg_map, cv2.COLOR_RGB2BGR)
 
-        # cv2.imencode('.jpg', image)[1].tofile(
-        #     os.path.join(temp_dir, f'idx_{count}_image.jpg'))
-        # cv2.imencode('.jpg', mask)[1].tofile(
-        #     os.path.join(temp_dir, f'idx_{count}_mask.jpg'))
-        # cv2.imencode('.jpg', trimap)[1].tofile(
-        #     os.path.join(temp_dir, f'idx_{count}_trimap.jpg'))
-        # cv2.imencode('.jpg', fg_map)[1].tofile(
-        #     os.path.join(temp_dir, f'idx_{count}_fg_map.jpg'))
-        # cv2.imencode('.jpg', bg_map)[1].tofile(
-        #     os.path.join(temp_dir, f'idx_{count}_bg_map.jpg'))
+        cv2.imencode('.jpg', image)[1].tofile(
+            os.path.join(temp_dir, f'idx_{count}_image.jpg'))
+        cv2.imencode('.jpg', mask)[1].tofile(
+            os.path.join(temp_dir, f'idx_{count}_mask.jpg'))
+        cv2.imencode('.jpg', trimap)[1].tofile(
+            os.path.join(temp_dir, f'idx_{count}_trimap.jpg'))
+        cv2.imencode('.jpg', fg_map)[1].tofile(
+            os.path.join(temp_dir, f'idx_{count}_fg_map.jpg'))
+        cv2.imencode('.jpg', bg_map)[1].tofile(
+            os.path.join(temp_dir, f'idx_{count}_bg_map.jpg'))
 
         if count < 2:
             count += 1

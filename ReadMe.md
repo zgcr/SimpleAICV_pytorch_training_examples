@@ -25,7 +25,7 @@
 
 # 📢 News!
 
-* 2025/01/18: train light segment-anything model with bf16.
+* 2025/02/16: train light segment-anything model with bf16.
 
 # My column
 

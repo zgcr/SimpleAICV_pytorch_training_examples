@@ -475,16 +475,16 @@ You can find all jupyter notebook examples in 13.interactive_segmentation_traini
 | Network                            | dataset   | input size | batch | epochs | loss   |
 | ---------------------------------- | --------- | ---------- | ----- | ------ | ------ |
 | convformer_m36_sam_encoder_distill | sa_1b_11w | 1024x1024  | 48    | 40     | 0.0034 |
-| convformer_m36_sam_distill         | sa_1b_11w | 1024x1024  | 32    | 5      | 0.1051 |
-| convformer_m36_sam                 | sa_1b_11w | 1024x1024  | 64    | 5      | 0.1190 |
+| convformer_m36_sam_distill         | sa_1b_11w | 1024x1024  | 32    | 5      | 0.1010 |
+| convformer_m36_sam                 | sa_1b_11w | 1024x1024  | 64    | 5      | 0.1214 |
 
 You can find more model training details in 13.interactive_segmentation_training/sa_1b/.
 
 ## light sam train on combine salient object detection and human matting dataset
 
-| Network            | dataset         | input size | batch | epochs | loss   | precision | recall | iou    |
-| ------------------ | --------------- | ---------- | ----- | ------ | ------ | --------- | ------ | ------ |
-| convformer_m36_sam | combine dataset | 1024x1024  | 64    | 100    | 0.0994 | 0.9493    | 0.9383 | 0.8978 |
+| Network            | dataset         | input size | batch | epochs | precision | recall | iou    |
+| ------------------ | --------------- | ---------- | ----- | ------ | --------- | ------ | ------ |
+| convformer_m36_sam | combine dataset | 1024x1024  | 64    | 100    | 0.9492    | 0.9508 | 0.9088 |
 
 You can find more model training details in 13.interactive_segmentation_training/salient_object_detection_human_matting_pretrain/.
 
@@ -492,8 +492,8 @@ You can find more model training details in 13.interactive_segmentation_training
 
 | Network                     | dataset         | input size | batch | epochs | iou    | precision | recall | sad    | mae    | mse    | grad   | conn   |
 | --------------------------- | --------------- | ---------- | ----- | ------ | ------ | --------- | ------ | ------ | ------ | ------ | ------ | ------ |
-| convformer_m36_sam_matting1 | combine dataset | 1024x1024  | 48    | 200    | 0.9795 | 0.9866    | 0.9926 | 6.9735 | 0.0093 | 0.0057 | 7.2263 | 6.7487 |
-| convformer_m36_sam_matting2 | combine dataset | 1024x1024  | 32    | 200    | 0.9796 | 0.9868    | 0.9925 | 7.0256 | 0.0093 | 0.0058 | 7.0361 | 6.8018 |
+| convformer_m36_sam_matting1 | combine dataset | 1024x1024  | 48    | 200    | 0.9792 | 0.9854    | 0.9936 | 7.0763 | 0.0094 | 0.0058 | 7.0546 | 6.8581 |
+| convformer_m36_sam_matting2 | combine dataset | 1024x1024  | 32    | 200    | 0.9792 | 0.9860    | 0.9925 | 7.2788 | 0.0096 | 0.0061 | 6.9827 | 7.0555 |
 
 You can find more model training details in 13.interactive_segmentation_training/human_matting/.
 
@@ -501,8 +501,8 @@ You can find more model training details in 13.interactive_segmentation_training
 
 | Network                     | dataset         | input size | batch | epochs | iou    | precision | recall | sad     | mae    | mse    | grad    | conn    |
 | --------------------------- | --------------- | ---------- | ----- | ------ | ------ | --------- | ------ | ------- | ------ | ------ | ------- | ------- |
-| convformer_m36_sam_matting1 | combine dataset | 1024x1024  | 48    | 200    | 0.8587 | 0.9179    | 0.9295 | 23.6769 | 0.0324 | 0.0313 | 41.2617 | 23.6972 |
-| convformer_m36_sam_matting2 | combine dataset | 1024x1024  | 32    | 200    | 0.8567 | 0.9155    | 0.9297 | 23.9945 | 0.0329 | 0.0318 | 41.3848 | 24.0135 |
+| convformer_m36_sam_matting1 | combine dataset | 1024x1024  | 48    | 200    | 0.8647 | 0.9188    | 0.9348 | 22.2654 | 0.0304 | 0.0294 | 40.5077 | 22.2860 |
+| convformer_m36_sam_matting2 | combine dataset | 1024x1024  | 32    | 200    | 0.8690 | 0.9244    | 0.9343 | 21.1366 | 0.0289 | 0.0279 | 39.2742 | 21.1572 |
 
 You can find more model training details in 13.interactive_segmentation_training/salient_object_detection/.
 

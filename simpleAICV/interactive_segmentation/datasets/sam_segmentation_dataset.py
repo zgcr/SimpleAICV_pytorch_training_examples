@@ -112,10 +112,6 @@ class SAMSegmentationDataset(Dataset):
                     # bbox format:[x_min, y_min, w, h]
                     per_box = per_annot['bbox']
 
-                    if math.ceil(per_box[2] * per_box[3]) < 25 or math.ceil(
-                            per_box[2]) < 5 or math.ceil(per_box[3]) < 5:
-                        continue
-
                     x_min = math.ceil(max(per_box[0], 0))
                     y_min = math.ceil(max(per_box[1], 0))
                     x_max = math.ceil(min(per_box[0] + per_box[2],
@@ -125,7 +121,11 @@ class SAMSegmentationDataset(Dataset):
                     box_w = math.ceil(x_max - x_min)
                     box_h = math.ceil(y_max - y_min)
 
-                    if box_w * box_h < 25 or box_w < 5 or box_h < 5:
+                    if box_w / per_image_w < 0.01 and box_h / per_image_h < 0.01:
+                        continue
+
+                    if (box_w * box_h) / float(
+                            per_image_h * per_image_w) < 0.00005:
                         continue
 
                     if per_annot['area'] / float(
@@ -276,10 +276,10 @@ class SAMSegmentationDataset(Dataset):
         if h / mask_np_shape[0] <= 0.01 or w / mask_np_shape[1] <= 0.01:
             return properties_bbox.astype(np.float32)
 
-        if h <= 10 or w <= 10:
-            return properties_bbox.astype(np.float32)
-
         noise_x, noise_y = w * self.box_noise_wh_ratio, h * self.box_noise_wh_ratio
+        noise_x, noise_y = min(int(mask_np_shape[1] * 0.02),
+                               noise_x), min(int(mask_np_shape[0] * 0.02),
+                                             noise_y)
 
         if noise_x <= 1 or noise_y <= 1:
             return properties_bbox.astype(np.float32)
@@ -364,14 +364,14 @@ if __name__ == '__main__':
     samdataset = SAMSegmentationDataset(
         interactive_segmentation_dataset_path,
         set_name=[
-            'DIS5K_seg',
-            'HRS10K_seg',
-            'HRSOD_seg',
-            'UHRSD_seg',
-            'Deep_Automatic_Portrait_Matting_seg',
-            'RealWorldPortrait636_seg',
-            'P3M10K_seg',
-            # 'sa_000020',
+            # 'DIS5K_seg',
+            # 'HRS10K_seg',
+            # 'HRSOD_seg',
+            # 'UHRSD_seg',
+            # 'Deep_Automatic_Portrait_Matting_seg',
+            # 'RealWorldPortrait636_seg',
+            # 'P3M10K_seg',
+            'sa_000020',
             # 'sa_000021',
             # 'sa_000022',
             # 'sa_000023',
@@ -384,14 +384,14 @@ if __name__ == '__main__':
         ],
         set_type='train',
         per_set_image_choose_max_num={
-            'DIS5K_seg': 10000000,
-            'HRS10K_seg': 10000000,
-            'HRSOD_seg': 10000000,
-            'UHRSD_seg': 10000000,
-            'Deep_Automatic_Portrait_Matting_seg': 10000000,
-            'RealWorldPortrait636_seg': 10000000,
-            'P3M10K_seg': 10000000,
-            # 'sa_000020': 1000000,
+            # 'DIS5K_seg': 10000000,
+            # 'HRS10K_seg': 10000000,
+            # 'HRSOD_seg': 10000000,
+            # 'UHRSD_seg': 10000000,
+            # 'Deep_Automatic_Portrait_Matting_seg': 10000000,
+            # 'RealWorldPortrait636_seg': 10000000,
+            # 'P3M10K_seg': 10000000,
+            'sa_000020': 1000000,
             # 'sa_000021': 1000000,
             # 'sa_000022': 1000000,
             # 'sa_000023': 1000000,

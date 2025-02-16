@@ -64,7 +64,7 @@ class config:
     assert 0.0 <= train_prompt_probs['prompt_box'] <= 1.0
     assert 0.0 <= train_prompt_probs['prompt_mask'] <= 1.0
 
-    train_criterion = losses.__dict__['SAMMultiLevelAssignLoss'](
+    train_criterion = losses.__dict__['SAMMultiLevelLoss'](
         **{
             'alpha': 0.8,
             'gamma': 2,
@@ -73,37 +73,34 @@ class config:
             'dice_loss_weight': 1,
             'iou_predict_loss_weight': 1,
             'mask_threshold': mask_threshold,
-            'idx_nums': 4,
-            'area_ranges': [[0.04, 0.64], [0.0, 0.04], [0.01, 0.25],
-                            [0.16, 1.0]],
         })
 
     train_dataset = SAMSegmentationDataset(
         interactive_segmentation_dataset_path,
         set_name=[
-            'sa_000020',
-            'sa_000021',
-            'sa_000022',
-            'sa_000023',
-            'sa_000024',
-            'sa_000025',
-            'sa_000026',
-            'sa_000027',
-            'sa_000028',
-            'sa_000029',
+            'sa_000020_filter_duplicated',
+            'sa_000021_filter_duplicated',
+            'sa_000022_filter_duplicated',
+            'sa_000023_filter_duplicated',
+            'sa_000024_filter_duplicated',
+            'sa_000025_filter_duplicated',
+            'sa_000026_filter_duplicated',
+            'sa_000027_filter_duplicated',
+            'sa_000028_filter_duplicated',
+            'sa_000029_filter_duplicated',
         ],
         set_type='train',
         per_set_image_choose_max_num={
-            'sa_000020': 1000000,
-            'sa_000021': 1000000,
-            'sa_000022': 1000000,
-            'sa_000023': 1000000,
-            'sa_000024': 1000000,
-            'sa_000025': 1000000,
-            'sa_000026': 1000000,
-            'sa_000027': 1000000,
-            'sa_000028': 1000000,
-            'sa_000029': 1000000,
+            'sa_000020_filter_duplicated': 1000000,
+            'sa_000021_filter_duplicated': 1000000,
+            'sa_000022_filter_duplicated': 1000000,
+            'sa_000023_filter_duplicated': 1000000,
+            'sa_000024_filter_duplicated': 1000000,
+            'sa_000025_filter_duplicated': 1000000,
+            'sa_000026_filter_duplicated': 1000000,
+            'sa_000027_filter_duplicated': 1000000,
+            'sa_000028_filter_duplicated': 1000000,
+            'sa_000029_filter_duplicated': 1000000,
         },
         per_image_mask_chosse_max_num=16,
         positive_points_num=9,
