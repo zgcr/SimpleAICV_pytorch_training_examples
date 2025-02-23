@@ -1,1 +1,1 @@
-CUDA_VISIBLE_DEVICES=1 python -m torch.distributed.run --nproc_per_node=1 --master_addr 127.0.1.2 --master_port 10002 ../../../tools/test_interactive_matting_model.py --work-dir ./
+CUDA_VISIBLE_DEVICES=0 python -m torch.distributed.run --nproc_per_node=1 --master_addr 127.0.1.2 --master_port 10002 ../../../tools/test_interactive_matting_model.py --work-dir ./

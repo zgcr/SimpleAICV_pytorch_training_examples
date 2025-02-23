@@ -112,10 +112,10 @@ class LIGHTSAMMATTING(nn.Module):
             mask_out_idxs=mask_out_idxs)
 
         batch_masks_global_preds, batch_masks_local_preds, batch_masks_fused_preds = [], [], []
-        for idx in mask_out_idxs:
+        for idx, mask_out_idx in enumerate(mask_out_idxs):
             batch_masks_per_layer = masks[:, idx:idx + 1, :, :]
             mask_global_pred_per_layer, mask_local_pred_per_layer = self.fusion_pred_list[
-                idx](batch_masks_per_layer, feat3, feat1)
+                mask_out_idx](batch_masks_per_layer, feat3, feat1)
             mask_fused_pred_per_layer = self.collaborative_matting(
                 mask_global_pred_per_layer, mask_local_pred_per_layer)
 
@@ -128,11 +128,7 @@ class LIGHTSAMMATTING(nn.Module):
         batch_masks_local_preds = torch.stack(batch_masks_local_preds, dim=1)
         batch_masks_fused_preds = torch.stack(batch_masks_fused_preds, dim=1)
 
-        batch_masks_global_preds = batch_masks_global_preds[:, mask_out_idxs]
-        batch_masks_local_preds = batch_masks_local_preds[:, mask_out_idxs]
-        batch_masks_fused_preds = batch_masks_fused_preds[:, mask_out_idxs]
-        batch_iou_preds = iou_predictions[:, mask_out_idxs]
-        batch_iou_preds = batch_iou_preds.float()
+        batch_iou_preds = iou_predictions.float()
         batch_iou_preds = self.sigmoid(batch_iou_preds)
 
         return batch_masks_global_preds, batch_masks_local_preds, batch_masks_fused_preds, batch_iou_preds
