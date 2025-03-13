@@ -16,5 +16,5 @@ video_human_matting_scripts.py
 train_video_human_matting_model.py
 21.stable_diffusion_model_inference
 stable_diffusion_model
-
+contrastive_language_image_pretraining
 
