@@ -1,5 +1,17 @@
+<div align="center">
+      <h1>SimpleAICV</h1>
+</div>
+
+<div align="center">
+    <p align="center">
+          <em> Open-source / Simple / Lightweight / Easy-to-use / Extensible </em>
+    </p>
+</div>
+
+<hr>
+
 - [📢 News!](#-news)
-- [My column](#my-column)
+- [Simplicity](#simplicity)
 - [Introduction](#introduction)
 - [All task training results](#all-task-training-results)
 - [Environments](#environments)
@@ -20,6 +32,7 @@
 - [How to train or test a model](#how-to-train-or-test-a-model)
 - [How to use gradio demo](#how-to-use-gradio-demo)
 - [Reference](#reference)
+- [My column](#my-column)
 - [Citation](#citation)
 
 
@@ -27,9 +40,8 @@
 
 * 2025/02/16: train light segment-anything model with bf16.
 
-# My column
-
-https://www.zhihu.com/column/c_1692623656205897728
+# Simplicity
+This repository maintains a lightweight codebase.It requiring only Python and PyTorch as core dependencies(no third-party frameworks like MMCV).
 
 # Introduction
 
@@ -63,46 +75,34 @@ https://www.zhihu.com/column/c_1692623656205897728
 
 **1、This repository only supports running on ubuntu(verison>=22.04 LTS).**
 
-**2、This repository only support one node one gpu/one node multi gpus mode with pytorch DDP training.**
+**2、Most Experiments only support Single-Node Single-GPU training/Single-Node Multi-GPU DDP training, but segment-anything also support Multi-Node Multi-GPU DDP training(Requires RDMA/IB network support).**
 
-**3、Please make sure your Python environment version>=3.9 and pytorch version>=2.0.**
+**3、Please make sure your Python version>=3.9 and pytorch version>=2.0.**
 
-**4、If you want to use torch.complie() function,using pytorch2.0/2.2/2.3,don't use pytorch2.1.**
-
-**Use pip or conda to install those Packages in your Python environment:**
-
+**4、Create a conda environment:**
 ```
-torch
-torchvision
-pillow
-numpy
-Cython
-pycocotools
-opencv-python
-scipy
-einops
-scikit-image
-pyclipper
-shapely
-imagesize
-nltk
-tqdm
-yapf
-onnx
-onnxruntime
-onnxsim
-thop==0.1.1.post2209072238
-gradio==3.50.0
-transformers==4.41.2
-open-clip-torch==2.24.0
+conda create -n simpleAICV python=3.12
 ```
 
-**If you want to use xformers,install xformers Packge from offical github repository:**
+**5、Using commands to install PyTorch:**
+```
+conda install pytorch==2.3.0 torchvision==0.18.0 torchaudio==2.3.0 pytorch-cuda=12.1 -c pytorch -c nvidia
+```
+To install a different PyTorch version, select command from here:
+
+https://pytorch.org/get-started/previous-versions/
+
+**6、Install other Packages:**
+```
+pip install -r requirements.txt
+```
+
+**7、(optional) If you want to use xformers,install xformers Packge from offical github repository:**
 
 https://github.com/facebookresearch/xformers
 
 
-**If you want to use dino-detr model,install MultiScaleDeformableAttention Packge in your Python environment:**
+**8、(optional) If you want to use dino-detr model,install MultiScaleDeformableAttention Packge in your Python environment:**
 
 cd to simpleAICV/detection/compile_multiscale_deformable_attention,then run commands:
 ```
@@ -358,6 +358,10 @@ python gradio_detect_single_image.py
 https://github.com/facebookresearch/segment-anything
 https://github.com/facebookresearch/sam2
 ```
+
+# My column
+
+https://www.zhihu.com/column/c_1692623656205897728
 
 # Citation
 

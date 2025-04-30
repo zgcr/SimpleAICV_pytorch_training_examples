@@ -10,10 +10,6 @@ log
 .ipynb_checkpoints
 flagged
 pretrained_models
-14.video_human_matting_training
-video_human_matting
-video_human_matting_scripts.py
-train_video_human_matting_model.py
 21.stable_diffusion_model_inference
 stable_diffusion_model
 contrastive_language_image_pretraining
