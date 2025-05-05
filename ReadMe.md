@@ -63,7 +63,6 @@ This repository maintains a lightweight codebase.It requiring only Python and Py
 | Face parsing task             | FaceSynthetics<br>CelebAMask-HQ                                        | pfan-face-parsing     <br>sapiens_face_parsing                                     |
 | Human parsing task            | LIP<br>CIHP                                                            | pfan-human-parsing <br>sapiens_human_parsing                                       |
 | Interactive segmentation task | combine dataset                                                        | SAM(segment-anything)<br>light_sam<br>light_sam_matting |
-| Diffusion model task          | CelebA-HQ<br>CIFAR10<br>CIFAR100<br>FFHQ                               | DDPM<br>DDIM                                                                       |
 
 # All task training results
 
@@ -132,7 +131,6 @@ https://huggingface.co/zgcr654321/10.face_detection_training/tree/main
 https://huggingface.co/zgcr654321/11.face_parsing_training/tree/main
 https://huggingface.co/zgcr654321/12.human_parsing_training/tree/main
 https://huggingface.co/zgcr654321/13.interactive_segmentation_training/tree/main
-https://huggingface.co/zgcr654321/20.diffusion_model_training/tree/main
 https://huggingface.co/zgcr654321/pretrained_models/tree/main
 
 # Baidu-Netdisk
@@ -370,6 +368,6 @@ If you find my work useful in your research, please consider citing:
 @inproceedings{zgcr,
  title={SimpleAICV-pytorch-training-examples},
  author={zgcr},
- year={2020-2024}
+ year={2020-2025}
 }
 ```

@@ -35,11 +35,6 @@
   - [light sam train on combine salient object detection and human matting dataset](#light-sam-train-on-combine-salient-object-detection-and-human-matting-dataset)
   - [light sam matting train on combine human matting dataset](#light-sam-matting-train-on-combine-human-matting-dataset)
   - [light sam matting train on combine salient object detection dataset](#light-sam-matting-train-on-combine-salient-object-detection-dataset)
-- [Diffusion model task results](#diffusion-model-task-results)
-  - [All diffusion model with different sampling methods on CelebA-HQ](#all-diffusion-model-with-different-sampling-methods-on-celeba-hq)
-  - [All diffusion model with different sampling methods on CIFAR10](#all-diffusion-model-with-different-sampling-methods-on-cifar10)
-  - [All diffusion model with different sampling methods on CIFAR100](#all-diffusion-model-with-different-sampling-methods-on-cifar100)
-  - [All diffusion model with different sampling methods on FFHQ](#all-diffusion-model-with-different-sampling-methods-on-ffhq)
 
 
 # Image classification task results
@@ -505,59 +500,3 @@ You can find more model training details in 13.interactive_segmentation_training
 | convformer_m36_sam_matting2 | combine dataset | 1024x1024  | 32    | 200    | 0.8690 | 0.9244    | 0.9343 | 21.1366 | 0.0289 | 0.0279 | 39.2742 | 21.1572 |
 
 You can find more model training details in 13.interactive_segmentation_training/salient_object_detection/.
-
-# Diffusion model task results
-
-**Denoising Diffusion Probabilistic Models**
-
-Paper:https://arxiv.org/abs/2006.11239
-
-**Denoising Diffusion Implicit Models**
-
-Paper:https://arxiv.org/abs/2010.02502
-
-## All diffusion model with different sampling methods on CelebA-HQ
-
-Trained diffusion unet on CelebA-HQ dataset(DDPM method).Test image num=28000.
-
-| sampling method | input size | steps | condition label(train/test) | FID    | IS score(mean/std) |
-| --------------- | ---------- | ----- | --------------------------- | ------ | ------------------ |
-| DDPM            | 64x64      | 1000  | False/False                 | 6.409  | 2.486/0.082        |
-| DDIM            | 64x64      | 50    | False/False                 | 14.623 | 2.622/0.073        |
-
-You can find more model training details in 20.diffusion_model_training/celebahq/.
-
-## All diffusion model with different sampling methods on CIFAR10
-
-Trained diffusion unet on CIFAR10 dataset(DDPM method).Test image num=50000.
-
-| sampling method | input size | steps | condition label(train/test) | FID    | IS score(mean/std) |
-| --------------- | ---------- | ----- | --------------------------- | ------ | ------------------ |
-| DDPM            | 32x32      | 1000  | False/False                 | 10.302 | 8.213/0.257        |
-| DDIM            | 32x32      | 50    | False/False                 | 12.440 | 8.318/0.408        |
-| DDPM            | 32x32      | 1000  | True/True                   | 5.049  | 8.654/0.112        |
-
-You can find more model training details in 20.diffusion_model_training/cifar10/.
-
-## All diffusion model with different sampling methods on CIFAR100
-
-Trained diffusion unet on CIFAR100 dataset(DDPM method).Test image num=50000.
-
-| sampling method | input size | steps | condition label(train/test) | FID    | IS score(mean/std) |
-| --------------- | ---------- | ----- | --------------------------- | ------ | ------------------ |
-| DDPM            | 32x32      | 1000  | False/False                 | 16.298 | 8.398/0.281        |
-| DDIM            | 32x32      | 50    | False/False                 | 21.402 | 8.344/0.192        |
-| DDPM            | 32x32      | 1000  | True/True                   | 6.953  | 10.344/0.150       |
-
-You can find more model training details in 20.diffusion_model_training/cifar100/.
-
-## All diffusion model with different sampling methods on FFHQ
-
-Trained diffusion unet on FFHQ dataset(DDPM method).Test image num=60000.
-
-| sampling method | input size | steps | condition label(train/test) | FID    | IS score(mean/std) |
-| --------------- | ---------- | ----- | --------------------------- | ------ | ------------------ |
-| DDPM            | 64x64      | 1000  | False/False                 | 7.758  | 3.283/0.124        |
-| DDIM            | 64x64      | 50    | False/False                 | 11.328 | 3.417/0.071        |
-
-You can find more model training details in 20.diffusion_model_training/ffhq/.

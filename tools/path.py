@@ -5,6 +5,8 @@ CIFAR10_path = '/root/autodl-tmp/CIFAR10'
 CIFAR100_path = '/root/autodl-tmp/CIFAR100'
 ILSVRC2012_path = '/root/autodl-tmp/ILSVRC2012'
 ImageNet21K_path = '/root/autodl-tmp/ImageNet21K'
+CelebAHQ_path = '/root/autodl-tmp/CelebA-HQ'
+FFHQ_path = '/root/autodl-tmp/FFHQ'
 
 # detection
 COCO2017_path = '/root/autodl-tmp/COCO2017'
@@ -38,7 +40,3 @@ human_parsing_dataset_path = '/root/autodl-tmp/human_parsing_dataset'
 
 # interactive_segmentation
 interactive_segmentation_dataset_path = '/root/autodl-tmp/interactive_segmentation_dataset'
-
-# diffusion_model
-CelebAHQ_path = '/root/autodl-tmp/CelebA-HQ'
-FFHQ_path = '/root/autodl-tmp/FFHQ'
