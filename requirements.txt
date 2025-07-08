@@ -17,5 +17,5 @@ onnxruntime
 onnxsim
 thop==0.1.1.post2209072238
 gradio==3.50.0
-transformers==4.41.2
+transformers==4.52.1
 open-clip-torch==2.24.0
