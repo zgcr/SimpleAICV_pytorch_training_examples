@@ -117,16 +117,16 @@ If you only want to download all my pretrained models(model.state_dict()),you ca
 
 ```
 # huggingface
-https://huggingface.co/zgcr654321/0.classification_training/tree/main
-https://huggingface.co/zgcr654321/1.distillation_training/tree/main
-https://huggingface.co/zgcr654321/2.masked_image_modeling_training/tree/main
-https://huggingface.co/zgcr654321/3.detection_training/tree/main
-https://huggingface.co/zgcr654321/4.semantic_segmentation_training/tree/main
-https://huggingface.co/zgcr654321/5.instance_segmentation_training/tree/main
-https://huggingface.co/zgcr654321/6.salient_object_detection_training/tree/main
-https://huggingface.co/zgcr654321/7.human_matting_training/tree/main
-https://huggingface.co/zgcr654321/8.ocr_text_detection_training/tree/main
-https://huggingface.co/zgcr654321/9.ocr_text_recognition_training/tree/main
+https://huggingface.co/zgcr654321/00.classification_training/tree/main
+https://huggingface.co/zgcr654321/01.distillation_training/tree/main
+https://huggingface.co/zgcr654321/02.masked_image_modeling_training/tree/main
+https://huggingface.co/zgcr654321/03.detection_training/tree/main
+https://huggingface.co/zgcr654321/04.semantic_segmentation_training/tree/main
+https://huggingface.co/zgcr654321/05.instance_segmentation_training/tree/main
+https://huggingface.co/zgcr654321/06.salient_object_detection_training/tree/main
+https://huggingface.co/zgcr654321/07.human_matting_training/tree/main
+https://huggingface.co/zgcr654321/08.ocr_text_detection_training/tree/main
+https://huggingface.co/zgcr654321/09.ocr_text_recognition_training/tree/main
 https://huggingface.co/zgcr654321/10.face_detection_training/tree/main
 https://huggingface.co/zgcr654321/11.face_parsing_training/tree/main
 https://huggingface.co/zgcr654321/12.human_parsing_training/tree/main
