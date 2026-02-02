@@ -35,9 +35,12 @@
 
 # 📢 News!
 
-* 2026/02/02: update dinov3 backbone implementation.
-* 2026/02/02: update SAM(segment_anything)/SAM_Matting/SAM2(segment_anything2)/SAM2_Matting model training pipeline and jupyter example.
-* 2026/02/02: update universal_segmentation/universal_matting model training pipeline and testing pipeline.
+* 2026/02/02: update dinov3 backbone implementation in SimpleAICV/detection/models/backbones.
+* 2026/02/02: update SAM(segment_anything)/SAM_Matting model training pipeline and jupyter example in 13.interactive_segmentation_training.
+* 2026/02/02: update SAM2(segment_anything2)/SAM2_Matting model training pipeline and jupyter example in 14.video_interactive_segmentation_training.
+* 2026/02/02: update universal_segmentation/universal_matting model training pipeline in 16.universal_segmentation_training.
+* 2026/02/02: updata all task gradio demo in gradio_demo.
+* 2026/02/02: updata all task inference demo in inference_demo.
 
 # Simplicity
 
@@ -72,24 +75,22 @@ This repository maintains a lightweight codebase.It requiring only Python and Py
 
 # Training GPU server
 
-1、1-8 RTX 4090D(24GB) GPU server, Python3.12, Pytorch2.5.1, CUDA12.4, Ubuntu22.04(for most experiments).
+1、1-8 RTX 4090D(24GB) GPUs, Python3.12, Pytorch2.5.1, CUDA12.4, Ubuntu22.04(for most experiments).
 
-2、8 RTX PRO 6000(96GB) GPU server, Python3.12, Pytorch2.8.0, CUDA12.8, Ubuntu22.04(for 13.interactive_segmentation_training/14.video_interactive_segmentation_training/16.universal_segmentation_training).
+2、8 RTX PRO 6000(96GB) GPUs, Python3.12, Pytorch2.8.0, CUDA12.8, Ubuntu22.04(for 13.interactive_segmentation_training/14.video_interactive_segmentation_training/16.universal_segmentation_training).
 
 # Environments
 
-**1、Support OS: ubuntu(verison>=22.04 LTS).**
+**1、Python and Pytorch Supported Version: Python>=3.12, Pytorch>=2.5.1.**
 
-**2、Python and Pytorch Supported Version: Python>=3.12, Pytorch>=2.5.1.**
+**2、Most Experiments only support Single-Node Single-GPU training/Single-Node Multi-GPU DDP training, but 13.interactive_segmentation_training/14.video_interactive_segmentation_training also support Multi-Node Multi-GPU DDP training(Requires InfiniBand/RoCE).**
 
-**3、Most Experiments only support Single-Node Single-GPU training/Single-Node Multi-GPU DDP training, but 13.interactive_segmentation_training/14.video_interactive_segmentation_training also support Multi-Node Multi-GPU DDP training(Requires InfiniBand/RoCE).**
-
-**4、Create a conda environment:**
+**3、Create a conda environment:**
 ```
 conda create -n SimpleAICV python=3.12
 ```
 
-**5、Install PyTorch:**
+**4、Install PyTorch:**
 ```
 conda install pytorch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 pytorch-cuda=12.4 -c pytorch -c nvidia
 ```
@@ -97,7 +98,7 @@ To install a different PyTorch version, find command from here:
 
 https://pytorch.org/get-started/previous-versions/
 
-**6、Install other Packages:**
+**5、Install other Packages:**
 ```
 pip install -r requirements.txt
 ```
