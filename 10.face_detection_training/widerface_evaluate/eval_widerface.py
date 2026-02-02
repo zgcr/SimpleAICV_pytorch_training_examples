@@ -263,7 +263,7 @@ def main():
 
     set_seed(config.seed)
 
-    os.makedirs(log_dir) if not os.path.exists(log_dir) else None
+    os.makedirs(log_dir, exist_ok=True)
 
     logger = get_logger('test', log_dir)
 

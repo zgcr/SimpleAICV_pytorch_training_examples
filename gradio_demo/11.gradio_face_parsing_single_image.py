@@ -2,49 +2,43 @@ import os
 import sys
 import warnings
 
-FILE_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(FILE_DIR)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
 warnings.filterwarnings('ignore')
 
 import cv2
 import gradio as gr
-import random
 import numpy as np
 from PIL import Image
 
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
-from simpleAICV.face_parsing import models
-from simpleAICV.face_parsing.common import load_state_dict
+from SimpleAICV.face_parsing import models
+from SimpleAICV.face_parsing.common import load_state_dict
+from SimpleAICV.face_parsing.datasets.face_parsing_dataset import CelebAMask_HQ_19_CLASSES, CLASSES_19_COLOR
+from tools.utils import set_seed
 
-from simpleAICV.face_parsing.datasets.face_parsing_dataset import CelebAMask_HQ_19_CLASSES, CLASSES_19_COLOR
 
-seed = 0
-model_name = 'convformerm36_pfan_face_parsing'
-# CelebAMask_HQ class
-model_num_classes = 19
-classes_name = CelebAMask_HQ_19_CLASSES
-classes_color = CLASSES_19_COLOR
+class config:
+    network = 'dinov3_vit_base_patch16_pfan_face_parsing'
+    # 包含背景类
+    num_classes = 19
+    input_image_size = 512
 
-trained_model_path = '/root/autodl-tmp/pretrained_models/face_parsing_train_on_CelebAMask-HQ/convformerm36_pfan_face_parsing-metric72.613.pth'
-input_image_size = 512
+    model = models.__dict__[network](**{
+        'num_classes': num_classes,
+    })
 
-os.environ['PYTHONHASHSEED'] = str(seed)
-random.seed(seed)
-np.random.seed(seed)
-torch.manual_seed(seed)
-
-assert model_name in models.__dict__.keys(), 'Unsupported model!'
-model = models.__dict__[model_name](**{
-    'num_classes': model_num_classes,
-})
-if trained_model_path:
+    # load pretrained model or not
+    trained_model_path = '/root/autodl-tmp/pretrained_models/face_parsing_train_on_CelebAMask-HQ/dinov3_vit_base_patch16_pfan_face_parsing-metric75.351.pth'
     load_state_dict(trained_model_path, model)
-else:
-    print('No pretrained model load!')
-model.eval()
+
+    seed = 0
+
+    classes_name = CelebAMask_HQ_19_CLASSES
+    classes_color = CLASSES_19_COLOR
 
 
 def preprocess_image(image, resize):
@@ -54,15 +48,18 @@ def preprocess_image(image, resize):
     origin_image = image.copy()
     h, w, _ = origin_image.shape
 
-    scale_factor = min(resize / max(h, w), resize / min(h, w))
-    resize_w, resize_h = int(round(w * scale_factor)), int(
-        round(h * scale_factor))
+    factor = resize / max(h, w)
 
+    resize_h, resize_w = int(round(h * factor)), int(round(w * factor))
     image = cv2.resize(image, (resize_w, resize_h))
 
-    padded_img = np.zeros((resize, resize, 3), dtype=np.float32)
+    pad_w = 0 if resize_w % 32 == 0 else 32 - resize_w % 32
+    pad_h = 0 if resize_h % 32 == 0 else 32 - resize_h % 32
+
+    padded_img = np.zeros((resize_h + pad_h, resize_w + pad_w, 3),
+                          dtype=np.float32)
     padded_img[:resize_h, :resize_w, :] = image
-    scale = scale_factor
+    scale = factor
 
     # normalize
     padded_img = padded_img.astype(np.float32) / 255.
@@ -70,18 +67,24 @@ def preprocess_image(image, resize):
     return origin_image, padded_img, scale, [resize_h, resize_w]
 
 
-@torch.no_grad
+@torch.no_grad()
 def predict(image):
+    set_seed(config.seed)
+
     origin_image, resized_img, scale, [resize_h, resize_w] = preprocess_image(
-        image, input_image_size)
+        image, config.input_image_size)
     resized_img = torch.tensor(resized_img).permute(2, 0, 1).unsqueeze(0)
+
+    model = config.model
+
+    model.eval()
 
     with torch.no_grad():
         outputs = model(resized_img)
 
     # pred shape:[b,c,h,w] -> [b,h,w,c]
     outputs = outputs.permute(0, 2, 3, 1).squeeze(0).contiguous()
-    outputs = torch.argmax(outputs, axis=-1)
+    outputs = torch.argmax(outputs, dim=-1)
     outputs = outputs.numpy()
     outputs = outputs[:resize_h, :resize_w]
     origin_h, origin_w = origin_image.shape[0], origin_image.shape[1]
@@ -89,7 +92,10 @@ def predict(image):
                          interpolation=cv2.INTER_NEAREST)
 
     origin_image = cv2.cvtColor(origin_image, cv2.COLOR_RGB2BGR)
-    origin_image = origin_image.astype('uint8')
+    origin_image = origin_image.astype(np.uint8)
+
+    classes_name = config.classes_name
+    classes_color = config.classes_color
 
     all_classes = np.unique(outputs)
 
@@ -98,14 +104,13 @@ def predict(image):
     all_colors = []
     for per_class in all_classes:
         per_class = int(per_class)
-        if per_class <= 0:
+        if per_class < 0 or per_class > 255:
             continue
+
         class_name, class_color = classes_name[per_class], classes_color[
             per_class]
         all_colors.append(class_color)
     all_classes = list(all_classes)
-    if 0 in all_classes:
-        all_classes.remove(0)
 
     print('1313', len(all_classes), len(all_colors))
 
@@ -119,13 +124,13 @@ def predict(image):
     per_image_mask = np.zeros(
         (origin_image.shape[0], origin_image.shape[1], 3))
     for idx, per_class in enumerate(all_classes):
-        if per_class <= 0:
+        if per_class < 0 or per_class > 255:
             continue
 
         per_class_mask = np.nonzero(outputs == per_class)
         per_image_mask[per_class_mask[0], per_class_mask[1]] = all_colors[idx]
 
-    per_image_mask = per_image_mask.astype('uint8')
+    per_image_mask = per_image_mask.astype(np.uint8)
     per_image_mask = cv2.cvtColor(per_image_mask, cv2.COLOR_RGBA2BGR)
 
     all_classes_mask = np.nonzero(per_image_mask != 0)

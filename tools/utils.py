@@ -16,13 +16,15 @@ import os
 import random
 import time
 
-from thop import profile
-from thop import clever_format
+from calflops import calculate_flops
+
 import torch
 import torch.nn as nn
 import torch.backends.cudnn as cudnn
 
-from torch.cuda.amp import GradScaler
+from torch.amp.grad_scaler import GradScaler
+
+from tools.muon_optimizer import Muon
 
 
 def parse_args_example():
@@ -70,6 +72,7 @@ def get_logger(name, log_dir):
 
     logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
+    logger.propagate = False
     formatter = logging.Formatter('%(asctime)s - %(message)s',
                                   datefmt='%Y-%m-%d %H:%M:%S')
 
@@ -127,10 +130,16 @@ def compute_macs_and_params(config, model):
 
     model = model.cpu()
 
-    macs, params = profile(model, inputs=(macs_input, ), verbose=False)
-    macs, params = clever_format([macs, params], '%.3f')
+    flops, macs, params = calculate_flops(model=model,
+                                          args=[
+                                              macs_input,
+                                          ],
+                                          output_as_string=True,
+                                          output_precision=3,
+                                          print_results=False,
+                                          print_detailed=False)
 
-    return macs, params
+    return flops, macs, params
 
 
 class EmaModel(nn.Module):
@@ -168,16 +177,24 @@ def build_training_mode(config, model):
     if config.sync_bn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model).cuda()
 
+    if hasattr(config, 'find_unused_parameters'):
+        find_unused_parameters = config.find_unused_parameters
+    else:
+        find_unused_parameters = False
+
     local_rank = config.local_rank
     if hasattr(config, 'use_ema_model') and config.use_ema_model:
         ema_model = EmaModel(model, decay=config.ema_model_decay)
         ema_model.ema_model = nn.parallel.DistributedDataParallel(
             ema_model.ema_model,
             device_ids=[local_rank],
-            output_device=local_rank)
-    model = nn.parallel.DistributedDataParallel(model,
-                                                device_ids=[local_rank],
-                                                output_device=local_rank)
+            output_device=local_rank,
+            find_unused_parameters=find_unused_parameters)
+    model = nn.parallel.DistributedDataParallel(
+        model,
+        device_ids=[local_rank],
+        output_device=local_rank,
+        find_unused_parameters=find_unused_parameters)
 
     if hasattr(config, 'use_amp') and config.use_amp:
         scaler = GradScaler()
@@ -275,13 +292,14 @@ class Scheduler:
 def build_optimizer(config, model):
     optimizer_name = config.optimizer[0]
     optimizer_parameters = config.optimizer[1]
-    assert optimizer_name in ['SGD', 'AdamW'], 'Unsupported optimizer!'
+    assert optimizer_name in ['SGD', 'AdamW', 'Muon'], 'Unsupported optimizer!'
 
     lr = optimizer_parameters['lr']
     weight_decay = optimizer_parameters['weight_decay']
 
     # if global_weight_decay = False,set 1d parms weight decay = 0.
-    global_weight_decay = optimizer_parameters['global_weight_decay']
+    global_weight_decay = True if 'global_weight_decay' not in optimizer_parameters.keys(
+    ) else optimizer_parameters['global_weight_decay']
 
     # if global_weight_decay = True,no_weight_decay_layer_name_list can't be set.
     no_weight_decay_layer_name_list = []
@@ -580,3 +598,82 @@ def build_optimizer(config, model):
                                  lr=lr,
                                  betas=(beta1, beta2),
                                  eps=eps), model_layer_weight_decay_list
+    elif optimizer_name == 'Muon':
+        # Note: Muon uses unified lr and wd for all parameters.
+        # Per-layer lr/wd settings from optimizer_parameters are not applied.
+        # Muon optimizer don't support global_weight_decay
+        # Muon optimizer don't support no_weight_decay_layer_name_list
+        # Muon optimizer don't support sub_layer_lr/sub_layer_weight_decay
+        # Muon optimizer don't support lr_layer_decay
+
+        exclude_muon_layer_name_list = [
+            'position_encoding',
+            'cls_token',
+            'patch_embedding',
+        ]
+        if 'exclude_muon_layer_name_list' in optimizer_parameters.keys(
+        ) and isinstance(optimizer_parameters['exclude_muon_layer_name_list'],
+                         list):
+            exclude_muon_layer_name_list = exclude_muon_layer_name_list + optimizer_parameters[
+                'exclude_muon_layer_name_list']
+
+        # Separate parameters into muon_params and adamw_params
+        muon_param_list, muon_param_names = [], []
+        adamw_param_list, adamw_param_names = [], []
+        for name, param in model.named_parameters():
+            if not param.requires_grad:
+                continue
+
+            # Muon is used for 2D parameters that are not in exclude list
+            use_muon = (
+                param.ndim >= 2
+                and not any(exclude_name in name
+                            for exclude_name in exclude_muon_layer_name_list))
+
+            if use_muon:
+                muon_param_list.append(param)
+                muon_param_names.append(name)
+            else:
+                adamw_param_list.append(param)
+                adamw_param_names.append(name)
+
+        # Create summary for model_layer_weight_decay_list
+        model_layer_weight_decay_list = []
+        if len(muon_param_names) > 0:
+            model_layer_weight_decay_list.append({
+                'name': muon_param_names,
+                'optimizer': 'Muon',
+                'lr': lr,
+                'weight_decay': weight_decay,
+            })
+        if len(adamw_param_names) > 0:
+            model_layer_weight_decay_list.append({
+                'name': adamw_param_names,
+                'optimizer': 'AdamW',
+                'lr': lr,
+                'weight_decay': weight_decay,
+            })
+
+        momentum = 0.95 if 'momentum' not in optimizer_parameters.keys(
+        ) else optimizer_parameters['momentum']
+        nesterov = True if 'nesterov' not in optimizer_parameters.keys(
+        ) else optimizer_parameters['nesterov']
+        ns_steps = 5 if 'ns_steps' not in optimizer_parameters.keys(
+        ) else optimizer_parameters['ns_steps']
+
+        adamw_beta1 = 0.9 if 'adamw_beta1' not in optimizer_parameters.keys(
+        ) else optimizer_parameters['adamw_beta1']
+        adamw_beta2 = 0.999 if 'adamw_beta2' not in optimizer_parameters.keys(
+        ) else optimizer_parameters['adamw_beta2']
+        adamw_eps = 1e-08 if 'adamw_eps' not in optimizer_parameters.keys(
+        ) else optimizer_parameters['adamw_eps']
+
+        return Muon(lr=lr,
+                    wd=weight_decay,
+                    muon_params=muon_param_list,
+                    adamw_params=adamw_param_list,
+                    momentum=momentum,
+                    nesterov=nesterov,
+                    ns_steps=ns_steps,
+                    adamw_betas=(adamw_beta1, adamw_beta2),
+                    adamw_eps=adamw_eps), model_layer_weight_decay_list

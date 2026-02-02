@@ -8,11 +8,11 @@ sys.path.append(BASE_DIR)
 
 from tools.path import Objects365_path
 
-from simpleAICV.detection import models
-from simpleAICV.detection import losses
-from simpleAICV.detection import decode
-from simpleAICV.detection.datasets.objects365dataset import Objects365Detection
-from simpleAICV.detection.common import DetectionResize, RandomHorizontalFlip, Normalize, DetectionCollater, load_state_dict
+from SimpleAICV.detection import models
+from SimpleAICV.detection import losses
+from SimpleAICV.detection import decode
+from SimpleAICV.detection.datasets.objects365dataset import Objects365Detection
+from SimpleAICV.detection.common import DetectionResize, RandomHorizontalFlip, Normalize, DetectionCollater, load_state_dict
 
 import torch
 import torchvision.transforms as transforms
@@ -82,6 +82,6 @@ class config:
 
     seed = 0
     # batch_size is total size
-    batch_size = 8
+    batch_size = 16
     # num_workers is total workers
     num_workers = 30

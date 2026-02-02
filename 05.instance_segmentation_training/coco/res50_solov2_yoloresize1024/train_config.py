@@ -8,11 +8,11 @@ sys.path.append(BASE_DIR)
 
 from tools.path import COCO2017_path
 
-from simpleAICV.instance_segmentation import models
-from simpleAICV.instance_segmentation import losses
-from simpleAICV.instance_segmentation import decode
-from simpleAICV.instance_segmentation.datasets.cocodataset import CocoInstanceSegmentation
-from simpleAICV.instance_segmentation.common import InstanceSegmentationResize, RandomHorizontalFlip, Normalize, SOLOV2InstanceSegmentationCollater, load_state_dict
+from SimpleAICV.instance_segmentation import models
+from SimpleAICV.instance_segmentation import losses
+from SimpleAICV.instance_segmentation import decode
+from SimpleAICV.instance_segmentation.datasets.cocodataset import CocoInstanceSegmentation
+from SimpleAICV.instance_segmentation.common import InstanceSegmentationResize, RandomHorizontalFlip, Normalize, SOLOV2InstanceSegmentationCollater, load_state_dict
 
 import torch
 import torchvision.transforms as transforms
@@ -24,7 +24,7 @@ class config:
     input_image_size = [1024, 1024]
 
     # load backbone pretrained model or not
-    backbone_pretrained_path = '/root/code/SimpleAICV_pytorch_training_examples/pretrained_models/resnet_convert_from_pytorch_official_weights/resnet50-11ad3fa6-acc1-80.858_pytorch_official_weight_convert.pth'
+    backbone_pretrained_path = '/root/autodl-tmp/pretrained_models/resnet_convert_from_pytorch_official_weights/resnet50-11ad3fa6-acc1-80.858_pytorch_official_weight_convert.pth'
     model = models.__dict__[network](**{
         'backbone_pretrained_path': backbone_pretrained_path,
         'num_classes': num_classes,
@@ -120,7 +120,7 @@ class config:
     # batch_size is total size
     batch_size = 32
     # num_workers is total workers
-    num_workers = 16
+    num_workers = 32
     accumulation_steps = 1
 
     optimizer = (
@@ -162,3 +162,5 @@ class config:
 
     use_ema_model = False
     ema_model_decay = 0.9999
+
+    clip_max_norm = 1.

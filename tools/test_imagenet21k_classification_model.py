@@ -43,14 +43,13 @@ def main():
     local_rank = int(os.environ['LOCAL_RANK'])
     config.local_rank = local_rank
     # start init process
-    torch.distributed.init_process_group(backend='nccl', init_method='env://')
     torch.cuda.set_device(local_rank)
+    torch.distributed.init_process_group(backend='nccl', init_method='env://')
     config.group = torch.distributed.new_group(list(range(config.gpus_num)))
 
-    if local_rank == 0:
-        os.makedirs(log_dir) if not os.path.exists(log_dir) else None
+    os.makedirs(log_dir, exist_ok=True)
 
-    torch.distributed.barrier()
+    torch.distributed.barrier(device_ids=[local_rank])
 
     logger = get_logger('test', log_dir)
 
@@ -79,8 +78,8 @@ def main():
     model = config.model
     test_criterion = config.test_criterion
 
-    macs, params = compute_macs_and_params(config, model)
-    log_info = f'model: {config.network}, macs: {macs}, params: {params}'
+    flops, macs, params = compute_macs_and_params(config, model)
+    log_info = f'model: {config.network}, flops: {flops}, macs: {macs}, params: {params}'
     logger.info(log_info) if local_rank == 0 else None
 
     model = model.cuda()
@@ -94,6 +93,8 @@ def main():
         test_loader, model, test_criterion, config)
     log_info = f'acc1: {acc1:.3f}%, test_loss: {test_loss:.4f}, per_image_load_time: {per_image_load_time:.3f}ms, per_image_inference_time: {per_image_inference_time:.3f}ms'
     logger.info(log_info) if local_rank == 0 else None
+
+    torch.distributed.destroy_process_group()
 
     return
 

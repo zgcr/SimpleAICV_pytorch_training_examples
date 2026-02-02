@@ -1,3 +1,11 @@
+import os
+import sys
+import warnings
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(BASE_DIR)
+warnings.filterwarnings('ignore')
+
 import cv2
 
 import collections
@@ -12,10 +20,12 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from torch.cuda.amp import autocast
+from torch.amp.autocast_mode import autocast
 
-from simpleAICV.text_detection.common import AverageMeter, PrecisionRecallMeter
+from SimpleAICV.classification.common import get_amp_type, AverageMeter
 from tools.scripts import all_reduce_operation_in_group_for_variables
+
+from SimpleAICV.text_detection.common import PrecisionRecallMeter
 
 
 def test_text_recognition_for_all_dataset(val_loader_list, model, criterion,
@@ -143,7 +153,7 @@ def test_str_acc_edit_distance_for_per_sub_dataset(val_loader, model,
 
             end = time.time()
 
-    torch.distributed.barrier()
+    torch.distributed.barrier(device_ids=[config.local_rank])
 
     [correct_str_nums, not_included_str_nums, total_str_nums,
      ne_distances] = all_reduce_operation_in_group_for_variables(
@@ -291,7 +301,7 @@ def test_order_PR_for_per_sub_dataset(val_loader, model, criterion, converter,
                 garbage_char,
                 case_insensitve=True)
 
-    torch.distributed.barrier()
+    torch.distributed.barrier(device_ids=[config.local_rank])
 
     [c_char_nums, p_char_nums,
      t_char_nums] = all_reduce_operation_in_group_for_variables(
@@ -401,7 +411,7 @@ def test_chars_PR_for_per_sub_dataset(val_loader, model, criterion, converter,
                 not_include_target_char_nums, pred_strs, targets,
                 support_chars_set, garbage_char)
 
-    torch.distributed.barrier()
+    torch.distributed.barrier(device_ids=[config.local_rank])
 
     [
         correct_char_nums, pred_char_nums, target_char_nums,
@@ -581,7 +591,7 @@ def test_lcs_PR_for_per_sub_dataset(val_loader,
                 garbage_char,
                 ignore_threhold=1000)
 
-    torch.distributed.barrier()
+    torch.distributed.barrier(device_ids=[config.local_rank])
 
     [
         c_num_char_nums,
@@ -891,7 +901,17 @@ def train_text_recognition(train_loader, model, criterion, optimizer,
     # switch to train mode
     model.train()
 
+    amp_type = get_amp_type(model)
+
     local_rank = config.local_rank
+    if hasattr(config, 'total_rank'):
+        total_rank = config.total_rank
+    else:
+        total_rank = 0
+
+    log_info = f'use_amp: {config.use_amp}, amp_type: {amp_type}!'
+    logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
+
     iters = len(train_loader.dataset) // config.batch_size
     iter_index = 1
     assert config.accumulation_steps >= 1, 'illegal accumulation_steps!'
@@ -913,65 +933,7 @@ def train_text_recognition(train_loader, model, criterion, optimizer,
             skip_batch_flag = True
 
         if config.use_amp:
-            with autocast():
-                if iter_index % config.accumulation_steps == 0:
-                    # [B,W,num_classes]
-                    outputs = model(images)
-
-                    input_lengths = torch.IntTensor([outputs.shape[1]] *
-                                                    outputs.shape[0]).cuda()
-                    # [B,W,num_classes]->[W,B,num_classes]
-                    outputs = outputs.permute(1, 0, 2)
-
-                    loss_value = {}
-                    for loss_name in criterion.keys():
-                        if loss_name == "CTCLoss":
-                            temp_loss = criterion[loss_name](outputs,
-                                                             trans_targets,
-                                                             input_lengths,
-                                                             target_lengths)
-                            temp_loss = config.loss_ratio[loss_name] * temp_loss
-                            loss_value[loss_name] = temp_loss
-                        elif loss_name == 'ACELoss':
-                            temp_loss = criterion[loss_name](outputs,
-                                                             trans_targets)
-                            temp_loss = config.loss_ratio[loss_name] * temp_loss
-                            loss_value[loss_name] = temp_loss
-                        else:
-                            log_info = f'Unsupport loss: {loss_name}'
-                            logger.info(log_info) if local_rank == 0 else None
-                else:
-                    # not reduce gradient while iter_index % config.accumulation_steps != 0
-                    with model.no_sync():
-                        # [B,W,num_classes]
-                        outputs = model(images)
-
-                        input_lengths = torch.IntTensor(
-                            [outputs.shape[1]] * outputs.shape[0]).cuda()
-                        # [B,W,num_classes]->[W,B,num_classes]
-                        outputs = outputs.permute(1, 0, 2)
-
-                        loss_value = {}
-                        for loss_name in criterion.keys():
-                            if loss_name == "CTCLoss":
-                                temp_loss = criterion[loss_name](
-                                    outputs, trans_targets, input_lengths,
-                                    target_lengths)
-                                temp_loss = config.loss_ratio[
-                                    loss_name] * temp_loss
-                                loss_value[loss_name] = temp_loss
-                            elif loss_name == 'ACELoss':
-                                temp_loss = criterion[loss_name](outputs,
-                                                                 trans_targets)
-                                temp_loss = config.loss_ratio[
-                                    loss_name] * temp_loss
-                                loss_value[loss_name] = temp_loss
-                            else:
-                                log_info = f'Unsupport loss: {loss_name}'
-                                logger.info(
-                                    log_info) if local_rank == 0 else None
-        else:
-            if iter_index % config.accumulation_steps == 0:
+            with autocast(device_type="cuda", dtype=amp_type):
                 # [B,W,num_classes]
                 outputs = model(images)
 
@@ -996,35 +958,35 @@ def train_text_recognition(train_loader, model, criterion, optimizer,
                         loss_value[loss_name] = temp_loss
                     else:
                         log_info = f'Unsupport loss: {loss_name}'
-                        logger.info(log_info) if local_rank == 0 else None
-            else:
-                # not reduce gradient while iter_index % config.accumulation_steps != 0
-                with model.no_sync():
-                    # [B,W,num_classes]
-                    outputs = model(images)
+                        logger.info(
+                            log_info
+                        ) if local_rank == 0 and total_rank == 0 else None
+        else:
+            # [B,W,num_classes]
+            outputs = model(images)
 
-                    input_lengths = torch.IntTensor([outputs.shape[1]] *
-                                                    outputs.shape[0]).cuda()
-                    # [B,W,num_classes]->[W,B,num_classes]
-                    outputs = outputs.permute(1, 0, 2)
+            input_lengths = torch.IntTensor([outputs.shape[1]] *
+                                            outputs.shape[0]).cuda()
+            # [B,W,num_classes]->[W,B,num_classes]
+            outputs = outputs.permute(1, 0, 2)
 
-                    loss_value = {}
-                    for loss_name in criterion.keys():
-                        if loss_name == "CTCLoss":
-                            temp_loss = criterion[loss_name](outputs,
-                                                             trans_targets,
-                                                             input_lengths,
-                                                             target_lengths)
-                            temp_loss = config.loss_ratio[loss_name] * temp_loss
-                            loss_value[loss_name] = temp_loss
-                        elif loss_name == 'ACELoss':
-                            temp_loss = criterion[loss_name](outputs,
-                                                             trans_targets)
-                            temp_loss = config.loss_ratio[loss_name] * temp_loss
-                            loss_value[loss_name] = temp_loss
-                        else:
-                            log_info = f'Unsupport loss: {loss_name}'
-                            logger.info(log_info) if local_rank == 0 else None
+            loss_value = {}
+            for loss_name in criterion.keys():
+                if loss_name == "CTCLoss":
+                    temp_loss = criterion[loss_name](outputs, trans_targets,
+                                                     input_lengths,
+                                                     target_lengths)
+                    temp_loss = config.loss_ratio[loss_name] * temp_loss
+                    loss_value[loss_name] = temp_loss
+                elif loss_name == 'ACELoss':
+                    temp_loss = criterion[loss_name](outputs, trans_targets)
+                    temp_loss = config.loss_ratio[loss_name] * temp_loss
+                    loss_value[loss_name] = temp_loss
+                else:
+                    log_info = f'Unsupport loss: {loss_name}'
+                    logger.info(
+                        log_info
+                    ) if local_rank == 0 and total_rank == 0 else None
 
         loss = 0.
         for key, value in loss_value.items():
@@ -1066,7 +1028,7 @@ def train_text_recognition(train_loader, model, criterion, optimizer,
             for _, param in model.named_parameters():
                 per_weight_grad = param.grad
                 if per_weight_grad is not None:
-                    if torch.any(torch.isnan(per_weight_grad)) or torch.any(
+                    if torch.any(torch.isinf(per_weight_grad)) or torch.any(
                             torch.isnan(per_weight_grad)):
                         grad_inf_nan_flag = True
             if grad_inf_nan_flag:
@@ -1080,11 +1042,12 @@ def train_text_recognition(train_loader, model, criterion, optimizer,
 
         if skip_batch_flag:
             log_info = f'skip this batch!'
-            logger.info(log_info) if local_rank == 0 else None
+            logger.info(
+                log_info) if local_rank == 0 and total_rank == 0 else None
             optimizer.zero_grad()
             continue
 
-        torch.distributed.barrier()
+        torch.distributed.barrier(device_ids=[local_rank])
 
         if config.use_amp:
             if iter_index % config.accumulation_steps == 0:
@@ -1153,7 +1116,8 @@ def train_text_recognition(train_loader, model, criterion, optimizer,
             log_info = f'train: epoch {epoch:0>4d}, iter [{accumulation_iter_index:0>5d}, {accumulation_iters:0>5d}], lr: {scheduler.current_lr:.6f}, loss: {loss*config.accumulation_steps:.4f}, '
             for key, value in loss_value.items():
                 log_info += f'{key}: {value*config.accumulation_steps:.4f}, '
-            logger.info(log_info) if local_rank == 0 else None
+            logger.info(
+                log_info) if local_rank == 0 and total_rank == 0 else None
 
         iter_index += 1
 
@@ -1682,7 +1646,17 @@ def train_text_detection(train_loader, model, criterion, optimizer, scheduler,
     # switch to train mode
     model.train()
 
+    amp_type = get_amp_type(model)
+
     local_rank = config.local_rank
+    if hasattr(config, 'total_rank'):
+        total_rank = config.total_rank
+    else:
+        total_rank = 0
+
+    log_info = f'use_amp: {config.use_amp}, amp_type: {amp_type}!'
+    logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
+
     iters = len(train_loader.dataset) // config.batch_size
     iter_index = 1
     assert config.accumulation_steps >= 1, 'illegal accumulation_steps!'
@@ -1700,24 +1674,12 @@ def train_text_detection(train_loader, model, criterion, optimizer, scheduler,
             skip_batch_flag = True
 
         if config.use_amp:
-            with autocast():
-                if iter_index % config.accumulation_steps == 0:
-                    preds = model(images)
-                    loss_value = criterion(preds, targets)
-                else:
-                    # not reduce gradient while iter_index % config.accumulation_steps != 0
-                    with model.no_sync():
-                        preds = model(images)
-                        loss_value = criterion(preds, targets)
-        else:
-            if iter_index % config.accumulation_steps == 0:
+            with autocast(device_type="cuda", dtype=amp_type):
                 preds = model(images)
                 loss_value = criterion(preds, targets)
-            else:
-                # not reduce gradient while iter_index % config.accumulation_steps != 0
-                with model.no_sync():
-                    preds = model(images)
-                    loss_value = criterion(preds, targets)
+        else:
+            preds = model(images)
+            loss_value = criterion(preds, targets)
 
         loss = sum(loss_value.values())
 
@@ -1757,7 +1719,7 @@ def train_text_detection(train_loader, model, criterion, optimizer, scheduler,
             for _, param in model.named_parameters():
                 per_weight_grad = param.grad
                 if per_weight_grad is not None:
-                    if torch.any(torch.isnan(per_weight_grad)) or torch.any(
+                    if torch.any(torch.isinf(per_weight_grad)) or torch.any(
                             torch.isnan(per_weight_grad)):
                         grad_inf_nan_flag = True
             if grad_inf_nan_flag:
@@ -1771,11 +1733,12 @@ def train_text_detection(train_loader, model, criterion, optimizer, scheduler,
 
         if skip_batch_flag:
             log_info = f'skip this batch!'
-            logger.info(log_info) if local_rank == 0 else None
+            logger.info(
+                log_info) if local_rank == 0 and total_rank == 0 else None
             optimizer.zero_grad()
             continue
 
-        torch.distributed.barrier()
+        torch.distributed.barrier(device_ids=[local_rank])
 
         if config.use_amp:
             if iter_index % config.accumulation_steps == 0:
@@ -1844,7 +1807,8 @@ def train_text_detection(train_loader, model, criterion, optimizer, scheduler,
             log_info = f'train: epoch {epoch:0>4d}, iter [{accumulation_iter_index:0>5d}, {accumulation_iters:0>5d}], lr: {scheduler.current_lr:.6f}, total_loss: {loss*config.accumulation_steps:.4f}, '
             for key, value in loss_value.items():
                 log_info += f'{key}: {value*config.accumulation_steps:.4f}, '
-            logger.info(log_info) if local_rank == 0 else None
+            logger.info(
+                log_info) if local_rank == 0 and total_rank == 0 else None
 
         iter_index += 1
 

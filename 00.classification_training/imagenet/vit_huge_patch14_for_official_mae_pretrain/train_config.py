@@ -8,10 +8,10 @@ sys.path.append(BASE_DIR)
 
 from tools.path import ILSVRC2012_path
 
-from simpleAICV.classification import backbones
-from simpleAICV.classification import losses
-from simpleAICV.classification.datasets.ilsvrc2012dataset import ILSVRC2012Dataset
-from simpleAICV.classification.common import Opencv2PIL, TorchRandomResizedCrop, TorchRandomHorizontalFlip, RandAugment, TorchResize, TorchCenterCrop, TorchMeanStdNormalize, RandomErasing, ClassificationCollater, MixupCutmixClassificationCollater, load_state_dict
+from SimpleAICV.classification import backbones
+from SimpleAICV.classification import losses
+from SimpleAICV.classification.datasets.ilsvrc2012dataset import ILSVRC2012Dataset
+from SimpleAICV.classification.common import Opencv2PIL, TorchRandomResizedCrop, TorchRandomHorizontalFlip, RandAugment, TorchResize, TorchCenterCrop, TorchMeanStdNormalize, RandomErasing, ClassificationCollater, MixupCutmixClassificationCollater, load_state_dict
 
 import torch
 import torchvision.transforms as transforms
@@ -31,7 +31,7 @@ class config:
     })
 
     # load pretrained model or not
-    trained_model_path = '/root/code/SimpleAICV_pytorch_training_examples/pretrained_models/vit_convert_from_official_mae_pretrain/mae_pretrain_vit_huge_pytorch_official_weight_convert.pth'
+    trained_model_path = '/root/autodl-tmp/pretrained_models/vit_mae_pretrain_convert_from_pytorch_official_weights/mae_pretrain_vit_huge_pytorch_official_weight_convert.pth'
     load_state_dict(trained_model_path,
                     model,
                     loading_new_input_size_position_encoding_weight=True)
@@ -64,7 +64,7 @@ class config:
         set_name='val',
         transform=transforms.Compose([
             Opencv2PIL(),
-            TorchResize(resize=input_image_size * scale),
+            TorchResize(resize=int(input_image_size * scale)),
             TorchCenterCrop(resize=input_image_size),
             TorchMeanStdNormalize(mean=[0.485, 0.456, 0.406],
                                   std=[0.229, 0.224, 0.225]),

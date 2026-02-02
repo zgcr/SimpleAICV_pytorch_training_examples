@@ -8,10 +8,10 @@ sys.path.append(BASE_DIR)
 
 from tools.path import ImageNet21K_path
 
-from simpleAICV.classification import backbones
-from simpleAICV.classification import losses
-from simpleAICV.classification.datasets.imagenet21kdataset import ImageNet21KSemanticTreeLabelDataset
-from simpleAICV.classification.common import Opencv2PIL, TorchResize, TorchCenterCrop, TorchMeanStdNormalize, ClassificationCollater, load_state_dict
+from SimpleAICV.classification import backbones
+from SimpleAICV.classification import losses
+from SimpleAICV.classification.datasets.imagenet21kdataset import ImageNet21KSemanticTreeLabelDataset
+from SimpleAICV.classification.common import Opencv2PIL, TorchResize, TorchCenterCrop, TorchMeanStdNormalize, ClassificationCollater, load_state_dict
 
 import torch
 import torchvision.transforms as transforms
@@ -39,7 +39,7 @@ class config:
         set_name='val',
         transform=transforms.Compose([
             Opencv2PIL(),
-            TorchResize(resize=input_image_size * scale),
+            TorchResize(resize=int(input_image_size * scale)),
             TorchCenterCrop(resize=input_image_size),
             TorchMeanStdNormalize(mean=[0.485, 0.456, 0.406],
                                   std=[0.229, 0.224, 0.225]),

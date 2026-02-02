@@ -8,11 +8,11 @@ sys.path.append(BASE_DIR)
 
 from tools.path import VOCdataset_path
 
-from simpleAICV.detection import models
-from simpleAICV.detection import losses
-from simpleAICV.detection import decode
-from simpleAICV.detection.datasets.vocdataset import VocDetection
-from simpleAICV.detection.common import DetectionResize, RandomHorizontalFlip, RandomCrop, RandomTranslate, Normalize, DetectionCollater, load_state_dict
+from SimpleAICV.detection import models
+from SimpleAICV.detection import losses
+from SimpleAICV.detection import decode
+from SimpleAICV.detection.datasets.vocdataset import VocDetection
+from SimpleAICV.detection.common import DetectionResize, RandomHorizontalFlip, RandomCrop, RandomTranslate, Normalize, DetectionCollater, load_state_dict
 
 import torch
 import torchvision.transforms as transforms
@@ -24,7 +24,7 @@ class config:
     input_image_size = [640, 640]
 
     # load backbone pretrained model or not
-    backbone_pretrained_path = '/root/code/SimpleAICV_pytorch_training_examples/pretrained_models/resnet_convert_from_pytorch_official_weights/resnet50-11ad3fa6-acc1-80.858_pytorch_official_weight_convert.pth'
+    backbone_pretrained_path = '/root/autodl-tmp/pretrained_models/resnet_convert_from_pytorch_official_weights/resnet50-11ad3fa6-acc1-80.858_pytorch_official_weight_convert.pth'
     model = models.__dict__[network](**{
         'backbone_pretrained_path': backbone_pretrained_path,
         'num_classes': num_classes,
@@ -150,7 +150,7 @@ class config:
     save_model_metric = 'IoU=0.50,area=all,maxDets=100,mAP'
 
     sync_bn = False
-    use_amp = False
+    use_amp = True
     use_compile = False
     compile_params = {
         # 'default': optimizes for large models, low compile-time and no extra memory usage.

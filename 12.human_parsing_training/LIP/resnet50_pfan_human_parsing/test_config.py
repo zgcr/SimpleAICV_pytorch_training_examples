@@ -8,10 +8,10 @@ sys.path.append(BASE_DIR)
 
 from tools.path import human_parsing_dataset_path
 
-from simpleAICV.human_parsing import models
-from simpleAICV.human_parsing import losses
-from simpleAICV.human_parsing.datasets.human_parsing_dataset import HumanParsingDataset, LIP_20_CLASSES
-from simpleAICV.human_parsing.common import YoloStyleResize, Normalize, HumanParsingCollater, load_state_dict
+from SimpleAICV.human_parsing import models
+from SimpleAICV.human_parsing import losses
+from SimpleAICV.human_parsing.datasets.human_parsing_dataset import HumanParsingDataset, LIP_20_CLASSES
+from SimpleAICV.human_parsing.common import YoloStyleResize, Normalize, HumanParsingCollater, load_state_dict
 
 import torch
 import torchvision.transforms as transforms

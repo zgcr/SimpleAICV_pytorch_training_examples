@@ -43,14 +43,13 @@ def main():
     local_rank = int(os.environ['LOCAL_RANK'])
     config.local_rank = local_rank
     # start init process
-    torch.distributed.init_process_group(backend='nccl', init_method='env://')
     torch.cuda.set_device(local_rank)
+    torch.distributed.init_process_group(backend='nccl', init_method='env://')
     config.group = torch.distributed.new_group(list(range(config.gpus_num)))
 
-    if local_rank == 0:
-        os.makedirs(log_dir) if not os.path.exists(log_dir) else None
+    os.makedirs(log_dir, exist_ok=True)
 
-    torch.distributed.barrier()
+    torch.distributed.barrier(device_ids=[local_rank])
 
     logger = get_logger('test', log_dir)
 
@@ -65,7 +64,7 @@ def main():
         per_sub_loader = DataLoader(per_sub_dataset,
                                     batch_size=batch_size,
                                     shuffle=False,
-                                    pin_memory=False,
+                                    pin_memory=True,
                                     num_workers=num_workers,
                                     collate_fn=config.val_collater)
         val_loader_list.append(per_sub_loader)
@@ -80,8 +79,8 @@ def main():
     val_criterion = config.val_criterion
     decoder = config.decoder
 
-    macs, params = compute_macs_and_params(config, model)
-    log_info = f'model: {config.network}, macs: {macs}, params: {params}'
+    flops, macs, params = compute_macs_and_params(config, model)
+    log_info = f'model: {config.network}, flops: {flops}, macs: {macs}, params: {params}'
     logger.info(log_info) if local_rank == 0 else None
 
     model = model.cuda()
@@ -101,6 +100,8 @@ def main():
             log_info += f'{key}: {value}\n'
 
     logger.info(log_info) if local_rank == 0 else None
+
+    torch.distributed.destroy_process_group()
 
     return
 

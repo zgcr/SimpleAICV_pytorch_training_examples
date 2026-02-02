@@ -8,11 +8,11 @@ sys.path.append(BASE_DIR)
 
 from tools.path import Objects365_path
 
-from simpleAICV.detection import models
-from simpleAICV.detection import losses
-from simpleAICV.detection import decode
-from simpleAICV.detection.datasets.objects365dataset import Objects365Detection
-from simpleAICV.detection.common import DetectionResize, RandomHorizontalFlip, RandomCrop, RandomTranslate, Normalize, DetectionCollater, load_state_dict
+from SimpleAICV.detection import models
+from SimpleAICV.detection import losses
+from SimpleAICV.detection import decode
+from SimpleAICV.detection.datasets.objects365dataset import Objects365Detection
+from SimpleAICV.detection.common import DetectionResize, RandomHorizontalFlip, RandomCrop, RandomTranslate, Normalize, DetectionCollater, load_state_dict
 
 import torch
 import torchvision.transforms as transforms
@@ -24,14 +24,14 @@ class config:
     input_image_size = [1024, 1024]
 
     # load backbone pretrained model or not
-    backbone_pretrained_path = '/root/code/SimpleAICV_pytorch_training_examples/pretrained_models/resnet_convert_from_pytorch_official_weights/resnet50-11ad3fa6-acc1-80.858_pytorch_official_weight_convert.pth'
+    backbone_pretrained_path = '/root/autodl-tmp/pretrained_models/resnet_convert_from_pytorch_official_weights/resnet50-11ad3fa6-acc1-80.858_pytorch_official_weight_convert.pth'
     model = models.__dict__[network](**{
         'backbone_pretrained_path': backbone_pretrained_path,
         'num_classes': num_classes,
     })
 
     # load total pretrained model or not
-    trained_model_path = '/root/autodl-tmp/pretrained_models/fcos_train_from_scratch_on_coco/resnet50_fcos_retinaresize800-metric41.071.pth'
+    trained_model_path = ''
     load_state_dict(trained_model_path, model)
 
     train_criterion = losses.__dict__['FCOSLoss'](
@@ -89,30 +89,13 @@ class config:
                                             Normalize(),
                                         ]))
 
-    test_dataset = Objects365Detection(Objects365_path,
-                                       set_name='val',
-                                       max_annots_num=150,
-                                       filter_no_object_image=True,
-                                       transform=transforms.Compose([
-                                           DetectionResize(
-                                               resize=input_image_size[0],
-                                               stride=32,
-                                               resize_type='yolo_style',
-                                               multi_scale=False,
-                                               multi_scale_range=[0.8, 1.0]),
-                                           Normalize(),
-                                       ]))
-
     train_collater = DetectionCollater(resize=input_image_size[0],
                                        resize_type='yolo_style',
                                        max_annots_num=150)
-    test_collater = DetectionCollater(resize=input_image_size[0],
-                                      resize_type='yolo_style',
-                                      max_annots_num=150)
 
     seed = 0
     # batch_size is total size
-    batch_size = 64
+    batch_size = 128
     # num_workers is total workers
     num_workers = 32
     accumulation_steps = 1
@@ -153,5 +136,3 @@ class config:
 
     use_ema_model = False
     ema_model_decay = 0.9999
-
-    clip_max_norm = 1

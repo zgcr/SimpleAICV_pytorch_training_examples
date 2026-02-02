@@ -7,11 +7,11 @@ sys.path.append(BASE_DIR)
 
 from tools.path import face_detection_dataset_path
 
-from simpleAICV.face_detection import models
-from simpleAICV.face_detection import losses
-from simpleAICV.face_detection import decode
-from simpleAICV.face_detection.datasets.face_detection_dataset import FaceDetectionDataset
-from simpleAICV.face_detection.common import YoloStyleResize, Normalize, FaceDetectionCollater, load_state_dict
+from SimpleAICV.face_detection import models
+from SimpleAICV.face_detection import losses
+from SimpleAICV.face_detection import decode
+from SimpleAICV.face_detection.datasets.face_detection_dataset import FaceDetectionDataset
+from SimpleAICV.face_detection.common import YoloStyleResize, Normalize, FaceDetectionCollater, load_state_dict
 
 import torch
 import torchvision.transforms as transforms

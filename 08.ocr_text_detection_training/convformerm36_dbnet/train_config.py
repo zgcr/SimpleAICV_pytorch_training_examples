@@ -7,11 +7,11 @@ sys.path.append(BASE_DIR)
 
 from tools.path import text_detection_dataset_path
 
-from simpleAICV.text_detection import models
-from simpleAICV.text_detection import losses
-from simpleAICV.text_detection import decode
-from simpleAICV.text_detection.datasets.text_detection_dataset import TextDetection
-from simpleAICV.text_detection.common import RandomRotate, MainDirectionRandomRotate, Resize, Normalize, DBNetTextDetectionCollater, load_state_dict
+from SimpleAICV.text_detection import models
+from SimpleAICV.text_detection import losses
+from SimpleAICV.text_detection import decode
+from SimpleAICV.text_detection.datasets.text_detection_dataset import TextDetection
+from SimpleAICV.text_detection.common import RandomRotate, MainDirectionRandomRotate, Resize, Normalize, DBNetTextDetectionCollater, load_state_dict
 
 import torch
 import torchvision.transforms as transforms
@@ -22,7 +22,7 @@ class config:
     input_image_size = [1024, 1024]
 
     # load backbone pretrained model or not
-    backbone_pretrained_path = '/root/autodl-tmp/pretrained_models/convformer_finetune_on_imagenet1k_from_convert_official_weights/convformer_m36-acc84.000.pth'
+    backbone_pretrained_path = '/root/autodl-tmp/pretrained_models/convformer_finetune_on_imagenet1k_from_convert_official_weights/convformer_m36-acc83.980.pth'
     model = models.__dict__[network](
         **{
             'backbone_pretrained_path': backbone_pretrained_path,
@@ -110,7 +110,7 @@ class config:
     # batch_size is total size
     batch_size = 64
     # num_workers is total workers
-    num_workers = 64
+    num_workers = 32
     accumulation_steps = 1
 
     optimizer = (

@@ -7,17 +7,17 @@ sys.path.append(BASE_DIR)
 
 from tools.path import salient_object_detection_dataset_path
 
-from simpleAICV.salient_object_detection import models
-from simpleAICV.salient_object_detection import losses
-from simpleAICV.salient_object_detection.datasets.salient_object_detection_dataset import SalientObjectDetectionDataset
-from simpleAICV.salient_object_detection.common import RandomHorizontalFlip, YoloStyleResize, Resize, Normalize, SalientObjectDetectionSegmentationCollater, load_state_dict
+from SimpleAICV.salient_object_detection import models
+from SimpleAICV.salient_object_detection import losses
+from SimpleAICV.salient_object_detection.datasets.salient_object_detection_dataset import SalientObjectDetectionDataset
+from SimpleAICV.salient_object_detection.common import RandomHorizontalFlip, YoloStyleResize, Resize, Normalize, SalientObjectDetectionSegmentationCollater, load_state_dict
 
 import torch
 import torchvision.transforms as transforms
 
 
 class config:
-    input_image_size = [832, 832]
+    input_image_size = [1024, 1024]
     network = 'convformerm36_pfan_segmentation'
 
     model = models.__dict__[network](**{})
@@ -30,6 +30,7 @@ class config:
     # 完整数据集必须在list中第0个位置
     val_dataset_name_list = [
         [
+            'AM2K',
             'DIS5K',
             'HRS10K',
             'HRSOD',

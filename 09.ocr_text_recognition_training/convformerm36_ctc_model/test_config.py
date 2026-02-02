@@ -7,13 +7,13 @@ sys.path.append(BASE_DIR)
 
 from tools.path import text_recognition_dataset_path
 
-from simpleAICV.text_recognition.models import CTCModel
-from simpleAICV.text_recognition import losses
-from simpleAICV.text_recognition.char_sets.final_char_table import final_char_table
-from simpleAICV.text_recognition.char_sets.num_and_alpha_char_table import num_char_table, alpha_char_table
-from simpleAICV.text_recognition.char_sets.common_standard_chinese_char_table import common_standard_chinese_char_first_table, common_standard_chinese_char_second_table, common_standard_chinese_char_third_table
-from simpleAICV.text_recognition.datasets.text_recognition_dataset import CNENTextRecognition
-from simpleAICV.text_recognition.common import RandomScale, RandomGaussianBlur, RandomBrightness, RandomRotate, Distort, Stretch, Perspective, Normalize, KeepRatioResizeTextRecognitionCollater, CTCTextLabelConverter, load_state_dict
+from SimpleAICV.text_recognition.models import CTCModel
+from SimpleAICV.text_recognition import losses
+from SimpleAICV.text_recognition.char_sets.final_char_table import final_char_table
+from SimpleAICV.text_recognition.char_sets.num_and_alpha_char_table import num_char_table, alpha_char_table
+from SimpleAICV.text_recognition.char_sets.common_standard_chinese_char_table import common_standard_chinese_char_first_table, common_standard_chinese_char_second_table, common_standard_chinese_char_third_table
+from SimpleAICV.text_recognition.datasets.text_recognition_dataset import CNENTextRecognition
+from SimpleAICV.text_recognition.common import RandomScale, RandomGaussianBlur, RandomBrightness, RandomRotate, Distort, Stretch, Perspective, Normalize, KeepRatioResizeTextRecognitionCollater, CTCTextLabelConverter, load_state_dict
 
 import torch
 import torchvision.transforms as transforms
@@ -38,25 +38,10 @@ class config:
     # all char + '[CTCblank]' = 12111 + 1 = 12112
     num_classes = converter.num_classes
 
-    model_config = {
-        'backbone': {
-            'name': 'convformerm36backbone',
-            'param': {}
-        },
-        'encoder': {
-            'name': 'BiLSTMEncoder',
-            'param': {},
-        },
-        'predictor': {
-            'name': 'CTCEnhancePredictor',
-            'param': {
-                'hidden_planes': 512,
-                'num_classes': num_classes + 1,
-            }
-        },
-    }
-
-    model = CTCModel(model_config)
+    model = CTCModel(backbone_type='convformerm36backbone',
+                     backbone_pretrained_path='',
+                     planes=512,
+                     num_classes=num_classes + 1)
 
     # load total pretrained model or not
     trained_model_path = ''

@@ -5,9 +5,9 @@ BASE_DIR = os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(BASE_DIR)
 
-from simpleAICV.face_detection import models
-from simpleAICV.face_detection import decode
-from simpleAICV.face_detection.common import load_state_dict
+from SimpleAICV.face_detection import models
+from SimpleAICV.face_detection import decode
+from SimpleAICV.face_detection.common import load_state_dict
 
 
 class config:
@@ -20,7 +20,7 @@ class config:
     })
 
     # load total pretrained model or not
-    trained_model_path = '/root/autodl-tmp/pretrained_models/retinaface_train_on_face_detection_dataset/resnet50_retinaface-metric66.053.pth'
+    trained_model_path = '/root/autodl-tmp/pretrained_models/retinaface_train_on_face_detection_dataset/resnet50_retinaface-metric66.224.pth'
     load_state_dict(trained_model_path, model)
 
     decoder = decode.__dict__['RetinaFaceDecoder'](
@@ -36,7 +36,7 @@ class config:
 
     seed = 0
 
-    eval_image_dir = '/root/autodl-tmp/face_detection/wider_face_val_images/images'
+    eval_image_dir = '/root/autodl-tmp/face_detection_dataset/wider_face_val_images/images'
     save_image_dir = '/root/code/SimpleAICV_pytorch_training_examples/10.face_detection_training/widerface_evaluate/val_images_result'
     save_image_result = False
 

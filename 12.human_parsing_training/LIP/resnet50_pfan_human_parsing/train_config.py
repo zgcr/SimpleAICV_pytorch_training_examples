@@ -8,10 +8,10 @@ sys.path.append(BASE_DIR)
 
 from tools.path import human_parsing_dataset_path
 
-from simpleAICV.human_parsing import models
-from simpleAICV.human_parsing import losses
-from simpleAICV.human_parsing.datasets.human_parsing_dataset import HumanParsingDataset, LIP_20_CLASSES
-from simpleAICV.human_parsing.common import YoloStyleResize, RandomHorizontalFlip, Normalize, HumanParsingCollater, load_state_dict
+from SimpleAICV.human_parsing import models
+from SimpleAICV.human_parsing import losses
+from SimpleAICV.human_parsing.datasets.human_parsing_dataset import HumanParsingDataset, LIP_20_CLASSES
+from SimpleAICV.human_parsing.common import YoloStyleResize, RandomHorizontalFlip, Normalize, HumanParsingCollater, load_state_dict
 
 import torch
 import torchvision.transforms as transforms
@@ -24,7 +24,7 @@ class config:
     input_image_size = [512, 512]
 
     # load backbone pretrained model or not
-    backbone_pretrained_path = '/root/code/SimpleAICV_pytorch_training_examples/pretrained_models/resnet_convert_from_pytorch_official_weights/resnet50-11ad3fa6-acc1-80.858_pytorch_official_weight_convert.pth'
+    backbone_pretrained_path = '/root/autodl-tmp/pretrained_models/resnet_convert_from_pytorch_official_weights/resnet50-11ad3fa6-acc1-80.858_pytorch_official_weight_convert.pth'
     model = models.__dict__[network](**{
         'backbone_pretrained_path': backbone_pretrained_path,
         'num_classes': num_classes,

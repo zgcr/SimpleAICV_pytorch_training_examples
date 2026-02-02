@@ -8,10 +8,10 @@ sys.path.append(BASE_DIR)
 
 from tools.path import ILSVRC2012_path
 
-from simpleAICV.distillation.distillmodel import KDModel
-from simpleAICV.distillation import losses
-from simpleAICV.classification.datasets.ilsvrc2012dataset import ILSVRC2012Dataset
-from simpleAICV.classification.common import Opencv2PIL, TorchRandomResizedCrop, TorchRandomHorizontalFlip, RandAugment, TorchResize, TorchCenterCrop, TorchMeanStdNormalize, RandomErasing, ClassificationCollater, MixupCutmixClassificationCollater, load_state_dict
+from SimpleAICV.distillation.distillmodel import KDModel
+from SimpleAICV.distillation import losses
+from SimpleAICV.classification.datasets.ilsvrc2012dataset import ILSVRC2012Dataset
+from SimpleAICV.classification.common import Opencv2PIL, TorchRandomResizedCrop, TorchRandomHorizontalFlip, RandAugment, TorchResize, TorchCenterCrop, TorchMeanStdNormalize, RandomErasing, ClassificationCollater, MixupCutmixClassificationCollater, load_state_dict
 
 import torch
 import torchvision.transforms as transforms
@@ -23,8 +23,8 @@ class config:
 
     teacher = 'resnet152'
     student = 'resnet50'
-    teacher_pretrained_model_path = '/root/autodl-tmp/pretrained_models/resnet_finetune_on_imagenet1k_from_imagenet21k_pretrain/resnet152-acc81.934.pth'
-    student_pretrained_model_path = '/root/autodl-tmp/pretrained_models/resnet_finetune_on_imagenet1k_from_imagenet21k_pretrain/resnet50-acc80.258.pth'
+    teacher_pretrained_model_path = '/root/autodl-tmp/pretrained_models/resnet_finetune_on_imagenet1k_from_imagenet21k_pretrain/resnet152-acc81.712.pth'
+    student_pretrained_model_path = '/root/autodl-tmp/pretrained_models/resnet_finetune_on_imagenet1k_from_imagenet21k_pretrain/resnet50-acc80.110.pth'
     freeze_teacher = True
     num_classes = 1000
     use_gradient_checkpoint = False
@@ -73,7 +73,7 @@ class config:
         set_name='val',
         transform=transforms.Compose([
             Opencv2PIL(),
-            TorchResize(resize=input_image_size * scale),
+            TorchResize(resize=int(input_image_size * scale)),
             TorchCenterCrop(resize=input_image_size),
             TorchMeanStdNormalize(mean=[0.485, 0.456, 0.406],
                                   std=[0.229, 0.224, 0.225]),
@@ -123,6 +123,7 @@ class config:
     print_interval = 100
 
     sync_bn = False
+    use_amp = True
     use_compile = False
     compile_params = {
         # 'default': optimizes for large models, low compile-time and no extra memory usage.

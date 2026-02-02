@@ -2,7 +2,6 @@
 https://github.com/kong36088/BaiduImageSpider
 百度搜索引擎单线程图片爬虫
 '''
-
 import os
 import re
 import urllib

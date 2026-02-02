@@ -1,18 +1,26 @@
+import os
+import sys
+import warnings
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(BASE_DIR)
+warnings.filterwarnings('ignore')
+
 import collections
 import numpy as np
 import time
 from tqdm import tqdm
 
+import pycocotools.mask as mask_util
+from pycocotools.cocoeval import COCOeval
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from torch.cuda.amp import autocast
+from torch.amp.autocast_mode import autocast
 
-import pycocotools.mask as mask_util
-from pycocotools.cocoeval import COCOeval
-
-from simpleAICV.classification.common import AverageMeter, AccMeter
+from SimpleAICV.classification.common import get_amp_type, AverageMeter, AccMeter
 
 
 def all_reduce_operation_in_group_for_variables(variables, operator, group):
@@ -115,7 +123,17 @@ def train_classification(train_loader, model, criterion, optimizer, scheduler,
     # switch to train mode
     model.train()
 
+    amp_type = get_amp_type(model)
+
     local_rank = config.local_rank
+    if hasattr(config, 'total_rank'):
+        total_rank = config.total_rank
+    else:
+        total_rank = 0
+
+    log_info = f'use_amp: {config.use_amp}, amp_type: {amp_type}!'
+    logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
+
     iters = len(train_loader.dataset) // config.batch_size
     iter_index = 1
     assert config.accumulation_steps >= 1, 'illegal accumulation_steps!'
@@ -133,24 +151,12 @@ def train_classification(train_loader, model, criterion, optimizer, scheduler,
             skip_batch_flag = True
 
         if config.use_amp:
-            with autocast():
-                if iter_index % config.accumulation_steps == 0:
-                    outputs = model(images)
-                    loss = criterion(outputs, labels)
-                else:
-                    # not reduce gradient while iter_index % config.accumulation_steps != 0
-                    with model.no_sync():
-                        outputs = model(images)
-                        loss = criterion(outputs, labels)
-        else:
-            if iter_index % config.accumulation_steps == 0:
+            with autocast(device_type="cuda", dtype=amp_type):
                 outputs = model(images)
                 loss = criterion(outputs, labels)
-            else:
-                # not reduce gradient while iter_index % config.accumulation_steps != 0
-                with model.no_sync():
-                    outputs = model(images)
-                    loss = criterion(outputs, labels)
+        else:
+            outputs = model(images)
+            loss = criterion(outputs, labels)
 
         if loss == 0. or torch.any(torch.isinf(loss)) or torch.any(
                 torch.isnan(loss)):
@@ -179,7 +185,7 @@ def train_classification(train_loader, model, criterion, optimizer, scheduler,
             for _, param in model.named_parameters():
                 per_weight_grad = param.grad
                 if per_weight_grad is not None:
-                    if torch.any(torch.isnan(per_weight_grad)) or torch.any(
+                    if torch.any(torch.isinf(per_weight_grad)) or torch.any(
                             torch.isnan(per_weight_grad)):
                         grad_inf_nan_flag = True
             if grad_inf_nan_flag:
@@ -193,11 +199,12 @@ def train_classification(train_loader, model, criterion, optimizer, scheduler,
 
         if skip_batch_flag:
             log_info = f'skip this batch!'
-            logger.info(log_info) if local_rank == 0 else None
+            logger.info(
+                log_info) if local_rank == 0 and total_rank == 0 else None
             optimizer.zero_grad()
             continue
 
-        torch.distributed.barrier()
+        torch.distributed.barrier(device_ids=[local_rank])
 
         if config.use_amp:
             if iter_index % config.accumulation_steps == 0:
@@ -257,7 +264,8 @@ def train_classification(train_loader, model, criterion, optimizer, scheduler,
         if iter_index % int(
                 config.print_interval * config.accumulation_steps) == 0:
             log_info = f'train: epoch {epoch:0>4d}, iter [{accumulation_iter_index:0>5d}, {accumulation_iters:0>5d}], lr: {scheduler.current_lr:.6f}, loss: {loss*config.accumulation_steps:.4f}'
-            logger.info(log_info) if local_rank == 0 else None
+            logger.info(
+                log_info) if local_rank == 0 and total_rank == 0 else None
 
         iter_index += 1
 
@@ -293,7 +301,17 @@ def train_distill_classification(train_loader, model, criterion, optimizer,
     if config.freeze_teacher:
         model.module.teacher.eval()
 
+    amp_type = get_amp_type(model)
+
     local_rank = config.local_rank
+    if hasattr(config, 'total_rank'):
+        total_rank = config.total_rank
+    else:
+        total_rank = 0
+
+    log_info = f'use_amp: {config.use_amp}, amp_type: {amp_type}!'
+    logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
+
     iters = len(train_loader.dataset) // config.batch_size
     iter_index = 1
     assert config.accumulation_steps >= 1, 'illegal accumulation_steps!'
@@ -310,27 +328,8 @@ def train_distill_classification(train_loader, model, criterion, optimizer,
         if torch.any(torch.isnan(images)) or torch.any(torch.isnan(labels)):
             skip_batch_flag = True
 
-        if iter_index % config.accumulation_steps == 0:
-            tea_outputs, stu_outputs = model(images)
-            loss_value = {}
-            for loss_name in criterion.keys():
-                if loss_name in ['CELoss', 'OneHotLabelCELoss']:
-                    if not config.freeze_teacher:
-                        temp_loss = criterion[loss_name](
-                            tea_outputs, labels) * config.loss_ratio[loss_name]
-                        loss_value['tea_' + loss_name] = temp_loss
-
-                    temp_loss = criterion[loss_name](
-                        stu_outputs, labels) * config.loss_ratio[loss_name]
-                    loss_value['stu_' + loss_name] = temp_loss
-                else:
-                    temp_loss = criterion[loss_name](
-                        stu_outputs,
-                        tea_outputs) * config.loss_ratio[loss_name]
-                    loss_value[loss_name] = temp_loss
-        else:
-            # not reduce gradient while iter_index % config.accumulation_steps != 0
-            with model.no_sync():
+        if config.use_amp:
+            with autocast(device_type="cuda", dtype=amp_type):
                 tea_outputs, stu_outputs = model(images)
                 loss_value = {}
                 for loss_name in criterion.keys():
@@ -349,6 +348,24 @@ def train_distill_classification(train_loader, model, criterion, optimizer,
                             stu_outputs,
                             tea_outputs) * config.loss_ratio[loss_name]
                         loss_value[loss_name] = temp_loss
+        else:
+            tea_outputs, stu_outputs = model(images)
+            loss_value = {}
+            for loss_name in criterion.keys():
+                if loss_name in ['CELoss', 'OneHotLabelCELoss']:
+                    if not config.freeze_teacher:
+                        temp_loss = criterion[loss_name](
+                            tea_outputs, labels) * config.loss_ratio[loss_name]
+                        loss_value['tea_' + loss_name] = temp_loss
+
+                    temp_loss = criterion[loss_name](
+                        stu_outputs, labels) * config.loss_ratio[loss_name]
+                    loss_value['stu_' + loss_name] = temp_loss
+                else:
+                    temp_loss = criterion[loss_name](
+                        stu_outputs,
+                        tea_outputs) * config.loss_ratio[loss_name]
+                    loss_value[loss_name] = temp_loss
 
         loss = sum(loss_value.values())
 
@@ -368,19 +385,27 @@ def train_distill_classification(train_loader, model, criterion, optimizer,
         for key, value in loss_value.items():
             loss_value[key] = value / config.accumulation_steps
 
-        if iter_index % config.accumulation_steps == 0:
-            loss.backward()
+        if config.use_amp:
+            if iter_index % config.accumulation_steps == 0:
+                config.scaler.scale(loss).backward()
+            else:
+                # not reduce gradient while iter_index % config.accumulation_steps != 0
+                with model.no_sync():
+                    config.scaler.scale(loss).backward()
         else:
-            # not reduce gradient while iter_index % config.accumulation_steps != 0
-            with model.no_sync():
+            if iter_index % config.accumulation_steps == 0:
                 loss.backward()
+            else:
+                # not reduce gradient while iter_index % config.accumulation_steps != 0
+                with model.no_sync():
+                    loss.backward()
 
         if hasattr(config, 'skip_inf_nan_grad') and config.skip_inf_nan_grad:
             grad_inf_nan_flag = False
             for _, param in model.named_parameters():
                 per_weight_grad = param.grad
                 if per_weight_grad is not None:
-                    if torch.any(torch.isnan(per_weight_grad)) or torch.any(
+                    if torch.any(torch.isinf(per_weight_grad)) or torch.any(
                             torch.isnan(per_weight_grad)):
                         grad_inf_nan_flag = True
             if grad_inf_nan_flag:
@@ -394,27 +419,49 @@ def train_distill_classification(train_loader, model, criterion, optimizer,
 
         if skip_batch_flag:
             log_info = f'skip this batch!'
-            logger.info(log_info) if local_rank == 0 else None
+            logger.info(
+                log_info) if local_rank == 0 and total_rank == 0 else None
             optimizer.zero_grad()
             continue
 
-        torch.distributed.barrier()
+        torch.distributed.barrier(device_ids=[local_rank])
 
-        if iter_index % config.accumulation_steps == 0:
-            if (hasattr(config, 'clip_grad_value')
-                    and config.clip_grad_value > 0) or (hasattr(
-                        config, 'clip_max_norm') and config.clip_max_norm > 0):
+        if config.use_amp:
+            if iter_index % config.accumulation_steps == 0:
+                if (hasattr(config, 'clip_grad_value')
+                        and config.clip_grad_value
+                        > 0) or (hasattr(config, 'clip_max_norm')
+                                 and config.clip_max_norm > 0):
+                    config.scaler.unscale_(optimizer)
 
-                if hasattr(config, 'clip_grad_value'):
-                    torch.nn.utils.clip_grad_value_(model.parameters(),
-                                                    config.clip_grad_value)
+                    if hasattr(config, 'clip_grad_value'):
+                        torch.nn.utils.clip_grad_value_(
+                            model.parameters(), config.clip_grad_value)
 
-                if hasattr(config, 'clip_max_norm'):
-                    torch.nn.utils.clip_grad_norm_(model.parameters(),
-                                                   config.clip_max_norm)
+                    if hasattr(config, 'clip_max_norm'):
+                        torch.nn.utils.clip_grad_norm_(model.parameters(),
+                                                       config.clip_max_norm)
 
-            optimizer.step()
-            optimizer.zero_grad()
+                config.scaler.step(optimizer)
+                config.scaler.update()
+                optimizer.zero_grad()
+        else:
+            if iter_index % config.accumulation_steps == 0:
+                if (hasattr(config, 'clip_grad_value')
+                        and config.clip_grad_value
+                        > 0) or (hasattr(config, 'clip_max_norm')
+                                 and config.clip_max_norm > 0):
+
+                    if hasattr(config, 'clip_grad_value'):
+                        torch.nn.utils.clip_grad_value_(
+                            model.parameters(), config.clip_grad_value)
+
+                    if hasattr(config, 'clip_max_norm'):
+                        torch.nn.utils.clip_grad_norm_(model.parameters(),
+                                                       config.clip_max_norm)
+
+                optimizer.step()
+                optimizer.zero_grad()
 
         if iter_index % config.accumulation_steps == 0:
             for key, value in loss_value.items():
@@ -442,7 +489,8 @@ def train_distill_classification(train_loader, model, criterion, optimizer,
             log_info = f'train: epoch {epoch:0>4d}, iter [{accumulation_iter_index:0>5d}, {accumulation_iters:0>5d}], lr: {scheduler.current_lr:.6f}, loss: {loss*config.accumulation_steps:.4f}, '
             for key, value in loss_value.items():
                 log_info += f'{key}: {value*config.accumulation_steps:.4f}, '
-            logger.info(log_info) if local_rank == 0 else None
+            logger.info(
+                log_info) if local_rank == 0 and total_rank == 0 else None
 
         iter_index += 1
 
@@ -859,7 +907,17 @@ def train_detection(train_loader, model, criterion, optimizer, scheduler,
     # switch to train mode
     model.train()
 
+    amp_type = get_amp_type(model)
+
     local_rank = config.local_rank
+    if hasattr(config, 'total_rank'):
+        total_rank = config.total_rank
+    else:
+        total_rank = 0
+
+    log_info = f'use_amp: {config.use_amp}, amp_type: {amp_type}!'
+    logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
+
     iters = len(train_loader.dataset) // config.batch_size
     iter_index = 1
     assert config.accumulation_steps >= 1, 'illegal accumulation_steps!'
@@ -884,36 +942,18 @@ def train_detection(train_loader, model, criterion, optimizer, scheduler,
             skip_batch_flag = True
 
         if config.use_amp:
-            with autocast():
-                if iter_index % config.accumulation_steps == 0:
-                    if 'detr' in config.network:
-                        outs_tuple = model(images, masks)
-                    else:
-                        outs_tuple = model(images)
-                    loss_value = criterion(outs_tuple, targets)
-                else:
-                    # not reduce gradient while iter_index % config.accumulation_steps != 0
-                    with model.no_sync():
-                        if 'detr' in config.network:
-                            outs_tuple = model(images, masks)
-                        else:
-                            outs_tuple = model(images)
-                        loss_value = criterion(outs_tuple, targets)
-        else:
-            if iter_index % config.accumulation_steps == 0:
+            with autocast(device_type="cuda", dtype=amp_type):
                 if 'detr' in config.network:
                     outs_tuple = model(images, masks)
                 else:
                     outs_tuple = model(images)
                 loss_value = criterion(outs_tuple, targets)
+        else:
+            if 'detr' in config.network:
+                outs_tuple = model(images, masks)
             else:
-                # not reduce gradient while iter_index % config.accumulation_steps != 0
-                with model.no_sync():
-                    if 'detr' in config.network:
-                        outs_tuple = model(images, masks)
-                    else:
-                        outs_tuple = model(images)
-                    loss_value = criterion(outs_tuple, targets)
+                outs_tuple = model(images)
+            loss_value = criterion(outs_tuple, targets)
 
         loss = sum(loss_value.values())
 
@@ -953,7 +993,7 @@ def train_detection(train_loader, model, criterion, optimizer, scheduler,
             for _, param in model.named_parameters():
                 per_weight_grad = param.grad
                 if per_weight_grad is not None:
-                    if torch.any(torch.isnan(per_weight_grad)) or torch.any(
+                    if torch.any(torch.isinf(per_weight_grad)) or torch.any(
                             torch.isnan(per_weight_grad)):
                         grad_inf_nan_flag = True
             if grad_inf_nan_flag:
@@ -967,11 +1007,12 @@ def train_detection(train_loader, model, criterion, optimizer, scheduler,
 
         if skip_batch_flag:
             log_info = f'skip this batch!'
-            logger.info(log_info) if local_rank == 0 else None
+            logger.info(
+                log_info) if local_rank == 0 and total_rank == 0 else None
             optimizer.zero_grad()
             continue
 
-        torch.distributed.barrier()
+        torch.distributed.barrier(device_ids=[local_rank])
 
         if config.use_amp:
             if iter_index % config.accumulation_steps == 0:
@@ -1040,7 +1081,8 @@ def train_detection(train_loader, model, criterion, optimizer, scheduler,
             log_info = f'train: epoch {epoch:0>4d}, iter [{accumulation_iter_index:0>5d}, {accumulation_iters:0>5d}], lr: {scheduler.current_lr:.6f}, total_loss: {loss*config.accumulation_steps:.4f}, '
             for key, value in loss_value.items():
                 log_info += f'{key}: {value*config.accumulation_steps:.4f}, '
-            logger.info(log_info) if local_rank == 0 else None
+            logger.info(
+                log_info) if local_rank == 0 and total_rank == 0 else None
 
         iter_index += 1
 
@@ -1074,8 +1116,7 @@ def test_semantic_segmentation(test_loader, model, criterion, config):
         end = time.time()
         model_on_cuda = next(model.parameters()).is_cuda
         for _, data in tqdm(enumerate(test_loader)):
-            images, masks, scales, sizes = data['image'], data['mask'], data[
-                'scale'], data['size']
+            images, masks, sizes = data['image'], data['mask'], data['size']
             if model_on_cuda:
                 images, masks = images.cuda(), masks.cuda()
 
@@ -1092,7 +1133,7 @@ def test_semantic_segmentation(test_loader, model, criterion, config):
 
             # pred shape:[b,c,h,w] -> [b,h,w,c]
             outputs = outputs.permute(0, 2, 3, 1).contiguous()
-            pixel_preds = torch.argmax(outputs, axis=-1)
+            pixel_preds = torch.argmax(outputs, dim=-1)
 
             for per_image_pred, per_image_mask, per_image_size in zip(
                     pixel_preds, masks, sizes):
@@ -1104,12 +1145,6 @@ def test_semantic_segmentation(test_loader, model, criterion, config):
                 # per_image_mask:[h,w] -> (-1)
                 per_image_pred, per_image_mask = per_image_pred.reshape(
                     -1), per_image_mask.reshape(-1)
-
-                if config.ignore_index:
-                    per_image_filter_mask = (per_image_mask
-                                             != config.ignore_index)
-                    per_image_pred = per_image_pred[per_image_filter_mask]
-                    per_image_mask = per_image_mask[per_image_filter_mask]
 
                 per_image_intersect = per_image_pred[per_image_pred ==
                                                      per_image_mask]
@@ -1234,7 +1269,17 @@ def train_semantic_segmentation(train_loader, model, criterion, optimizer,
     # switch to train mode
     model.train()
 
+    amp_type = get_amp_type(model)
+
     local_rank = config.local_rank
+    if hasattr(config, 'total_rank'):
+        total_rank = config.total_rank
+    else:
+        total_rank = 0
+
+    log_info = f'use_amp: {config.use_amp}, amp_type: {amp_type}!'
+    logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
+
     iters = len(train_loader.dataset) // config.batch_size
     iter_index = 1
     assert config.accumulation_steps >= 1, 'illegal accumulation_steps!'
@@ -1252,41 +1297,20 @@ def train_semantic_segmentation(train_loader, model, criterion, optimizer,
             skip_batch_flag = True
 
         if config.use_amp:
-            with autocast():
-                if iter_index % config.accumulation_steps == 0:
-                    outputs = model(images)
-                    loss_value = {}
-                    for loss_name in criterion.keys():
-                        temp_loss = criterion[loss_name](outputs, masks)
-                        temp_loss = config.loss_ratio[loss_name] * temp_loss
-                        loss_value[loss_name] = temp_loss
-
-                else:
-                    # not reduce gradient while iter_index % config.accumulation_steps != 0
-                    with model.no_sync():
-                        outputs = model(images)
-                        loss_value = {}
-                        for loss_name in criterion.keys():
-                            temp_loss = criterion[loss_name](outputs, masks)
-                            temp_loss = config.loss_ratio[loss_name] * temp_loss
-                            loss_value[loss_name] = temp_loss
-        else:
-            if iter_index % config.accumulation_steps == 0:
+            with autocast(device_type="cuda", dtype=amp_type):
                 outputs = model(images)
                 loss_value = {}
                 for loss_name in criterion.keys():
                     temp_loss = criterion[loss_name](outputs, masks)
                     temp_loss = config.loss_ratio[loss_name] * temp_loss
                     loss_value[loss_name] = temp_loss
-            else:
-                # not reduce gradient while iter_index % config.accumulation_steps != 0
-                with model.no_sync():
-                    outputs = model(images)
-                    loss_value = {}
-                    for loss_name in criterion.keys():
-                        temp_loss = criterion[loss_name](outputs, masks)
-                        temp_loss = config.loss_ratio[loss_name] * temp_loss
-                        loss_value[loss_name] = temp_loss
+        else:
+            outputs = model(images)
+            loss_value = {}
+            for loss_name in criterion.keys():
+                temp_loss = criterion[loss_name](outputs, masks)
+                temp_loss = config.loss_ratio[loss_name] * temp_loss
+                loss_value[loss_name] = temp_loss
 
         loss = 0.
         for key, value in loss_value.items():
@@ -1328,7 +1352,7 @@ def train_semantic_segmentation(train_loader, model, criterion, optimizer,
             for _, param in model.named_parameters():
                 per_weight_grad = param.grad
                 if per_weight_grad is not None:
-                    if torch.any(torch.isnan(per_weight_grad)) or torch.any(
+                    if torch.any(torch.isinf(per_weight_grad)) or torch.any(
                             torch.isnan(per_weight_grad)):
                         grad_inf_nan_flag = True
             if grad_inf_nan_flag:
@@ -1342,11 +1366,12 @@ def train_semantic_segmentation(train_loader, model, criterion, optimizer,
 
         if skip_batch_flag:
             log_info = f'skip this batch!'
-            logger.info(log_info) if local_rank == 0 else None
+            logger.info(
+                log_info) if local_rank == 0 and total_rank == 0 else None
             optimizer.zero_grad()
             continue
 
-        torch.distributed.barrier()
+        torch.distributed.barrier(device_ids=[local_rank])
 
         if config.use_amp:
             if iter_index % config.accumulation_steps == 0:
@@ -1415,7 +1440,8 @@ def train_semantic_segmentation(train_loader, model, criterion, optimizer,
             log_info = f'train: epoch {epoch:0>4d}, iter [{accumulation_iter_index:0>5d}, {accumulation_iters:0>5d}], lr: {scheduler.current_lr:.6f}, loss: {loss*config.accumulation_steps:.4f}, '
             for key, value in loss_value.items():
                 log_info += f'{key}: {value*config.accumulation_steps:.4f}, '
-            logger.info(log_info) if local_rank == 0 else None
+            logger.info(
+                log_info) if local_rank == 0 and total_rank == 0 else None
 
         iter_index += 1
 
@@ -1570,7 +1596,17 @@ def train_instance_segmentation(train_loader, model, criterion, optimizer,
     # switch to train mode
     model.train()
 
+    amp_type = get_amp_type(model)
+
     local_rank = config.local_rank
+    if hasattr(config, 'total_rank'):
+        total_rank = config.total_rank
+    else:
+        total_rank = 0
+
+    log_info = f'use_amp: {config.use_amp}, amp_type: {amp_type}!'
+    logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
+
     iters = len(train_loader.dataset) // config.batch_size
     iter_index = 1
     assert config.accumulation_steps >= 1, 'illegal accumulation_steps!'
@@ -1591,24 +1627,12 @@ def train_instance_segmentation(train_loader, model, criterion, optimizer,
             skip_batch_flag = True
 
         if config.use_amp:
-            with autocast():
-                if iter_index % config.accumulation_steps == 0:
-                    outs_tuple = model(images)
-                    loss_value = criterion(outs_tuple, gt_bboxes, gt_masks)
-                else:
-                    # not reduce gradient while iter_index % config.accumulation_steps != 0
-                    with model.no_sync():
-                        outs_tuple = model(images)
-                        loss_value = criterion(outs_tuple, gt_bboxes, gt_masks)
-        else:
-            if iter_index % config.accumulation_steps == 0:
+            with autocast(device_type="cuda", dtype=amp_type):
                 outs_tuple = model(images)
                 loss_value = criterion(outs_tuple, gt_bboxes, gt_masks)
-            else:
-                # not reduce gradient while iter_index % config.accumulation_steps != 0
-                with model.no_sync():
-                    outs_tuple = model(images)
-                    loss_value = criterion(outs_tuple, gt_bboxes, gt_masks)
+        else:
+            outs_tuple = model(images)
+            loss_value = criterion(outs_tuple, gt_bboxes, gt_masks)
 
         loss = sum(loss_value.values())
 
@@ -1648,7 +1672,7 @@ def train_instance_segmentation(train_loader, model, criterion, optimizer,
             for _, param in model.named_parameters():
                 per_weight_grad = param.grad
                 if per_weight_grad is not None:
-                    if torch.any(torch.isnan(per_weight_grad)) or torch.any(
+                    if torch.any(torch.isinf(per_weight_grad)) or torch.any(
                             torch.isnan(per_weight_grad)):
                         grad_inf_nan_flag = True
             if grad_inf_nan_flag:
@@ -1662,11 +1686,12 @@ def train_instance_segmentation(train_loader, model, criterion, optimizer,
 
         if skip_batch_flag:
             log_info = f'skip this batch!'
-            logger.info(log_info) if local_rank == 0 else None
+            logger.info(
+                log_info) if local_rank == 0 and total_rank == 0 else None
             optimizer.zero_grad()
             continue
 
-        torch.distributed.barrier()
+        torch.distributed.barrier(device_ids=[local_rank])
 
         if config.use_amp:
             if iter_index % config.accumulation_steps == 0:
@@ -1735,7 +1760,8 @@ def train_instance_segmentation(train_loader, model, criterion, optimizer,
             log_info = f'train: epoch {epoch:0>4d}, iter [{accumulation_iter_index:0>5d}, {accumulation_iters:0>5d}], lr: {scheduler.current_lr:.6f}, total_loss: {loss*config.accumulation_steps:.4f}, '
             for key, value in loss_value.items():
                 log_info += f'{key}: {value*config.accumulation_steps:.4f}, '
-            logger.info(log_info) if local_rank == 0 else None
+            logger.info(
+                log_info) if local_rank == 0 and total_rank == 0 else None
 
         iter_index += 1
 
@@ -1756,7 +1782,17 @@ def train_mae_self_supervised_learning(train_loader, model, criterion,
     # switch to train mode
     model.train()
 
+    amp_type = get_amp_type(model)
+
     local_rank = config.local_rank
+    if hasattr(config, 'total_rank'):
+        total_rank = config.total_rank
+    else:
+        total_rank = 0
+
+    log_info = f'use_amp: {config.use_amp}, amp_type: {amp_type}!'
+    logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
+
     iters = len(train_loader.dataset) // config.batch_size
     iter_index = 1
     assert config.accumulation_steps >= 1, 'illegal accumulation_steps!'
@@ -1774,24 +1810,12 @@ def train_mae_self_supervised_learning(train_loader, model, criterion,
             skip_batch_flag = True
 
         if config.use_amp:
-            with autocast():
-                if iter_index % config.accumulation_steps == 0:
-                    outputs, masks = model(images)
-                    loss = criterion(outputs, labels, masks)
-                else:
-                    # not reduce gradient while iter_index % config.accumulation_steps != 0
-                    with model.no_sync():
-                        outputs, masks = model(images)
-                        loss = criterion(outputs, labels, masks)
-        else:
-            if iter_index % config.accumulation_steps == 0:
+            with autocast(device_type="cuda", dtype=amp_type):
                 outputs, masks = model(images)
                 loss = criterion(outputs, labels, masks)
-            else:
-                # not reduce gradient while iter_index % config.accumulation_steps != 0
-                with model.no_sync():
-                    outputs, masks = model(images)
-                    loss = criterion(outputs, labels, masks)
+        else:
+            outputs, masks = model(images)
+            loss = criterion(outputs, labels, masks)
 
         if loss == 0. or torch.any(torch.isinf(loss)) or torch.any(
                 torch.isnan(loss)):
@@ -1820,7 +1844,7 @@ def train_mae_self_supervised_learning(train_loader, model, criterion,
             for _, param in model.named_parameters():
                 per_weight_grad = param.grad
                 if per_weight_grad is not None:
-                    if torch.any(torch.isnan(per_weight_grad)) or torch.any(
+                    if torch.any(torch.isinf(per_weight_grad)) or torch.any(
                             torch.isnan(per_weight_grad)):
                         grad_inf_nan_flag = True
             if grad_inf_nan_flag:
@@ -1834,11 +1858,12 @@ def train_mae_self_supervised_learning(train_loader, model, criterion,
 
         if skip_batch_flag:
             log_info = f'skip this batch!'
-            logger.info(log_info) if local_rank == 0 else None
+            logger.info(
+                log_info) if local_rank == 0 and total_rank == 0 else None
             optimizer.zero_grad()
             continue
 
-        torch.distributed.barrier()
+        torch.distributed.barrier(device_ids=[local_rank])
 
         if config.use_amp:
             if iter_index % config.accumulation_steps == 0:
@@ -1898,7 +1923,8 @@ def train_mae_self_supervised_learning(train_loader, model, criterion,
         if iter_index % int(
                 config.print_interval * config.accumulation_steps) == 0:
             log_info = f'train: epoch {epoch:0>4d}, iter [{accumulation_iter_index:0>5d}, {accumulation_iters:0>5d}], lr: {scheduler.current_lr:.6f}, loss: {loss*config.accumulation_steps:.4f}'
-            logger.info(log_info) if local_rank == 0 else None
+            logger.info(
+                log_info) if local_rank == 0 and total_rank == 0 else None
 
         iter_index += 1
 

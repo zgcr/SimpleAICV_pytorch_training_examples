@@ -7,20 +7,20 @@ sys.path.append(BASE_DIR)
 
 from tools.path import human_matting_dataset_path
 
-from simpleAICV.human_matting import models
-from simpleAICV.human_matting import losses
-from simpleAICV.human_matting.datasets.human_matting_dataset import HumanMattingDataset
-from simpleAICV.human_matting.common import RandomHorizontalFlip, Resize, Normalize, HumanMattingCollater, load_state_dict
+from SimpleAICV.human_matting import models
+from SimpleAICV.human_matting import losses
+from SimpleAICV.human_matting.datasets.human_matting_dataset import HumanMattingDataset
+from SimpleAICV.human_matting.common import RandomHorizontalFlip, Resize, Normalize, HumanMattingCollater, load_state_dict
 
 import torch
 import torchvision.transforms as transforms
 
 
 class config:
-    input_image_size = [832, 832]
+    input_image_size = [1024, 1024]
     network = 'resnet50_pfan_matting'
 
-    backbone_pretrained_path = '/root/code/SimpleAICV_pytorch_training_examples/pretrained_models/resnet_convert_from_pytorch_official_weights/resnet50-11ad3fa6-acc1-80.858_pytorch_official_weight_convert.pth'
+    backbone_pretrained_path = '/root/autodl-tmp/pretrained_models/resnet_convert_from_pytorch_official_weights/resnet50-11ad3fa6-acc1-80.858_pytorch_official_weight_convert.pth'
     model = models.__dict__[network](
         **{
             'backbone_pretrained_path': backbone_pretrained_path,
@@ -54,13 +54,14 @@ class config:
 
     train_dataset = HumanMattingDataset(human_matting_dataset_path,
                                         set_name_list=[
+                                            'matting_human_half',
                                             'Deep_Automatic_Portrait_Matting',
                                             'RealWorldPortrait636',
                                             'P3M10K',
                                         ],
                                         set_type='train',
                                         max_side=2048,
-                                        kernel_size_range=[10, 15],
+                                        kernel_size_range=[15, 15],
                                         transform=transforms.Compose([
                                             Resize(resize=input_image_size[0]),
                                             RandomHorizontalFlip(prob=0.5),
@@ -70,7 +71,6 @@ class config:
     # 完整数据集必须在list中第0个位置
     val_dataset_name_list = [
         [
-            'Deep_Automatic_Portrait_Matting',
             'P3M-500-NP',
             'P3M-500-P',
         ],
@@ -83,7 +83,7 @@ class config:
             set_name_list=per_sub_dataset_list,
             set_type='val',
             max_side=2048,
-            kernel_size_range=[10, 15],
+            kernel_size_range=[15, 15],
             transform=transforms.Compose([
                 Resize(resize=input_image_size[0]),
                 Normalize(),
@@ -95,7 +95,7 @@ class config:
 
     seed = 0
     # batch_size is total size
-    batch_size = 96
+    batch_size = 32
     # num_workers is total workers
     num_workers = 32
     accumulation_steps = 1
@@ -125,7 +125,7 @@ class config:
     for i in range(epochs):
         if i % 10 == 0:
             eval_epoch.append(i)
-    print_interval = 50
+    print_interval = 100
     save_interval = 10
 
     save_model_metric = 'miou_average'

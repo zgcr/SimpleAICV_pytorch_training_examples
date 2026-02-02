@@ -8,11 +8,11 @@ sys.path.append(BASE_DIR)
 
 from tools.path import COCO2017_path
 
-from simpleAICV.detection import models
-from simpleAICV.detection import losses
-from simpleAICV.detection import decode
-from simpleAICV.detection.datasets.cocodataset import CocoDetection
-from simpleAICV.detection.common import DetectionResize, RandomHorizontalFlip, Normalize, DETRDetectionCollater, load_state_dict
+from SimpleAICV.detection import models
+from SimpleAICV.detection import losses
+from SimpleAICV.detection import decode
+from SimpleAICV.detection.datasets.cocodataset import CocoDetection
+from SimpleAICV.detection.common import DetectionResize, RandomHorizontalFlip, Normalize, DETRDetectionCollater, load_state_dict
 
 import torch
 import torchvision.transforms as transforms

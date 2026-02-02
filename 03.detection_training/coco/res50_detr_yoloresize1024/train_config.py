@@ -8,11 +8,11 @@ sys.path.append(BASE_DIR)
 
 from tools.path import COCO2017_path
 
-from simpleAICV.detection import models
-from simpleAICV.detection import losses
-from simpleAICV.detection import decode
-from simpleAICV.detection.datasets.cocodataset import CocoDetection
-from simpleAICV.detection.common import DetectionResize, RandomHorizontalFlip, RandomCrop, RandomTranslate, Normalize, DETRDetectionCollater, load_state_dict
+from SimpleAICV.detection import models
+from SimpleAICV.detection import losses
+from SimpleAICV.detection import decode
+from SimpleAICV.detection.datasets.cocodataset import CocoDetection
+from SimpleAICV.detection.common import DetectionResize, RandomHorizontalFlip, RandomCrop, RandomTranslate, Normalize, DETRDetectionCollater, load_state_dict
 
 import torch
 import torchvision.transforms as transforms
@@ -24,7 +24,7 @@ class config:
     input_image_size = [1024, 1024]
 
     # load backbone pretrained model or not
-    backbone_pretrained_path = '/root/code/SimpleAICV_pytorch_training_examples/pretrained_models/resnet_convert_from_pytorch_official_weights/resnet50-11ad3fa6-acc1-80.858_pytorch_official_weight_convert.pth'
+    backbone_pretrained_path = '/root/autodl-tmp/pretrained_models/resnet_convert_from_pytorch_official_weights/resnet50-11ad3fa6-acc1-80.858_pytorch_official_weight_convert.pth'
     model = models.__dict__[network](**{
         'backbone_pretrained_path': backbone_pretrained_path,
         'num_classes': num_classes,
@@ -102,7 +102,7 @@ class config:
     # batch_size is total size
     batch_size = 64
     # num_workers is total workers
-    num_workers = 64
+    num_workers = 32
     accumulation_steps = 1
 
     optimizer = (

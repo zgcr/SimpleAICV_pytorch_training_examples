@@ -8,10 +8,10 @@ sys.path.append(BASE_DIR)
 
 from tools.path import ILSVRC2012_path
 
-from simpleAICV.classification import backbones
-from simpleAICV.classification import losses
-from simpleAICV.classification.datasets.ilsvrc2012dataset import ILSVRC2012Dataset
-from simpleAICV.classification.common import Opencv2PIL, TorchRandomResizedCrop, TorchRandomHorizontalFlip, RandAugment, TorchResize, TorchCenterCrop, TorchMeanStdNormalize, RandomErasing, ClassificationCollater, MixupCutmixClassificationCollater, load_state_dict
+from SimpleAICV.classification import backbones
+from SimpleAICV.classification import losses
+from SimpleAICV.classification.datasets.ilsvrc2012dataset import ILSVRC2012Dataset
+from SimpleAICV.classification.common import Opencv2PIL, TorchRandomResizedCrop, TorchRandomHorizontalFlip, RandAugment, TorchResize, TorchCenterCrop, TorchMeanStdNormalize, RandomErasing, ClassificationCollater, MixupCutmixClassificationCollater, load_state_dict
 
 import torch
 import torchvision.transforms as transforms
@@ -33,7 +33,7 @@ class config:
     })
 
     # load pretrained model or not
-    trained_model_path = '/root/code/SimpleAICV_pytorch_training_examples/pretrained_models/convformer_convert_from_official_weights/convformer_s36_384_in21ft1k_pytorch_official_weight_convert.pth'
+    trained_model_path = '/root/autodl-tmp/pretrained_models/convformer_convert_from_pytorch_official_weights/convformer_s36_384_in21ft1k_pytorch_official_weight_convert.pth'
     load_state_dict(trained_model_path, model)
 
     train_criterion = losses.__dict__['OneHotLabelCELoss']()
@@ -64,7 +64,7 @@ class config:
         set_name='val',
         transform=transforms.Compose([
             Opencv2PIL(),
-            TorchResize(resize=input_image_size * scale),
+            TorchResize(resize=int(input_image_size * scale)),
             TorchCenterCrop(resize=input_image_size),
             TorchMeanStdNormalize(mean=[0.485, 0.456, 0.406],
                                   std=[0.229, 0.224, 0.225]),
@@ -85,7 +85,7 @@ class config:
 
     seed = 0
     # batch_size is total size
-    batch_size = 1024
+    batch_size = 2048
     # num_workers is total workers
     num_workers = 64
     accumulation_steps = 1
@@ -93,7 +93,7 @@ class config:
     optimizer = (
         'AdamW',
         {
-            'lr': 1e-3,
+            'lr': 2e-3,
             'global_weight_decay': False,
             # if global_weight_decay = False
             # all bias, bn and other 1d params weight set to 0 weight decay
@@ -114,7 +114,7 @@ class config:
     print_interval = 100
 
     sync_bn = False
-    use_amp = False
+    use_amp = True
     use_compile = False
     compile_params = {
         # 'default': optimizes for large models, low compile-time and no extra memory usage.

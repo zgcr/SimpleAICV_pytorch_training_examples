@@ -2,60 +2,52 @@ import os
 import sys
 import warnings
 
-FILE_DIR = os.path.dirname(os.path.abspath(__file__))
-sys.path.append(FILE_DIR)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(BASE_DIR)
 warnings.filterwarnings('ignore')
 
 import cv2
 import gradio as gr
-import random
 import numpy as np
 from PIL import Image
 
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
-from simpleAICV.face_detection import models
-from simpleAICV.face_detection import decode
-from simpleAICV.face_detection.common import load_state_dict
+from SimpleAICV.face_detection import models
+from SimpleAICV.face_detection import decode
+from SimpleAICV.face_detection.common import load_state_dict
+from SimpleAICV.face_detection.datasets.face_detection_dataset import FACE_CLASSES, FACE_CLASSES_COLOR
+from tools.utils import set_seed
 
-from simpleAICV.face_detection.datasets.face_detection_dataset import FACE_CLASSES, FACE_CLASSES_COLOR
 
-seed = 0
-model_name = 'resnet50_retinaface'
-decoder_name = 'RetinaFaceDecoder'
-classes_name = FACE_CLASSES
-classes_color = FACE_CLASSES_COLOR
+class config:
+    network = 'resnet50_retinaface'
+    num_classes = 1
+    input_image_size = 1024
 
-trained_model_path = '/root/autodl-tmp/pretrained_models/retinaface_train_on_face_detection_dataset/resnet50_retinaface-metric66.053.pth'
-input_image_size = 1024
-min_score_threshold = 0.3
+    model = models.__dict__[network](**{})
 
-os.environ['PYTHONHASHSEED'] = str(seed)
-random.seed(seed)
-np.random.seed(seed)
-torch.manual_seed(seed)
-
-# assert model_name in models.__dict__.keys(), 'Unsupported model!'
-model = models.__dict__[model_name](**{})
-if trained_model_path:
+    # load total pretrained model or not
+    trained_model_path = '/root/autodl-tmp/pretrained_models/retinaface_train_on_face_detection_dataset/resnet50_retinaface-metric66.224.pth'
     load_state_dict(trained_model_path, model)
-else:
-    print('No pretrained model load!')
-model.eval()
 
-assert decoder_name in decode.__dict__.keys(), 'Unsupported decoder!'
-decoder = decode.__dict__[decoder_name](
-    **{
-        'anchor_sizes': [[8, 16, 32], [32, 64, 128], [128, 256, 512]],
-        'strides': [8, 16, 32],
-        'max_object_num': 200,
-        'min_score_threshold': min_score_threshold,
-        'topn': 1000,
-        'nms_type': 'python_nms',
-        'nms_threshold': 0.3,
-    })
+    decoder = decode.__dict__['RetinaFaceDecoder'](
+        **{
+            'anchor_sizes': [[8, 16, 32], [32, 64, 128], [128, 256, 512]],
+            'strides': [8, 16, 32],
+            'max_object_num': 200,
+            'min_score_threshold': 0.3,
+            'topn': 1000,
+            'nms_type': 'python_nms',
+            'nms_threshold': 0.3,
+        })
+
+    seed = 0
+
+    classes_name = FACE_CLASSES
+    classes_color = FACE_CLASSES_COLOR
 
 
 def preprocess_image(image, resize):
@@ -82,11 +74,18 @@ def preprocess_image(image, resize):
     return origin_image, padded_img, scale, scaled_size
 
 
-@torch.no_grad
+@torch.no_grad()
 def predict(image):
+    set_seed(config.seed)
+
     origin_image, resized_img, scale, scaled_size = preprocess_image(
-        image, input_image_size)
+        image, config.input_image_size)
     resized_img = torch.tensor(resized_img).permute(2, 0, 1).unsqueeze(0)
+
+    model = config.model
+    decoder = config.decoder
+
+    model.eval()
 
     with torch.no_grad():
         outputs = model(resized_img)

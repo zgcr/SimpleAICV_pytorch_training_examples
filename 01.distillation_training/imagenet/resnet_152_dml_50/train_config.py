@@ -8,10 +8,10 @@ sys.path.append(BASE_DIR)
 
 from tools.path import ILSVRC2012_path
 
-from simpleAICV.distillation.distillmodel import KDModel
-from simpleAICV.distillation import losses
-from simpleAICV.classification.datasets.ilsvrc2012dataset import ILSVRC2012Dataset
-from simpleAICV.classification.common import Opencv2PIL, TorchMeanStdNormalize, TorchRandomResizedCrop, TorchRandomHorizontalFlip, TorchResize, TorchCenterCrop, ClassificationCollater
+from SimpleAICV.distillation.distillmodel import KDModel
+from SimpleAICV.distillation import losses
+from SimpleAICV.classification.datasets.ilsvrc2012dataset import ILSVRC2012Dataset
+from SimpleAICV.classification.common import Opencv2PIL, TorchMeanStdNormalize, TorchRandomResizedCrop, TorchRandomHorizontalFlip, TorchResize, TorchCenterCrop, ClassificationCollater
 
 import torch
 import torchvision.transforms as transforms
@@ -23,8 +23,8 @@ class config:
 
     teacher = 'resnet152'
     student = 'resnet50'
-    teacher_pretrained_model_path = '/root/autodl-tmp/pretrained_models/resnet_train_from_scratch_on_imagenet1k/resnet152-acc77.772.pth'
-    student_pretrained_model_path = '/root/autodl-tmp/pretrained_models/resnet_train_from_scratch_on_imagenet1k/resnet50-acc76.182.pth'
+    teacher_pretrained_model_path = '/root/autodl-tmp/pretrained_models/resnet_train_from_scratch_on_imagenet1k/resnet152-acc77.834.pth'
+    student_pretrained_model_path = '/root/autodl-tmp/pretrained_models/resnet_train_from_scratch_on_imagenet1k/resnet50-acc76.242.pth'
     freeze_teacher = False
     num_classes = 1000
     use_gradient_checkpoint = False
@@ -64,7 +64,7 @@ class config:
         set_name='val',
         transform=transforms.Compose([
             Opencv2PIL(),
-            TorchResize(resize=input_image_size * scale),
+            TorchResize(resize=int(input_image_size * scale)),
             TorchCenterCrop(resize=input_image_size),
             TorchMeanStdNormalize(mean=[0.485, 0.456, 0.406],
                                   std=[0.229, 0.224, 0.225]),
@@ -76,7 +76,7 @@ class config:
     # batch_size is total size
     batch_size = 256
     # num_workers is total workers
-    num_workers = 20
+    num_workers = 64
     accumulation_steps = 1
 
     optimizer = (
@@ -105,6 +105,7 @@ class config:
     print_interval = 100
 
     sync_bn = False
+    use_amp = True
     use_compile = False
     compile_params = {
         # 'default': optimizes for large models, low compile-time and no extra memory usage.

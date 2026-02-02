@@ -12,30 +12,11 @@ import re
 import time
 
 import torch
-import torch.nn as nn
 from torch.utils.data import DataLoader
-from torch.cuda.amp import GradScaler
 
 from tools.interactive_segmentation_scripts import train_distill_sam_encoder
 from tools.utils import (get_logger, set_seed, worker_seed_init_fn,
-                         build_optimizer, Scheduler, EmaModel)
-
-
-def build_training_mode(config, model):
-    ema_model, scaler = None, None
-    if config.sync_bn:
-        model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model).cuda()
-
-    local_rank = config.local_rank
-    model = nn.parallel.DistributedDataParallel(model,
-                                                device_ids=[local_rank],
-                                                output_device=local_rank,
-                                                find_unused_parameters=True)
-
-    if hasattr(config, 'use_amp') and config.use_amp:
-        scaler = GradScaler()
-
-    return model, ema_model, scaler
+                         build_optimizer, Scheduler, build_training_mode)
 
 
 def parse_args():
@@ -68,16 +49,14 @@ def main():
     local_rank = int(os.environ['LOCAL_RANK'])
     config.local_rank = local_rank
     # start init process
-    torch.distributed.init_process_group(backend='nccl', init_method='env://')
     torch.cuda.set_device(local_rank)
+    torch.distributed.init_process_group(backend='nccl', init_method='env://')
     config.group = torch.distributed.new_group(list(range(config.gpus_num)))
 
-    if local_rank == 0:
-        os.makedirs(
-            checkpoint_dir) if not os.path.exists(checkpoint_dir) else None
-        os.makedirs(log_dir) if not os.path.exists(log_dir) else None
+    os.makedirs(checkpoint_dir, exist_ok=True)
+    os.makedirs(log_dir, exist_ok=True)
 
-    torch.distributed.barrier()
+    torch.distributed.barrier(device_ids=[local_rank])
 
     logger = get_logger('train', log_dir)
 
@@ -148,7 +127,9 @@ def main():
     start_epoch, train_time = 1, 0
     best_loss, train_loss = 1e9, 0
     if os.path.exists(resume_model):
-        checkpoint = torch.load(resume_model, map_location=torch.device('cpu'))
+        checkpoint = torch.load(resume_model,
+                                map_location=torch.device('cpu'),
+                                weights_only=True)
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
@@ -259,6 +240,8 @@ def main():
 
     log_info = f'train done. train time: {train_time:.3f} hours, best_loss: {best_loss:.4f}'
     logger.info(log_info) if local_rank == 0 else None
+
+    torch.distributed.destroy_process_group()
 
     return
 

@@ -7,17 +7,17 @@ sys.path.append(BASE_DIR)
 
 from tools.path import human_matting_dataset_path
 
-from simpleAICV.human_matting import models
-from simpleAICV.human_matting import losses
-from simpleAICV.human_matting.datasets.human_matting_dataset import HumanMattingDataset
-from simpleAICV.human_matting.common import RandomHorizontalFlip, Resize, Normalize, HumanMattingCollater, load_state_dict
+from SimpleAICV.human_matting import models
+from SimpleAICV.human_matting import losses
+from SimpleAICV.human_matting.datasets.human_matting_dataset import HumanMattingDataset
+from SimpleAICV.human_matting.common import RandomHorizontalFlip, Resize, Normalize, HumanMattingCollater, load_state_dict
 
 import torch
 import torchvision.transforms as transforms
 
 
 class config:
-    input_image_size = [832, 832]
+    input_image_size = [1024, 1024]
     network = 'resnet50_pfan_matting'
 
     model = models.__dict__[network](**{})
@@ -30,7 +30,6 @@ class config:
     # 完整数据集必须在list中第0个位置
     val_dataset_name_list = [
         [
-            'Deep_Automatic_Portrait_Matting',
             'P3M-500-NP',
             'P3M-500-P',
         ],

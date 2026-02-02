@@ -1,0 +1,10 @@
+tar -xvf sav_000.tar
+tar -xvf sav_001.tar
+tar -xvf sav_002.tar
+tar -xvf sav_003.tar
+tar -xvf sav_004.tar
+tar -xvf sav_005.tar
+tar -xvf sav_006.tar
+tar -xvf sav_007.tar
+tar -xvf sav_008.tar
+tar -xvf sav_009.tar

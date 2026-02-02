@@ -8,11 +8,11 @@ sys.path.append(BASE_DIR)
 
 from tools.path import COCO2017_path
 
-from simpleAICV.instance_segmentation import models
-from simpleAICV.instance_segmentation import losses
-from simpleAICV.instance_segmentation import decode
-from simpleAICV.instance_segmentation.datasets.cocodataset import CocoInstanceSegmentation
-from simpleAICV.instance_segmentation.common import InstanceSegmentationResize, RandomHorizontalFlip, Normalize, SOLOV2InstanceSegmentationCollater, load_state_dict
+from SimpleAICV.instance_segmentation import models
+from SimpleAICV.instance_segmentation import losses
+from SimpleAICV.instance_segmentation import decode
+from SimpleAICV.instance_segmentation.datasets.cocodataset import CocoInstanceSegmentation
+from SimpleAICV.instance_segmentation.common import InstanceSegmentationResize, RandomHorizontalFlip, Normalize, SOLOV2InstanceSegmentationCollater, load_state_dict
 
 import torch
 import torchvision.transforms as transforms

@@ -10,10 +10,10 @@ import numpy as np
 
 from tools.path import CIFAR100_path
 
-from simpleAICV.classification import backbones
-from simpleAICV.classification import losses
-from simpleAICV.classification.datasets.cifar100dataset import CIFAR100Dataset
-from simpleAICV.classification.common import Opencv2PIL, TorchMeanStdNormalize, ClassificationCollater, load_state_dict
+from SimpleAICV.classification import backbones
+from SimpleAICV.classification import losses
+from SimpleAICV.classification.datasets.cifar100dataset import CIFAR100Dataset
+from SimpleAICV.classification.common import Opencv2PIL, TorchMeanStdNormalize, ClassificationCollater, load_state_dict
 
 import torch
 import torchvision.transforms as transforms

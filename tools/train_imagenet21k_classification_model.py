@@ -15,9 +15,9 @@ from tqdm import tqdm
 
 import torch
 from torch.utils.data import DataLoader
-from torch.cuda.amp import autocast
+from torch.amp.autocast_mode import autocast
 
-from simpleAICV.classification.common import AverageMeter, SemanticSoftmaxMeter
+from SimpleAICV.classification.common import get_amp_type, AverageMeter, SemanticSoftmaxMeter
 
 from tools.scripts import all_reduce_operation_in_group_for_variables
 from tools.utils import (get_logger, set_seed, worker_seed_init_fn,
@@ -104,7 +104,14 @@ def train_classification(train_loader, model, criterion, optimizer, scheduler,
     # switch to train mode
     model.train()
 
+    amp_type = get_amp_type(model)
+
     local_rank = config.local_rank
+    if hasattr(config, 'total_rank'):
+        total_rank = config.total_rank
+    else:
+        total_rank = 0
+
     iters = len(train_loader.dataset) // config.batch_size
     iter_index = 1
     assert config.accumulation_steps >= 1, 'illegal accumulation_steps!'
@@ -122,29 +129,7 @@ def train_classification(train_loader, model, criterion, optimizer, scheduler,
             skip_batch_flag = True
 
         if config.use_amp:
-            with autocast():
-                if iter_index % config.accumulation_steps == 0:
-                    outputs = model(images)
-
-                    outputs = config.train_dataset.convert_outputs_to_semantic_outputs(
-                        outputs)
-                    labels = config.train_dataset.convert_single_labels_to_semantic_labels(
-                        labels)
-
-                    loss = criterion(outputs, labels)
-                else:
-                    # not reduce gradient while iter_index % config.accumulation_steps != 0
-                    with model.no_sync():
-                        outputs = model(images)
-
-                        outputs = config.train_dataset.convert_outputs_to_semantic_outputs(
-                            outputs)
-                        labels = config.train_dataset.convert_single_labels_to_semantic_labels(
-                            labels)
-
-                        loss = criterion(outputs, labels)
-        else:
-            if iter_index % config.accumulation_steps == 0:
+            with autocast(device_type="cuda", dtype=amp_type):
                 outputs = model(images)
 
                 outputs = config.train_dataset.convert_outputs_to_semantic_outputs(
@@ -153,17 +138,15 @@ def train_classification(train_loader, model, criterion, optimizer, scheduler,
                     labels)
 
                 loss = criterion(outputs, labels)
-            else:
-                # not reduce gradient while iter_index % config.accumulation_steps != 0
-                with model.no_sync():
-                    outputs = model(images)
+        else:
+            outputs = model(images)
 
-                    outputs = config.train_dataset.convert_outputs_to_semantic_outputs(
-                        outputs)
-                    labels = config.train_dataset.convert_single_labels_to_semantic_labels(
-                        labels)
+            outputs = config.train_dataset.convert_outputs_to_semantic_outputs(
+                outputs)
+            labels = config.train_dataset.convert_single_labels_to_semantic_labels(
+                labels)
 
-                    loss = criterion(outputs, labels)
+            loss = criterion(outputs, labels)
 
         if loss == 0. or torch.any(torch.isinf(loss)) or torch.any(
                 torch.isnan(loss)):
@@ -192,7 +175,7 @@ def train_classification(train_loader, model, criterion, optimizer, scheduler,
             for _, param in model.named_parameters():
                 per_weight_grad = param.grad
                 if per_weight_grad is not None:
-                    if torch.any(torch.isnan(per_weight_grad)) or torch.any(
+                    if torch.any(torch.isinf(per_weight_grad)) or torch.any(
                             torch.isnan(per_weight_grad)):
                         grad_inf_nan_flag = True
             if grad_inf_nan_flag:
@@ -206,11 +189,12 @@ def train_classification(train_loader, model, criterion, optimizer, scheduler,
 
         if skip_batch_flag:
             log_info = f'skip this batch!'
-            logger.info(log_info) if local_rank == 0 else None
+            logger.info(
+                log_info) if local_rank == 0 and total_rank == 0 else None
             optimizer.zero_grad()
             continue
 
-        torch.distributed.barrier()
+        torch.distributed.barrier(device_ids=[local_rank])
 
         if config.use_amp:
             if iter_index % config.accumulation_steps == 0:
@@ -243,7 +227,8 @@ def train_classification(train_loader, model, criterion, optimizer, scheduler,
         if iter_index % int(
                 config.print_interval * config.accumulation_steps) == 0:
             log_info = f'train: epoch {epoch:0>4d}, iter [{accumulation_iter_index:0>5d}, {accumulation_iters:0>5d}], lr: {scheduler.current_lr:.6f}, loss: {loss*config.accumulation_steps:.4f}'
-            logger.info(log_info) if local_rank == 0 else None
+            logger.info(
+                log_info) if local_rank == 0 and total_rank == 0 else None
 
         iter_index += 1
 
@@ -282,16 +267,14 @@ def main():
     local_rank = int(os.environ['LOCAL_RANK'])
     config.local_rank = local_rank
     # start init process
-    torch.distributed.init_process_group(backend='nccl', init_method='env://')
     torch.cuda.set_device(local_rank)
+    torch.distributed.init_process_group(backend='nccl', init_method='env://')
     config.group = torch.distributed.new_group(list(range(config.gpus_num)))
 
-    if local_rank == 0:
-        os.makedirs(
-            checkpoint_dir) if not os.path.exists(checkpoint_dir) else None
-        os.makedirs(log_dir) if not os.path.exists(log_dir) else None
+    os.makedirs(checkpoint_dir, exist_ok=True)
+    os.makedirs(log_dir, exist_ok=True)
 
-    torch.distributed.barrier()
+    torch.distributed.barrier(device_ids=[local_rank])
 
     logger = get_logger('train', log_dir)
 
@@ -373,7 +356,9 @@ def main():
     start_epoch, train_time = 1, 0
     best_acc1, acc1, test_loss = 0, 0, 0
     if os.path.exists(resume_model):
-        checkpoint = torch.load(resume_model, map_location=torch.device('cpu'))
+        checkpoint = torch.load(resume_model,
+                                map_location=torch.device('cpu'),
+                                weights_only=True)
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
@@ -507,6 +492,8 @@ def main():
 
     log_info = f'train done. model: {config.network}, train time: {train_time:.3f} hours, best_acc1: {best_acc1:.3f}%'
     logger.info(log_info) if local_rank == 0 else None
+
+    torch.distributed.destroy_process_group()
 
     return
 

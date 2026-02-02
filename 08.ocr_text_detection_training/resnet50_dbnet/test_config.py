@@ -7,11 +7,11 @@ sys.path.append(BASE_DIR)
 
 from tools.path import text_detection_dataset_path
 
-from simpleAICV.text_detection import models
-from simpleAICV.text_detection import losses
-from simpleAICV.text_detection import decode
-from simpleAICV.text_detection.datasets.text_detection_dataset import TextDetection
-from simpleAICV.text_detection.common import RandomRotate, MainDirectionRandomRotate, Resize, Normalize, DBNetTextDetectionCollater, load_state_dict
+from SimpleAICV.text_detection import models
+from SimpleAICV.text_detection import losses
+from SimpleAICV.text_detection import decode
+from SimpleAICV.text_detection.datasets.text_detection_dataset import TextDetection
+from SimpleAICV.text_detection.common import RandomRotate, MainDirectionRandomRotate, Resize, Normalize, DBNetTextDetectionCollater, load_state_dict
 
 import torch
 import torchvision.transforms as transforms

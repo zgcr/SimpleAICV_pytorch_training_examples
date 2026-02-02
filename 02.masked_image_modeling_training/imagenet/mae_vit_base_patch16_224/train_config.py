@@ -8,11 +8,11 @@ sys.path.append(BASE_DIR)
 
 from tools.path import ILSVRC2012_path
 
-from simpleAICV.masked_image_modeling import models
-from simpleAICV.masked_image_modeling import losses
-from simpleAICV.classification.datasets.ilsvrc2012dataset import ILSVRC2012Dataset
-from simpleAICV.classification.common import Opencv2PIL, TorchRandomResizedCrop, TorchRandomHorizontalFlip, TorchMeanStdNormalize, load_state_dict
-from simpleAICV.masked_image_modeling.common import MAESelfSupervisedPretrainCollater
+from SimpleAICV.masked_image_modeling import models
+from SimpleAICV.masked_image_modeling import losses
+from SimpleAICV.classification.datasets.ilsvrc2012dataset import ILSVRC2012Dataset
+from SimpleAICV.classification.common import Opencv2PIL, TorchRandomResizedCrop, TorchRandomHorizontalFlip, TorchMeanStdNormalize, load_state_dict
+from SimpleAICV.masked_image_modeling.common import MAESelfSupervisedPretrainCollater
 
 import torch
 import torchvision.transforms as transforms

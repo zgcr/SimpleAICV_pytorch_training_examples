@@ -48,16 +48,14 @@ def main():
     local_rank = int(os.environ['LOCAL_RANK'])
     config.local_rank = local_rank
     # start init process
-    torch.distributed.init_process_group(backend='nccl', init_method='env://')
     torch.cuda.set_device(local_rank)
+    torch.distributed.init_process_group(backend='nccl', init_method='env://')
     config.group = torch.distributed.new_group(list(range(config.gpus_num)))
 
-    if local_rank == 0:
-        os.makedirs(
-            checkpoint_dir) if not os.path.exists(checkpoint_dir) else None
-        os.makedirs(log_dir) if not os.path.exists(log_dir) else None
+    os.makedirs(checkpoint_dir, exist_ok=True)
+    os.makedirs(log_dir, exist_ok=True)
 
-    torch.distributed.barrier()
+    torch.distributed.barrier(device_ids=[local_rank])
 
     logger = get_logger('train', log_dir)
 
@@ -128,7 +126,9 @@ def main():
     start_epoch, train_time = 1, 0
     best_loss, train_loss = 1e9, 0
     if os.path.exists(resume_model):
-        checkpoint = torch.load(resume_model, map_location=torch.device('cpu'))
+        checkpoint = torch.load(resume_model,
+                                map_location=torch.device('cpu'),
+                                weights_only=True)
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
@@ -268,6 +268,8 @@ def main():
 
     log_info = f'train done. model: {config.network}, train time: {train_time:.3f} hours, best_loss: {best_loss:.4f}'
     logger.info(log_info) if local_rank == 0 else None
+
+    torch.distributed.destroy_process_group()
 
     return
 

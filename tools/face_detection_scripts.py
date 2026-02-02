@@ -1,3 +1,11 @@
+import os
+import sys
+import warnings
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(BASE_DIR)
+warnings.filterwarnings('ignore')
+
 import collections
 import numpy as np
 import time
@@ -7,9 +15,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from torch.cuda.amp import autocast
+from torch.amp.autocast_mode import autocast
 
-from simpleAICV.face_detection.common import AverageMeter
+from SimpleAICV.classification.common import get_amp_type, AverageMeter
 from tools.scripts import all_reduce_operation_in_group_for_variables, compute_voc_ap, compute_ious
 
 
@@ -401,7 +409,17 @@ def train_face_detection(train_loader, model, criterion, optimizer, scheduler,
     # switch to train mode
     model.train()
 
+    amp_type = get_amp_type(model)
+
     local_rank = config.local_rank
+    if hasattr(config, 'total_rank'):
+        total_rank = config.total_rank
+    else:
+        total_rank = 0
+
+    log_info = f'use_amp: {config.use_amp}, amp_type: {amp_type}!'
+    logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
+
     iters = len(train_loader.dataset) // config.batch_size
     iter_index = 1
     assert config.accumulation_steps >= 1, 'illegal accumulation_steps!'
@@ -419,24 +437,12 @@ def train_face_detection(train_loader, model, criterion, optimizer, scheduler,
             skip_batch_flag = True
 
         if config.use_amp:
-            with autocast():
-                if iter_index % config.accumulation_steps == 0:
-                    outs_tuple = model(images)
-                    loss_value = criterion(outs_tuple, targets)
-                else:
-                    # not reduce gradient while iter_index % config.accumulation_steps != 0
-                    with model.no_sync():
-                        outs_tuple = model(images)
-                        loss_value = criterion(outs_tuple, targets)
-        else:
-            if iter_index % config.accumulation_steps == 0:
+            with autocast(device_type="cuda", dtype=amp_type):
                 outs_tuple = model(images)
                 loss_value = criterion(outs_tuple, targets)
-            else:
-                # not reduce gradient while iter_index % config.accumulation_steps != 0
-                with model.no_sync():
-                    outs_tuple = model(images)
-                    loss_value = criterion(outs_tuple, targets)
+        else:
+            outs_tuple = model(images)
+            loss_value = criterion(outs_tuple, targets)
 
         loss = sum(loss_value.values())
 
@@ -476,7 +482,7 @@ def train_face_detection(train_loader, model, criterion, optimizer, scheduler,
             for _, param in model.named_parameters():
                 per_weight_grad = param.grad
                 if per_weight_grad is not None:
-                    if torch.any(torch.isnan(per_weight_grad)) or torch.any(
+                    if torch.any(torch.isinf(per_weight_grad)) or torch.any(
                             torch.isnan(per_weight_grad)):
                         grad_inf_nan_flag = True
             if grad_inf_nan_flag:
@@ -490,11 +496,12 @@ def train_face_detection(train_loader, model, criterion, optimizer, scheduler,
 
         if skip_batch_flag:
             log_info = f'skip this batch!'
-            logger.info(log_info) if local_rank == 0 else None
+            logger.info(
+                log_info) if local_rank == 0 and total_rank == 0 else None
             optimizer.zero_grad()
             continue
 
-        torch.distributed.barrier()
+        torch.distributed.barrier(device_ids=[local_rank])
 
         if config.use_amp:
             if iter_index % config.accumulation_steps == 0:
@@ -563,7 +570,8 @@ def train_face_detection(train_loader, model, criterion, optimizer, scheduler,
             log_info = f'train: epoch {epoch:0>4d}, iter [{accumulation_iter_index:0>5d}, {accumulation_iters:0>5d}], lr: {scheduler.current_lr:.6f}, total_loss: {loss*config.accumulation_steps:.4f}, '
             for key, value in loss_value.items():
                 log_info += f'{key}: {value*config.accumulation_steps:.4f}, '
-            logger.info(log_info) if local_rank == 0 else None
+            logger.info(
+                log_info) if local_rank == 0 and total_rank == 0 else None
 
         iter_index += 1
 

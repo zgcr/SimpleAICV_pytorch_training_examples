@@ -1,0 +1,10 @@
+mkdir sa_000040 && tar -xvf sa_000040.tar -C ./sa_000040/
+mkdir sa_000041 && tar -xvf sa_000041.tar -C ./sa_000041/
+mkdir sa_000042 && tar -xvf sa_000042.tar -C ./sa_000042/
+mkdir sa_000043 && tar -xvf sa_000043.tar -C ./sa_000043/
+mkdir sa_000044 && tar -xvf sa_000044.tar -C ./sa_000044/
+mkdir sa_000045 && tar -xvf sa_000045.tar -C ./sa_000045/
+mkdir sa_000046 && tar -xvf sa_000046.tar -C ./sa_000046/
+mkdir sa_000047 && tar -xvf sa_000047.tar -C ./sa_000047/
+mkdir sa_000048 && tar -xvf sa_000048.tar -C ./sa_000048/
+mkdir sa_000049 && tar -xvf sa_000049.tar -C ./sa_000049/

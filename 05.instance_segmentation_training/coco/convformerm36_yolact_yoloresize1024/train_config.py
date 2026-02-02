@@ -8,11 +8,11 @@ sys.path.append(BASE_DIR)
 
 from tools.path import COCO2017_path
 
-from simpleAICV.instance_segmentation import models
-from simpleAICV.instance_segmentation import losses
-from simpleAICV.instance_segmentation import decode
-from simpleAICV.instance_segmentation.datasets.cocodataset import CocoInstanceSegmentation
-from simpleAICV.instance_segmentation.common import InstanceSegmentationResize, RandomHorizontalFlip, Normalize, YOLACTInstanceSegmentationCollater, load_state_dict
+from SimpleAICV.instance_segmentation import models
+from SimpleAICV.instance_segmentation import losses
+from SimpleAICV.instance_segmentation import decode
+from SimpleAICV.instance_segmentation.datasets.cocodataset import CocoInstanceSegmentation
+from SimpleAICV.instance_segmentation.common import InstanceSegmentationResize, RandomHorizontalFlip, Normalize, YOLACTInstanceSegmentationCollater, load_state_dict
 
 import torch
 import torchvision.transforms as transforms
@@ -24,7 +24,7 @@ class config:
     input_image_size = [1024, 1024]
 
     # load backbone pretrained model or not
-    backbone_pretrained_path = '/root/autodl-tmp/pretrained_models/convformer_finetune_on_imagenet1k_from_convert_official_weights/convformer_m36-acc84.000.pth'
+    backbone_pretrained_path = '/root/autodl-tmp/pretrained_models/convformer_finetune_on_imagenet1k_from_convert_official_weights/convformer_m36-acc83.980.pth'
     model = models.__dict__[network](**{
         'backbone_pretrained_path': backbone_pretrained_path,
         'num_classes': num_classes + 1,
@@ -44,8 +44,8 @@ class config:
             'ratios': [1, 1 / 2, 2],
             'strides': [8, 16, 32, 64, 128],
             'cls_loss_weight': 1.,
-            'box_loss_weight': 1.5,
-            'mask_loss_weight': 6.125,
+            'box_loss_weight': 1.,
+            'mask_loss_weight': 1.,
             'semantic_seg_loss_weight': 1.,
         })
     test_criterion = losses.__dict__['YOLACTLoss'](
@@ -56,8 +56,8 @@ class config:
             'ratios': [1, 1 / 2, 2],
             'strides': [8, 16, 32, 64, 128],
             'cls_loss_weight': 1.,
-            'box_loss_weight': 1.5,
-            'mask_loss_weight': 6.125,
+            'box_loss_weight': 1.,
+            'mask_loss_weight': 1.,
             'semantic_seg_loss_weight': 1.,
         })
 

@@ -48,16 +48,14 @@ def main():
     local_rank = int(os.environ['LOCAL_RANK'])
     config.local_rank = local_rank
     # start init process
-    torch.distributed.init_process_group(backend='nccl', init_method='env://')
     torch.cuda.set_device(local_rank)
+    torch.distributed.init_process_group(backend='nccl', init_method='env://')
     config.group = torch.distributed.new_group(list(range(config.gpus_num)))
 
-    if local_rank == 0:
-        os.makedirs(
-            checkpoint_dir) if not os.path.exists(checkpoint_dir) else None
-        os.makedirs(log_dir) if not os.path.exists(log_dir) else None
+    os.makedirs(checkpoint_dir, exist_ok=True)
+    os.makedirs(log_dir, exist_ok=True)
 
-    torch.distributed.barrier()
+    torch.distributed.barrier(device_ids=[local_rank])
 
     logger = get_logger('train', log_dir)
 
@@ -90,7 +88,6 @@ def main():
                                     shuffle=False,
                                     pin_memory=True,
                                     num_workers=num_workers,
-                                    drop_last=False,
                                     collate_fn=config.val_collater)
         val_loader_list.append(per_sub_loader)
 
@@ -144,7 +141,9 @@ def main():
     start_epoch, train_time = 1, 0
     best_metric, metric, test_loss = 0, 0, 0
     if os.path.exists(resume_model):
-        checkpoint = torch.load(resume_model, map_location=torch.device('cpu'))
+        checkpoint = torch.load(resume_model,
+                                map_location=torch.device('cpu'),
+                                weights_only=True)
         model.load_state_dict(checkpoint['model_state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
@@ -157,7 +156,7 @@ def main():
         best_metric, test_loss, lr = checkpoint['best_metric'], checkpoint[
             'test_loss'], checkpoint['lr']
 
-        log_info = f'resuming model from {resume_model}. resume_epoch: {saved_epoch:0>3d}, used_time: {used_time:.3f} hours, best_metric: {best_metric:.3f}%, test_loss: {test_loss}, lr: {lr:.6f}'
+        log_info = f'resuming model from {resume_model}. resume_epoch: {saved_epoch:0>3d}, used_time: {used_time:.3f} hours, best_metric: {best_metric:.3f}, test_loss: {test_loss}, lr: {lr:.6f}'
         logger.info(log_info) if local_rank == 0 else None
 
         if 'ema_model_state_dict' in checkpoint.keys():
@@ -294,7 +293,7 @@ def main():
                         'scheduler_state_dict': scheduler.state_dict(),
                     }, os.path.join(checkpoint_dir, 'latest.pth'))
 
-        log_info = f'until epoch: {epoch:0>3d}, best_metric: {best_metric:.3f}%'
+        log_info = f'until epoch: {epoch:0>3d}, best_metric: {best_metric:.3f}'
         logger.info(log_info) if local_rank == 0 else None
 
     if local_rank == 0:
@@ -304,8 +303,10 @@ def main():
                 os.path.join(checkpoint_dir,
                              f'{config.network}-metric{best_metric:.3f}.pth'))
 
-    log_info = f'train done. model: {config.network}, train time: {train_time:.3f} hours, best_metric: {best_metric:.3f}%'
+    log_info = f'train done. model: {config.network}, train time: {train_time:.3f} hours, best_metric: {best_metric:.3f}'
     logger.info(log_info) if local_rank == 0 else None
+
+    torch.distributed.destroy_process_group()
 
     return
 

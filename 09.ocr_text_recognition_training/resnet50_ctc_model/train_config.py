@@ -7,13 +7,13 @@ sys.path.append(BASE_DIR)
 
 from tools.path import text_recognition_dataset_path
 
-from simpleAICV.text_recognition.models import CTCModel
-from simpleAICV.text_recognition import losses
-from simpleAICV.text_recognition.char_sets.final_char_table import final_char_table
-from simpleAICV.text_recognition.char_sets.num_and_alpha_char_table import num_char_table, alpha_char_table
-from simpleAICV.text_recognition.char_sets.common_standard_chinese_char_table import common_standard_chinese_char_first_table, common_standard_chinese_char_second_table, common_standard_chinese_char_third_table
-from simpleAICV.text_recognition.datasets.text_recognition_dataset import CNENTextRecognition
-from simpleAICV.text_recognition.common import RandomScale, RandomGaussianBlur, RandomBrightness, RandomRotate, Distort, Stretch, Perspective, Normalize, KeepRatioResizeTextRecognitionCollater, CTCTextLabelConverter, load_state_dict
+from SimpleAICV.text_recognition.models import CTCModel
+from SimpleAICV.text_recognition import losses
+from SimpleAICV.text_recognition.char_sets.final_char_table import final_char_table
+from SimpleAICV.text_recognition.char_sets.num_and_alpha_char_table import num_char_table, alpha_char_table
+from SimpleAICV.text_recognition.char_sets.common_standard_chinese_char_table import common_standard_chinese_char_first_table, common_standard_chinese_char_second_table, common_standard_chinese_char_third_table
+from SimpleAICV.text_recognition.datasets.text_recognition_dataset import CNENTextRecognition
+from SimpleAICV.text_recognition.common import RandomScale, RandomGaussianBlur, RandomBrightness, RandomRotate, Distort, Stretch, Perspective, Normalize, KeepRatioResizeTextRecognitionCollater, CTCTextLabelConverter, load_state_dict
 
 import torch
 import torchvision.transforms as transforms
@@ -39,28 +39,11 @@ class config:
     num_classes = converter.num_classes
 
     # load backbone pretrained model or not
-    backbone_pretrained_path = '/root/code/SimpleAICV_pytorch_training_examples/pretrained_models/resnet_convert_from_pytorch_official_weights/resnet50-11ad3fa6-acc1-80.858_pytorch_official_weight_convert.pth'
-    model_config = {
-        'backbone': {
-            'name': 'resnet50backbone',
-            'param': {
-                'pretrained_path': backbone_pretrained_path,
-            }
-        },
-        'encoder': {
-            'name': 'BiLSTMEncoder',
-            'param': {},
-        },
-        'predictor': {
-            'name': 'CTCPredictor',
-            'param': {
-                'hidden_planes': 512,
-                'num_classes': num_classes + 1,
-            }
-        },
-    }
-
-    model = CTCModel(model_config)
+    backbone_pretrained_path = '/root/autodl-tmp/pretrained_models/resnet_convert_from_pytorch_official_weights/resnet50-11ad3fa6-acc1-80.858_pytorch_official_weight_convert.pth'
+    model = CTCModel(backbone_type='resnet50backbone',
+                     backbone_pretrained_path=backbone_pretrained_path,
+                     planes=512,
+                     num_classes=num_classes + 1)
 
     # load total pretrained model or not
     trained_model_path = ''
@@ -181,7 +164,7 @@ class config:
     save_model_metric = 'lcs_precision'
 
     sync_bn = False
-    use_amp = False
+    use_amp = True
     use_compile = False
     compile_params = {
         # 'default': optimizes for large models, low compile-time and no extra memory usage.

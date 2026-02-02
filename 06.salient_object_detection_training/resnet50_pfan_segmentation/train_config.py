@@ -7,20 +7,20 @@ sys.path.append(BASE_DIR)
 
 from tools.path import salient_object_detection_dataset_path
 
-from simpleAICV.salient_object_detection import models
-from simpleAICV.salient_object_detection import losses
-from simpleAICV.salient_object_detection.datasets.salient_object_detection_dataset import SalientObjectDetectionDataset
-from simpleAICV.salient_object_detection.common import RandomHorizontalFlip, YoloStyleResize, Resize, Normalize, SalientObjectDetectionSegmentationCollater, load_state_dict
+from SimpleAICV.salient_object_detection import models
+from SimpleAICV.salient_object_detection import losses
+from SimpleAICV.salient_object_detection.datasets.salient_object_detection_dataset import SalientObjectDetectionDataset
+from SimpleAICV.salient_object_detection.common import RandomHorizontalFlip, YoloStyleResize, Resize, Normalize, SalientObjectDetectionSegmentationCollater, load_state_dict
 
 import torch
 import torchvision.transforms as transforms
 
 
 class config:
-    input_image_size = [832, 832]
+    input_image_size = [1024, 1024]
     network = 'resnet50_pfan_segmentation'
 
-    backbone_pretrained_path = '/root/code/SimpleAICV_pytorch_training_examples/pretrained_models/resnet_convert_from_pytorch_official_weights/resnet50-11ad3fa6-acc1-80.858_pytorch_official_weight_convert.pth'
+    backbone_pretrained_path = '/root/autodl-tmp/pretrained_models/resnet_convert_from_pytorch_official_weights/resnet50-11ad3fa6-acc1-80.858_pytorch_official_weight_convert.pth'
     model = models.__dict__[network](
         **{
             'backbone_pretrained_path': backbone_pretrained_path,
@@ -46,6 +46,8 @@ class config:
     train_dataset = SalientObjectDetectionDataset(
         salient_object_detection_dataset_path,
         set_name_list=[
+            'MAGICK',
+            'AM2K',
             'DIS5K',
             'HRS10K',
             'HRSOD',
@@ -61,6 +63,7 @@ class config:
     # 完整数据集必须在list中第0个位置
     val_dataset_name_list = [
         [
+            'AM2K',
             'DIS5K',
             'HRS10K',
             'HRSOD',
@@ -87,7 +90,7 @@ class config:
 
     seed = 0
     # batch_size is total size
-    batch_size = 96
+    batch_size = 64
     # num_workers is total workers
     num_workers = 32
     accumulation_steps = 1
@@ -117,7 +120,7 @@ class config:
     for i in range(epochs):
         if i % 10 == 0:
             eval_epoch.append(i)
-    print_interval = 50
+    print_interval = 100
     save_interval = 10
 
     save_model_metric = 'miou_average'

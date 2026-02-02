@@ -13,7 +13,7 @@ import onnx
 import onnxsim
 import onnxruntime
 
-from simpleAICV.classification.common import load_state_dict
+from SimpleAICV.classification.common import load_state_dict
 
 
 def convert_pytorch_model_to_onnx_model(model,
@@ -58,12 +58,6 @@ def convert_pytorch_model_to_onnx_model(model,
 
 if __name__ == '__main__':
     import os
-    import sys
-
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    sys.path.append(BASE_DIR)
-
-    import os
     import random
     import numpy as np
     import torch
@@ -78,7 +72,7 @@ if __name__ == '__main__':
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
-    from simpleAICV.classification import backbones
+    from SimpleAICV.classification import backbones
 
     model = backbones.__dict__['resnet50'](**{
         'num_classes': 1000,
