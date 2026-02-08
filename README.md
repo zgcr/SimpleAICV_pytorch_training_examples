@@ -17,6 +17,7 @@
 - [Training GPU server](#training-gpu-server)
 - [Environments](#environments)
 - [Download pretrained models and experiments checkpoints/logs](#download-pretrained-models-and-experiments-checkpointslogs)
+- [Download datasets](#download-datasets)
 - [How to use gradio demo](#how-to-use-gradio-demo)
 - [How to use inference demo](#how-to-use-inference-demo)
 - [How to train or test model](#how-to-train-or-test-model)
@@ -131,6 +132,14 @@ https://huggingface.co/zgcr654321/pretrained_models/tree/main
 # Baidu-Netdisk
 链接:https://pan.baidu.com/s/17oSFXgIy1vxUdPUhTzRkdw?pwd=3l99
 提取码：3l99
+```
+
+# Download datasets
+You can download all datasets from Baidu-Netdisk.
+```
+# Baidu-Netdisk
+链接: https://pan.baidu.com/s/1zjwdVNliOMS3xwuuY41gcA?pwd=z9sa 
+提取码: z9sa
 ```
 
 # How to use gradio demo

@@ -2,6 +2,8 @@
 __pycache__
 checkpoints
 log
+*temp*
+*tmp*
 *.pth
 *.onnx
 *.pt
