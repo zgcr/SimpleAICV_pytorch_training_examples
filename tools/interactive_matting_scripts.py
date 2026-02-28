@@ -122,7 +122,12 @@ def train_sam_matting(train_loader, model, criterion, optimizer, scheduler,
         if torch.any(torch.isnan(images)):
             skip_batch_flag = True
 
-        batch_image_embeddings = model.module.forward_image_encoder(images)
+        if config.use_amp:
+            with autocast(device_type="cuda", dtype=amp_type):
+                batch_image_embeddings = model.module.forward_image_encoder(
+                    images)
+        else:
+            batch_image_embeddings = model.module.forward_image_encoder(images)
 
         all_iter_global_preds, all_iter_local_preds, all_iter_fused_preds, all_iter_iou_preds = [], [], [], []
         # 先执行第一次decoder forward
@@ -201,6 +206,11 @@ def train_sam_matting(train_loader, model, criterion, optimizer, scheduler,
         if config.use_amp:
             if iter_index % config.accumulation_steps == 0:
                 config.scaler.scale(loss).backward()
+                # 手动 allreduce 梯度
+                for param in model.parameters():
+                    if param.grad is not None:
+                        torch.distributed.all_reduce(
+                            param.grad, op=torch.distributed.ReduceOp.AVG)
             else:
                 # not reduce gradient while iter_index % config.accumulation_steps != 0
                 with model.no_sync():
@@ -208,6 +218,11 @@ def train_sam_matting(train_loader, model, criterion, optimizer, scheduler,
         else:
             if iter_index % config.accumulation_steps == 0:
                 loss.backward()
+                # 手动 allreduce 梯度
+                for param in model.parameters():
+                    if param.grad is not None:
+                        torch.distributed.all_reduce(
+                            param.grad, op=torch.distributed.ReduceOp.AVG)
             else:
                 # not reduce gradient while iter_index % config.accumulation_steps != 0
                 with model.no_sync():

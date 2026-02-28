@@ -49,12 +49,11 @@ def process_single_video(args):
     with open(per_video_json_path, encoding='utf-8') as f:
         per_video_json_data = json.load(f)
 
-    if need_resize:
-        per_video_json_data['video_height'] = float(origin_height)
-        per_video_json_data['video_width'] = float(origin_width)
-        per_video_json_data['video_resolution'] = float(origin_height *
-                                                        origin_width)
+    per_video_json_data['video_height'] = float(resize_h)
+    per_video_json_data['video_width'] = float(resize_w)
+    per_video_json_data['video_resolution'] = float(resize_h * resize_w)
 
+    if need_resize:
         per_video_annotations = per_video_json_data['masklet']
         new_per_video_annotations = []
 
@@ -157,12 +156,11 @@ def process_videos(root_path, save_path):
     #     with open(per_video_json_path, encoding='utf-8') as f:
     #         per_video_json_data = json.load(f)
 
-    #     if need_resize:
-    #         per_video_json_data['video_height'] = float(origin_height)
-    #         per_video_json_data['video_width'] = float(origin_width)
-    #         per_video_json_data['video_resolution'] = float(origin_height *
-    #                                                         origin_width)
+    #     per_video_json_data['video_height'] = float(resize_h)
+    #     per_video_json_data['video_width'] = float(resize_w)
+    #     per_video_json_data['video_resolution'] = float(resize_h * resize_w)
 
+    #     if need_resize:
     #         per_video_annotations = per_video_json_data['masklet']
     #         new_per_video_annotations = []
 

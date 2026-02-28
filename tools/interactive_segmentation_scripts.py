@@ -369,7 +369,12 @@ def train_sam_segmentation(train_loader, model, criterion, optimizer,
         if torch.any(torch.isnan(images)):
             skip_batch_flag = True
 
-        batch_image_embeddings = model.module.forward_image_encoder(images)
+        if config.use_amp:
+            with autocast(device_type="cuda", dtype=amp_type):
+                batch_image_embeddings = model.module.forward_image_encoder(
+                    images)
+        else:
+            batch_image_embeddings = model.module.forward_image_encoder(images)
 
         all_iter_mask_preds, all_iter_iou_preds = [], []
         # 先执行第一次decoder forward
@@ -437,6 +442,11 @@ def train_sam_segmentation(train_loader, model, criterion, optimizer,
         if config.use_amp:
             if iter_index % config.accumulation_steps == 0:
                 config.scaler.scale(loss).backward()
+                # 手动 allreduce 梯度
+                for param in model.parameters():
+                    if param.grad is not None:
+                        torch.distributed.all_reduce(
+                            param.grad, op=torch.distributed.ReduceOp.AVG)
             else:
                 # not reduce gradient while iter_index % config.accumulation_steps != 0
                 with model.no_sync():
@@ -444,6 +454,11 @@ def train_sam_segmentation(train_loader, model, criterion, optimizer,
         else:
             if iter_index % config.accumulation_steps == 0:
                 loss.backward()
+                # 手动 allreduce 梯度
+                for param in model.parameters():
+                    if param.grad is not None:
+                        torch.distributed.all_reduce(
+                            param.grad, op=torch.distributed.ReduceOp.AVG)
             else:
                 # not reduce gradient while iter_index % config.accumulation_steps != 0
                 with model.no_sync():
