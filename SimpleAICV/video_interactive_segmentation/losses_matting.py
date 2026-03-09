@@ -428,6 +428,7 @@ class SAM2MattingLoss(nn.Module):
         # local_pred: [b,4,1,h,w] -> [b,4,h,w,1] -> [b,4,h,w]
         # alpha: [b,1,h,w]
         # trimap: [b,h,w]->[b,1,h,w]
+        batch_size = local_pred.shape[0]
         local_pred = local_pred.float()
         local_pred = local_pred.permute(0, 1, 3, 4, 2).contiguous()
         local_pred = torch.clamp(local_pred, min=1e-4, max=1. - 1e-4)
@@ -450,6 +451,7 @@ class SAM2MattingLoss(nn.Module):
         weighted = weighted.sum(dim=[2, 3])
 
         alpha_loss = alpha_loss / (weighted + 1.)
+        alpha_loss = alpha_loss / batch_size
 
         return alpha_loss
 
@@ -523,6 +525,7 @@ class SAM2MattingLoss(nn.Module):
         # alpha: torch.Size([2, 1, 1024, 1024])
         # fusion_pred: [b,4,1,h,w] -> [b,4,h,w,1] -> [b,4,h,w]
         # alpha: [b,1,h,w]
+        batch_size = fusion_pred.shape[0]
         fusion_pred = fusion_pred.float()
         fusion_pred = fusion_pred.permute(0, 1, 3, 4, 2).contiguous()
         fusion_pred = torch.clamp(fusion_pred, min=1e-4, max=1. - 1e-4)
@@ -539,7 +542,8 @@ class SAM2MattingLoss(nn.Module):
         alpha_loss = alpha_loss.sum(dim=[2, 3])
         weighted = weighted.sum(dim=[2, 3])
 
-        alpha_loss = alpha_loss / (weighted + 1.)
+        alpha_loss = alpha_loss / weighted
+        alpha_loss = alpha_loss / batch_size
 
         return alpha_loss
 
@@ -606,6 +610,7 @@ class SAM2MattingLoss(nn.Module):
         # fg_map:[b,3,h,w]
         # bg_map:[b,3,h,w]
         # fusion_pred:[b,4,1,h,w] -> [b,4,3,h,w]
+        batch_size = fusion_pred.shape[0]
         fusion_pred = fusion_pred.float()
         fusion_pred = torch.clamp(fusion_pred, min=1e-4, max=1. - 1e-4)
         fusion_pred = torch.cat([fusion_pred, fusion_pred, fusion_pred], dim=2)
@@ -634,6 +639,7 @@ class SAM2MattingLoss(nn.Module):
         weighted = weighted.sum(dim=[2, 3, 4])
 
         composition_loss = composition_loss / weighted
+        composition_loss = composition_loss / batch_size
 
         return composition_loss
 
@@ -1110,6 +1116,7 @@ class SAM2MattingMultiLevelLoss(nn.Module):
         # local_pred: [b,4,1,h,w] -> [b,4,h,w,1] -> [b,4,h,w]
         # alpha: [b,1,h,w]
         # trimap: [b,h,w]->[b,1,h,w]
+        batch_size = local_pred.shape[0]
         local_pred = local_pred.float()
         local_pred = local_pred.permute(0, 1, 3, 4, 2).contiguous()
         local_pred = torch.clamp(local_pred, min=1e-4, max=1. - 1e-4)
@@ -1132,6 +1139,7 @@ class SAM2MattingMultiLevelLoss(nn.Module):
         weighted = weighted.sum(dim=[2, 3])
 
         alpha_loss = alpha_loss / (weighted + 1.)
+        alpha_loss = alpha_loss / batch_size
 
         return alpha_loss
 
@@ -1205,6 +1213,7 @@ class SAM2MattingMultiLevelLoss(nn.Module):
         # alpha: torch.Size([2, 1, 1024, 1024])
         # fusion_pred: [b,4,1,h,w] -> [b,4,h,w,1] -> [b,4,h,w]
         # alpha: [b,1,h,w]
+        batch_size = fusion_pred.shape[0]
         fusion_pred = fusion_pred.float()
         fusion_pred = fusion_pred.permute(0, 1, 3, 4, 2).contiguous()
         fusion_pred = torch.clamp(fusion_pred, min=1e-4, max=1. - 1e-4)
@@ -1221,7 +1230,8 @@ class SAM2MattingMultiLevelLoss(nn.Module):
         alpha_loss = alpha_loss.sum(dim=[2, 3])
         weighted = weighted.sum(dim=[2, 3])
 
-        alpha_loss = alpha_loss / (weighted + 1.)
+        alpha_loss = alpha_loss / weighted
+        alpha_loss = alpha_loss / batch_size
 
         return alpha_loss
 
@@ -1288,6 +1298,7 @@ class SAM2MattingMultiLevelLoss(nn.Module):
         # fg_map:[b,3,h,w]
         # bg_map:[b,3,h,w]
         # fusion_pred:[b,4,1,h,w] -> [b,4,3,h,w]
+        batch_size = fusion_pred.shape[0]
         fusion_pred = fusion_pred.float()
         fusion_pred = torch.clamp(fusion_pred, min=1e-4, max=1. - 1e-4)
         fusion_pred = torch.cat([fusion_pred, fusion_pred, fusion_pred], dim=2)
@@ -1316,6 +1327,7 @@ class SAM2MattingMultiLevelLoss(nn.Module):
         weighted = weighted.sum(dim=[2, 3, 4])
 
         composition_loss = composition_loss / weighted
+        composition_loss = composition_loss / batch_size
 
         return composition_loss
 
