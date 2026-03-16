@@ -231,7 +231,7 @@ class config:
     optimizer = (
         'AdamW',
         {
-            'lr': 1e-5,
+            'lr': 1e-4,
             'global_weight_decay': False,
             # if global_weight_decay = False
             # all bias, bn and other 1d params weight set to 0 weight decay
@@ -241,15 +241,14 @@ class config:
     )
 
     scheduler = (
-        'MultiStepLR',
+        'CosineLR',
         {
             'warm_up_epochs': 0,
-            'gamma': 0.1,
-            'milestones': [100],
+            'min_lr': 5e-6,
         },
     )
 
-    epochs = 2
+    epochs = 4
     print_interval = 100
     save_interval = 1
 
