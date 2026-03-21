@@ -161,7 +161,7 @@ def main():
         best_loss, train_loss, lr = checkpoint['best_loss'], checkpoint[
             'train_loss'], checkpoint['lr']
 
-        log_info = f'resuming model from {resume_model}. resume_epoch: {saved_epoch:0>3d}, used_time: {used_time:.3f} hours, best_loss: {best_loss:.4f}, lr: {lr:.6f}'
+        log_info = f'resuming model from {resume_model}. resume_epoch: {saved_epoch:0>3d}, used_time: {used_time:.3f} hours, best_loss: {best_loss:.6f}, lr: {lr:.6f}'
         logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
 
     # use torch 2.0 compile function
@@ -198,7 +198,7 @@ def main():
                                                train_criterion, optimizer,
                                                scheduler, epoch, logger,
                                                config)
-        log_info = f'train: epoch {epoch:0>3d}, train_loss: {train_loss:.4f}'
+        log_info = f'train: epoch {epoch:0>3d}, train_loss: {train_loss:.6f}'
         logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
 
         torch.cuda.empty_cache()
@@ -247,7 +247,7 @@ def main():
                     'scheduler_state_dict': scheduler.state_dict(),
                 }, os.path.join(checkpoint_dir, 'latest.pth'))
 
-        log_info = f'until epoch: {epoch:0>3d}, best_loss: {best_loss:.4f}'
+        log_info = f'until epoch: {epoch:0>3d}, best_loss: {best_loss:.6f}'
         logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
 
     if local_rank == 0 and total_rank == 0:
@@ -255,9 +255,9 @@ def main():
             os.rename(
                 os.path.join(checkpoint_dir, 'best_student.pth'),
                 os.path.join(checkpoint_dir,
-                             f'student-epoch{epoch}-loss{best_loss:.3f}.pth'))
+                             f'student-epoch{epoch}-loss{best_loss:.6f}.pth'))
 
-    log_info = f'train done. train time: {train_time:.3f} hours, best_loss: {best_loss:.4f}'
+    log_info = f'train done. train time: {train_time:.3f} hours, best_loss: {best_loss:.6f}'
     logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
 
     torch.distributed.destroy_process_group()

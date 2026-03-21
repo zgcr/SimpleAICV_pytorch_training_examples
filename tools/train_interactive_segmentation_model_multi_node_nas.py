@@ -14,15 +14,14 @@ import time
 import torch
 from torch.utils.data import DataLoader
 
-from tools.interactive_segmentation_scripts import train_distill_sam_encoder
+from tools.interactive_segmentation_scripts import train_sam_segmentation
 from tools.utils import (get_logger, set_seed, worker_seed_init_fn,
                          build_optimizer, Scheduler, build_training_mode)
 
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description='PyTorch Interactive Segmentation Distill Encoder Training'
-    )
+        description='PyTorch Interactive Segmentation Training')
     parser.add_argument(
         '--work-dir',
         type=str,
@@ -103,7 +102,8 @@ def main():
         if not key.startswith('__'):
             if key not in ['model']:
                 log_info = f'{key}: {value}'
-                logger.info(log_info) if local_rank == 0 else None
+                logger.info(
+                    log_info) if local_rank == 0 and total_rank == 0 else None
 
     model = config.model.cuda()
     train_criterion = config.train_criterion.cuda()
@@ -111,21 +111,21 @@ def main():
     # parameters needs to be updated by the optimizer
     # buffers doesn't needs to be updated by the optimizer
     log_info = f'--------------------parameters--------------------'
-    logger.info(log_info) if local_rank == 0 else None
+    logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
     for name, param in model.named_parameters():
         log_info = f'name: {name}, grad: {param.requires_grad}'
-        logger.info(log_info) if local_rank == 0 else None
+        logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
 
     log_info = f'--------------------buffers--------------------'
-    logger.info(log_info) if local_rank == 0 else None
+    logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
     for name, buffer in model.named_buffers():
         log_info = f'name: {name}, grad: {buffer.requires_grad}'
-        logger.info(log_info) if local_rank == 0 else None
+        logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
 
     optimizer, model_layer_weight_decay_list = build_optimizer(config, model)
 
     log_info = f'-------------layers weight decay---------------'
-    logger.info(log_info) if local_rank == 0 else None
+    logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
     for per_layer_list in model_layer_weight_decay_list:
         layer_name_list, layer_lr, layer_weight_decay = per_layer_list[
             'name'], per_layer_list['lr'], per_layer_list['weight_decay']
@@ -136,7 +136,8 @@ def main():
 
         for name in layer_name_list:
             log_info = f'name: {name}, lr: {layer_lr}, weight_decay: {layer_weight_decay}, lr_scale: {lr_scale}'
-            logger.info(log_info) if local_rank == 0 else None
+            logger.info(
+                log_info) if local_rank == 0 and total_rank == 0 else None
 
     scheduler = Scheduler(config, optimizer)
     model, _, config.scaler = build_training_mode(config, model)
@@ -159,23 +160,23 @@ def main():
         best_loss, train_loss, lr = checkpoint['best_loss'], checkpoint[
             'train_loss'], checkpoint['lr']
 
-        log_info = f'resuming model from {resume_model}. resume_epoch: {saved_epoch:0>3d}, used_time: {used_time:.3f} hours, best_loss: {best_loss:.6f}, lr: {lr:.6f}'
-        logger.info(log_info) if local_rank == 0 else None
+        log_info = f'resuming model from {resume_model}. resume_epoch: {saved_epoch:0>3d}, used_time: {used_time:.3f} hours, best_loss: {best_loss:.4f}, lr: {lr:.6f}'
+        logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
 
     # use torch 2.0 compile function
     config.compile_support = False
     log_info = f'using torch version:{torch.__version__}'
-    logger.info(log_info) if local_rank == 0 else None
+    logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
     if re.match(r'2.\d*.\d*', torch.__version__):
         config.compile_support = True
         log_info = f'this torch version support torch.compile function.'
-        logger.info(log_info) if local_rank == 0 else None
+        logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
     elif re.match(r'1.\d*.\d*', torch.__version__):
         log_info = f'this torch version unsupport torch.compile function.'
-        logger.info(log_info) if local_rank == 0 else None
+        logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
     else:
         log_info = f'unsupport torch version:{torch.__version__}'
-        logger.info(log_info) if local_rank == 0 else None
+        logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
         return
 
     config.use_compile = (config.compile_support and config.use_compile)
@@ -187,46 +188,41 @@ def main():
         per_epoch_start_time = time.time()
 
         log_info = f'epoch {epoch:0>3d} lr: {scheduler.current_lr:.6f}'
-        logger.info(log_info) if local_rank == 0 else None
+        logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
 
         torch.cuda.empty_cache()
 
         train_sampler.set_epoch(epoch)
-        train_loss = train_distill_sam_encoder(train_loader, model,
-                                               train_criterion, optimizer,
-                                               scheduler, epoch, logger,
-                                               config)
-        log_info = f'train: epoch {epoch:0>3d}, train_loss: {train_loss:.6f}'
-        logger.info(log_info) if local_rank == 0 else None
+        train_loss = train_sam_segmentation(train_loader, model,
+                                            train_criterion, optimizer,
+                                            scheduler, epoch, logger, config)
+        log_info = f'train: epoch {epoch:0>3d}, train_loss: {train_loss:.4f}'
+        logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
 
         torch.cuda.empty_cache()
 
         train_time += (time.time() - per_epoch_start_time) / 3600
 
         if epoch % config.save_interval == 0:
-            if local_rank == 0:
+            if local_rank == 0 and total_rank == 0:
                 if config.use_compile:
-                    save_student_model = model._orig_mod.module.student.state_dict(
-                    )
+                    save_model = model._orig_mod.module.state_dict()
                 else:
-                    save_student_model = model.module.student.state_dict()
-                torch.save(
-                    save_student_model,
-                    os.path.join(checkpoint_dir,
-                                 f'student_model_epoch_{epoch}.pth'))
+                    save_model = model.module.state_dict()
+                torch.save(save_model,
+                           os.path.join(checkpoint_dir, f'epoch_{epoch}.pth'))
 
-        if local_rank == 0:
+        if local_rank == 0 and total_rank == 0:
             # save best acc1 model and each epoch checkpoint
             if train_loss < best_loss:
                 best_loss = train_loss
                 if config.use_compile:
-                    save_best_student_model = model._orig_mod.module.student.state_dict(
-                    )
+                    save_best_model = model._orig_mod.module.state_dict()
                 else:
-                    save_best_student_model = model.module.student.state_dict()
+                    save_best_model = model.module.state_dict()
 
-                torch.save(save_best_student_model,
-                           os.path.join(checkpoint_dir, 'best_student.pth'))
+                torch.save(save_best_model,
+                           os.path.join(checkpoint_dir, 'best.pth'))
 
             if config.use_compile:
                 save_checkpoint_model = model._orig_mod.state_dict()
@@ -245,18 +241,18 @@ def main():
                     'scheduler_state_dict': scheduler.state_dict(),
                 }, os.path.join(checkpoint_dir, 'latest.pth'))
 
-        log_info = f'until epoch: {epoch:0>3d}, best_loss: {best_loss:.6f}'
-        logger.info(log_info) if local_rank == 0 else None
+        log_info = f'until epoch: {epoch:0>3d}, best_loss: {best_loss:.4f}'
+        logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
 
-    if local_rank == 0:
-        if os.path.exists(os.path.join(checkpoint_dir, 'best_student.pth')):
+    if local_rank == 0 and total_rank == 0:
+        if os.path.exists(os.path.join(checkpoint_dir, 'best.pth')):
             os.rename(
-                os.path.join(checkpoint_dir, 'best_student.pth'),
+                os.path.join(checkpoint_dir, 'best.pth'),
                 os.path.join(checkpoint_dir,
-                             f'student-epoch{epoch}-loss{best_loss:.6f}.pth'))
+                             f'{config.network}-loss{best_loss:.3f}.pth'))
 
-    log_info = f'train done. train time: {train_time:.3f} hours, best_loss: {best_loss:.6f}'
-    logger.info(log_info) if local_rank == 0 else None
+    log_info = f'train done. model: {config.network}, train time: {train_time:.3f} hours, best_loss: {best_loss:.4f}'
+    logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
 
     torch.distributed.destroy_process_group()
 

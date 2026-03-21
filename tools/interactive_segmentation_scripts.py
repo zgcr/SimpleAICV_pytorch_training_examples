@@ -185,9 +185,9 @@ def train_distill_sam_encoder(train_loader, model, criterion, optimizer,
                 iters // config.accumulation_steps)
         if iter_index % int(
                 config.print_interval * config.accumulation_steps) == 0:
-            log_info = f'train: epoch {epoch:0>4d}, iter [{accumulation_iter_index:0>5d}, {accumulation_iters:0>5d}], lr: {scheduler.current_lr:.6f}, loss: {loss*config.accumulation_steps:.4f}, '
+            log_info = f'train: epoch {epoch:0>4d}, iter [{accumulation_iter_index:0>5d}, {accumulation_iters:0>5d}], lr: {scheduler.current_lr:.6f}, loss: {loss*config.accumulation_steps:.6f}, '
             for key, value in loss_value.items():
-                log_info += f'{key}: {value*config.accumulation_steps:.4f}, '
+                log_info += f'{key}: {value*config.accumulation_steps:.6f}, '
             logger.info(
                 log_info) if local_rank == 0 and total_rank == 0 else None
 
