@@ -310,8 +310,9 @@ def build_optimizer(config, model):
             'no_weight_decay_layer_name_list']
 
     # training trick only for VIT
-    if 'lr_layer_decay' and 'lr_layer_decay_block' and 'block_name' in optimizer_parameters.keys(
-    ):
+    if 'lr_layer_decay' in optimizer_parameters.keys(
+    ) and 'lr_layer_decay_block' in optimizer_parameters.keys(
+    ) and 'block_name' in optimizer_parameters.keys():
         lr_layer_decay = optimizer_parameters['lr_layer_decay']
         lr_layer_decay_block = optimizer_parameters['lr_layer_decay_block']
         block_name = optimizer_parameters['block_name']

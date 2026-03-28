@@ -1,4 +1,5 @@
 .vscode
+.claude
 __pycache__
 checkpoints
 log
