@@ -245,11 +245,12 @@ def validate_human_matting(test_loader, model, decoder, config):
                 padding_per_image_fused_preds = torch.from_numpy(
                     padding_per_image_fused_preds).float().cuda()
                 padding_per_image_fused_preds = padding_per_image_fused_preds.unsqueeze(
-                    0).unsqueeze(0)
+                    0)
 
                 outputs.append(padding_per_image_fused_preds)
 
             outputs = torch.cat(outputs, dim=0)
+            outputs = torch.unsqueeze(outputs, dim=1)
 
             eval_metric.add_batch_result(outputs, masks)
 

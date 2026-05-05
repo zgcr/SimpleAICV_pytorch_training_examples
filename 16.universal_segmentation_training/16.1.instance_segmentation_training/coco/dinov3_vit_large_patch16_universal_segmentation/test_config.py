@@ -32,7 +32,7 @@ class config:
     })
 
     # load pretrained model or not
-    trained_model_path = '/root/autodl-tmp/pretrained_models/universal_segmentation_train_on_coco/dinov3_vit_large_patch16_universal_segmentation_epoch_50.pth'
+    trained_model_path = '/root/autodl-tmp/pretrained_models/universal_segmentation_train_instance_segmentation_on_coco/dinov3_vit_large_patch16_universal_segmentation_epoch_50.pth'
     load_state_dict(trained_model_path, model)
 
     decoder = segmentation_decode.__dict__['UniversalSegmentationDecoder'](

@@ -40,8 +40,8 @@
 * 2026/02/02: update SAM(segment_anything)/SAM_Matting model training pipeline and jupyter example in 13.interactive_segmentation_training.
 * 2026/02/02: update SAM2(segment_anything2)/SAM2_Matting model training pipeline and jupyter example in 14.video_interactive_segmentation_training.
 * 2026/02/02: update universal_segmentation/universal_matting model training pipeline in 16.universal_segmentation_training.
-* 2026/02/02: updata all task gradio demo in gradio_demo.
-* 2026/02/02: updata all task inference demo in inference_demo.
+* 2026/02/02: update all task gradio demo in gradio_demo.
+* 2026/02/02: update all task inference demo in inference_demo.
 
 # Simplicity
 
@@ -52,7 +52,7 @@ This repository maintains a lightweight codebase.It requiring only Python and Py
 **This repository provides simple training and testing examples for following tasks:**
 
 | task                                       | support dataset                                                        | support model                                 |
-| ------------------------------------------ | ---------------------------------------------------------------------- | --------------------------------------------- |
+|--------------------------------------------|------------------------------------------------------------------------|-----------------------------------------------|
 | 00.classification_training                 | CIFAR100<br>ImageNet1K(ILSVRC2012)<br>ImageNet21K(Winter 2021 release) | DarkNet<br>ResNet<br>Convformer<br>VAN<br>ViT |
 | 01.distillation_training                   | ImageNet1K(ILSVRC2012)                                                 | DML loss(ResNet)<br>KD loss(ResNet)           |
 | 02.masked_image_modeling_training          | ImageNet1K(ILSVRC2012)                                                 | MAE(ViT)                                      |

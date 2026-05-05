@@ -257,7 +257,6 @@ def evaluate_coco_instance_segmentation_dataset(test_loader, model, decoder,
 
             for per_image_masks, per_image_classes, per_image_scores, index in zip(
                     batch_masks, batch_classes, batch_scores, per_batch_ids):
-
                 for per_mask, per_class, per_score in zip(
                         per_image_masks, per_image_classes, per_image_scores):
                     rle = mask_util.encode(

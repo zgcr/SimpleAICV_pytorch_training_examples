@@ -98,7 +98,8 @@ class UniversalSegmentation(nn.Module):
         self.query_proj = nn.Sequential(
             nn.Linear(embedding_planes, embedding_planes), nn.GELU(),
             nn.Linear(embedding_planes, embedding_planes), nn.GELU(),
-            nn.Linear(embedding_planes, embedding_planes))
+            nn.Linear(embedding_planes, embedding_planes),
+            nn.LayerNorm(embedding_planes))
 
         upscale_blocks_num = max(1, int(math.log2(patch_size)) - 2)
         self.upscale_blocks = nn.ModuleList(
@@ -126,6 +127,9 @@ class UniversalSegmentation(nn.Module):
                 x = checkpoint(block, x, use_reentrant=False)
             else:
                 x = block(x)
+
+        q = q.float()
+        x = x.float()
 
         # torch.Size([1, 100, 384]) torch.Size([1, 384, 128, 128]) -> torch.Size([1, 100, 128, 128])
         mask_preds = torch.einsum("bqc, bchw -> bqhw", q, x)

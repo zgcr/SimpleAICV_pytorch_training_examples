@@ -38,7 +38,7 @@ class config:
     load_state_dict(trained_model_path, model)
 
     train_criterion = segmentation_losses.__dict__[
-        'UniversalSegmentationLoss'](**{
+        'UniversalSegmentationAccelerateLoss'](**{
             'mask_cost': 5.0,
             'dice_cost': 5.0,
             'class_cost': 2.0,

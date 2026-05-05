@@ -37,8 +37,8 @@ class config:
     trained_model_path = ''
     load_state_dict(trained_model_path, model)
 
-    train_criterion = matting_losses.__dict__['UniversalMattingLoss'](
-        **{
+    train_criterion = matting_losses.__dict__[
+        'UniversalMattingAccelerateLoss'](**{
             'global_trimap_ce_cost': 1.0,
             'global_trimap_iou_cost': 1.0,
             'local_alpha_cost': 1.0,

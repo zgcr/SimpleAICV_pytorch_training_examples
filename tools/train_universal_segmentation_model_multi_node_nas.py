@@ -50,6 +50,23 @@ def main():
     # start init process
     torch.cuda.set_device(local_rank)
     torch.distributed.init_process_group(backend='nccl', init_method='env://')
+
+    # 获取total_rank
+    total_rank = torch.distributed.get_rank()
+    config.total_rank = total_rank
+
+    # 假设每个进程只使用一个GPU
+    # 获取当前node上进程数量
+    per_node_process_nums = int(os.environ['LOCAL_WORLD_SIZE'])
+    # 获取当前node上GPU数量
+    per_node_gpus_num = torch.cuda.device_count()
+    # 获取当前node上每个进程分配的GPU数量
+    per_node_per_process_gpus_num = int(per_node_gpus_num /
+                                        per_node_process_nums)
+    # 获取所有node上进程数量
+    world_size = torch.distributed.get_world_size()
+    # 获取所有node上GPU数量:每个进程分配的GPU数量×所有node上进程数量
+    config.gpus_num = int(per_node_per_process_gpus_num * world_size)
     config.group = torch.distributed.new_group(list(range(config.gpus_num)))
 
     os.makedirs(checkpoint_dir, exist_ok=True)
@@ -85,7 +102,8 @@ def main():
         if not key.startswith('__'):
             if key not in ['model']:
                 log_info = f'{key}: {value}'
-                logger.info(log_info) if local_rank == 0 else None
+                logger.info(
+                    log_info) if local_rank == 0 and total_rank == 0 else None
 
     model = config.model.cuda()
     train_criterion = config.train_criterion.cuda()
@@ -93,21 +111,21 @@ def main():
     # parameters needs to be updated by the optimizer
     # buffers doesn't needs to be updated by the optimizer
     log_info = f'--------------------parameters--------------------'
-    logger.info(log_info) if local_rank == 0 else None
+    logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
     for name, param in model.named_parameters():
         log_info = f'name: {name}, grad: {param.requires_grad}'
-        logger.info(log_info) if local_rank == 0 else None
+        logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
 
     log_info = f'--------------------buffers--------------------'
-    logger.info(log_info) if local_rank == 0 else None
+    logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
     for name, buffer in model.named_buffers():
         log_info = f'name: {name}, grad: {buffer.requires_grad}'
-        logger.info(log_info) if local_rank == 0 else None
+        logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
 
     optimizer, model_layer_weight_decay_list = build_optimizer(config, model)
 
     log_info = f'-------------layers weight decay---------------'
-    logger.info(log_info) if local_rank == 0 else None
+    logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
     for per_layer_list in model_layer_weight_decay_list:
         layer_name_list, layer_lr, layer_weight_decay = per_layer_list[
             'name'], per_layer_list['lr'], per_layer_list['weight_decay']
@@ -118,7 +136,8 @@ def main():
 
         for name in layer_name_list:
             log_info = f'name: {name}, lr: {layer_lr}, weight_decay: {layer_weight_decay}, lr_scale: {lr_scale}'
-            logger.info(log_info) if local_rank == 0 else None
+            logger.info(
+                log_info) if local_rank == 0 and total_rank == 0 else None
 
     scheduler = Scheduler(config, optimizer)
     model, config.ema_model, config.scaler = build_training_mode(config, model)
@@ -142,7 +161,7 @@ def main():
             'train_loss'], checkpoint['lr']
 
         log_info = f'resuming model from {resume_model}. resume_epoch: {saved_epoch:0>3d}, used_time: {used_time:.3f} hours, best_loss: {best_loss:.4f}, lr: {lr:.6f}'
-        logger.info(log_info) if local_rank == 0 else None
+        logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
 
         if 'ema_model_state_dict' in checkpoint.keys():
             config.ema_model.ema_model.load_state_dict(
@@ -151,17 +170,17 @@ def main():
     # use torch 2.0 compile function
     config.compile_support = False
     log_info = f'using torch version:{torch.__version__}'
-    logger.info(log_info) if local_rank == 0 else None
+    logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
     if re.match(r'2.\d*.\d*', torch.__version__):
         config.compile_support = True
         log_info = f'this torch version support torch.compile function.'
-        logger.info(log_info) if local_rank == 0 else None
+        logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
     elif re.match(r'1.\d*.\d*', torch.__version__):
         log_info = f'this torch version unsupport torch.compile function.'
-        logger.info(log_info) if local_rank == 0 else None
+        logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
     else:
         log_info = f'unsupport torch version:{torch.__version__}'
-        logger.info(log_info) if local_rank == 0 else None
+        logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
         return
 
     config.use_compile = (config.compile_support and config.use_compile)
@@ -173,7 +192,7 @@ def main():
         per_epoch_start_time = time.time()
 
         log_info = f'epoch {epoch:0>3d} lr: {scheduler.current_lr:.6f}'
-        logger.info(log_info) if local_rank == 0 else None
+        logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
 
         torch.cuda.empty_cache()
 
@@ -183,14 +202,14 @@ def main():
                                                   scheduler, epoch, logger,
                                                   config)
         log_info = f'train: epoch {epoch:0>3d}, train_loss: {train_loss:.4f}'
-        logger.info(log_info) if local_rank == 0 else None
+        logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
 
         torch.cuda.empty_cache()
 
         train_time += (time.time() - per_epoch_start_time) / 3600
 
         if epoch % config.save_interval == 0 or epoch == config.epochs:
-            if local_rank == 0:
+            if local_rank == 0 and total_rank == 0:
                 if config.use_ema_model:
                     save_model = config.ema_model.ema_model.module.state_dict()
                 elif config.use_compile:
@@ -200,7 +219,7 @@ def main():
                 torch.save(save_model,
                            os.path.join(checkpoint_dir, f'epoch_{epoch}.pth'))
 
-        if local_rank == 0:
+        if local_rank == 0 and total_rank == 0:
             # save best acc1 model and each epoch checkpoint
             if train_loss < best_loss:
                 best_loss = train_loss
@@ -256,9 +275,9 @@ def main():
                     }, os.path.join(checkpoint_dir, 'latest.pth'))
 
         log_info = f'until epoch: {epoch:0>3d}, best_loss: {best_loss:.4f}'
-        logger.info(log_info) if local_rank == 0 else None
+        logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
 
-    if local_rank == 0:
+    if local_rank == 0 and total_rank == 0:
         if os.path.exists(os.path.join(checkpoint_dir, 'best.pth')):
             os.rename(
                 os.path.join(checkpoint_dir, 'best.pth'),
@@ -266,7 +285,7 @@ def main():
                              f'{config.network}-loss{best_loss:.3f}.pth'))
 
     log_info = f'train done. model: {config.network}, train time: {train_time:.3f} hours, best_loss: {best_loss:.4f}'
-    logger.info(log_info) if local_rank == 0 else None
+    logger.info(log_info) if local_rank == 0 and total_rank == 0 else None
 
     torch.distributed.destroy_process_group()
 

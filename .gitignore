@@ -3,6 +3,11 @@
 __pycache__
 checkpoints
 log
+*__pycache__*
+*checkpoints*
+*log*
+temp
+tmp
 *temp*
 *tmp*
 *.pth

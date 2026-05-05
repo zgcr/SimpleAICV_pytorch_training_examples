@@ -188,7 +188,7 @@ def main():
 
         train_time += (time.time() - per_epoch_start_time) / 3600
 
-        if epoch % config.save_interval == 0:
+        if epoch % config.save_interval == 0 or epoch == config.epochs:
             if local_rank == 0:
                 if config.use_ema_model:
                     save_model = config.ema_model.ema_model.module.state_dict()

@@ -14,6 +14,7 @@ from torch.autograd import Variable
 
 __all__ = [
     'UniversalMattingLoss',
+    'UniversalMattingAccelerateLoss',
 ]
 
 
@@ -141,6 +142,7 @@ class Mask2FormerHungarianMatcher(nn.Module):
 
         # [query_num, num_objects]
         cost = torch.stack(cost_list, dim=1)
+
         return cost
 
     def compute_pair_wise_trimap_iou_cost(self, pred_global, target_trimap):
@@ -181,6 +183,7 @@ class Mask2FormerHungarianMatcher(nn.Module):
             cost_list.append(iou_loss)
 
         cost = torch.stack(cost_list, dim=1)
+
         return cost
 
     def compute_pair_wise_local_alpha_cost(self, pred_local, target_alpha,
@@ -216,6 +219,7 @@ class Mask2FormerHungarianMatcher(nn.Module):
             cost_list.append(alpha_cost)
 
         cost = torch.stack(cost_list, dim=1)
+
         return cost
 
     def compute_pair_wise_fusion_alpha_cost(self, pred_fused, target_alpha):
@@ -349,39 +353,6 @@ class UniversalMattingLoss(nn.Module):
 
         return matched_global_preds, matched_local_preds, matched_fused_preds, matched_target_trimaps, matched_target_alphas
 
-    def build_gauss_kernel(self, size=5, sigma=1.0, n_channels=1):
-        if size % 2 != 1:
-            raise ValueError("kernel size must be uneven")
-        grid = np.float32(np.mgrid[0:size, 0:size].T)
-        gaussian = lambda x: np.exp(-((x - size // 2)**2) / (2 * sigma**2))
-        kernel = np.sum(gaussian(grid), axis=2)
-        kernel /= np.sum(kernel)
-        kernel = np.tile(kernel, (n_channels, 1, 1))
-        kernel = torch.FloatTensor(kernel[:, None, :, :])
-
-        return Variable(kernel, requires_grad=False)
-
-    def laplacian_pyramid(self, img, kernel, max_levels=5):
-        current = img
-        pyr = []
-        for _ in range(max_levels):
-            filtered = self.conv_gauss(current, kernel)
-            diff = current - filtered
-            pyr.append(diff)
-            current = F.avg_pool2d(filtered, 2)
-        pyr.append(current)
-
-        return pyr
-
-    def conv_gauss(self, img, kernel):
-        """ convolve img with a gaussian kernel that has been built with build_gauss_kernel """
-        n_channels, _, kw, kh = kernel.shape
-        img = F.pad(img, (kw // 2, kh // 2, kw // 2, kh // 2),
-                    mode='replicate')
-        img = F.conv2d(img, kernel, groups=n_channels)
-
-        return img
-
     def compute_global_trimap_ce_loss(self, global_pred, trimap):
         # global_pred shape:[b,3,h,w] -> [b,h,w,3]
         # trimap shape:[b,h,w]
@@ -442,6 +413,7 @@ class UniversalMattingLoss(nn.Module):
         # local_pred shape:[b,1,h,w] -> [b,h,w,1] -> [b,h,w]
         # alpha shape:[b,h,w]
         # trimap shape:[b,h,w]
+        batch_size = local_pred.shape[0]
         local_pred = local_pred.float()
         local_pred = local_pred.permute(0, 2, 3, 1).contiguous()
         local_pred = torch.clamp(local_pred, min=1e-4, max=1. - 1e-4)
@@ -453,7 +425,12 @@ class UniversalMattingLoss(nn.Module):
         diff = local_pred - alpha
         diff = diff * weighted
         alpha_loss = torch.sqrt(diff**2 + 1e-12)
-        alpha_loss = alpha_loss.sum() / (weighted.sum() + 1.)
+
+        alpha_loss = alpha_loss.sum(dim=[1, 2])
+        weighted = weighted.sum(dim=[1, 2])
+
+        alpha_loss = alpha_loss / (weighted + 1.)
+        alpha_loss = alpha_loss.mean()
 
         return alpha_loss
 
@@ -478,14 +455,22 @@ class UniversalMattingLoss(nn.Module):
         pyr_alpha = self.laplacian_pyramid(alpha, gauss_kernel, 5)
         pyr_predict = self.laplacian_pyramid(local_pred, gauss_kernel, 5)
 
-        laplacian_loss = sum(
-            F.l1_loss(a, b) for a, b in zip(pyr_alpha, pyr_predict))
+        laplacian_loss = [
+            F.l1_loss(a, b, reduction="none")
+            for a, b in zip(pyr_alpha, pyr_predict)
+        ]
 
-        return laplacian_loss
+        total_laplacian_loss = 0.
+        for per_level_laplacian_loss in laplacian_loss:
+            per_level_laplacian_loss = per_level_laplacian_loss.mean()
+            total_laplacian_loss += per_level_laplacian_loss
+
+        return total_laplacian_loss
 
     def compute_fusion_alpha_loss(self, fusion_pred, alpha):
         # fusion_pred shape:[b,1,h,w] -> [b,h,w,1] -> [b,h,w]
         # alpha shape:[b,h,w]
+        batch_size = fusion_pred.shape[0]
         fusion_pred = fusion_pred.float()
         fusion_pred = fusion_pred.permute(0, 2, 3, 1).contiguous()
         fusion_pred = torch.clamp(fusion_pred, min=1e-4, max=1. - 1e-4)
@@ -495,7 +480,12 @@ class UniversalMattingLoss(nn.Module):
 
         diff = fusion_pred - alpha
         alpha_loss = torch.sqrt(diff**2 + 1e-12)
-        alpha_loss = alpha_loss.sum() / (weighted.sum())
+
+        alpha_loss = alpha_loss.sum(dim=[1, 2])
+        weighted = weighted.sum(dim=[1, 2])
+
+        alpha_loss = alpha_loss / weighted
+        alpha_loss = alpha_loss.mean()
 
         return alpha_loss
 
@@ -513,10 +503,17 @@ class UniversalMattingLoss(nn.Module):
         pyr_alpha = self.laplacian_pyramid(alpha, gauss_kernel, 5)
         pyr_predict = self.laplacian_pyramid(fusion_pred, gauss_kernel, 5)
 
-        laplacian_loss = sum(
-            F.l1_loss(a, b) for a, b in zip(pyr_alpha, pyr_predict))
+        laplacian_loss = [
+            F.l1_loss(a, b, reduction="none")
+            for a, b in zip(pyr_alpha, pyr_predict)
+        ]
 
-        return laplacian_loss
+        total_laplacian_loss = 0.
+        for per_level_laplacian_loss in laplacian_loss:
+            per_level_laplacian_loss = per_level_laplacian_loss.mean()
+            total_laplacian_loss += per_level_laplacian_loss
+
+        return total_laplacian_loss
 
     def compute_batch_class_loss(self, class_preds, class_gts, indices):
         """计算分类损失"""
@@ -540,6 +537,39 @@ class UniversalMattingLoss(nn.Module):
 
         return class_loss
 
+    def build_gauss_kernel(self, size=5, sigma=1.0, n_channels=1):
+        if size % 2 != 1:
+            raise ValueError("kernel size must be uneven")
+        grid = np.float32(np.mgrid[0:size, 0:size].T)
+        gaussian = lambda x: np.exp(-((x - size // 2)**2) / (2 * sigma**2))
+        kernel = np.sum(gaussian(grid), axis=2)
+        kernel /= np.sum(kernel)
+        kernel = np.tile(kernel, (n_channels, 1, 1))
+        kernel = torch.FloatTensor(kernel[:, None, :, :])
+
+        return Variable(kernel, requires_grad=False)
+
+    def laplacian_pyramid(self, img, kernel, max_levels=5):
+        current = img
+        pyr = []
+        for _ in range(max_levels):
+            filtered = self.conv_gauss(current, kernel)
+            diff = current - filtered
+            pyr.append(diff)
+            current = F.avg_pool2d(filtered, 2)
+        pyr.append(current)
+
+        return pyr
+
+    def conv_gauss(self, img, kernel):
+        """ convolve img with a gaussian kernel that has been built with build_gauss_kernel """
+        n_channels, _, kw, kh = kernel.shape
+        img = F.pad(img, (kw // 2, kh // 2, kw // 2, kh // 2),
+                    mode='replicate')
+        img = F.conv2d(img, kernel, groups=n_channels)
+
+        return img
+
     def forward(self, global_preds, local_preds, fused_preds, class_preds,
                 trimap_gts, alpha_gts, class_gts):
         """
@@ -551,6 +581,574 @@ class UniversalMattingLoss(nn.Module):
         alpha_gts: list of [num_objects, H, W] - alpha matte ground truths
         class_gts: list of [num_objects] - class labels ground truths
         """
+        global_preds = global_preds.float()
+        local_preds = local_preds.float()
+        fused_preds = fused_preds.float()
+        class_preds = class_preds.float()
+
+        device = fused_preds.device
+
+        trimap_gts = [
+            per_image_trimap_gts.float().to(device)
+            for per_image_trimap_gts in trimap_gts
+        ]
+        alpha_gts = [
+            per_image_alpha_gts.float().to(device)
+            for per_image_alpha_gts in alpha_gts
+        ]
+        class_gts = [
+            per_image_class_gts.long().to(device)
+            for per_image_class_gts in class_gts
+        ]
+
+        indices = self.hungarian_matcher(global_preds=global_preds,
+                                         local_preds=local_preds,
+                                         fused_preds=fused_preds,
+                                         class_preds=class_preds,
+                                         trimap_gts=trimap_gts,
+                                         alpha_gts=alpha_gts,
+                                         class_gts=class_gts)
+
+        matched_global_preds, matched_local_preds, matched_fused_preds, matched_target_trimaps, matched_target_alphas = self.get_assigned_preds_and_targets(
+            global_preds, local_preds, fused_preds, trimap_gts, alpha_gts,
+            indices)
+
+        global_trimap_ce_loss = self.compute_global_trimap_ce_loss(
+            matched_global_preds, matched_target_trimaps)
+        global_trimap_iou_loss = self.compute_global_trimap_iou_loss(
+            matched_global_preds, matched_target_trimaps)
+        local_alpha_loss = self.compute_local_alpha_loss(
+            matched_local_preds, matched_target_alphas, matched_target_trimaps)
+        local_laplacian_loss = self.compute_local_laplacian_loss(
+            matched_local_preds, matched_target_alphas, matched_target_trimaps)
+        fusion_alpha_loss = self.compute_fusion_alpha_loss(
+            matched_fused_preds, matched_target_alphas)
+        fusion_laplacian_loss = self.compute_fusion_laplacian_loss(
+            matched_fused_preds, matched_target_alphas)
+        class_loss = self.compute_batch_class_loss(class_preds, class_gts,
+                                                   indices)
+
+        global_trimap_ce_loss = self.global_trimap_ce_loss_weight * global_trimap_ce_loss
+        global_trimap_iou_loss = self.global_trimap_iou_loss_weight * global_trimap_iou_loss
+        local_alpha_loss = self.local_alpha_loss_weight * local_alpha_loss
+        local_laplacian_loss = self.local_laplacian_loss_weight * local_laplacian_loss
+        fusion_alpha_loss = self.fusion_alpha_loss_weight * fusion_alpha_loss
+        fusion_laplacian_loss = self.fusion_laplacian_loss_weight * fusion_laplacian_loss
+        class_loss = self.class_loss_weight * class_loss
+
+        loss_dict = {
+            'global_trimap_ce_loss': global_trimap_ce_loss,
+            'global_trimap_iou_loss': global_trimap_iou_loss,
+            'local_alpha_loss': local_alpha_loss,
+            'local_laplacian_loss': local_laplacian_loss,
+            'fusion_alpha_loss': fusion_alpha_loss,
+            'fusion_laplacian_loss': fusion_laplacian_loss,
+            'class_loss': class_loss,
+        }
+
+        return loss_dict
+
+
+class Mask2FormerHungarianAccelerateMatcher(nn.Module):
+    """
+    Accelerated version of Mask2FormerHungarianMatcher for matting.
+    Batches cost computation across images to reduce per-image loop overhead.
+    """
+
+    def __init__(self,
+                 global_trimap_ce_cost=1.0,
+                 global_trimap_iou_cost=1.0,
+                 local_alpha_cost=1.0,
+                 fusion_alpha_cost=1.0,
+                 class_cost=1.0):
+        super(Mask2FormerHungarianAccelerateMatcher, self).__init__()
+
+        self.global_trimap_ce_cost = global_trimap_ce_cost
+        self.global_trimap_iou_cost = global_trimap_iou_cost
+        self.local_alpha_cost = local_alpha_cost
+        self.fusion_alpha_cost = fusion_alpha_cost
+        self.class_cost = class_cost
+
+    @torch.no_grad()
+    def forward(self, global_preds, local_preds, fused_preds, class_preds,
+                trimap_gts, alpha_gts, class_gts):
+        """
+        Args:
+            global_preds: [B, query_num, 3, H, W]
+            local_preds: [B, query_num, 1, H, W]
+            fused_preds: [B, query_num, 1, H, W]
+            class_preds: [B, query_num, num_classes]
+            trimap_gts: list of [num_objects, H, W]
+            alpha_gts: list of [num_objects, H, W]
+            class_gts: list of [num_objects]
+        """
+        batch_size, query_num = fused_preds.shape[0], fused_preds.shape[1]
+        H, W = fused_preds.shape[3], fused_preds.shape[4]
+        pixels = H * W
+        max_n = query_num
+        device = fused_preds.device
+        dtype = fused_preds.dtype
+
+        # ---- Pad targets to uniform length max_n ----
+        trimap_padded = torch.zeros(batch_size,
+                                    max_n,
+                                    H,
+                                    W,
+                                    device=device,
+                                    dtype=dtype)
+        alpha_padded = torch.zeros(batch_size,
+                                   max_n,
+                                   H,
+                                   W,
+                                   device=device,
+                                   dtype=dtype)
+        class_targets_padded = torch.zeros(batch_size,
+                                           max_n,
+                                           dtype=torch.long,
+                                           device=device)
+        n_masks_per_image = []
+        for i in range(batch_size):
+            n_total = trimap_gts[i].shape[0]
+            n = min(n_total, max_n)
+            n_masks_per_image.append(n)
+            trimap_padded[i, :n] = trimap_gts[i][:n].to(dtype)
+            alpha_padded[i, :n] = alpha_gts[i][:n].to(dtype)
+            class_targets_padded[i, :n] = class_gts[i][:n]
+
+        # ---- 1. Global trimap CE cost (batched) ----
+        # Convert trimap to class index: 0->0, 255->2, others->1
+        convert_trimap = trimap_padded.clone()
+        mask_255 = (convert_trimap == 255)
+        mask_0 = (convert_trimap == 0)
+        convert_trimap[mask_0] = 0
+        convert_trimap[mask_255] = 2
+        convert_trimap[(~mask_0) & (~mask_255)] = 1
+
+        # pred_global: [B, query_num, 3, H, W] -> [B, query_num, H, W, 3]
+        pred_global = global_preds.permute(0, 1, 3, 4, 2)
+        pred_global = torch.clamp(pred_global, min=1e-4, max=1. - 1e-4)
+
+        # target onehot: [B, max_n, H, W] -> [B, max_n, H, W, 3]
+        target_onehot = F.one_hot(convert_trimap.long(), num_classes=3).float()
+
+        # Compute CE: for each (query, object) pair
+        # log terms: [B, query_num, H, W, 3]
+        log_pred = torch.log(pred_global)
+        log_1_pred = torch.log(1. - pred_global)
+
+        # We need cost[b, q, obj] = mean over (H,W,3) of -(onehot[b,obj]*log_pred[b,q] + (1-onehot[b,obj])*log_1_pred[b,q])
+        # Reshape for bmm: flatten spatial+channel dims
+        # pred terms: [B, query_num, H*W*3]
+        log_pred_flat = log_pred.reshape(batch_size, query_num, -1)
+        log_1_pred_flat = log_1_pred.reshape(batch_size, query_num, -1)
+        # target: [B, max_n, H*W*3]
+        target_onehot_flat = target_onehot.reshape(batch_size, max_n, -1)
+
+        # cost = -( bmm(log_pred_flat, target_onehot_flat^T) + bmm(log_1_pred_flat, (1-target_onehot_flat)^T) ) / (H*W*3)
+        total_elements = H * W * 3
+        global_trimap_ce_cost = -(
+            torch.bmm(log_pred_flat, target_onehot_flat.transpose(1, 2)) +
+            torch.bmm(log_1_pred_flat, (1. - target_onehot_flat).transpose(
+                1, 2))) / total_elements  # [B, query_num, max_n]
+
+        # ---- 2. Global trimap IOU cost (batched) ----
+        # intersection[b,q,obj] = sum over (H,W,3) of pred[b,q] * onehot[b,obj]
+        # We sum over the 3-class channel as well (multi-class soft IOU)
+        pred_global_flat = pred_global.reshape(batch_size, query_num,
+                                               -1)  # [B, query_num, H*W*3]
+        intersection = torch.bmm(pred_global_flat,
+                                 target_onehot_flat.transpose(
+                                     1, 2))  # [B, query_num, max_n]
+        pred_sum = pred_global_flat.sum(dim=-1,
+                                        keepdim=True)  # [B, query_num, 1]
+        target_sum = target_onehot_flat.sum(dim=-1).unsqueeze(
+            1)  # [B, 1, max_n]
+        union = pred_sum + target_sum - intersection
+        global_trimap_iou_cost = 1. - (intersection + 1e-4) / (
+            union + 1e-4)  # [B, query_num, max_n]
+
+        # ---- 3. Local alpha cost (batched, weighted by trimap==128) ----
+        # pred_local: [B, query_num, 1, H, W] -> [B, query_num, H*W]
+        pred_local = local_preds.squeeze(2)  # [B, query_num, H, W]
+        pred_local = torch.clamp(pred_local, min=1e-4, max=1. - 1e-4)
+        pred_local_flat = pred_local.reshape(batch_size, query_num, pixels)
+
+        # weighted mask: [B, max_n, H, W]
+        weighted_mask = (trimap_padded == 128).float()
+        # weighted alpha: [B, max_n, H*W]
+        target_alpha_flat = alpha_padded.reshape(batch_size, max_n, pixels)
+        weighted_flat = weighted_mask.reshape(batch_size, max_n, pixels)
+
+        # For L1 cost with weight, we need sum_over_pixels |pred[b,q,p] - alpha[b,obj,p]| * w[b,obj,p]
+        # This cannot be directly done with bmm. Use a loop over batch only.
+        local_alpha_cost = torch.zeros(batch_size,
+                                       query_num,
+                                       max_n,
+                                       device=device,
+                                       dtype=dtype)
+        for i in range(batch_size):
+            n = n_masks_per_image[i]
+            if n == 0:
+                continue
+            # [query_num, pixels] vs [n, pixels]
+            for obj_idx in range(n):
+                w = weighted_flat[i, obj_idx]  # [pixels]
+                diff = torch.abs(
+                    pred_local_flat[i] -
+                    target_alpha_flat[i, obj_idx])  # [query_num, pixels]
+                local_alpha_cost[i, :,
+                                 obj_idx] = (diff * w).sum(dim=-1) / (w.sum() +
+                                                                      1.)
+
+        # ---- 4. Fusion alpha cost (batched) ----
+        # pred_fused: [B, query_num, 1, H, W] -> [B, query_num, H*W]
+        pred_fused = fused_preds.squeeze(2)  # [B, query_num, H, W]
+        pred_fused = torch.clamp(pred_fused, min=1e-4, max=1. - 1e-4)
+        pred_fused_flat = pred_fused.reshape(batch_size, query_num, pixels)
+
+        fusion_alpha_cost = torch.zeros(batch_size,
+                                        query_num,
+                                        max_n,
+                                        device=device,
+                                        dtype=dtype)
+        for i in range(batch_size):
+            n = n_masks_per_image[i]
+            if n == 0:
+                continue
+            for obj_idx in range(n):
+                diff = torch.abs(
+                    pred_fused_flat[i] -
+                    target_alpha_flat[i, obj_idx])  # [query_num, pixels]
+                fusion_alpha_cost[i, :, obj_idx] = diff.mean(dim=-1)
+
+        # ---- 5. Class cost (batched) ----
+        pred_probs = class_preds.softmax(dim=-1)  # [B, query_num, num_classes]
+        class_cost = -torch.gather(pred_probs, 2,
+                                   class_targets_padded.unsqueeze(1).expand(
+                                       -1, query_num,
+                                       -1))  # [B, query_num, max_n]
+
+        # ---- Combine costs and run Hungarian per image ----
+        total_cost = (self.global_trimap_ce_cost * global_trimap_ce_cost +
+                      self.global_trimap_iou_cost * global_trimap_iou_cost +
+                      self.local_alpha_cost * local_alpha_cost +
+                      self.fusion_alpha_cost * fusion_alpha_cost +
+                      self.class_cost * class_cost)
+
+        indices = []
+        for i in range(batch_size):
+            n = n_masks_per_image[i]
+            cost_matrix = total_cost[i, :, :n]  # [query_num, n]
+            cost_matrix = torch.clamp(cost_matrix, -1e10, 1e10)
+            cost_matrix = torch.nan_to_num(cost_matrix, 0)
+            assigned_indices = linear_sum_assignment(cost_matrix.cpu())
+            indices.append(assigned_indices)
+
+        matched_indices = [(torch.as_tensor(i, dtype=torch.int64),
+                            torch.as_tensor(j, dtype=torch.int64))
+                           for i, j in indices]
+
+        return matched_indices
+
+
+class UniversalMattingAccelerateLoss(nn.Module):
+
+    def __init__(self,
+                 global_trimap_ce_cost=1.0,
+                 global_trimap_iou_cost=1.0,
+                 local_alpha_cost=1.0,
+                 fusion_alpha_cost=1.0,
+                 class_cost=1.0,
+                 num_classes=2,
+                 global_trimap_ce_loss_weight=1.0,
+                 global_trimap_iou_loss_weight=1.0,
+                 local_alpha_loss_weight=1.0,
+                 local_laplacian_loss_weight=1.0,
+                 fusion_alpha_loss_weight=1.0,
+                 fusion_laplacian_loss_weight=1.0,
+                 class_loss_weight=1.0,
+                 no_object_class_weight=0.1):
+        super(UniversalMattingAccelerateLoss, self).__init__()
+        # num_classes has background class
+        self.num_classes = num_classes
+
+        self.global_trimap_ce_loss_weight = global_trimap_ce_loss_weight
+        self.global_trimap_iou_loss_weight = global_trimap_iou_loss_weight
+        self.local_alpha_loss_weight = local_alpha_loss_weight
+        self.local_laplacian_loss_weight = local_laplacian_loss_weight
+        self.fusion_alpha_loss_weight = fusion_alpha_loss_weight
+        self.fusion_laplacian_loss_weight = fusion_laplacian_loss_weight
+        self.class_loss_weight = class_loss_weight
+
+        self.hungarian_matcher = Mask2FormerHungarianAccelerateMatcher(
+            global_trimap_ce_cost=global_trimap_ce_cost,
+            global_trimap_iou_cost=global_trimap_iou_cost,
+            local_alpha_cost=local_alpha_cost,
+            fusion_alpha_cost=fusion_alpha_cost,
+            class_cost=class_cost)
+
+        self.register_buffer("ce_loss_weight", torch.ones(self.num_classes))
+        self.ce_loss_weight[-1].fill_(no_object_class_weight)
+        self.ce_loss = nn.CrossEntropyLoss(weight=self.ce_loss_weight)
+
+    def get_pred_permutation_indices(self, indices):
+        batch_indices = torch.cat([
+            torch.full_like(pred_idx, i)
+            for i, (pred_idx, _) in enumerate(indices)
+        ])
+        pred_indices = torch.cat([pred_idx for (pred_idx, _) in indices])
+
+        return batch_indices, pred_indices
+
+    def get_target_permutation_indices(self, indices):
+        batch_indices = torch.cat([
+            torch.full_like(target_idx, i)
+            for i, (_, target_idx) in enumerate(indices)
+        ])
+        target_indices = torch.cat([target_idx for (_, target_idx) in indices])
+
+        return batch_indices, target_indices
+
+    def get_assigned_preds_and_targets(self, global_preds, local_preds,
+                                       fused_preds, trimap_gts, alpha_gts,
+                                       indices):
+        device = fused_preds.device
+
+        pred_idx = self.get_pred_permutation_indices(indices)
+        target_idx = self.get_target_permutation_indices(indices)
+
+        # get matched predictions
+        matched_global_preds = global_preds[pred_idx]
+        matched_local_preds = local_preds[pred_idx]
+        matched_fused_preds = fused_preds[pred_idx]
+
+        batch_size, batch_max_object_num, max_height, max_width = len(
+            trimap_gts), 0, 0, 0
+        for per_image_trimap_gts in trimap_gts:
+            object_num, height, width = per_image_trimap_gts.shape
+            batch_max_object_num = max(batch_max_object_num, object_num)
+            max_height = max(max_height, height)
+            max_width = max(max_width, width)
+
+        target_trimaps = torch.zeros(
+            [batch_size, batch_max_object_num, max_height, max_width],
+            dtype=torch.float32).to(device)
+        for idx, per_image_trimap_gts in enumerate(trimap_gts):
+            target_trimaps[
+                idx, :per_image_trimap_gts.shape[0], :per_image_trimap_gts.
+                shape[1], :per_image_trimap_gts.
+                shape[2]] = per_image_trimap_gts
+        matched_target_trimaps = target_trimaps[target_idx]
+
+        target_alphas = torch.zeros(
+            [batch_size, batch_max_object_num, max_height, max_width],
+            dtype=torch.float32).to(device)
+        for idx, per_image_alpha_gts in enumerate(alpha_gts):
+            target_alphas[
+                idx, :per_image_alpha_gts.shape[0], :per_image_alpha_gts.
+                shape[1], :per_image_alpha_gts.shape[2]] = per_image_alpha_gts
+        matched_target_alphas = target_alphas[target_idx]
+
+        return matched_global_preds, matched_local_preds, matched_fused_preds, matched_target_trimaps, matched_target_alphas
+
+    def compute_global_trimap_ce_loss(self, global_pred, trimap):
+        global_pred = global_pred.float()
+        global_pred = global_pred.permute(0, 2, 3, 1).contiguous()
+        num_classes = global_pred.shape[3]
+
+        global_pred = torch.clamp(global_pred, min=1e-4, max=1. - 1e-4)
+
+        convert_trimap = trimap.clone()
+        convert_trimap[convert_trimap == 0] = 0
+        convert_trimap[convert_trimap == 255] = 2
+        convert_trimap[convert_trimap > 2] = 1
+
+        global_pred = global_pred.view(-1, num_classes)
+        convert_trimap = convert_trimap.view(-1)
+        loss_ground_truth = F.one_hot(convert_trimap.long(),
+                                      num_classes=num_classes).float()
+        bce_loss = -(loss_ground_truth * torch.log(global_pred) +
+                     (1. - loss_ground_truth) * torch.log(1. - global_pred))
+
+        bce_loss = bce_loss.mean()
+
+        return bce_loss
+
+    def compute_global_trimap_iou_loss(self, global_pred, trimap):
+        global_pred = global_pred.float()
+        global_pred = global_pred.permute(0, 2, 3, 1).contiguous()
+        num_classes = global_pred.shape[3]
+
+        global_pred = torch.clamp(global_pred, min=1e-4, max=1. - 1e-4)
+
+        convert_trimap = trimap.clone()
+        convert_trimap[convert_trimap == 0] = 0
+        convert_trimap[convert_trimap == 255] = 2
+        convert_trimap[convert_trimap > 2] = 1
+
+        global_pred = global_pred.view(-1, num_classes)
+        convert_trimap = convert_trimap.view(-1)
+
+        label = F.one_hot(convert_trimap.long(),
+                          num_classes=num_classes).float()
+
+        intersection = global_pred * label
+
+        iou_loss = 1. - (torch.sum(intersection, dim=1) + 1e-4) / (
+            torch.sum(global_pred, dim=1) + torch.sum(label, dim=1) -
+            torch.sum(intersection, dim=1) + 1e-4)
+        iou_loss = iou_loss.mean()
+
+        return iou_loss
+
+    def compute_local_alpha_loss(self, local_pred, alpha, trimap):
+        batch_size = local_pred.shape[0]
+        local_pred = local_pred.float()
+        local_pred = local_pred.permute(0, 2, 3, 1).contiguous()
+        local_pred = torch.clamp(local_pred, min=1e-4, max=1. - 1e-4)
+        local_pred = torch.squeeze(local_pred, dim=-1)
+
+        weighted = torch.zeros_like(trimap)
+        weighted[trimap == 128] = 1.
+
+        diff = local_pred - alpha
+        diff = diff * weighted
+        alpha_loss = torch.sqrt(diff**2 + 1e-12)
+
+        alpha_loss = alpha_loss.sum(dim=[1, 2])
+        weighted = weighted.sum(dim=[1, 2])
+
+        alpha_loss = alpha_loss / (weighted + 1.)
+        alpha_loss = alpha_loss.mean()
+
+        return alpha_loss
+
+    def compute_local_laplacian_loss(self, local_pred, alpha, trimap):
+        device = local_pred.device
+        local_pred = local_pred.float()
+        local_pred = torch.clamp(local_pred, min=1e-4, max=1. - 1e-4)
+
+        alpha = torch.unsqueeze(alpha, dim=1)
+        trimap = torch.unsqueeze(trimap, dim=1)
+
+        weighted = torch.zeros_like(trimap)
+        weighted[trimap == 128] = 1.
+
+        local_pred = local_pred * weighted
+        alpha = alpha * weighted
+        gauss_kernel = self.build_gauss_kernel(size=5, sigma=1.0,
+                                               n_channels=1).to(device)
+        pyr_alpha = self.laplacian_pyramid(alpha, gauss_kernel, 5)
+        pyr_predict = self.laplacian_pyramid(local_pred, gauss_kernel, 5)
+
+        laplacian_loss = [
+            F.l1_loss(a, b, reduction="none")
+            for a, b in zip(pyr_alpha, pyr_predict)
+        ]
+
+        total_laplacian_loss = 0.
+        for per_level_laplacian_loss in laplacian_loss:
+            per_level_laplacian_loss = per_level_laplacian_loss.mean()
+            total_laplacian_loss += per_level_laplacian_loss
+
+        return total_laplacian_loss
+
+    def compute_fusion_alpha_loss(self, fusion_pred, alpha):
+        batch_size = fusion_pred.shape[0]
+        fusion_pred = fusion_pred.float()
+        fusion_pred = fusion_pred.permute(0, 2, 3, 1).contiguous()
+        fusion_pred = torch.clamp(fusion_pred, min=1e-4, max=1. - 1e-4)
+        fusion_pred = torch.squeeze(fusion_pred, dim=-1)
+
+        weighted = torch.ones_like(alpha)
+
+        diff = fusion_pred - alpha
+        alpha_loss = torch.sqrt(diff**2 + 1e-12)
+
+        alpha_loss = alpha_loss.sum(dim=[1, 2])
+        weighted = weighted.sum(dim=[1, 2])
+
+        alpha_loss = alpha_loss / weighted
+        alpha_loss = alpha_loss.mean()
+
+        return alpha_loss
+
+    def compute_fusion_laplacian_loss(self, fusion_pred, alpha):
+        device = fusion_pred.device
+        fusion_pred = fusion_pred.float()
+        fusion_pred = torch.clamp(fusion_pred, min=1e-4, max=1. - 1e-4)
+
+        alpha = torch.unsqueeze(alpha, dim=1)
+
+        gauss_kernel = self.build_gauss_kernel(size=5, sigma=1.0,
+                                               n_channels=1).to(device)
+        pyr_alpha = self.laplacian_pyramid(alpha, gauss_kernel, 5)
+        pyr_predict = self.laplacian_pyramid(fusion_pred, gauss_kernel, 5)
+
+        laplacian_loss = [
+            F.l1_loss(a, b, reduction="none")
+            for a, b in zip(pyr_alpha, pyr_predict)
+        ]
+
+        total_laplacian_loss = 0.
+        for per_level_laplacian_loss in laplacian_loss:
+            per_level_laplacian_loss = per_level_laplacian_loss.mean()
+            total_laplacian_loss += per_level_laplacian_loss
+
+        return total_laplacian_loss
+
+    def compute_batch_class_loss(self, class_preds, class_gts, indices):
+        device = class_preds.device
+        batch_size, query_num = class_preds.shape[0], class_preds.shape[1]
+
+        idx = self.get_pred_permutation_indices(indices)
+        class_targets = torch.full((batch_size, query_num),
+                                   fill_value=self.num_classes - 1,
+                                   dtype=torch.int64,
+                                   device=device)
+        class_target_objects = torch.cat(
+            [target[j] for target, (_, j) in zip(class_gts, indices)])
+        class_targets[idx] = class_target_objects
+
+        class_preds = class_preds.transpose(1, 2)
+        class_loss = self.ce_loss(class_preds, class_targets)
+
+        return class_loss
+
+    def build_gauss_kernel(self, size=5, sigma=1.0, n_channels=1):
+        if size % 2 != 1:
+            raise ValueError("kernel size must be uneven")
+        grid = np.float32(np.mgrid[0:size, 0:size].T)
+        gaussian = lambda x: np.exp(-((x - size // 2)**2) / (2 * sigma**2))
+        kernel = np.sum(gaussian(grid), axis=2)
+        kernel /= np.sum(kernel)
+        kernel = np.tile(kernel, (n_channels, 1, 1))
+        kernel = torch.FloatTensor(kernel[:, None, :, :])
+
+        return Variable(kernel, requires_grad=False)
+
+    def laplacian_pyramid(self, img, kernel, max_levels=5):
+        current = img
+        pyr = []
+        for _ in range(max_levels):
+            filtered = self.conv_gauss(current, kernel)
+            diff = current - filtered
+            pyr.append(diff)
+            current = F.avg_pool2d(filtered, 2)
+        pyr.append(current)
+
+        return pyr
+
+    def conv_gauss(self, img, kernel):
+        n_channels, _, kw, kh = kernel.shape
+        img = F.pad(img, (kw // 2, kh // 2, kw // 2, kh // 2),
+                    mode='replicate')
+        img = F.conv2d(img, kernel, groups=n_channels)
+
+        return img
+
+    def forward(self, global_preds, local_preds, fused_preds, class_preds,
+                trimap_gts, alpha_gts, class_gts):
         global_preds = global_preds.float()
         local_preds = local_preds.float()
         fused_preds = fused_preds.float()
@@ -707,6 +1305,41 @@ if __name__ == '__main__':
 
         global_preds, local_preds, fused_preds, class_preds = net(images)
         out = loss1(global_preds, local_preds, fused_preds, class_preds,
+                    trimaps, masks, labels)
+        print('3333', out)
+
+        break
+
+    loss2 = UniversalMattingAccelerateLoss(global_trimap_ce_cost=1.0,
+                                           global_trimap_iou_cost=1.0,
+                                           local_alpha_cost=1.0,
+                                           fusion_alpha_cost=1.0,
+                                           class_cost=1.0,
+                                           num_classes=2,
+                                           global_trimap_ce_loss_weight=1.0,
+                                           global_trimap_iou_loss_weight=1.0,
+                                           local_alpha_loss_weight=1.0,
+                                           local_laplacian_loss_weight=1.0,
+                                           fusion_alpha_loss_weight=1.0,
+                                           fusion_laplacian_loss_weight=1.0,
+                                           class_loss_weight=1.0,
+                                           no_object_class_weight=0.1)
+    for data in tqdm(train_loader):
+        images, masks, trimaps, fg_maps, bg_maps, labels, sizes = data[
+            'image'], data['mask'], data['trimap'], data['fg_map'], data[
+                'bg_map'], data['label'], data['size']
+        print('1111', images.shape, len(masks), len(trimaps), len(fg_maps),
+              len(bg_maps), len(labels), sizes.shape)
+
+        for per_image_masks, per_image_trimaps, per_image_fg_maps, per_image_bg_maps, per_image_labels in zip(
+                masks, trimaps, fg_maps, bg_maps, labels):
+            print('2222', per_image_masks.shape, per_image_trimaps.shape,
+                  per_image_fg_maps.shape, per_image_bg_maps.shape,
+                  per_image_labels.shape)
+            print('3333', per_image_labels)
+
+        global_preds, local_preds, fused_preds, class_preds = net(images)
+        out = loss2(global_preds, local_preds, fused_preds, class_preds,
                     trimaps, masks, labels)
         print('3333', out)
 
