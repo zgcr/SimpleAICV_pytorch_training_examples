@@ -78,7 +78,9 @@ def get_logger(name, log_dir):
 
     file_name = os.path.join(log_dir, '{}.info.log'.format(name))
     file_handler = logging.handlers.TimedRotatingFileHandler(file_name,
-                                                             when='W0',
+                                                             when='D',
+                                                             interval=365,
+                                                             backupCount=0,
                                                              encoding='utf-8')
     file_handler.setLevel(logging.INFO)
     file_handler.setFormatter(formatter)
