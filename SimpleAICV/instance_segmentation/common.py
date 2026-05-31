@@ -89,11 +89,13 @@ class InstanceSegmentationResize:
         resize_h, resize_w = int(round(h * factor)), int(round(w * factor))
         image = cv2.resize(image, (resize_w, resize_h))
 
-        masks = cv2.resize(masks, (resize_w, resize_h),
-                           interpolation=cv2.INTER_NEAREST)
-
-        if len(masks.shape) != 3:
-            masks = np.expand_dims(masks, axis=-1)
+        if masks.shape[2] > 0:
+            masks = cv2.resize(masks, (resize_w, resize_h),
+                               interpolation=cv2.INTER_NEAREST)
+            if len(masks.shape) != 3:
+                masks = np.expand_dims(masks, axis=-1)
+        else:
+            masks = np.zeros((resize_h, resize_w, 0), dtype=np.float32)
 
         factor = np.float32(factor)
         boxes[:, :4] *= factor
