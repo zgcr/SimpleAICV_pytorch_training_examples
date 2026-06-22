@@ -537,7 +537,7 @@ class SAM2MattingLoss(nn.Module):
         weighted = torch.ones_like(alpha)
 
         diff = fusion_pred - alpha
-        alpha_loss = torch.sqrt(diff**2 + 1e-12)
+        alpha_loss = torch.sqrt(diff**2 + 1e-4)
 
         alpha_loss = alpha_loss.sum(dim=[2, 3])
         weighted = weighted.sum(dim=[2, 3])
@@ -633,7 +633,7 @@ class SAM2MattingLoss(nn.Module):
                                            dim=1)
 
         composition = fusion_pred * fg_map + (1. - fusion_pred) * bg_map
-        composition_loss = torch.sqrt((composition - image)**2 + 1e-12)
+        composition_loss = torch.sqrt((composition - image)**2 + 1e-4)
 
         composition_loss = composition_loss.sum(dim=[2, 3, 4])
         weighted = weighted.sum(dim=[2, 3, 4])
@@ -672,7 +672,7 @@ class SAM2MattingLoss(nn.Module):
         # gt_ious: torch.Size([2, 4])
         intersection = torch.sum(fusion_pred & alpha, dim=-1).float()
         union = torch.sum(fusion_pred | alpha, dim=-1).float()
-        gt_ious = intersection / torch.clamp(union, min=1e-6)
+        gt_ious = intersection / torch.clamp(union, min=1e-4)
         gt_ious = torch.clamp(gt_ious, min=0.0, max=1.0)
 
         # iou_predict_loss: torch.Size([2, 4])
@@ -1225,7 +1225,7 @@ class SAM2MattingMultiLevelLoss(nn.Module):
         weighted = torch.ones_like(alpha)
 
         diff = fusion_pred - alpha
-        alpha_loss = torch.sqrt(diff**2 + 1e-12)
+        alpha_loss = torch.sqrt(diff**2 + 1e-4)
 
         alpha_loss = alpha_loss.sum(dim=[2, 3])
         weighted = weighted.sum(dim=[2, 3])
@@ -1321,7 +1321,7 @@ class SAM2MattingMultiLevelLoss(nn.Module):
                                            dim=1)
 
         composition = fusion_pred * fg_map + (1. - fusion_pred) * bg_map
-        composition_loss = torch.sqrt((composition - image)**2 + 1e-12)
+        composition_loss = torch.sqrt((composition - image)**2 + 1e-4)
 
         composition_loss = composition_loss.sum(dim=[2, 3, 4])
         weighted = weighted.sum(dim=[2, 3, 4])
@@ -1360,7 +1360,7 @@ class SAM2MattingMultiLevelLoss(nn.Module):
         # gt_ious: torch.Size([2, 4])
         intersection = torch.sum(fusion_pred & alpha, dim=-1).float()
         union = torch.sum(fusion_pred | alpha, dim=-1).float()
-        gt_ious = intersection / torch.clamp(union, min=1e-6)
+        gt_ious = intersection / torch.clamp(union, min=1e-4)
         gt_ious = torch.clamp(gt_ious, min=0.0, max=1.0)
 
         # iou_predict_loss: torch.Size([2, 4])

@@ -28,7 +28,7 @@ class UniversalMattingDecoder(nn.Module):
             global_preds, local_preds, fused_preds, class_preds = preds
 
             mask_preds_h, mask_preds_w = fused_preds.shape[
-                2], fused_preds.shape[3]
+                3], fused_preds.shape[4]
 
             # class_preds用softmax预测
             class_preds = torch.softmax(class_preds, dim=-1)
